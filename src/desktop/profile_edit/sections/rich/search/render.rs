@@ -1,5 +1,8 @@
 //! Profile-owned renderer facts. Names never grant DOM/caret or selection custody.
-use super::Search;
+use super::{
+    Search,
+    channel_host::{self, Host},
+};
 use crate::{app_home::channel_fetches::canonical, state::ShellState};
 use dioxus::prelude::*;
 use serde::Deserialize;
@@ -38,7 +41,7 @@ pub(super) fn model_query(raw: &str) -> &str {
 }
 
 pub(super) struct Observed {
-    lease: super::super::query::Lease,
+    team: String,
     source: Arc<canonical::Canonical>,
     rows: BTreeMap<String, Value>,
     raw_query: String,
@@ -50,10 +53,8 @@ pub(super) struct Observed {
     demote_passthrough: bool,
 }
 impl Observed {
-    pub(super) fn current(&self, search: &Search, shell: &ShellState) -> bool {
-        self.lease.current(shell)
-            && search.current(shell)
-            && self.source.current_for(shell, self.lease.team())
+    pub(super) fn current(&self, search: &Search<impl Host>, shell: &ShellState) -> bool {
+        search.current(shell) && self.source.current_for(shell, &self.team)
     }
     pub(super) fn raw_query(&self) -> &str {
         &self.raw_query
@@ -112,14 +113,14 @@ pub(super) struct CollationReply {
 
 /// Only caller-selected ordinary rows from this exact canonical receipt. No
 /// Home/Activity owner or inferred typed channel is used to acquire strings.
-pub(super) async fn capture(
+pub(super) async fn capture<L: Host>(
     state: Signal<ShellState>,
-    search: &Search,
+    search: &Search<L>,
     raw_query: &str,
     source: Arc<canonical::Canonical>,
     rows: &[Value],
 ) -> Result<Observed, Error> {
-    let mut fields = inputs(raw_query, rows)?;
+    let mut fields = inputs_for::<L>(raw_query, rows)?;
     if !source_rows(&source, rows) {
         return Err(unavailable());
     }
@@ -187,7 +188,7 @@ pub(super) async fn capture(
         return Err(unavailable());
     }
     Ok(Observed {
-        lease: search.lease.clone(),
+        team: search.lease.team().into(),
         source,
         rows: rows
             .iter()
@@ -210,7 +211,11 @@ fn source_rows(source: &canonical::Canonical, rows: &[Value]) -> bool {
             .is_some_and(|id| source.row(id) == Some(row))
     })
 }
+#[cfg(test)]
 fn inputs(raw: &str, rows: &[Value]) -> Result<BTreeSet<String>, Error> {
+    inputs_for::<super::super::query::Lease>(raw, rows)
+}
+fn inputs_for<L: Host>(raw: &str, rows: &[Value]) -> Result<BTreeSet<String>, Error> {
     let formatted = formatted_query(raw);
     let mut fields = BTreeSet::from([
         String::new(),
@@ -219,7 +224,7 @@ fn inputs(raw: &str, rows: &[Value]) -> Result<BTreeSet<String>, Error> {
         model_query(formatted).into(),
     ]);
     for row in rows {
-        if !matching::ordinary_local(row) {
+        if !channel_host::ordinary::<L>(row) {
             return Err(unavailable());
         }
         let name = row["name"].as_str().ok_or_else(unavailable)?;
@@ -315,7 +320,7 @@ pub(super) fn decode_collation(
     Ok(classes)
 }
 pub(super) async fn lower(
-    search: &Search,
+    search: &Search<impl Host>,
     current: &impl Fn() -> bool,
     ticket: &str,
     stage: usize,
@@ -332,7 +337,7 @@ pub(super) async fn lower(
     decode_lower(ticket, stage, fields, reply)
 }
 pub(super) async fn evaluate<T: serde::de::DeserializeOwned>(
-    search: &Search,
+    search: &Search<impl Host>,
     current: &impl Fn() -> bool,
     function: &str,
     input: Value,

@@ -12,6 +12,7 @@ mod lifecycle;
 pub use ingress::{AcceptedIngress, IngressWitness};
 mod actions;
 pub mod freshness;
+pub mod inline_label;
 mod joined;
 mod memberships;
 mod names;

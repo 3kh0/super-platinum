@@ -1,10 +1,8 @@
 //! Profile member strings from the original source/policy and this query's
 //! renderer. These observations grant no native caret or selection authority.
+use super::channel_host::Host;
 use super::{Search, file_render, file_source, group_render, group_source, member_names, render};
-use crate::{
-    directory_member_fetches::search::Snapshot, profile_edit::sections::rich::query::Lease,
-    state::ShellState,
-};
+use crate::{directory_member_fetches::search::Snapshot, state::ShellState};
 use dioxus::prelude::*;
 use serde_json::{Value, json};
 use std::{
@@ -34,7 +32,7 @@ fn missing(text: &str) -> ranking::Error {
 }
 
 pub(super) struct Observed {
-    lease: Lease,
+    owner: Arc<dyn Fn(&ShellState) -> bool + Send + Sync>,
     source: Arc<Snapshot>,
     names: Arc<member_names::Observation>,
     groups: Option<group_render::Observed>,
@@ -51,8 +49,8 @@ pub(super) struct Observed {
     demote: bool,
 }
 impl Observed {
-    pub(super) fn current(&self, search: &Search, shell: &ShellState) -> bool {
-        self.lease.current(shell)
+    pub(super) fn current(&self, search: &Search<impl Host>, shell: &ShellState) -> bool {
+        (self.owner)(shell)
             && search.current(shell)
             && self.source.current(shell)
             && self.names.current(shell, search)
@@ -129,7 +127,7 @@ impl Observed {
 
 pub(super) async fn capture(
     state: Signal<ShellState>,
-    search: &Search,
+    search: &Search<impl Host>,
     raw_query: &str,
     source: Arc<Snapshot>,
     names: Arc<member_names::Observation>,
@@ -139,7 +137,7 @@ pub(super) async fn capture(
 
 pub(super) async fn capture_mixed(
     state: Signal<ShellState>,
-    search: &Search,
+    search: &Search<impl Host>,
     raw_query: &str,
     source: Arc<Snapshot>,
     names: Arc<member_names::Observation>,
@@ -150,7 +148,7 @@ pub(super) async fn capture_mixed(
 
 pub(super) async fn capture_with_files(
     state: Signal<ShellState>,
-    search: &Search,
+    search: &Search<impl Host>,
     raw_query: &str,
     source: Arc<Snapshot>,
     names: Arc<member_names::Observation>,
@@ -274,7 +272,10 @@ pub(super) async fn capture_with_files(
         return Err(unavailable());
     }
     Ok(Observed {
-        lease: search.lease.clone(),
+        owner: {
+            let lease = search.lease.clone();
+            Arc::new(move |shell| lease.current(shell))
+        },
         source,
         names,
         raw_query: raw_query.into(),
@@ -293,7 +294,7 @@ pub(super) async fn capture_with_files(
 }
 
 async fn observe_fields(
-    search: &Search,
+    search: &Search<impl Host>,
     current: &impl Fn() -> bool,
     ticket: &str,
     locale: &str,

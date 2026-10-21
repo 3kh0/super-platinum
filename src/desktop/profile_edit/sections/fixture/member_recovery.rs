@@ -33,6 +33,7 @@ pub(crate) fn enabled() -> bool {
     cfg!(any(test, feature = "protected-native-fixture"))
         && (named()
             || super::member_known::named()
+            || super::group_recovery::mixed_absent::enabled()
             || (super::member_freshness::named()
                 && std::env::var(super::member_freshness::FLAG).as_deref() == Ok("1")))
         && std::env::var(FLAG).as_deref() == Ok("1")
@@ -151,6 +152,14 @@ pub(crate) fn pending() -> Vec<Value> {
         .collect()
 }
 pub(crate) fn release(serial: u64, response: Reply) -> Result<(), String> {
+    let observed = release_observed(serial, response)?;
+    if observed["delivered"] == true {
+        Ok(())
+    } else {
+        Err("Closed receiver retired before response".into())
+    }
+}
+pub(crate) fn release_observed(serial: u64, response: Reply) -> Result<Value, String> {
     if !enabled() {
         return Err("Closed callback required".into());
     }
@@ -173,11 +182,29 @@ pub(crate) fn release(serial: u64, response: Reply) -> Result<(), String> {
             .unwrap();
         row["released"] = json!(true);
         row["outcome"] = json!(outcome);
+        if super::group_recovery::mixed_absent::enabled() {
+            row["response"] = match &response {
+                Ok((raw, disconnected)) => json!({"raw":raw,"disconnected":disconnected}),
+                Err(Error::Offline(_)) => json!({"error":"offline"}),
+                Err(_) => json!({"error":"other"}),
+            };
+        }
         book.held.remove(i).1
     };
-    sender
-        .send(response)
-        .map_err(|_| "Closed receiver retired before response".into())
+    let retired = sender.is_closed();
+    let delivered = sender.send(response).is_ok();
+    let observed = json!({"serial":serial,"receiverRetired":retired,"delivered":delivered});
+    if super::group_recovery::mixed_absent::enabled() {
+        let mut book = ledger().lock().unwrap();
+        let row = book
+            .requests
+            .iter_mut()
+            .find(|row| row["serial"] == serial)
+            .unwrap();
+        row["receiverRetired"] = json!(retired);
+        row["delivered"] = json!(delivered);
+    }
+    Ok(observed)
 }
 pub(crate) fn success(team: &str) -> Value {
     json!({"ok":true,"results":[{"id":MEMBER,"team_id":team,"name":"username-must-not-win",

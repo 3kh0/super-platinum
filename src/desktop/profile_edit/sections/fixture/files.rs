@@ -32,13 +32,18 @@ fn ledger() -> &'static Mutex<Ledger> {
     LEDGER.get_or_init(Default::default)
 }
 pub(crate) fn named() -> bool {
-    super::mentions::named() && std::env::var(FLAG).as_deref() == Ok("1")
+    (super::mentions::named() && std::env::var(FLAG).as_deref() == Ok("1")) || mixed_group()
+}
+fn mixed_group() -> bool {
+    (super::group_recovery::enabled() && super::group_recovery::case() == "mixed-file-group")
+        || super::group_recovery::mixed_absent::enabled()
 }
 pub(crate) fn enabled(shell: &ShellState) -> bool {
     named() && super::mentions::enabled(shell)
 }
 pub(crate) fn list() -> bool {
-    std::env::var("SUPER_PLATINUM_PROFILE_FILE_TITLES_KIND").as_deref() == Ok("list")
+    mixed_group()
+        || std::env::var("SUPER_PLATINUM_PROFILE_FILE_TITLES_KIND").as_deref() == Ok("list")
 }
 pub(crate) fn block_mode() -> bool {
     !list() && std::env::var(BLOCKS_FLAG).as_deref() == Ok("1")

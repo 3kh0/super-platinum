@@ -72,7 +72,9 @@ fn validate_directory(directory: &Path, expected: &Value) -> Result<(), String> 
     Ok(())
 }
 pub(crate) async fn wait_runner(state: Signal<ShellState>) -> Result<Value, String> {
-    if state.read().core.transport.is_some() || state.read().core.session.is_some() {
+    if (state.read().core.transport.is_some() || state.read().core.session.is_some())
+        && !fixture::completion::enabled(&state.peek())
+    {
         return Err("Disconnected fixture required".into());
     }
     let (directory, expected) = configuration()?;
@@ -148,10 +150,16 @@ pub(super) async fn storage_control(
     sequence: u64,
     action: &str,
 ) -> Result<Value, String> {
-    if std::env::var("SUPER_PLATINUM_LIST_COMMENTS_COMPOSE_CASE").as_deref()
-        != Ok("storage-recovery")
+    let limit = match std::env::var("SUPER_PLATINUM_LIST_COMMENTS_COMPOSE_CASE").as_deref() {
+        Ok("storage-recovery") => 6,
+        Ok("own-edit-storage") => 8,
+        Ok("own-delete-storage") => 4,
+        Ok("file-navigation-custody") => 4,
+        _ => 0,
+    };
+    if limit == 0
         || !fixture::compose::enabled(&state.peek())
-        || !(1..=6).contains(&sequence)
+        || !(1..=limit).contains(&sequence)
         || action != if sequence % 2 == 1 { "hold" } else { "release" }
     {
         return Err("Storage control requires the exact closed recovery case".into());

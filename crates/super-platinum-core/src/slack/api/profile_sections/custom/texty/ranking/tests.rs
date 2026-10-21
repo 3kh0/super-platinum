@@ -9,6 +9,131 @@ use std::collections::BTreeSet;
 fn raw(id: &str, name: &str) -> Value {
     json!({"id":id,"name":name,"is_channel":true,"is_member":true,"fromAnotherTeam":false})
 }
+
+fn list_matched<'a>(query: &str, rows: &'a [Value]) -> Result<Vec<Matched<'a>>, Error> {
+    matching::list_channels(
+        query,
+        &local::PreparedQuery {
+            normalized: query.into(),
+            matcher_normalized: query.into(),
+        },
+        rows,
+        &BTreeSet::new(),
+        false,
+        names,
+        |s| Ok(s.to_lowercase()),
+    )
+}
+fn list_rank(query: &str, rows: &[Matched<'_>], state: &Value) -> Result<Observation, Error> {
+    let history = History::from_wire("{}").unwrap();
+    let model = Model::fallback();
+    rank_list_channels(
+        query,
+        rows,
+        &Context {
+            state,
+            history: &history,
+            model: &model,
+            now_ms: 1760000000000.0,
+            normalize: &|s| Ok(s.to_lowercase()),
+        },
+        &mut SimilarityCache::default(),
+        |a, b| Ok(a.cmp(b)),
+        false,
+    )
+}
+
+#[test]
+fn list_caller_includes_private_other_team_and_previous_names() {
+    let mut private = raw("G12345678", "zzzzzz");
+    private["is_private"] = json!(true);
+    private["fromAnotherTeam"] = json!(true);
+    private["previous_names"] = json!(["mpdm-ignore", "alpha"]);
+    private["opaque"] = json!({"source":"retain"});
+    let rows = vec![
+        private,
+        raw("C12345678", "alpha"),
+        raw("C12345678", "alpha"),
+    ];
+    let before = rows.clone();
+    let matched = list_matched("alpha", &rows).unwrap();
+    assert_eq!(
+        matched.iter().map(Matched::id).collect::<Vec<_>>(),
+        ["C12345678", "C12345678", "G12345678"]
+    );
+    assert_eq!(matched[2].previous_match(), Some("alpha"));
+    assert_eq!(matched[2].raw(), &rows[0]);
+    assert!(std::ptr::eq(matched[2].raw(), &rows[0]));
+    let result = list_rank("alpha", &matched, &state(&rows)).unwrap();
+    assert_eq!(result.rows.len(), 3);
+    assert!(result.rows.iter().any(|r| r.row["id"] == "G12345678"));
+    assert!(
+        rank("alpha", &matched, &state(&rows)).is_err(),
+        "Profile cannot accept List-only locality"
+    );
+    assert_eq!(rows, before);
+}
+
+#[test]
+fn list_locality_is_observed_not_inferred_and_special_categories_remain_unavailable() {
+    let mut other = raw("C12345678", "alpha");
+    other["fromAnotherTeam"] = json!(true);
+    assert!(ordinary_list_channel(&other));
+    assert!(!ordinary_local(&other));
+    for value in [Value::Null, json!("false"), json!(0), json!({})] {
+        let mut row = other.clone();
+        row["fromAnotherTeam"] = value;
+        assert!(!ordinary_list_channel(&row));
+        assert!(list_matched("", &[row]).is_err());
+    }
+    let mut missing = other.clone();
+    missing.as_object_mut().unwrap().remove("fromAnotherTeam");
+    missing["team_id"] = json!("T_CURRENT");
+    assert!(!ordinary_list_channel(&missing));
+    for patch in [
+        json!({"id":"C_bad"}),
+        json!({"isUnknown":true}),
+        json!({"is_im":true}),
+        json!({"properties":{"record_channel":{"record_id":"R1"}}}),
+        json!({"name":"mc:meeting"}),
+    ] {
+        let mut row = other.clone();
+        row.as_object_mut()
+            .unwrap()
+            .extend(patch.as_object().unwrap().clone());
+        assert!(!ordinary_list_channel(&row));
+    }
+}
+
+#[test]
+fn list_empty_query_keeps_shared_75_then_25_cap_and_profile_compatibility() {
+    let rows: Vec<_> = (0..90)
+        .map(|i| raw(&format!("C{i:08}"), &format!("alpha{i:03}")))
+        .collect();
+    let source = state(&rows);
+    let profile = rank("", &matched("", &rows), &source).unwrap();
+    let list = list_rank("", &list_matched("", &rows).unwrap(), &source).unwrap();
+    assert_eq!(list.latest_ids, profile.latest_ids);
+    assert_eq!(
+        list.rows
+            .iter()
+            .map(|r| (&r.row, r.original_index))
+            .collect::<Vec<_>>(),
+        profile
+            .rows
+            .iter()
+            .map(|r| (&r.row, r.original_index))
+            .collect::<Vec<_>>()
+    );
+    let mut other = rows.clone();
+    for row in &mut other {
+        row["fromAnotherTeam"] = json!(true);
+    }
+    let cross = list_rank("", &list_matched("", &other).unwrap(), &state(&other)).unwrap();
+    assert_eq!(cross.latest_ids.len(), 75);
+    assert_eq!(cross.rows.len(), 25);
+    assert!(cross.rows.iter().all(|r| r.original_index < 90));
+}
 fn names(row: &Value) -> Result<ChannelName, Error> {
     let name = row["name"].as_str().unwrap().to_lowercase();
     Ok(ChannelName {

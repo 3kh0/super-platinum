@@ -3,6 +3,11 @@ use super::*;
 use crate::slack_links_check::wait_dom;
 use dioxus::desktop::DesktopContext;
 use std::time::Duration;
+mod delete;
+mod managers;
+mod permissions;
+mod run_access;
+mod unpublish;
 
 const TITLE: &str = "Révision de projet";
 const DESCRIPTION: &str = "Keep the proposed details.\nReview 中🙂 e\u{301} together.";
@@ -86,16 +91,63 @@ pub(crate) fn start(state: Signal<ShellState>, desktop: DesktopContext) {
         return;
     }
     dioxus::core::spawn_forever(async move {
-        let result =
-            match tokio::time::timeout(Duration::from_secs(150), run(state, &desktop, &name)).await
+        let result = match tokio::time::timeout(Duration::from_secs(150), async {
+            if !std::env::var(super::managers::CASE_ENV)
+                .unwrap_or_default()
+                .is_empty()
             {
-                Ok(Ok(value)) => value,
-                Ok(Err(error)) => json!({"ok":false,"fixture":name,"error":error}),
-                Err(_) => {
-                    json!({"ok":false,"fixture":name,"error":"Workflow management timed out"})
+                if !super::managers::requested() {
+                    return Err("Invalid or overlapping Managers fixture flags".into());
                 }
-            };
-        eprintln!("workflow-management-check: {result}");
+                managers::run(state, &desktop, &name).await
+            } else if !std::env::var(super::run_access::CASE_ENV)
+                .unwrap_or_default()
+                .is_empty()
+            {
+                if !super::run_access::requested() {
+                    return Err("Invalid or overlapping Run access fixture flags".into());
+                }
+                run_access::run(state, &desktop, &name).await
+            } else if !std::env::var(super::permissions::CASE_ENV)
+                .unwrap_or_default()
+                .is_empty()
+            {
+                if !super::permissions::requested() {
+                    return Err("Invalid or overlapping Permissions fixture flags".into());
+                }
+                permissions::run(state, &desktop, &name).await
+            } else if super::unpublish::requested() {
+                unpublish::run(state, &desktop, &name).await
+            } else if super::delete::requested() {
+                delete::run(state, &desktop, &name).await
+            } else {
+                run(state, &desktop, &name).await
+            }
+        })
+        .await
+        {
+            Ok(Ok(value)) => value,
+            Ok(Err(error)) => json!({"ok":false,"fixture":name,"error":error}),
+            Err(_) => {
+                json!({"ok":false,"fixture":name,"error":"Workflow management timed out"})
+            }
+        };
+        if super::unpublish::requested()
+            || super::permissions::requested()
+            || super::run_access::requested()
+            || super::managers::requested()
+        {
+            // The retained raw Unpublish evidence is large. Format and write
+            // this owned receipt off the renderer so native ownership probes
+            // can still receive window messages after the final capture.
+            let _ = tokio::task::spawn_blocking(move || {
+                let line = format!("workflow-management-check: {result}");
+                eprintln!("{line}");
+            })
+            .await;
+        } else {
+            eprintln!("workflow-management-check: {result}");
+        }
     });
 }
 
@@ -173,7 +225,7 @@ async fn stage(
       const rect=e=>{{const r=e.getBoundingClientRect();return {{left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:r.width,height:r.height}}}};
       const visible=e=>{{const r=rect(e),s=getComputedStyle(e);const hits=[[r.left+1,r.top+1],[r.right-1,r.bottom-1]].every(([x,y])=>{{const a=document.elementFromPoint(x,y);return a===e||e.contains(a)}});return r.width>0&&r.height>0&&r.left>=0&&r.top>=0&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1&&s.visibility==='visible'&&s.display!=='none'&&hits&&e.scrollWidth<=e.clientWidth+1;}};
       const controls=root?[...root.querySelectorAll('.workflow-management-actions button')].filter(e=>!e.disabled):config?[config]:[];
-      const feedback=root?[...root.querySelectorAll('.workflow-management-feedback p')]:[];
+      const feedback=root?[...root.querySelectorAll('.workflow-management-feedback p')].filter(e=>e.textContent.trim()):[];
       const texts=feedback.map(e=>e.textContent),expected={},locked={};
       const allVisible=controls.length>0&&controls.every(visible)&&feedback.every(visible);
       const title=document.getElementById('workflow-management-title'),description=document.getElementById('workflow-management-description');

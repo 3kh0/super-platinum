@@ -11,6 +11,7 @@ pub(in crate::app_home::about::management) fn panel(
         return rsx! {};
     };
     let a = d.activity.clone();
+    let document_id = d.id;
     let h = s.app_home.about.management.surface.as_ref().unwrap();
     let loading = h.read.is_some();
     let (export_shown, export_disabled, export_notice) = export::status(&s, visit);
@@ -36,6 +37,7 @@ pub(in crate::app_home::about::management) fn panel(
     let more = a.page.as_ref().and_then(ActivityPage::next_query).is_some();
     let initial = a.page.is_none();
     let media_epoch = s.media_epoch;
+    let file_notice = message::files::notice(&s, visit);
     let detail_text = a.detail.as_ref().map(|detail| {
         let trigger = detail
             .trigger_message()
@@ -52,14 +54,19 @@ pub(in crate::app_home::about::management) fn panel(
         .map(|row| user(&s, &team, row["actor_id"].as_str().unwrap_or_default()))
         .collect::<Vec<_>>();
     drop(s);
+    if detail_text.is_some() {
+        dioxus::core::queue_effect(move || channel_labels::request(state, visit));
+        dioxus::core::queue_effect(move || message::files::request(state, visit));
+    }
     // Quoted value/selected bindings are nonvolatile in the pinned renderer.
     // Unrelated realtime renders must not erase native edits before IPC delivery;
     // actual model changes still update the same controls.
     rsx! {
         section{id:"workflow-activity",class:"app-home workflow-management-activity","data-activity-read":read_id,"data-page-revision":a.page_revision,
-            onmounted:move |_|{if initial{load(state,visit,Page::First);}},
+            onmounted:move |_|date_range::mount(state,visit,initial),
             div{class:"app-home-toolbar",
                 h3{"Activity"}
+                {date_range::filter_button(&a,blocked||loading)}
                 span{class:"spacer"}
                 if export_shown {
                     button{id:"workflow-activity-export",r#type:"button",disabled:export_disabled,onclick:move |_|export::start(state,visit),"Export CSV"}
@@ -75,6 +82,7 @@ pub(in crate::app_home::about::management) fn panel(
                         }
                     }
                 }
+                div{id:"workflow-activity-filter-panel",class:"workflow-filter-panel",style:if a.calendar.filter_open{"display:block"}else{"display:none"},
                 form{id:"workflow-activity-filters","data-revision":filters.revision,class:"workflow-activity-filters workflow-management-filters",
                     onsubmit:move |e|{e.prevent_default();load(state,visit,Page::First);},
                     label{r#for:"workflow-activity-status","Status"
@@ -84,12 +92,7 @@ pub(in crate::app_home::about::management) fn panel(
                             option{value:"ERROR","selected":filters.status=="ERROR","Failed"}option{value:"CANCELED","selected":filters.status=="CANCELED","Canceled"}option{value:"PENDING_USER_ACTION","selected":filters.status=="PENDING_USER_ACTION","Awaiting user action"}
                         }
                     }
-                    label{r#for:"workflow-activity-from","From"
-                        input{id:"workflow-activity-from",r#type:"date","value":filters.from,disabled:blocked,oninput:move |e|edit(&mut state.write(),visit,Field::From,e.value())}
-                    }
-                    label{r#for:"workflow-activity-to","Through"
-                        input{id:"workflow-activity-to",r#type:"date","value":filters.to,disabled:blocked,oninput:move |e|edit(&mut state.write(),visit,Field::To,e.value())}
-                    }
+                    {date_range::picker(&a,visit,document_id,blocked,loading,loading&&!exporting)}
                     label{r#for:"workflow-activity-limit","Runs per page"
                         select{id:"workflow-activity-limit","value":filters.limit.clone(),disabled:blocked,onchange:move |e|edit(&mut state.write(),visit,Field::Limit,e.value()),
                             for n in [20,50,75,100]{option{key:"{n}",value:"{n}","selected":filters.limit==n.to_string(),"{n}"}}
@@ -113,8 +116,8 @@ pub(in crate::app_home::about::management) fn panel(
                     button{id:"workflow-activity-find-people",r#type:"button",disabled:blocked||loading||member_loading,onclick:move |_|members::start(state,visit),"Find people"}
                     button{id:"workflow-activity-apply",r#type:"submit",disabled:loading||blocked,"Apply filters"}
                 }
+                }
                 if member_loading{p{role:"status","Loading people…"}}
-                p{class:"muted workflow-activity-hint","Use a date range of up to 90 days."}
                 if let Some(notice)=a.notice{p{id:"workflow-activity-notice",role:"status","{notice}"}}
                 if a.detail_row.is_some(){
                     section{id:"workflow-activity-detail",key:"{a.detail_revision}","data-detail-revision":a.detail_revision,"data-detail-loaded":a.detail.is_some().to_string(),tabindex:"-1",
@@ -169,9 +172,10 @@ pub(in crate::app_home::about::management) fn panel(
                     }
                 }
             }
+            if let Some(notice)=file_notice {p{id:"workflow-activity-file-notice",class:"workflow-activity-feedback",role:"status","{notice}"}}
             p{id:"workflow-activity-export-notice",class:"workflow-activity-feedback",role:"status","{export_notice.unwrap_or_default()}"}
             p{id:"workflow-activity-export-native-notice",class:"workflow-activity-feedback",role:"status"}
-            if loading&&!exporting{p{id:"workflow-activity-loading",class:"workflow-activity-feedback",role:"status","Loading activity…"}}
+            if loading&&!exporting&&!a.calendar.filter_open{p{id:"workflow-activity-loading",class:"workflow-activity-feedback",role:"status","Loading activity…"}}
             if let Some(notice)=member_notice{
                 p{id:"workflow-activity-member-notice",class:"workflow-activity-feedback",role:"status","{notice}"}
             }

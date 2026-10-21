@@ -1,7 +1,10 @@
 use super::*;
 use crate::profile_edit::{
     model::Token,
-    sections::{fixture, rich::opening},
+    sections::{
+        fixture,
+        rich::{opening, query},
+    },
 };
 use serde_json::{Value, json};
 
@@ -116,4 +119,23 @@ fn preferences_account_auth_socket_and_query_retire_original_observation() {
         }
         assert!(!observed.owner_current(&shell), "mutation {mutation}");
     }
+}
+
+#[test]
+fn successor_with_same_preferences_and_context_cannot_revive_original_host() {
+    let (mut shell, lease, context) = mounted();
+    let preferences = prefs(
+        &shell,
+        context.clone(),
+        json!({"texty_autocomplete_files":{"group":"on"}}),
+    );
+    let original = Observation::bound(&shell, lease, context.clone(), preferences.clone()).unwrap();
+    let pane = shell.profile_edit.sections.draft.as_ref().unwrap();
+    let (visit, serial) = (pane.visit, pane.serial);
+    let successor = query::begin(&mut shell, visit, serial, 1, 2).unwrap();
+    assert!(context.current(&shell));
+    assert!(preferences.current(&shell));
+    let replacement = Observation::bound(&shell, successor, context, preferences).unwrap();
+    assert!(replacement.owner_current(&shell));
+    assert!(!original.owner_current(&shell));
 }

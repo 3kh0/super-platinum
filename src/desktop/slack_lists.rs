@@ -40,7 +40,8 @@ use mutations::{
 mod read_state;
 mod record_detail;
 pub(crate) use editor::{
-    EditorKind, EditorView, begin_cell_editor, cancel_editor, link_normalization_slot, save_editor,
+    EditorKind, EditorView, begin_cell_editor, cancel_editor, cell_editor_blocks_profile_hover,
+    link_normalization_slot, save_editor,
 };
 pub(crate) use editor::{assignment, date as task_date, entities};
 pub(crate) use layout::{TableEntry, select_view, toggle_group};
@@ -84,6 +85,7 @@ pub(crate) struct State {
 struct View {
     id: String,
     title: String,
+    loading_title: Option<String>,
     generation: u64,
     layout: layout::Layout,
     read: u64,
@@ -176,6 +178,7 @@ pub(super) fn open_shell(shell: &mut ShellState, file: File) -> bool {
     shell.slack_lists.view = Some(View {
         id,
         title: super_platinum_core::state::file_title(&file),
+        loading_title: file.title.clone(),
         generation: next_id(),
         layout: Default::default(),
         read: 0,
@@ -198,6 +201,11 @@ pub(super) fn open_shell(shell: &mut ShellState, file: File) -> bool {
     true
 }
 pub(crate) fn close_shell(shell: &mut ShellState) {
+    if comments::presentation(shell)
+        .is_some_and(|view| comments::own_edit::blocks_departure(shell, view.generation))
+    {
+        return;
+    }
     create::close_visit(shell);
     delete::close_visit(shell);
     reminder::close_visit(shell);

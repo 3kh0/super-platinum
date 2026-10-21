@@ -115,6 +115,9 @@ impl StructureIntent {
         inventory.paragraph(section, now)?;
         let position = inventory.insertion_position(anchor, side)?;
         let draft = TextDraft::from_rtml(&draft.rtml()?)?;
+        if draft.runs.iter().any(|run| run.style.underline) {
+            return Err(Error::Unsupported);
+        }
         let suffix = uuid::Uuid::new_v4().simple().to_string();
         let id = position::section_id(snapshot, &suffix[..25])?;
         if inventory.sections.contains_key(&id) {

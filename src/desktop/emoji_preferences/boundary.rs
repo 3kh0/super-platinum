@@ -21,6 +21,14 @@ pub(super) trait Boundary: Clone + 'static {
         work: F,
     ) -> Result<T, ()>;
     async fn execute(&self, owner: Arc<Owner>, request: PreparedRequest) -> Result<Value, Error>;
+    async fn execute_read(
+        &self,
+        owner: Arc<ReadOwner>,
+        state: Signal<ShellState>,
+        request: PreparedRequest,
+    ) -> Result<Value, Error> {
+        owner.execute(self, state, request).await
+    }
     fn persist(&self, state: Signal<ShellState>, team: &str);
     fn failure(&self, state: Signal<ShellState>, error: Error, message: &'static str);
 }

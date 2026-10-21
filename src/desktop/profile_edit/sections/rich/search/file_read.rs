@@ -15,7 +15,7 @@ fn now_ms() -> i64 {
 /// An existing poisoned or stale collection is never replaced by empty history.
 pub(super) fn initialize(
     shell: &mut ShellState,
-    search: &Search,
+    search: &Search<impl Host>,
     names: Arc<member_names::Observation>,
     policy: &file_policy::Observation,
 ) -> Result<(), Error> {
@@ -36,7 +36,7 @@ impl Acquired {
     pub(super) fn publish(
         self,
         shell: &mut ShellState,
-        search: &Search,
+        search: &Search<impl Host>,
         policy: &file_policy::Observation,
         query: &str,
     ) -> Result<(), Error> {
@@ -57,7 +57,7 @@ impl Acquired {
 
 pub(super) async fn remote(
     mut state: Signal<ShellState>,
-    search: &Search,
+    search: &Search<impl Host>,
     names: Arc<member_names::Observation>,
     policy: &file_policy::Observation,
     query: &str,
@@ -71,7 +71,7 @@ pub(super) async fn remote(
 
 async fn read(
     mut state: Signal<ShellState>,
-    search: &Search,
+    search: &Search<impl Host>,
     names: Arc<member_names::Observation>,
     policy: &file_policy::Observation,
     query: &str,
@@ -101,7 +101,7 @@ async fn read(
         tokio::select! {
             biased;
             _ = search.lease.cancelled() => return Err(unavailable()),
-            result = fixture::completion::file_search(state, &request) => result?,
+            result = search.lease.fixture_file_request(state, &request) => result?,
         }
     } else {
         tokio::select! {

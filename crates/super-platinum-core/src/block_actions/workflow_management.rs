@@ -8,10 +8,13 @@ pub mod capabilities;
 mod editor;
 mod followup;
 mod list;
+pub mod manager_settings;
 mod mutation;
 mod name;
 mod observe;
 mod publication;
+pub mod run_settings;
+pub mod settings_acquisition;
 mod trigger;
 pub use activity::{
     ActivityDetail, ActivityDetailRequest, ActivityFilters, ActivityPage, ActivityQuery,

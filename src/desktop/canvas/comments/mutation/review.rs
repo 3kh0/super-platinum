@@ -77,7 +77,7 @@ pub(in crate::canvas::comments) fn open(
         };
         let result = super::super::read(state, &ticket).await;
         let result = match result {
-            Ok((Page::Replies(page), file)) => {
+            Ok((Page::Replies(page), file, _)) => {
                 if let Some(root) = page
                     .messages
                     .into_iter()

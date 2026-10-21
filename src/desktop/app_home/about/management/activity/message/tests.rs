@@ -8,6 +8,15 @@ fn text(nodes: &[Inline]) -> String {
     nodes
         .iter()
         .map(|n| match n {
+            Inline::File { kind, label, .. } => {
+                label
+                    .as_ref()
+                    .map(|v| v.text.as_str())
+                    .unwrap_or(match kind {
+                        files::Kind::Canvas => "Canvas unavailable",
+                        files::Kind::List => "List unavailable",
+                    })
+            }
             Inline::Text(text)
             | Inline::Emoji { text, .. }
             | Inline::User { label: text, .. }
@@ -166,21 +175,20 @@ fn ordinary_channel_name_preserves_bytes_and_occurrences_with_separate_icon() {
 }
 
 #[test]
-fn ordinary_icon_does_not_claim_special_or_incomplete_channel_metadata() {
+fn local_icon_does_not_claim_special_or_incomplete_channel_metadata() {
     let base = json!({"id":"CLABEL","name":"ordinary","is_channel":true});
     for patch in [
         json!({"is_channel":false}),
-        json!({"is_group":true}),
         json!({"is_im":true}),
         json!({"is_mpim":true}),
-        json!({"is_private":true}),
-        json!({"is_archived":true}),
         json!({"is_ext_shared":true}),
         json!({"is_shared":true}),
         json!({"is_org_shared":true}),
         json!({"is_file":true}),
         json!({"isUnknown":true}),
         json!({"isNonExistent":true}),
+        json!({"is_frozen":true}),
+        json!({"is_frozen":"false"}),
         json!({"name":"mc:event:meeting"}),
         json!({"name":""}),
         json!({"name":null}),
@@ -196,11 +204,102 @@ fn ordinary_icon_does_not_claim_special_or_incomplete_channel_metadata() {
             .unwrap()
             .extend(patch.as_object().unwrap().clone());
         let channel = serde_json::from_value(raw.clone()).unwrap();
-        assert!(!ordinary_public_channel(&channel), "{raw}");
+        assert_eq!(local_channel_icon(&channel), None, "{raw}");
     }
     let ordinary = serde_json::from_value(json!({"id":"CLABEL","name":" raw ","is_channel":true,
         "is_shared":false,"properties":{"record_channel":{"record_id":""},"huddles":{"is_huddle_channel":false}}})).unwrap();
-    assert!(ordinary_public_channel(&ordinary));
+    assert_eq!(local_channel_icon(&ordinary), Some(Icon::Tag));
+}
+
+#[test]
+fn local_private_and_archived_labels_keep_original_names_and_occurrences() {
+    let mut s = shell();
+    let name = " \u{00c9}quipe & <literal> \u{4e2d}\u{1f98a} ";
+    let raw = json!({"template":"Open {c} then {c}","variables":{"c":{"type":"CHANNEL","value":"CLABEL"}}});
+    for (patch, icon, archived) in [
+        (json!({"is_channel":true}), Icon::Tag, false),
+        (
+            json!({"is_channel":true,"is_private":true}),
+            Icon::LockFilled,
+            false,
+        ),
+        (json!({"is_group":true}), Icon::LockFilled, false),
+        (
+            json!({"is_channel":true,"is_archived":true}),
+            Icon::Archive,
+            true,
+        ),
+        (
+            json!({"is_channel":true,"is_private":true,"is_archived":true}),
+            Icon::ArchiveFilled,
+            true,
+        ),
+        (
+            json!({"is_group":true,"is_archived":true}),
+            Icon::ArchiveFilled,
+            true,
+        ),
+    ] {
+        let mut channel = json!({"id":"CLABEL","name":name,"is_frozen":false});
+        channel
+            .as_object_mut()
+            .unwrap()
+            .extend(patch.as_object().unwrap().clone());
+        let channel = serde_json::from_value(channel).unwrap();
+        s.core
+            .workspaces
+            .get_mut("T1")
+            .unwrap()
+            .channels
+            .insert("CLABEL".into(), channel);
+        let original = s.core.workspaces["T1"].channels["CLABEL"].clone();
+        let label = if archived {
+            format!("{name} (archived)")
+        } else {
+            name.to_owned()
+        };
+        let nodes = project(&s, "T1", 0, &raw);
+        for part in [1, 3] {
+            assert!(
+                matches!(&nodes[part],Inline::Channel{id,label:actual,icon:Some(actual_icon),part:ordinal}
+                    if id=="CLABEL" && actual==&label && *actual_icon==icon && *ordinal==part)
+            );
+        }
+        assert_eq!(
+            serde_json::to_value(&s.core.workspaces["T1"].channels["CLABEL"]).unwrap(),
+            serde_json::to_value(original).unwrap()
+        );
+    }
+}
+
+#[test]
+fn unsupported_private_archived_metadata_keeps_existing_fallback() {
+    let mut s = shell();
+    let raw = json!({"template":"{c}","variables":{"c":{"type":"CHANNEL","value":"CLABEL"}}});
+    for patch in [
+        json!({"is_ext_shared":true}),
+        json!({"is_shared":true}),
+        json!({"is_frozen":true,"unlinked":1,"grace_period_end":9}),
+        json!({"is_mpim":true}),
+        json!({"is_file":true}),
+        json!({"properties":{"record_channel":{"record_id":"R1"}}}),
+    ] {
+        let mut channel =
+            json!({"id":"CLABEL","name":" raw ","is_private":true,"is_archived":true});
+        channel
+            .as_object_mut()
+            .unwrap()
+            .extend(patch.as_object().unwrap().clone());
+        s.core
+            .workspaces
+            .get_mut("T1")
+            .unwrap()
+            .channels
+            .insert("CLABEL".into(), serde_json::from_value(channel).unwrap());
+        assert!(
+            matches!(&project(&s,"T1",0,&raw)[0],Inline::Channel{label,icon:None,..} if label=="# raw ")
+        );
+    }
 }
 
 fn name_policy(force: i32) -> super_platinum_core::block_actions::name_policy::Snapshot {

@@ -79,7 +79,7 @@ pub(super) fn prepare(
         )?],
     )?;
     let content = content(&prepared.intent.section, &history.rtml)?;
-    let parent = RawMessage::from_fields(&[
+    let mut fields = vec![
         F::bytes(1, prepared.anchor_section().as_bytes())?,
         F::uint(
             2,
@@ -92,11 +92,19 @@ pub(super) fn prepare(
         F::uint(9, 0)?,
         F::message(12, &content)?,
         F::message(13, &RawMessage::decode(&[])?)?,
+    ];
+    if let Some(attributes) =
+        super::super::text::heading_content_attributes(&prepared.intent.section)?
+    {
+        fields.push(F::message(16, &attributes)?);
+    }
+    fields.extend([
         F::uint(19, 1)?,
         F::uint(20, 1)?,
         F::bytes(33, format!("{}-0", prepared.session_id()).as_bytes())?,
         F::message(38, &history.wire)?,
-    ])?;
+    ]);
+    let parent = RawMessage::from_fields(&fields)?;
     prepared.intent.snippet = super::snippet::capture_inline(
         &prepared.intent.section,
         prepared.control_id(),
@@ -139,3 +147,6 @@ pub(super) fn captured_rtml(
     range::capture_removing(original, selection.start, selection.end, control, removal)
         .map(|m| m.rtml)
 }
+
+#[cfg(test)]
+mod underline_tests;

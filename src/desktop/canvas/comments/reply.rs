@@ -18,9 +18,11 @@ pub(super) mod check;
 mod delivery;
 mod departure;
 pub(super) mod fixture;
+mod guarded_departure;
 mod native;
 mod view;
 pub(super) use departure::back_to_canvas;
+pub(super) use guarded_departure::prepare as prepare_departure;
 pub(super) use view::Composer;
 #[cfg(test)]
 mod tests;

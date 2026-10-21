@@ -2,7 +2,7 @@
 use crate::candidate_catalog::CustomRecord;
 
 const WORD: usize = std::mem::size_of::<usize>();
-const HEADER: usize = WORD * 2;
+const HEADER: usize = WORD * 2 + 1;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Error {
@@ -34,8 +34,14 @@ impl Packed {
     pub fn capture<'a>(
         rows: impl Iterator<Item = (&'a str, &'a str)> + Clone,
     ) -> Result<Self, Error> {
+        Self::capture_with_flags(rows.map(|(name, value)| (name, value, false)))
+    }
+
+    pub fn capture_with_flags<'a>(
+        rows: impl Iterator<Item = (&'a str, &'a str, bool)> + Clone,
+    ) -> Result<Self, Error> {
         let (mut count, mut total) = (0usize, 0usize);
-        for (name, value) in rows.clone() {
+        for (name, value, _) in rows.clone() {
             total = add_record(total, name.len(), value.len())?;
             count = count.checked_add(1).ok_or(Error::SizeOverflow)?;
         }
@@ -44,12 +50,13 @@ impl Packed {
             .try_reserve_exact(total)
             .map_err(|_| Error::Allocation)?;
         let mut written = 0usize;
-        for (name, value) in rows {
+        for (name, value, is_nonexistent) in rows {
             if written == count || add_record(bytes.len(), name.len(), value.len())? > total {
                 return Err(Error::InputChanged);
             }
             bytes.extend_from_slice(&name.len().to_ne_bytes());
             bytes.extend_from_slice(&value.len().to_ne_bytes());
+            bytes.push(u8::from(is_nonexistent));
             bytes.extend_from_slice(name.as_bytes());
             bytes.extend_from_slice(value.as_bytes());
             written += 1;
@@ -60,7 +67,7 @@ impl Packed {
         Ok(Self { count, bytes })
     }
 
-    fn record<'a>(&'a self, cursor: &mut usize) -> Result<(&'a str, &'a str), Error> {
+    fn record<'a>(&'a self, cursor: &mut usize) -> Result<(&'a str, &'a str, bool), Error> {
         let header_end = cursor.checked_add(HEADER).ok_or(Error::Malformed)?;
         let header = self
             .bytes
@@ -68,8 +75,16 @@ impl Packed {
             .ok_or(Error::Malformed)?;
         let name_len =
             usize::from_ne_bytes(header[..WORD].try_into().map_err(|_| Error::Malformed)?);
-        let value_len =
-            usize::from_ne_bytes(header[WORD..].try_into().map_err(|_| Error::Malformed)?);
+        let value_len = usize::from_ne_bytes(
+            header[WORD..WORD * 2]
+                .try_into()
+                .map_err(|_| Error::Malformed)?,
+        );
+        let is_nonexistent = match header[WORD * 2] {
+            0 => false,
+            1 => true,
+            _ => return Err(Error::Malformed),
+        };
         let name_end = header_end.checked_add(name_len).ok_or(Error::Malformed)?;
         let end = name_end.checked_add(value_len).ok_or(Error::Malformed)?;
         let name = std::str::from_utf8(
@@ -81,7 +96,7 @@ impl Packed {
         let value = std::str::from_utf8(self.bytes.get(name_end..end).ok_or(Error::Malformed)?)
             .map_err(|_| Error::Utf8)?;
         *cursor = end;
-        Ok((name, value))
+        Ok((name, value, is_nonexistent))
     }
 
     /// Validate count, lengths, UTF-8 and exact EOF before allocating output.
@@ -103,10 +118,11 @@ impl Packed {
             .map_err(|_| Error::Allocation)?;
         cursor = 0;
         for _ in 0..self.count {
-            let (name, value) = self.record(&mut cursor)?;
+            let (name, value, is_nonexistent) = self.record(&mut cursor)?;
             result.push(CustomRecord {
                 name: copy(name)?,
                 value: copy(value)?,
+                is_nonexistent,
             });
         }
         Ok(result)
@@ -236,5 +252,22 @@ mod tests {
         source.clear();
         source.push_str("after");
         assert_eq!(p.decode().unwrap()[0].value, "before");
+    }
+
+    #[test]
+    fn missing_emoji_flag_survives_packed_snapshot_and_invalid_flag_is_rejected() {
+        let mut packed = Packed::capture_with_flags(
+            [
+                ("gone", "https://example.invalid/gone.png", true),
+                ("alias", "alias:gone", false),
+            ]
+            .into_iter(),
+        )
+        .unwrap();
+        let rows = packed.decode().unwrap();
+        assert!(rows[0].is_nonexistent);
+        assert!(!rows[1].is_nonexistent);
+        packed.bytes[WORD * 2] = 2;
+        assert_eq!(packed.decode(), Err(Error::Malformed));
     }
 }

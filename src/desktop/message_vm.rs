@@ -3,6 +3,9 @@ pub(crate) mod broadcast_check;
 use super_platinum_core::MediaAssetKind;
 
 use crate::blocks::{BlockCtx, block_nodes, custom_emoji_media, plain_inline_nodes};
+
+#[cfg(test)]
+mod tone_tests;
 use crate::media::MediaRegistry;
 use crate::model::{
     ExternalTeamVm, MessageVm, REACTOR_AVATARS_SHOWN, REACTOR_NAMES_SHOWN, ReactionVm, ReactorVm,

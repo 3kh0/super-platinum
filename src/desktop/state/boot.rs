@@ -465,6 +465,7 @@ impl ShellState {
             canvas_creation: Default::default(),
             app_home: Default::default(),
             directory_member_fetches: Default::default(),
+            group_freshness: Default::default(),
             app_modal: None,
             message_buttons: crate::message_buttons::State::default(),
             app_modal_closes: Vec::new(),
@@ -621,6 +622,7 @@ impl ShellState {
             canvas_creation: Default::default(),
             app_home: Default::default(),
             directory_member_fetches: Default::default(),
+            group_freshness: Default::default(),
             app_modal: None,
             message_buttons: crate::message_buttons::State::default(),
             app_modal_closes: Vec::new(),
@@ -971,6 +973,7 @@ impl ShellState {
             canvas_creation: Default::default(),
             app_home: Default::default(),
             directory_member_fetches: Default::default(),
+            group_freshness: Default::default(),
             app_modal: None,
             message_buttons: crate::message_buttons::State::default(),
             app_modal_closes: Vec::new(),
@@ -1892,12 +1895,34 @@ impl ShellState {
             | "canvas-narrow"
             | "canvas-comments"
             | "canvas-comments-narrow"
+            | "canvas-special-roots"
+            | "canvas-special-roots-narrow"
+            | "canvas-file-fallback"
+            | "canvas-file-fallback-narrow"
+            | "canvas-canonical-file-roots"
+            | "canvas-canonical-file-roots-narrow"
+            | "canvas-canonical-file-custody"
+            | "canvas-canonical-file-custody-narrow"
+            | "canvas-canonical-native-canvas"
+            | "canvas-canonical-native-canvas-narrow"
+            | "canvas-canonical-native-list"
+            | "canvas-canonical-native-list-narrow"
+            | "canvas-root-attribution"
+            | "canvas-root-attribution-narrow"
+            | "canvas-editor-recovery"
+            | "canvas-editor-recovery-narrow"
             | "canvas-comment-resolve"
             | "canvas-comment-resolve-narrow"
             | "canvas-comment-reply"
             | "canvas-comment-reply-narrow"
             | "canvas-comment-rich-reply-narrow"
             | "canvas-comment-inline"
+            | "canvas-comment-underline"
+            | "canvas-comment-underline-narrow"
+            | "canvas-comment-headings"
+            | "canvas-comment-headings-narrow"
+            | "canvas-comment-headings-content-id"
+            | "canvas-comment-headings-content-id-narrow"
             | "canvas-comment-inline-narrow"
             | "canvas-comment-existing-inline-narrow"
             | "canvas-comment-archived-inline-narrow"
@@ -1930,6 +1955,12 @@ impl ShellState {
             | "canvas-checklist-narrow"
             | "canvas-text"
             | "canvas-text-narrow"
+            | "canvas-heading"
+            | "canvas-underline"
+            | "canvas-heading-narrow"
+            | "canvas-heading-content-id"
+            | "canvas-heading-content-id-narrow"
+            | "canvas-underline-narrow"
             | "canvas-structure"
             | "canvas-structure-narrow"
             | "canvas-structure-mixed"
@@ -1953,6 +1984,8 @@ impl ShellState {
                     permalink: None,
                 });
                 state.overlay = Some(Overlay::Canvas);
+                crate::canvas::comments::fixture_install_attribution(&mut state)
+                    .expect("closed Canvas attribution fixture");
                 crate::canvas::comments::install_fixture(&mut state);
             }
             "unreads" => state.main_view = MainView::Unreads,

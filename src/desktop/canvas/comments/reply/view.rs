@@ -87,6 +87,16 @@ pub(in crate::canvas::comments) fn Composer(
         || model.read().loading
         || model.read().cooling();
     let editable = binding.current(&shell, &model.read());
+    // Only the current rendered reply can cover the panel's generic refusal.
+    // Keep its specific recovery guidance and Retry together.
+    let covers_file_refusal = editable
+        && matches!(
+            issue,
+            Some("This file could not be opened. Your reply draft is retained here.")
+                | Some(
+                    "The reply is retained here but could not be saved locally. Retry local save before leaving the app."
+                )
+        );
     rsx! {
         section {class:"canvas-comment-reply", "aria-label":"Reply to this comment thread",
             if disabled && e.loading {p{role:"status","Loading local reply..."}}
@@ -117,7 +127,7 @@ pub(in crate::canvas::comments) fn Composer(
             }
             if !writable {p{role:"status","This thread is read-only or resolved. Your saved reply is retained."}}
             if retired {p{role:"status","This text belongs to an already settled or archived attempt. Edit it to write a new reply; it will not be sent again automatically."}}
-            if let Some(issue)=issue {p{role:"alert","{issue}"}}
+            if let Some(issue)=issue {p{role:"alert","data-canvas-local-file-refusal":covers_file_refusal,"{issue}"}}
             if e.saving {p{role:"status","Saving reply locally..."}}
             if let Some(receipt)=locked {
                 p{role:"status","An earlier reply may have been sent. Automatic resend is disabled."}

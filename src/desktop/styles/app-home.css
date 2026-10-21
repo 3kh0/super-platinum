@@ -42,9 +42,40 @@
 .workflow-activity-channel-label {display:inline-flex;align-items:baseline;gap:2px;max-width:100%;vertical-align:baseline;}
 .workflow-activity-channel-icon {flex:none;align-self:center;}
 .workflow-activity-channel-name {min-width:0;overflow-wrap:anywhere;}
+.workflow-activity-file {display:inline-flex;align-items:baseline;gap:2px;max-width:100%;vertical-align:baseline;}
+.workflow-activity-file > .material-icon {flex:none;align-self:center;}
+.workflow-activity-file-name {min-width:0;overflow-wrap:anywhere;}
 .workflow-activity-user--deactivated {color:var(--muted);}
 .workflow-activity-user-deactivated {margin-inline-start:4px;font-weight:400;}
 
 .workflow-entry-native-notice {font-size:var(--text-sm);overflow-wrap:anywhere;}
 .workflow-entry-native-notice:empty {display:none;}
 #workflow-entry-navigation-notice:empty {display:none;}
+
+/* Activity owns one transactional calendar; genuine filter controls stay mounted. */
+.workflow-management-activity #workflow-activity-filter {display:inline-flex;align-items:center;gap:4px;flex:none;}
+.workflow-filter-panel {position:fixed;z-index:20;width:min(440px,calc(100vw - 16px));max-height:calc(100vh - 16px);overflow:auto;padding:12px;background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-popover);}
+.workflow-filter-panel .workflow-activity-filters {padding:0;}
+.workflow-date-range {display:flex;flex-direction:column;gap:4px;flex:1 1 240px;min-width:0;}
+.workflow-date-range-heading {display:flex;align-items:center;justify-content:space-between;gap:var(--space-2);height:16px;flex:none;white-space:nowrap;}
+.workflow-date-range-heading > label {flex:none;font-size:var(--text-sm);}
+.workflow-date-range-heading > [role="status"] {font-size:var(--text-xs);color:var(--muted);line-height:16px;}
+.workflow-management-activity #workflow-activity-date-range {width:100%;min-width:0;min-height:var(--control-height);text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:var(--text-md);}
+.workflow-date-calendar {position:fixed;z-index:21;width:250px;max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);overflow:auto;padding:8px;background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-popover);color:var(--text);}
+.workflow-calendar-heading {display:flex;align-items:center;justify-content:space-between;gap:4px;}
+.workflow-calendar-heading > span {font-size:var(--text-md);font-weight:600;}
+.workflow-calendar-heading .icon-btn {width:var(--control-height);height:var(--control-height);min-height:var(--control-height);padding:4px;flex:none;}
+.workflow-calendar-previous {transform:rotate(180deg);}
+.workflow-calendar-grid {margin-top:4px;}
+.workflow-calendar-week {display:grid;grid-template-columns:repeat(7,minmax(0,1fr));}
+.workflow-calendar-week [role=columnheader] {text-align:center;font-size:var(--text-xs);color:var(--muted);line-height:24px;}
+.workflow-calendar-week [role=gridcell] {min-height:32px;}
+.workflow-management-activity .workflow-calendar-week button {display:block;width:100%;min-width:0;height:32px;min-height:32px;padding:0;border:0;border-radius:var(--radius-sm);font-size:var(--text-sm);background:transparent;}
+.workflow-management-activity .workflow-calendar-week button[data-in-range=true] {background:var(--hover-overlay);}
+.workflow-calendar-week [aria-selected=true] button {font-weight:600;outline:1px solid var(--border);outline-offset:-1px;}
+.workflow-calendar-week button[aria-disabled=true] {color:var(--muted);opacity:.5;cursor:default;}
+.workflow-calendar-week button[aria-current=date] {text-decoration:underline;text-underline-offset:3px;}
+.workflow-calendar-week button:focus-visible {outline:2px solid var(--accent);outline-offset:-2px;}
+.workflow-calendar-hint {margin:8px 0;font-size:var(--text-xs);color:var(--muted);}
+.workflow-calendar-actions {display:flex;justify-content:flex-end;gap:8px;}
+.workflow-calendar-actions button {min-height:var(--control-height);font-size:var(--text-sm);}

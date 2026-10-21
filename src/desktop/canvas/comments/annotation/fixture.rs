@@ -20,11 +20,13 @@ use super_platinum_core::{
 };
 mod blockquote;
 mod columns;
+pub(in crate::canvas) mod heading;
 mod image;
 mod list;
 mod section;
 mod table;
 mod table_bodies;
+pub(in crate::canvas) mod underline;
 mod whole;
 pub(in crate::canvas) const ACCOUNT: &str = "147b5480-9f1a-4443-89da-836472cbb209";
 #[derive(Default)]
@@ -40,46 +42,50 @@ struct Record {
     prepared: Vec<Value>,
     // Explicit fixture initialization receipts, never counted as driven writes.
     seed_requests: Vec<Value>,
+    underline: underline::Control,
+    heading: heading::Control,
     // Test-only controls never produce an ambient/network capability.
     #[cfg(test)]
     mode: u8,
 }
 pub(in crate::canvas) fn requested() -> bool {
-    crate::fixture::is_fixture()
-        && matches!(
-            std::env::var("SUPER_PLATINUM_FIXTURE").as_deref(),
-            Ok("canvas-comment-annotation"
-                | "canvas-comment-annotation-narrow"
-                | "canvas-comment-inline"
-                | "canvas-comment-inline-narrow"
-                | "canvas-comment-existing-inline"
-                | "canvas-comment-existing-inline-narrow"
-                | "canvas-comment-archived-inline"
-                | "canvas-comment-archived-inline-narrow"
-                | "canvas-comment-hidden-inline"
-                | "canvas-comment-hidden-inline-narrow"
-                | "canvas-comment-section"
-                | "canvas-comment-section-narrow"
-                | "canvas-comment-section-inline"
-                | "canvas-comment-section-inline-narrow"
-                | "canvas-comment-list"
-                | "canvas-comment-list-narrow"
-                | "canvas-comment-image"
-                | "canvas-comment-image-narrow"
-                | "canvas-comment-table"
-                | "canvas-comment-table-narrow"
-                | "canvas-comment-table-bodies"
-                | "canvas-comment-table-bodies-narrow"
-                | "canvas-comment-blockquote"
-                | "canvas-comment-blockquote-narrow"
-                | "canvas-comment-flexbox"
-                | "canvas-comment-flexbox-narrow"
-                | "canvas-comment-callout"
-                | "canvas-comment-callout-narrow")
-        )
+    heading::requested()
+        || underline::requested()
+        || crate::fixture::is_fixture()
+            && matches!(
+                std::env::var("SUPER_PLATINUM_FIXTURE").as_deref(),
+                Ok("canvas-comment-annotation"
+                    | "canvas-comment-annotation-narrow"
+                    | "canvas-comment-inline"
+                    | "canvas-comment-inline-narrow"
+                    | "canvas-comment-existing-inline"
+                    | "canvas-comment-existing-inline-narrow"
+                    | "canvas-comment-archived-inline"
+                    | "canvas-comment-archived-inline-narrow"
+                    | "canvas-comment-hidden-inline"
+                    | "canvas-comment-hidden-inline-narrow"
+                    | "canvas-comment-section"
+                    | "canvas-comment-section-narrow"
+                    | "canvas-comment-section-inline"
+                    | "canvas-comment-section-inline-narrow"
+                    | "canvas-comment-list"
+                    | "canvas-comment-list-narrow"
+                    | "canvas-comment-image"
+                    | "canvas-comment-image-narrow"
+                    | "canvas-comment-table"
+                    | "canvas-comment-table-narrow"
+                    | "canvas-comment-table-bodies"
+                    | "canvas-comment-table-bodies-narrow"
+                    | "canvas-comment-blockquote"
+                    | "canvas-comment-blockquote-narrow"
+                    | "canvas-comment-flexbox"
+                    | "canvas-comment-flexbox-narrow"
+                    | "canvas-comment-callout"
+                    | "canvas-comment-callout-narrow")
+            )
 }
 pub(in crate::canvas) fn inline_requested() -> bool {
-    if whole::requested() {
+    if whole::requested() || underline::requested() || heading::requested() {
         return true;
     }
     crate::fixture::is_fixture()
@@ -182,7 +188,11 @@ fn initial() -> CanvasCollabSnapshot {
         .thread
         .replace_fields(23, &[F::uint(23, 5).unwrap()])
         .unwrap();
-    if inline_requested() {
+    if heading::requested() {
+        heading::snapshot(s)
+    } else if underline::requested() {
+        underline::snapshot(s)
+    } else if inline_requested() {
         inline_snapshot(s)
     } else {
         s
@@ -230,6 +240,9 @@ fn inline_snapshot(mut s: CanvasCollabSnapshot) -> CanvasCollabSnapshot {
 // A disconnected pre-existing thread fixture. Its seed forms remain separated
 // from user-driven requests; no network or saved account is available.
 fn existing_seed(snapshot: CanvasCollabSnapshot) -> Record {
+    existing_seed_at(snapshot, "paragraph", 1, 4)
+}
+fn existing_seed_at(snapshot: CanvasCollabSnapshot, id: &str, start: usize, end: usize) -> Record {
     let now = crate::canvas::checklist::save::now_usec().unwrap();
     let client = super_platinum_core::slack::client::SlackClient::default();
     let session = WorkspaceSession {
@@ -240,7 +253,7 @@ fn existing_seed(snapshot: CanvasCollabSnapshot) -> Record {
         url: "https://fixture.slack.com".into(),
         token: "fixture-only".into(),
     };
-    let p = AnnotationIntent::capture_range(&snapshot, "paragraph", 1, 4)
+    let p = AnnotationIntent::capture_range(&snapshot, id, start, end)
         .unwrap()
         .prepare_at(&snapshot, now)
         .unwrap();
@@ -361,7 +374,8 @@ pub(in crate::canvas) fn refresh_reader(
         return;
     };
     reader.document = Some(Arc::new(
-        columns::document(&snapshot)
+        heading::document(&snapshot)
+            .or_else(|| columns::document(&snapshot))
             .or_else(|| blockquote::document(&snapshot))
             .or_else(|| table_bodies::document(&snapshot))
             .or_else(|| table::document(&snapshot))
@@ -396,7 +410,11 @@ fn install_disconnected_owner(shell: &mut ShellState, snapshot: &CanvasCollabSna
     shell.core.active_account = Some(ACCOUNT.into());
     workspace.self_user_id = user.into();
     shell.self_account.user_id = user.into();
-    let record = if columns::requested() {
+    let record = if heading::requested() {
+        heading::seed(snapshot.clone())
+    } else if underline::requested() {
+        underline::seed(snapshot.clone())
+    } else if columns::requested() {
         columns::seed(snapshot.clone())
     } else if blockquote::requested() {
         blockquote::seed(snapshot.clone())
@@ -505,6 +523,12 @@ fn complete_anchor(
         return Err(CanvasEditFailure::Uncertain(Error::Transport(
             "synthetic lost anchor reply".into(),
         )));
+    }
+    if heading::requested() {
+        heading::ack(r, &ack);
+    }
+    if underline::requested() {
+        underline::ack(r, &ack)?;
     }
     p.validate_ack(&ack)
         .map_err(|_| CanvasEditFailure::Uncertain(failure()))
@@ -646,7 +670,8 @@ pub(in crate::canvas) fn reply(
 }
 
 pub(in crate::canvas) fn document() -> super_platinum_core::canvas::CanvasDocument {
-    crate::canvas::text::structure_fixture::document(&initial())
+    heading::document(&initial())
+        .unwrap_or_else(|| crate::canvas::text::structure_fixture::document(&initial()))
 }
 
 #[cfg(test)]

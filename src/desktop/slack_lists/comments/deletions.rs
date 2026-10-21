@@ -27,14 +27,39 @@ pub(crate) fn apply(shell: &mut ShellState, team: &str, generation: u64, event: 
     {
         return false;
     }
+    let owner = entry.owner.clone();
+    let target = entry.target.clone();
+    remove_scoped(shell, &owner, &target, ts)
+}
+
+/// Shared projection only. Caller supplies actual socket or confirmed local
+/// evidence; an ACK is never converted into a fake realtime event.
+pub(super) fn remove_scoped(
+    shell: &mut ShellState,
+    owner: &Owner,
+    target: &Target,
+    ts: &str,
+) -> bool {
+    let Some(entry) = shell.slack_lists.comments.entry.as_ref() else {
+        return false;
+    };
+    if !owner.active(shell)
+        || entry.owner.serial != owner.serial
+        || entry.target != *target
+        || target.root_ts() == Some(ts)
+        || !entry.rows.iter().any(|r| r.ts == ts)
+    {
+        return false;
+    }
+    let channel = target.channel_id();
     let (Some(mut page), Some(projection)) = (entry.page.clone(), entry.projection.as_ref()) else {
         return false;
     };
     let mut accepted = entry.accepted.clone();
     let mut live = entry.live.clone();
     let changed = page.remove_reply(channel, ts);
-    accepted.retain(|message| message.ts.as_deref() != Some(ts.as_str()));
-    live.retain(|message| message.ts.as_deref() != Some(ts.as_str()));
+    accepted.retain(|message| message.ts.as_deref() != Some(ts));
+    live.retain(|message| message.ts.as_deref() != Some(ts));
     if !changed && accepted.len() == entry.accepted.len() && live.len() == entry.live.len() {
         return false;
     }
@@ -50,7 +75,7 @@ pub(crate) fn apply(shell: &mut ShellState, team: &str, generation: u64, event: 
     entry.live_reactions.remove(ts);
     entry.live_edits.remove(ts);
     entry.rows = rows;
-    entry.deleted.insert(ts.clone());
+    entry.deleted.insert(ts.to_owned());
     if entry
         .reveal
         .as_ref()

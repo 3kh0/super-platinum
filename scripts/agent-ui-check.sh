@@ -34,6 +34,13 @@ FIXTURES=(
   canvas-links canvas-links-narrow
   canvas canvas-narrow canvas-loading canvas-error canvas-rename canvas-rename-error canvas-readonly
   canvas-comments canvas-comments-narrow
+  canvas-root-attribution canvas-root-attribution-narrow
+  canvas-editor-recovery canvas-editor-recovery-narrow
+  canvas-file-fallback canvas-file-fallback-narrow
+  canvas-canonical-file-roots canvas-canonical-file-roots-narrow
+  canvas-canonical-file-custody canvas-canonical-file-custody-narrow
+  canvas-canonical-native-canvas canvas-canonical-native-canvas-narrow
+  canvas-canonical-native-list canvas-canonical-native-list-narrow
   canvas-comment-resolve canvas-comment-resolve-narrow canvas-comment-reply canvas-comment-reply-narrow canvas-comment-rich-reply canvas-comment-rich-reply-narrow canvas-comment-annotation canvas-comment-annotation-narrow canvas-comment-inline canvas-comment-inline-narrow canvas-comment-existing-inline canvas-comment-existing-inline-narrow canvas-comment-archived-inline canvas-comment-archived-inline-narrow canvas-comment-hidden-inline canvas-comment-hidden-inline-narrow canvas-comment-section canvas-comment-section-narrow canvas-comment-section-inline canvas-comment-section-inline-narrow canvas-comment-list canvas-comment-list-narrow canvas-comment-image canvas-comment-image-narrow canvas-comment-table canvas-comment-table-narrow canvas-comment-table-bodies canvas-comment-table-bodies-narrow canvas-comment-blockquote canvas-comment-blockquote-narrow canvas-comment-flexbox canvas-comment-flexbox-narrow canvas-comment-callout canvas-comment-callout-narrow
   canvas-checklist canvas-checklist-narrow canvas-checklist-saving canvas-checklist-uncertain
   canvas-text canvas-text-narrow
@@ -259,6 +266,15 @@ FIXTURES=(
 owned_fixture_route() {
   owned_route=""
   case "$1" in
+    canvas-editor-recovery|canvas-editor-recovery-narrow)
+      owned_route="Use scripts/check-canvas-editor-recovery-native.py with a protected-native-fixture binary for synthetic-session, no-HTTP interaction checks."
+      return 0 ;;
+    canvas-file-fallback|canvas-file-fallback-narrow)
+      owned_route="Use scripts/check-canvas-file-fallback-native.py with a protected-native-fixture binary for offline interaction checks."
+      return 0 ;;
+    canvas-root-attribution|canvas-root-attribution-narrow)
+      owned_route="Use scripts/check-canvas-root-attribution-native.py with a protected-native-fixture binary for synthetic-session, no-HTTP interaction checks."
+      return 0 ;;
     app-home-workflow-auth|app-home-workflow-auth-narrow|app-home-workflow-auth-held|app-home-workflow-auth-held-narrow|app-home-workflow-auth-unconfirmed|app-home-workflow-auth-unconfirmed-narrow|app-home-workflow-auth-rate-limit|app-home-workflow-auth-rate-limit-narrow|app-home-workflow|app-home-workflow-narrow|app-home-workflow-held|app-home-workflow-held-narrow|app-home-workflow-unconfirmed|app-home-workflow-unconfirmed-narrow|app-home-workflow-rate-limit|app-home-workflow-rate-limit-narrow|app-home-workflow-meeting-*)
       owned_route="Requires the protected-test-support workflow native driver; an initial static capture does not verify the workflow."
       return 0 ;;
@@ -292,6 +308,12 @@ owned_fixture_route() {
     original-download-save-workflow)
       owned_route="Use scripts/check-save-workflow-windows.py for the owned actual Save workflow."
       return 0
+      ;;
+    canvas-canonical-file-roots|canvas-canonical-file-roots-narrow|canvas-canonical-file-custody|canvas-canonical-file-custody-narrow)
+      owned_route="Use scripts/check-canvas-canonical-files-native.py with a protected-native-fixture binary for offline interaction checks."
+      ;;
+    canvas-canonical-native-canvas|canvas-canonical-native-canvas-narrow|canvas-canonical-native-list|canvas-canonical-native-list-narrow)
+      owned_route="Use scripts/check-canvas-canonical-native-destinations.py with a protected-native-fixture binary for offline interaction checks."
       ;;
     original-download-save-dialog)
       owned_route="Use scripts/check-save-dialog-discovery-windows.py for the owned native Save dialog diagnostic."

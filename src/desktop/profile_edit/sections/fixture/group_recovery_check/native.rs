@@ -6,12 +6,41 @@ pub(super) async fn unavailable(desktop: &DesktopContext) -> Result<(), String> 
     wait_dom(desktop,r#"({ok:!document.getElementById('profile-section-rich')&&document.getElementById('profile-section-rich-status')?.textContent==='Mention names are unavailable or changed while opening. Your description is unchanged. Retry to load member, channel, and group details.'})"#).await.map(|_|())
 }
 pub(super) async fn editor(desktop: &DesktopContext) -> Result<(), String> {
-    let labels = if recovery::case() == "legacy" {
+    editor_text(desktop, recovery::DRAFT).await
+}
+pub(super) async fn editor_text(desktop: &DesktopContext, text: &str) -> Result<(), String> {
+    let labels = if recovery::mixed_absent::enabled() {
+        json!([
+            recovery::LABEL,
+            recovery::LABEL,
+            recovery::OTHER_LABEL,
+            format!("@{}", super::super::member_recovery::LABEL),
+            format!("@{}", super::super::member_recovery::LABEL),
+            super::super::files::mounted_label(),
+            super::super::files::mounted_label()
+        ])
+    } else if recovery::case() == "mixed-file-group" {
+        json!([
+            recovery::LABEL,
+            recovery::LABEL,
+            recovery::OTHER_LABEL,
+            recovery::MEMBER_LABEL,
+            super::super::files::mounted_label(),
+            super::super::files::mounted_label()
+        ])
+    } else if recovery::case() == "mixed-member" {
+        json!([
+            recovery::LABEL,
+            recovery::LABEL,
+            recovery::OTHER_LABEL,
+            recovery::MEMBER_LABEL
+        ])
+    } else if recovery::case() == "legacy" {
         json!([recovery::LABEL, recovery::LABEL])
     } else {
         json!([recovery::LABEL, recovery::LABEL, recovery::OTHER_LABEL])
     };
-    wait_dom(desktop,&format!(r#"(()=>{{const e=document.getElementById('profile-section-rich'),v=e&&window.superPlatinumRichEditor?.resolved(e);const stable=x=>JSON.stringify(x,(_,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.fromEntries(Object.keys(v).sort().map(k=>[k,v[k]])):v);return{{ok:!!v&&e.isContentEditable&&stable(v.snapshot.blocks)===stable({})&&JSON.stringify(v.tokens.map(t=>t.label))===JSON.stringify({labels})}};}})()"#,json!(recovery::blocks(recovery::DRAFT)))).await.map(|_|())
+    wait_dom(desktop,&format!(r#"(()=>{{const e=document.getElementById('profile-section-rich'),v=e&&window.superPlatinumRichEditor?.resolved(e);const stable=x=>JSON.stringify(x,(_,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.fromEntries(Object.keys(v).sort().map(k=>[k,v[k]])):v);return{{ok:!!v&&e.isContentEditable&&stable(v.snapshot.blocks)===stable({})&&JSON.stringify(v.tokens.map(t=>t.label))===JSON.stringify({labels})}};}})()"#,json!(recovery::blocks(text)))).await.map(|_|())
 }
 pub(super) async fn click(
     desktop: &DesktopContext,
@@ -56,20 +85,44 @@ pub(super) async fn capture(
     stages: &mut Vec<Value>,
     captures: &mut serde_json::Map<String, Value>,
 ) -> Result<(), String> {
+    let layout = if recovery::case() == "mixed-file-group"
+        || recovery::mixed_absent::enabled()
+        || recovery::known_freshness::enabled()
+    {
+        LAYOUT.replace("editable:e.isContentEditable,visible:visible(e)", "editable:e.isContentEditable,fontWeight:getComputedStyle(e).fontWeight,fontStyle:getComputedStyle(e).fontStyle,visible:visible(e)")
+    } else {
+        LAYOUT.to_string()
+    };
     let script = format!(
-        "((requireFeedback)=>{LAYOUT})({})",
+        "((requireFeedback)=>{layout})({})",
         matches!(
             stage,
-            "ordinary-open"
+            "member-held"
+                | "member-offline"
+                | "retry-member-held"
+                | "file-held"
+                | "group-held"
+                | "retry-file-held"
+                | "ordinary-open"
                 | "held"
                 | "malformed"
                 | "offline"
                 | "partial"
                 | "fallback-held"
                 | "source-refused"
+                | "pending"
+                | "direct-held"
+                | "limited"
+                | "reopened-limited"
+                | "expired"
         )
     );
     let mut geometry = wait_layout(desktop, stage, &script).await?;
+    // Layout measurements can precede a composited WebView frame. Let the
+    // already-checked state paint before taking the native screen capture.
+    wait_dom(desktop, "(()=>{window.__profileGroupPaint=false;requestAnimationFrame(()=>requestAnimationFrame(()=>window.__profileGroupPaint=true));return {ok:true};})()").await?;
+    wait_dom(desktop, "({ok:window.__profileGroupPaint===true})").await?;
+    geometry["paintFramesObserved"] = json!(2);
     let model = recovery::snapshot(&state.peek());
     let directory = std::env::var_os("SUPER_PLATINUM_UI_CAPTURE_DIR")
         .map(std::path::PathBuf::from)
@@ -125,7 +178,7 @@ const LAYOUT: &str = r#"(()=>{
  const visible=e=>{const s=getComputedStyle(e),fragments=[...e.getClientRects()].filter(r=>r.width>0&&r.height>0);return s.visibility==='visible'&&s.display!=='none'&&fragments.length>0&&fragments.every(r=>{const hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);let unclipped=true;for(let p=e.parentElement;p;p=p.parentElement){const ps=getComputedStyle(p),pr=rect(p);if(/auto|scroll|hidden|clip/.test(ps.overflowY)&&(r.top<pr.top-1||r.bottom>pr.bottom+1))unclipped=false;if(/auto|scroll|hidden|clip/.test(ps.overflowX)&&(r.left<pr.left-1||r.right>pr.right+1))unclipped=false;}return unclipped&&r.left>=0&&r.top>=0&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1&&(hit===e||e.contains(hit));});};
  const controls=d?[...d.querySelectorAll('footer button,#profile-section-rich-pane > button,#profile-section-field-long')].map(e=>({text:e.textContent,disabled:e.disabled,visible:visible(e),rect:rect(e)})):[];
  const notices=d?[...d.querySelectorAll('.profile-edit-notice,.profile-edit-field-error,#profile-section-rich-status')].filter(e=>e.textContent.trim()).map(e=>({text:e.textContent,visible:visible(e),rect:rect(e)})):[];
- const feedbackVisible=notices.some(n=>(n.text==='Mention names are unavailable or changed while opening. Your description is unchanged. Retry to load member, channel, and group details.'||n.text==='Loading mention names. Your description is unchanged.')&&n.visible);
+ const feedbackVisible=notices.some(n=>(n.text==='Loading reference details. Your description is unchanged.'||n.text==='Reference details are unavailable or changed while opening. Your description is unchanged. Retry to load document and mention details.'||n.text==='Mention names are unavailable or changed while opening. Your description is unchanged. Retry to load member, channel, and group details.'||n.text==='Loading mention names. Your description is unchanged.'||n.text==='Slack asked us to wait before loading group names. Your description is unchanged.'||n.text==='You can retry loading group names now. Your description is unchanged.')&&n.visible);
  const t=document.getElementById('status-toast'),dismiss=t?.querySelector('.toast-dismiss');
  const globalToast=t?{text:t.querySelector('.toast-text')?.textContent??'',positioned:t.dataset.positioned==='true',visibility:getComputedStyle(t).visibility,visible:visible(t),rect:rect(t),dismiss:dismiss?{visible:visible(dismiss),rect:rect(dismiss)}:null}:null;
  const tokens=e?[...e.querySelectorAll('.rich-editor-token')].map(e=>({text:e.textContent,editable:e.isContentEditable,visible:visible(e),rect:rect(e),fragments:[...e.getClientRects()].map(r=>({left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:r.width,height:r.height}))})):[];

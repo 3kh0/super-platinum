@@ -10,6 +10,12 @@ DIRECTORY = Path('/private/activity-captures')
 
 
 def sample(scenario='browse', narrow=False):
+    if scenario in R['SHARED_SPECS']:
+        fixture, receipt = channel_sample(narrow, spec=R['SHARED_SPECS'][scenario])
+        return fixture, receipt, scenario
+    if scenario in R['DATE_STAGES']:
+        from test_workflow_activity_dates import sample as date_sample
+        return date_sample(scenario, narrow)
     if scenario in R['REPLACEMENT_STAGES']:
         from test_workflow_activity_source_replacement import sample as replacement_sample
         return replacement_sample(scenario, narrow)
@@ -24,8 +30,9 @@ def sample(scenario='browse', narrow=False):
         return refresh_sample(narrow,scenario)
     if scenario in ('user-real','user-display'):
         return users_sample(scenario,narrow)
-    if scenario == 'channel':
-        fixture, receipt = channel_sample(narrow)
+    if scenario in ('channel', 'channel-special', 'channel-held-success'):
+        fixture, receipt = channel_sample(narrow, special=scenario == 'channel-special',
+                                          spec=R['HELD_SUCCESS'] if scenario == 'channel-held-success' else None)
         return fixture, receipt, scenario
     if scenario == 'picker':
         return picker_sample(narrow)
@@ -71,12 +78,12 @@ def sample(scenario='browse', narrow=False):
                     detail=dict(workflow_event=dict(workflow_execution_id='E_REVIEW', workflow_status='PENDING')) if stage == 'detail' else None)
         ledger = dict(requests=copy.deepcopy(requests[:counts[stage]]), finished=counts[stage] - (stage == 'held'),
                       held=2 if stage == 'held' else None, cancelled=1 if stage == 'account-replaced' else 0, networkCalls=0)
-        ids = (['workflow-activity-'+i for i in ('back', 'status', 'from', 'to', 'limit', 'apply')]
+        ids = (['workflow-activity-'+i for i in ('back', 'filter', 'status', 'date-range', 'limit', 'apply')]
                if active else ['workflow-configuration'] if hidden else ['workflow-management-activity'])
         notices = ([notice] if notice else []) + ([R['FAILURE']] if stage == 'error' else [])
         fields = None if active or hidden else dict(title='Uncommitted native title 未確定' if stage == 'uncommitted-refused' else R['TITLE'],
                     description=R['DESCRIPTION'], titleReadonly=pending, descriptionReadonly=pending)
-        geometry = dict(ok=True, noOverflow=True, viewport=viewport, activity=active, detail=stage == 'detail',
+        geometry = dict(ok=True, noOverflow=True, viewport=viewport, activity=active, filterOpen=active, detail=stage == 'detail',
                         detailStatus='Processing' if stage == 'detail' else None,
                         detailStatusGeometry=dict(text='Processing', visible=True, scrollSample=True, rect=copy.deepcopy(box)) if stage == 'detail' else None,
                         lastStepStatuses=[dict(text='Completed', visible=True, scrollSample=True, rect=copy.deepcopy(box))] if stage == 'detail' else [],
@@ -193,7 +200,33 @@ class ReceiptTests(unittest.TestCase):
 
     def test_four_complete_scenarios(self):
         for scenario in R['STAGES']:
+            # File and mixed-navigation receipts have distinct custody schemas;
+            # their dedicated suites exercise every case at both widths.
+            if (scenario in R['FILE_STAGES'] or scenario in R['RECOVERY_STAGES']
+                    or scenario in R['MIXED_STAGES']):
+                continue
             for narrow in (False, True): self.validate(*sample(scenario, narrow))
+
+    def test_closed_filter_keeps_measured_navigation_without_claiming_hidden_controls(self):
+        fixture, receipt, scenario = sample()
+        row = next(r for r in receipt['stages'] if r['stage'] == 'list')
+        row['geometry']['filterOpen'] = False
+        row['geometry']['controls'] = [
+            c for c in row['geometry']['controls']
+            if c['id'] in ('workflow-activity-back', 'workflow-activity-filter')
+        ]
+        self.validate(fixture, receipt, scenario)
+        row['geometry']['filterOpen'] = True
+        with self.assertRaisesRegex(RuntimeError, 'Open Filter controls'):
+            self.validate(fixture, receipt, scenario)
+
+    def test_open_filter_requires_actual_date_range_control(self):
+        self.mutate('list', lambda r: r['geometry'].update(
+            controls=[c for c in r['geometry']['controls']
+                      if c['id'] != 'workflow-activity-date-range']))
+
+    def test_filter_visibility_must_be_observed(self):
+        self.mutate('list', lambda r: r['geometry'].pop('filterOpen'))
 
     def test_picker_raw_buffer_refusal_is_observed(self):
         self.mutate('raw-refused', lambda r:r['proof']['exercise']['nativeAttempt'].update(query='a'), 'picker')
@@ -492,7 +525,7 @@ def refresh_sample(narrow=False,scenario='user-refresh'):
         if stage in ('offline','malformed'):
             ex['footer']=dict(ok=True,notice=failure,visible=True,outsideScroll=True,globalToastCount=0,rect=copy.deepcopy(box));g['notices']=[dict(text=failure,visible=True,rect=copy.deepcopy(box))]
         if stage in ('raw-refused','composition-refused'):
-            ex.update(requestsUnchanged=True,before=copy.deepcopy(m),after=copy.deepcopy(m),native=dict(ok=True,value='2026-06-01' if stage=='raw-refused' else '',composing=stage=='composition-refused'))
+            ex.update(requestsUnchanged=True,before=copy.deepcopy(m),after=copy.deepcopy(m),native=dict(ok=True,value='Uncommitted native search' if stage=='raw-refused' else '',composing=stage=='composition-refused'))
         if stage=='latest-display':ex['release']=dict(delivered=False,cancelledBeforeReply=True)
         if stage=='account-replaced':ex=copy.deepcopy(seed['account-replaced']['proof']['exercise'])
         if scenario=='user-deactivated':
@@ -642,21 +675,38 @@ class UserPolicyTests(unittest.TestCase):
         self.mutate('policy-failed',lambda r:r['proof']['policy']['ledger']['requests'][0]['args'].update(token='synthetic'))
 
 
-def channel_labels_sample(fetched=False):
+def channel_labels_sample(fetched=False, special=False, spec=None):
+    if spec is not None:
+        ordinary = channel_labels_sample(fetched)
+        rows = []
+        for id, channel, name, kind in spec.vectors(fetched):
+            row = copy.deepcopy(ordinary['rows'][2 if kind is None else 0])
+            row.update(id=id, channel=channel, text=name, name=name, iconKind=kind)
+            rows.append(row)
+        return dict(ordinary, rows=rows)
     rows=[]
-    for i,id in enumerate(['workflow-activity-channel-trigger-1','workflow-activity-channel-trigger-3','workflow-activity-channel-step-0-1']):
-        known=i<2 or fetched
-        name='activity-known' if i<2 else 'activity-fetched' if fetched else 'Channel unavailable'
+    ids=['workflow-activity-channel-trigger-1','workflow-activity-channel-trigger-3','workflow-activity-channel-step-0-1']
+    if special: ids += ['workflow-activity-channel-step-1-1','workflow-activity-channel-step-1-3']
+    for i,id in enumerate(ids):
+        known=i!=2 or fetched
+        name=['activity-known','activity-known','activity-fetched' if fetched else 'Channel unavailable','activity-archived (archived)','activity-private-archived (archived)'][i]
         box=dict(left=30,top=10,right=180,bottom=30,width=150,height=20)
         icon=dict(tag='svg',ariaHidden='true',viewBox='0 -960 960 960',material=True,pathMatches=True,visible=True,
                   rect=dict(left=10,top=12,right=26,bottom=28,width=16,height=16)) if known else None
-        rows.append(dict(id=id,channel='CACTKNOWN01' if i<2 else 'CACTMISS01',text=name,name=name,tag='BUTTON',labelTag='SPAN',nameTag='SPAN',
+        rows.append(dict(id=id,channel=['CACTKNOWN01','CACTKNOWN01','CACTMISS01','CACTARCH01','CACTPRARCH01'][i],text=name,name=name,tag='BUTTON',labelTag='SPAN',nameTag='SPAN',
                          iconCount=int(known),svgCount=int(known),icon=icon,nameRect=box,buttonRect=dict(left=8,top=8,right=182,bottom=32,width=174,height=24),
                          visible=True,inline=True if known else None,scrollSample=True,ok=True))
+        if special: rows[-1]['iconKind']=['LockFilled','LockFilled','Tag' if fetched else None,'Archive','ArchiveFilled'][i]
     return dict(ok=True,fetched=fetched,measurement='individual-scroll-samples',rows=rows)
 
 
-def channel_sample(narrow=False):
+def channel_sample(narrow=False, special=False, spec=None):
+    spec = spec or (R['SPECIAL'] if special else R['ORDINARY'])
+    special = spec.special
+    scenario = spec.case
+    stages = R['STAGES'][scenario]
+    returns, destinations = spec.returns, spec.destinations
+    labels = lambda fetched=False: channel_labels_sample(fetched, special, spec if scenario in R['SHARED_SPECS'] else None)
     fixture, base, _ = sample('browse', narrow)
     viewport=base['viewport']; box=dict(left=10,top=10,right=210,bottom=30,width=200,height=20)
     activity=base['stages'][4]['model']['ledger']['requests']
@@ -664,56 +714,102 @@ def channel_sample(narrow=False):
     channel_read=dict(method='conversations.info',args={'channel':'CACTMISS01','include_num_members':'false'})
     about=[dict(method='conversations.info',args={'channel':'DAPP','return_app_home':'true','_x_reason':'app-home-open-api'}),
            dict(method='apps.about.info',args={'app_id':'A_HOME'}),dict(method='apps.profile.get',args={'app':'A_HOME'}),dict(method='experiments.getByUser',args={})]
-    counts=dict.fromkeys(R['STAGES']['channel'],0);counts.update(malformed=1,offline=2,held=3,retired=3,retried=4,**{'final-return':4})
+    counts=dict.fromkeys(stages,0);counts.update(malformed=1,offline=2,held=3,retired=3,retried=4,**{'final-return':4})
+    held_success = scenario == 'channel-held-success'
+    if held_success:
+        counts.update(retried=3, **{'final-return':3})
     rows=[]
-    for i,stage in enumerate(R['STAGES']['channel']):
-        returned=i>=7; final=stage=='final-return'; n=counts[stage]
-        ch=dict(ledger=dict(original='DAPP',requests=copy.deepcopy([channel_read]*n),aboutRequests=copy.deepcopy(about*(2 if final else int(returned))),
-                    completed=n-(stage=='held'),cancelled=int(i>=11),held=stage=='held',networkCalls=0),
-                documents=[] if stage=='about' else [copy.deepcopy(doc)],selected='CACTKNOWN01' if stage=='known' else 'CACTMISS01' if stage=='retried' else 'DAPP',
-                generation=1,aboutVisit=3 if final else 2 if returned else 1,managementVisit=6 if final else 5 if returned else 4,
-                missingPresent=i>=12)
-        ids=['DAPP','CACTKNOWN01']+(['CACTMISS01'] if i>=12 else [])
-        names={'DAPP':'Review requests','CACTKNOWN01':'activity-known','CACTMISS01':'activity-fetched'}
+    for i,stage in enumerate(stages):
+        returned=sum(i>=stages.index(name) for name in returns); final=stage=='final-return'; n=counts[stage]
+        fetched=stage in ('retried','final-return')
+        ch=dict(ledger=dict(original='DAPP',requests=copy.deepcopy([channel_read]*n),aboutRequests=copy.deepcopy(about*returned),
+                    completed=n-(stage=='held'),cancelled=int(not held_success and stage in ('retired','retried','final-return')),held=stage=='held',networkCalls=0),
+                documents=[] if stage=='about' else [copy.deepcopy(doc)],selected=spec.selected(stage, 'DAPP'),
+                generation=1,aboutVisit=1+returned,managementVisit=4+returned,
+                missingPresent=fetched)
+        ids=['DAPP'] + sorted(spec.sidebar_ids('DAPP', stage, fetched) - {'DAPP'})
+        names={'DAPP':'Review requests', **R['CHANNEL_NAMES']}
         sidebar_rows=[dict(id=id,name=names[id],index=index,section='apps' if id=='DAPP' else 'channels',active=id==ch['selected']) for index,id in enumerate(ids)]
         sections=[dict(id='apps',title='Agents & apps',indices=[0]),dict(id='channels',title='Channels',indices=list(range(1,len(ids))))]
         active=ids.index(ch['selected'])
         ch['sidebar']=dict(rows=sidebar_rows,sections=sections,activeIndex=active,activeId=ch['selected'])
-        ch['sourceRows']=[dict(id=id,name=names[id],isMember=None if id=='DAPP' else True,isOpen=None,unreadCount=None,unreadDisplay=None,mentionCount=None,hasUnreads=False) for id in ids]
-        metadata=dict(networkCalls=0,writes=0,reads=36 if final else 24 if returned else 12)
+        source_ids=['DAPP'] + sorted(spec.source_ids('DAPP', fetched) - {'DAPP'})
+        ch['sourceRows']=[dict(id=id,name=names[id],isMember=None if id=='DAPP' else True,isOpen=None,unreadCount=None,unreadDisplay=None,mentionCount=None,hasUnreads=False) for id in source_ids]
+        if special:
+            for row in ch['sourceRows']:
+                row.update(isPrivate=row['id'] in getattr(spec, 'private_ids', ('CACTKNOWN01','CACTPRARCH01')),
+                           isGroup=False,isArchived=row['id'] in getattr(spec, 'archived_ids', ('CACTARCH01','CACTPRARCH01')))
+        if scenario in R['SHARED_SPECS']:
+            from test_workflow_activity_shared_frozen import sample as observation_sample
+            ch.update(observation_sample(spec))
+        metadata=dict(networkCalls=0,writes=0,reads=12*(1+returned),busy=False,pending=False)
         reads=copy.deepcopy(activity if i>=2 else [])
         model=dict(epoch=0,account='synthetic-workflow-activity-channel',metadata=metadata,ledger=dict(networkCalls=0,requests=reads,finished=len(reads),held=None,cancelled=0))
         g=dict(ok=True,noOverflow=True,viewport=viewport,pngDimensions=[1280,800],controls=[dict(id='control',visible=True,rect=copy.deepcopy(box))],notices=[])
         exercise=None
         if stage=='detail':
-            exercise=dict(rows=[dict(id='workflow-activity-channel-trigger-1',channel='CACTKNOWN01',text='activity-known',tag='BUTTON'),dict(id='workflow-activity-channel-trigger-3',channel='CACTKNOWN01',text='activity-known',tag='BUTTON'),dict(id='workflow-activity-channel-step-0-1',channel='CACTMISS01',text='Channel unavailable',tag='BUTTON')])
+            exercise=dict(rows=[{k:label[k] for k in ('id','channel','text','tag')} for label in labels()['rows']])
         if stage.endswith('-refused'):
             value='ERROR' if stage=='filter-refused' else 'Uncommitted native search' if stage=='search-refused' else ''
             composing=stage=='composition-refused'
             exercise=dict(unchangedRustState=True,before=copy.deepcopy(ch),after=copy.deepcopy(ch),attempt=dict(value=value,composing=composing,refusals=0),native=dict(value=value,composing=composing,refusals=1,notice='Finish editing the current text before opening this conversation. Your draft is unchanged.'))
-        if stage in ('returned','final-return'):
+        if stage == 'composition-refused':
+            inert_rows=[]
+            for j,label in enumerate(labels()['rows']):
+                inert_rows.append(dict(container='workflow-activity-trigger-message' if j<2 else 'workflow-activity-step-message-0' if j==2 else 'workflow-activity-step-message-1',
+                    occurrence=j if j<2 else 0 if j==2 else j-3,originalButtonId=label['id'],originalChannel=label['channel'],text=label['text'],
+                    tag='SPAN',buttonPresent=False,interactiveAncestor=False,visible=True,hit=True,ok=True,rect=copy.deepcopy(box)))
+            exercise=dict(kind=stage,mode='inert-while-composing',stateComposing=True,observedMs=100,
+                before=copy.deepcopy(model),after=copy.deepcopy(model),channelBefore=copy.deepcopy(ch),channelAfter=copy.deepcopy(ch),
+                beforeLabels=labels(),attempt=dict(ok=True,composing=True,value='',refusals=2),
+                native=dict(ok=True,composing=True,value='',refusals=2,notice=''),
+                inert=dict(ok=True,detailRevision='1',rows=inert_rows,activation=dict(ok=True,event='click',occurrence=0,observedMs=100)),
+                restored=dict(stateComposing=False,labels=labels(),native=dict(ok=True,composing=False,value='',refusals=2),
+                              model=copy.deepcopy(model),channel=copy.deepcopy(ch)))
+        if stage in returns:
             before=copy.deepcopy(ch);before['aboutVisit']-=1;before['managementVisit']-=1
-            exercise=dict(before=before,after=copy.deepcopy(ch),nativeAboutClick=dict(ok=True,selected='Review requests',scope='0-TWORKFLOW-DAPP-5'),reentryLabels=channel_labels_sample(final))
+            exercise=dict(before=before,after=copy.deepcopy(ch),nativeAboutClick=dict(ok=True,selected='Review requests',scope='0-TWORKFLOW-DAPP-5'),reentryLabels=labels(final))
             g['fields']=dict(title=R['TITLE'],description=R['DESCRIPTION'],titleReadonly=False,descriptionReadonly=False)
         if stage in ('malformed','offline'):
             message='Could not open this conversation. It may no longer be accessible.' if stage=='malformed' else 'Connect to Slack to open this conversation.'
             exercise=dict(native=dict(detail=True,notice=message,globalToastCount=0,visible=True,outsideScroll=True,rect=copy.deepcopy(box)),
                           before=copy.deepcopy(ch),after=copy.deepcopy(ch),modelBefore=copy.deepcopy(model),modelAfter=copy.deepcopy(model))
             g['notices']=[dict(text=message,visible=True,rect=copy.deepcopy(box))]
-        if stage=='retired':exercise=dict(delivered=False,cancelledBeforeReply=True)
+        if stage == 'held':
+            from test_workflow_activity_channel_loading import loading_sample
+            exercise = loading_sample(ch, box)
+            g['notices'] = [dict(text='Opening conversation\u2026', visible=True, rect=copy.deepcopy(box))]
+        if stage == 'retired':
+            exercise = dict(delivered=False, cancelledBeforeReply=True,
+                            cleanup=dict(oldPhase='settled', oldDetailConnected=False,
+                                         visiblePending=0, currentPending=False))
+        if stage == 'retried' and held_success:
+            exercise = dict(before=copy.deepcopy(next(r['proof']['channel'] for r in rows if r['stage'] == 'held')),
+                            heldCompletion=dict(serial=3, requestCount=3, delivered=True, cancelledBeforeReply=False))
         proof=dict(channel=ch,exercise=exercise)
-        if stage in ('detail','filter-refused','search-refused','composition-refused','malformed','offline','held'):
-            proof['channelLabels']=channel_labels_sample()
-        proof['sidebarNative']=dict(ok=True,rows=[dict(name=row['name'],active=row['active']) for row in sidebar_rows],headings=[section['title'] for section in sections],activeId=ch['selected'],activeIndex=active,activePosition=active,measured=stage in ('known','retried'),visible=True,hit=True,rect=copy.deepcopy(box))
-        if stage in ('known','retried'):
-            name='activity-known' if stage=='known' else 'activity-fetched'
+        if stage == 'detail' and scenario in R['SHARED_SPECS']:
+            proof['exercise'] = labels()
+        if stage in ('detail','filter-refused','search-refused','malformed','offline','held'):
+            proof['channelLabels']=labels()
+        proof['sidebarNative']=dict(ok=True,rows=[dict(name=row['name'],active=row['active']) for row in sidebar_rows],headings=[section['title'] for section in sections],activeId=ch['selected'],activeIndex=active,activePosition=active,measured=stage in destinations,visible=True,hit=True,rect=copy.deepcopy(box))
+        if stage in destinations:
+            name=names[ch['selected']]
             timeline=f"0-TWORKFLOW-{ch['selected']}-1"
             proof['conversationOwner']=dict(timeline=timeline,composer='synthetic-current-composer')
             g.update(conversation=True,timelineScope=timeline,composerScope='synthetic-current-composer',headerText='#'+name,placeholder='Message #'+name,
                      controls=[dict(id=id,visible=True,rect=copy.deepcopy(box)) for id in ('channel-details-trigger','message-timeline','channel-composer')])
+        if stage in spec.archived_destinations:
+            proof['conversationOwner']['composer']=None
+            g.pop('composerScope');g.pop('placeholder')
+            g.update(composerUnavailable=True,noComposer=True,archivedReason='This channel is archived. Unarchive it in channel details to send messages.')
+            g['controls'][-1]['id']=''
+        if stage in spec.local_clicks:
+            before=copy.deepcopy(ch);before['selected']='DAPP'
+            proof['exercise']=dict(button=spec.local_clicks[stage],
+                before=before,after=copy.deepcopy(ch),originalLabels=labels())
         rows.append(dict(stage=stage,model=model,geometry=g,proof=proof))
-    return fixture,dict(ok=True,fixture=fixture,case='channel',viewport=viewport,aboutConfiguration=True,actualActivityEntry=True,noLiveNetwork=True,
-        stages=rows,captures={stage:str(DIRECTORY/f'{fixture}-{stage}.png') for stage in R['STAGES']['channel']},final=copy.deepcopy(rows[-1]['model']))
+    return fixture,dict(ok=True,fixture=fixture,case=scenario,viewport=viewport,aboutConfiguration=True,actualActivityEntry=True,noLiveNetwork=True,
+        stages=rows,captures={stage:str(DIRECTORY/f'{fixture}-{stage}.png') for stage in stages},final=copy.deepcopy(rows[-1]['model']))
 
 
 class ChannelTests(unittest.TestCase):
@@ -722,6 +818,29 @@ class ChannelTests(unittest.TestCase):
     def mutate(self,stage,change):
         f,r=channel_sample();change(next(row for row in r['stages'] if row['stage']==stage))
         with self.assertRaises(RuntimeError):self.validate(f,r)
+    def test_composition_inert_identity_and_activation_required(self):
+        changes=[lambda e:e.update(mode='refused'),lambda e:e.update(stateComposing=False),
+                 lambda e:e['inert']['rows'].pop(),lambda e:e['inert']['rows'][1].update(occurrence=0),
+                 lambda e:e['inert']['rows'][0].update(originalChannel='FOREIGN'),
+                 lambda e:e['inert']['rows'][2].update(text='activity-known'),
+                 lambda e:e['inert']['activation'].update(observedMs=0),lambda e:e['inert'].pop('detailRevision')]
+        for change in changes:
+            with self.subTest(change=change):self.mutate('composition-refused',lambda r:change(r['proof']['exercise']))
+    def test_composition_cannot_remain_interactive_or_hidden(self):
+        for fields in [dict(tag='BUTTON'),dict(buttonPresent=True),dict(interactiveAncestor=True),dict(visible=False),dict(hit=False)]:
+            self.mutate('composition-refused',lambda r:r['proof']['exercise']['inert']['rows'][0].update(fields))
+        self.mutate('composition-refused',lambda r:r['proof']['exercise']['inert']['rows'][0]['rect'].update(bottom=9999))
+    def test_composition_preserves_model_endpoint_and_native_buffer(self):
+        changes=[lambda e:e['native'].update(refusals=3),lambda e:e['attempt'].update(composing=False),
+                 lambda e:e['native'].update(value='lost'),lambda e:e['after'].update(epoch=7),
+                 lambda e:e['channelAfter'].update(selected='CACTKNOWN01'),lambda e:e['native'].update(notice='refused')]
+        for change in changes:self.mutate('composition-refused',lambda r:change(r['proof']['exercise']))
+    def test_composition_end_requires_actual_restoration(self):
+        changes=[lambda e:e.pop('restored'),lambda e:e['restored'].update(stateComposing=True),
+                 lambda e:e['restored']['native'].update(refusals=3),lambda e:e['restored']['model'].update(epoch=7),
+                 lambda e:e['restored']['channel'].update(selected='CACTKNOWN01'),
+                 lambda e:e['restored']['labels']['rows'][0].update(tag='SPAN')]
+        for change in changes:self.mutate('composition-refused',lambda r:change(r['proof']['exercise']))
     def test_channel_both_widths(self):
         for narrow in (False,True):self.validate(*channel_sample(narrow))
     def test_channel_raw_name_separate_from_icon(self):
@@ -737,7 +856,7 @@ class ChannelTests(unittest.TestCase):
     def test_icon_name_geometry_is_visible_and_inline(self):
         self.mutate('detail',lambda r:r['proof']['channelLabels']['rows'][0]['icon'].update(visible=False))
         self.mutate('filter-refused',lambda r:r['proof']['channelLabels']['rows'][0]['icon']['rect'].update(right=70))
-        self.mutate('composition-refused',lambda r:r['proof']['channelLabels']['rows'][1]['nameRect'].update(bottom=9999))
+        self.mutate('composition-refused',lambda r:r['proof']['exercise']['beforeLabels']['rows'][1]['nameRect'].update(bottom=9999))
     def test_real_reentry_rechecks_known_and_fetched_label(self):
         self.mutate('returned',lambda r:r['proof']['exercise'].pop('reentryLabels'))
         self.mutate('final-return',lambda r:r['proof']['exercise'].update(reentryLabels=channel_labels_sample(False)))
@@ -834,9 +953,16 @@ def export_sample(scenario='export',narrow=False):
         if stage=='draft':exercise=selected.copy()
         if stage in ('ready','list'):exercise=dict(dates=dates.copy(),selected=selected.copy())
         if stage in ('raw-refused','composition-refused'):
-            v='2026-06-01' if stage=='raw-refused' else '2026-06-15';native['from']=v
+            v='Uncommitted native search' if stage=='raw-refused' else '';native['search']=v
             native['nativeNotice']=measure(R['EXPORT_REFUSAL'])
             exercise=dict(unchangedRustState=True,composition=stage=='composition-refused',rawValue=v,before=dict(refusals=0,value=v),after=dict(refusals=1,value=v,notice=R['EXPORT_REFUSAL']))
+        if stage == 'composition-refused':
+            state=dict(ok=True,sameNode=True,value='',composing=True,refusals=1,notice=R['EXPORT_REFUSAL'])
+            exercise=dict(mode='rust-composition-guard',composition=True,stateComposing=True,observedMs=100,
+                modelBefore=copy.deepcopy(model),modelAfter=copy.deepcopy(model),ledgerBefore=copy.deepcopy(ledger),ledgerAfter=copy.deepcopy(ledger),
+                nativeBefore=state.copy(),nativeAfter=state.copy(),click=dict(ok=True,id='workflow-activity-export',tag='BUTTON',text='Export CSV',
+                sameNode=True,visible=True,hit=True,disabled=False,rect=copy.deepcopy(box),viewport=viewport),
+                restored=dict(stateComposing=False,native=dict(state,composing=False),model=copy.deepcopy(model),ledger=copy.deepcopy(ledger)))
         if stage in ('initiated','route-retired'):exercise=dict(delivered=True,cancelledBeforeReply=False)
         if stage=='account-replaced':exercise=dict(previousEpoch=0,currentEpoch=1,foreignDocumentHidden=True,release=dict(delivered=True,cancelledBeforeReply=False))
         geometry=dict(ok=True,noOverflow=True,viewport=viewport,activity=active,controls=[dict(id='workflow-activity-export' if active else 'workflow-configuration',visible=True,rect=box)],notices=[],pngDimensions=[1024,656] if narrow else [1600,975])
@@ -853,12 +979,28 @@ class ExportTests(unittest.TestCase):
     def test_both_export_cases_both_widths(self):
         for c in ('export','export-retirement'):
             for narrow in (False,True):self.validate(*export_sample(c,narrow))
+    def test_composition_export_requires_actual_guard_and_custody(self):
+        changes=[lambda e:e.update(mode='native-refusal'),lambda e:e.update(stateComposing=False),lambda e:e.update(observedMs=0),
+                 lambda e:e['nativeAfter'].update(refusals=2),lambda e:e['nativeAfter'].update(value='lost'),
+                 lambda e:e['nativeBefore'].update(sameNode=False),lambda e:e['nativeBefore'].update(ok=False),
+                 lambda e:e['nativeAfter'].update(notice='new'),lambda e:e['modelAfter'].update(epoch=5),
+                 lambda e:e['ledgerAfter'].update(networkCalls=1)]
+        for change in changes:self.mutate('composition-refused',lambda r:change(r['proof']['exercise']))
+    def test_composition_export_requires_original_visible_activation(self):
+        for fields in [dict(sameNode=False),dict(visible=False),dict(hit=False),dict(disabled=True),dict(id='foreign'),dict(text='Send'),dict(viewport=[1,1])]:
+            self.mutate('composition-refused',lambda r:r['proof']['exercise']['click'].update(fields))
+        self.mutate('composition-refused',lambda r:r['proof']['exercise']['click']['rect'].update(bottom=9999))
+    def test_composition_export_requires_original_end_restoration(self):
+        changes=[lambda e:e.pop('restored'),lambda e:e['restored'].update(stateComposing=True),
+                 lambda e:e['restored']['native'].update(composing=True),lambda e:e['restored']['native'].update(refusals=2),
+                 lambda e:e['restored']['model'].update(epoch=5),lambda e:e['restored']['ledger'].update(networkCalls=1)]
+        for change in changes:self.mutate('composition-refused',lambda r:change(r['proof']['exercise']))
     def test_export_requires_actual_nested_source(self):self.mutate('held',lambda r:r['model']['activity']['query'].clear())
     def test_export_requires_actual_cursor_source(self):self.mutate('rejected',lambda r:r['model']['activity']['query'].clear())
     def test_gate_missing_cannot_show_export(self):self.mutate('gate-missing',lambda r:r['proof']['native'].update(button={'disabled':False}))
     def test_gate_off_cannot_show_export(self):self.mutate('gate-off',lambda r:r['proof']['native'].update(button={'disabled':False}))
-    def test_raw_refusal_requires_original_buffer(self):self.mutate('raw-refused',lambda r:r['proof']['exercise']['after'].update(value='2026-06-15'))
-    def test_refusal_requires_fresh_native_ack(self):self.mutate('composition-refused',lambda r:r['proof']['exercise']['after'].update(refusals=0))
+    def test_raw_refusal_requires_original_buffer(self):self.mutate('raw-refused',lambda r:r['proof']['exercise']['after'].update(value=''))
+    def test_refusal_requires_fresh_native_ack(self):self.mutate('raw-refused',lambda r:r['proof']['exercise']['after'].update(refusals=0))
     def test_refusal_requires_no_rust_write(self):self.mutate('raw-refused',lambda r:r['proof']['exercise'].update(unchangedRustState=False))
     def test_refusal_feedback_must_be_readable(self):self.mutate('raw-refused',lambda r:r['proof']['native']['nativeNotice'].update(visible=False))
     def test_feedback_clipping_rejected(self):self.mutate('malformed',lambda r:r['proof']['native']['notice']['rect'].update(bottom=9999,height=9989))

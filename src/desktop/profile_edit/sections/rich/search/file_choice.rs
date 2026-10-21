@@ -1,8 +1,8 @@
 //! Private whole-file insertion from an already-ranked, eligible source row.
 //! 814n requires an observed team; I83v uses the actual ordinary permalink;
 //! 8J14 exports URL-or-ID text, never the displayed canonical title.
-use super::{Search, file_source, member_names};
-use crate::{canvas::quip_titles, profile_edit::sections::rich::query, state::ShellState};
+use super::{Search, channel_host::Host, file_source, member_names};
+use crate::{canvas::quip_titles, state::ShellState};
 use serde_json::{Value, json};
 use std::sync::Arc;
 use super_platinum_core::slack::{
@@ -12,6 +12,10 @@ use super_platinum_core::slack::{
         texty::{file_title_source, file_titles},
     },
 };
+mod draft;
+pub(crate) use draft::draft_file_labels;
+mod target;
+pub(crate) use target::FileTarget;
 #[cfg(test)]
 mod tests;
 
@@ -20,7 +24,7 @@ fn unavailable() -> Error {
 }
 
 pub(in crate::profile_edit::sections::rich) struct Choice {
-    lease: query::Lease,
+    owner: Arc<dyn Fn(&ShellState) -> bool + Send + Sync>,
     context: Arc<crate::scheduled::Context>,
     names: Arc<member_names::Observation>,
     source: Arc<file_source::Snapshot>,
@@ -29,7 +33,7 @@ pub(in crate::profile_edit::sections::rich) struct Choice {
 
 pub(super) fn capture(
     shell: &ShellState,
-    search: &Search,
+    search: &Search<impl Host>,
     names: Arc<member_names::Observation>,
     source: Arc<file_source::Snapshot>,
     id: &str,
@@ -56,7 +60,10 @@ pub(super) fn capture(
         id,
     )?;
     let choice = Choice {
-        lease: search.lease.clone(),
+        owner: {
+            let lease = search.lease.clone();
+            Arc::new(move |shell| lease.current(shell))
+        },
         context: search.context.clone(),
         names,
         source,
@@ -72,9 +79,9 @@ impl Choice {
     pub(in crate::profile_edit::sections::rich) fn current(
         &self,
         shell: &ShellState,
-        search: &Search,
+        search: &Search<impl Host>,
     ) -> bool {
-        self.lease.current(shell)
+        (self.owner)(shell)
             && search.current(shell)
             && Arc::ptr_eq(&self.context, &search.context)
             && self.names.current(shell, search)
@@ -106,6 +113,49 @@ impl Projection {
         id: &str,
     ) -> Result<Self, Error> {
         observed_team(gantry, team)?;
+        let canonical = CanonicalTitle::capture(shell, &title, id)?;
+        let CanonicalTitle { kind, quip, label } = canonical;
+        let effective = title.effective();
+        let href = match effective.get("permalink") {
+            None | Some(Value::Null) => None,
+            Some(Value::String(url)) => (!url.is_empty()).then_some(url.as_str()),
+            _ => return Err(unavailable()),
+        };
+        let mut value = json!({
+            "type":if kind == file_titles::Kind::Canvas {"canvas"} else {"file"},
+            "file_id":id,
+            "text":href.unwrap_or(id),
+        });
+        if let Some(href) = href {
+            value["url"] = json!(href);
+        }
+        let mut context = RichTextContext::new_ordered(team, user)?;
+        context.file(&value, label.clone())?;
+        Ok(Self {
+            _title: title,
+            quip,
+            value,
+            label,
+        })
+    }
+    fn current_quip(&self, shell: &ShellState) -> bool {
+        self.quip.as_ref().is_none_or(|q| q.current(shell))
+    }
+}
+
+/// Shared title projection only. Capturing a new private choice still requires
+/// the observed gantry team above; displaying an existing token grants no choice.
+struct CanonicalTitle {
+    kind: file_titles::Kind,
+    quip: Option<quip_titles::Observation>,
+    label: String,
+}
+impl CanonicalTitle {
+    fn capture(
+        shell: &ShellState,
+        title: &file_title_source::Observation,
+        id: &str,
+    ) -> Result<Self, Error> {
         let effective = title.effective();
         if effective["id"].as_str() != Some(id) || id.is_empty() {
             return Err(unavailable());
@@ -128,27 +178,7 @@ impl Projection {
                 .map_or(file_titles::QuipTitle::Unavailable, |q| q.value()),
         )
         .map_err(|_| unavailable())?;
-        let href = match effective.get("permalink") {
-            None | Some(Value::Null) => None,
-            Some(Value::String(url)) => (!url.is_empty()).then_some(url.as_str()),
-            _ => return Err(unavailable()),
-        };
-        let mut value = json!({
-            "type":if kind == file_titles::Kind::Canvas {"canvas"} else {"file"},
-            "file_id":id,
-            "text":href.unwrap_or(id),
-        });
-        if let Some(href) = href {
-            value["url"] = json!(href);
-        }
-        let mut context = RichTextContext::new_ordered(team, user)?;
-        context.file(&value, label.clone())?;
-        Ok(Self {
-            _title: title,
-            quip,
-            value,
-            label,
-        })
+        Ok(Self { kind, quip, label })
     }
     fn current_quip(&self, shell: &ShellState) -> bool {
         self.quip.as_ref().is_none_or(|q| q.current(shell))

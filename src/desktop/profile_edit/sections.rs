@@ -425,7 +425,8 @@ pub(super) fn intercept_close(shell: &mut ShellState, visit: Option<u64>) -> boo
     false
 }
 pub(super) fn poll(shell: &mut ShellState) -> bool {
-    poll_at(shell, now())
+    let changed = poll_at(shell, now());
+    rich::poll_group_rate(shell) || changed
 }
 fn poll_at(shell: &mut ShellState, timestamp: i64) -> bool {
     let stale = shell

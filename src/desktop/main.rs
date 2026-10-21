@@ -31,6 +31,7 @@ mod drafts;
 mod emoji_catalog;
 mod emoji_native;
 mod emoji_preferences;
+mod emoji_text;
 mod file_actions;
 mod file_actions_check;
 mod file_events;

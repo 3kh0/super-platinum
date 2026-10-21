@@ -10,11 +10,13 @@ function workflowMemberNodes(expected) {
       || root.__workflowManagement?.composing || input.disabled || input.validity?.badInput
       || input.value!==expected.search
       || document.querySelector('[role="dialog"][aria-modal="true"]')) return null;
-  for (const name of ['status','from','to','limit','user']) {
+  const dateWitness=workflowActivityDateWitness(expected,form);
+  if(!dateWitness) return null;
+  for (const name of ['status','limit','user']) {
     const node=form.querySelector('#workflow-activity-'+name);
     if (!node || node.disabled || node.validity?.badInput || node.value!==expected.filters[name]) return null;
   }
-  return {root,input};
+  return {root,input,dateWitness};
 }
 function workflowMemberSnapshot(expected) {
   const nodes=workflowMemberNodes(expected);
@@ -41,7 +43,7 @@ function workflowMemberCommittedSnapshot(expected) {
     };
     const inspect=()=>{
       const current=workflowMemberNodes(expected);
-      if(!current || current.root!==initial.root || current.input!==initial.input) return finish(false);
+      if(!initial.dateWitness.current() || !current || current.root!==initial.root || current.input!==initial.input) return finish(false);
       if(generation()===String(expected.generation)) return finish(true);
       if(!pending()) finish(false);
     };

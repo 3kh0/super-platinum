@@ -3,7 +3,8 @@ async function workflowActivityExecution(expected, channel) {
   const get = id => document.getElementById(id);
   const root=get('workflow-management'),activity=get('workflow-activity'),form=get('workflow-activity-filters');
   const state=root?.__workflowManagement,input=get('workflow-activity-user-search');
-  const keys=['status','from','to','limit','user'],fields=keys.map(k=>get('workflow-activity-'+k));
+  const dateWitness = workflowActivityDateWitness(expected, form);
+  const keys=['status','limit','user'],fields=keys.map(k=>get('workflow-activity-'+k));
   const nodes=[root,activity,form],inert=nodes.map(n=>n?.inert);
   const dates=workflowActivitySnapshot(expected);
   let row=null,detail=null,detailRevision=null,held=null,ownedRead=null,waiting=true;
@@ -11,7 +12,7 @@ async function workflowActivityExecution(expected, channel) {
   const ended=new Promise(resolve=>{end=resolve;}),watchers=new Set();
   const enabled=n=>!!n&&!n.disabled&&!n.matches(':disabled');
   const usable=n=>n?.isConnected&&!n.validity?.badInput;
-  const identity=()=>state&&root.__workflowManagement===state
+  const identity=()=>dateWitness?.current()&&state&&root.__workflowManagement===state
     &&nodes.every(n=>n?.isConnected&&get(n.id)===n)&&root.contains(activity)&&activity.contains(form)
     &&root.dataset.managementVisit===String(expected.visit)
     &&root.dataset.managementDocument===String(expected.document)

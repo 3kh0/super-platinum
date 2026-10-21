@@ -171,10 +171,18 @@ def validate(fixture, receipt, directory, *, platform=sys.platform, png=True, di
         texts='\n'.join(n.get('text','') for n in g.get('notices',[]))
         if stage=='first':
             content=g.get('readContent',{})
+            # This read fixture admits no reaction dispatcher. Compare the
+            # actual backend admission proof to its intentionally disabled UI.
+            require(proof.get('reactionAvailable') is False,'Closed read fixture admitted a reaction')
             require(content.get('bold') is True and content.get('secondParagraph') is True
                     and content.get('reactionCount')=='2' and content.get('reactionGlyph')=='\U0001f44b'
-                    and content.get('reactionTag')=='SPAN' and content.get('reactionVisible') is True
-                    and content.get('messageTools')==content.get('reactionButtons')==0, 'Rich read-only comment proof missing')
+                    and content.get('reactionTag')=='BUTTON' and content.get('reactionType')=='button'
+                    and content.get('reactionVisible') is True and content.get('reactionHit') is True
+                    and content.get('reactionDisabled') is True and content.get('reactionAriaDisabled')=='true'
+                    and content.get('reactionOwn') is False and content.get('reactionPressed')=='false'
+                    and type(content.get('messageTools')) is int and content['messageTools']==0
+                    and type(content.get('reactionButtons')) is int and content['reactionButtons']==1,
+                    'Rich comment or scoped List reaction button proof missing')
         if error and active: require(error in texts,'Failure notice absent')
         if held: require('Loading comments' in texts,'Loading feedback absent')
         if stage=='empty': require('No comments yet' in texts,'Empty feedback absent')

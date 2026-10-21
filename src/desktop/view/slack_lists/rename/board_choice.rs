@@ -7,7 +7,7 @@ pub(in crate::view::slack_lists) fn add(state: Signal<ShellState>) -> Element {
         return rsx! {};
     };
     let disabled = board_choice::available(&state.read(), None, Kind::Add).is_none();
-    rsx! {button{disabled,r#type:"button",class:"slack-list-action","data-board-choice-kind":"add","data-board-choice-value":"","data-board-choice-view":"{choice.view}",
+    rsx! {button{disabled,r#type:"button",class:"slack-list-action slack-list-board-add-group","data-board-choice-kind":"add","data-board-choice-value":"","data-board-choice-view":"{choice.view}",
     onmounted:move |_|{dioxus::document::eval(include_str!("board_choice_return.js"));},
     onclick:move |_|board_choice::open(state,choice.clone()),{icon(Icon::Add,"icon")}"Add group"}}
 }

@@ -24,6 +24,7 @@ fn guard(current: Rc<Cell<bool>>) -> NavigationGuard {
     NavigationGuard {
         current: Rc::new(move |_| current.get()),
         lock: Rc::new(|| Box::pin(async { None })),
+        read: None,
     }
 }
 
@@ -269,6 +270,7 @@ async fn known_commit_reuses_initial_lease_without_racing_a_second_native_lock()
             observed.set(observed.get() + 1);
             Box::pin(async { None })
         }),
+        read: None,
     };
     let commit = commit_lease(Some(NativeLease(release)), &guard)
         .await
@@ -282,4 +284,102 @@ async fn known_commit_reuses_initial_lease_without_racing_a_second_native_lock()
     assert_eq!(receiver.await, Ok(()));
     assert!(commit_lease(None, &guard).await.is_none());
     assert_eq!(calls.get(), 1);
+}
+
+#[tokio::test]
+async fn missing_read_requires_current_source_before_and_after_pending_acknowledgment() {
+    for mode in 0..3 {
+        let current = Rc::new(Cell::new(mode != 0));
+        let started = Rc::new(Cell::new(0));
+        let settled = Rc::new(Cell::new(0));
+        let lifecycle = ReadLifecycle {
+            started: {
+                let current = current.clone();
+                let started = started.clone();
+                Rc::new(move || {
+                    started.set(started.get() + 1);
+                    let current = current.clone();
+                    Box::pin(async move {
+                        if mode == 2 {
+                            current.set(false);
+                        }
+                        mode != 1
+                    })
+                })
+            },
+            settled: {
+                let settled = settled.clone();
+                Rc::new(move || settled.set(settled.get() + 1))
+            },
+        };
+        assert!(
+            PendingRead::begin(Some(&lifecycle), || current.get())
+                .await
+                .is_none()
+        );
+        assert_eq!(started.get(), u32::from(mode != 0));
+        assert_eq!(settled.get(), u32::from(mode != 0));
+    }
+}
+
+#[tokio::test]
+async fn admitted_pending_ack_holds_original_lease_but_read_does_not() {
+    let (release, receiver) = crate::app_home::inputs::native::test_pair();
+    let receiver = Rc::new(std::cell::RefCell::new(receiver));
+    let lease = NativeLease(release);
+    let settled = Rc::new(Cell::new(0));
+    let lifecycle = ReadLifecycle {
+        started: {
+            let receiver = receiver.clone();
+            Rc::new(move || {
+                assert!(matches!(
+                    receiver.borrow_mut().try_recv(),
+                    Err(tokio::sync::oneshot::error::TryRecvError::Empty)
+                ));
+                Box::pin(async { true })
+            })
+        },
+        settled: {
+            let settled = settled.clone();
+            Rc::new(move || settled.set(settled.get() + 1))
+        },
+    };
+    let pending = PendingRead::begin(Some(&lifecycle), || true).await.unwrap();
+    assert_eq!(settled.get(), 0);
+    drop(lease);
+    let result = while_current(
+        async {
+            assert_eq!(receiver.borrow_mut().try_recv(), Ok(()));
+            Err::<(), _>(Error::Offline("closed fixture".into()))
+        },
+        || true,
+    )
+    .await;
+    assert!(matches!(result, Some(Err(Error::Offline(_)))));
+    assert_eq!(settled.get(), 0);
+    drop(pending);
+    assert_eq!(settled.get(), 1);
+}
+
+#[tokio::test]
+async fn dropping_unfinished_pending_ack_settles_only_its_own_lifecycle() {
+    let settled = Rc::new(Cell::new(0));
+    let lifecycle = ReadLifecycle {
+        started: Rc::new(|| Box::pin(std::future::pending())),
+        settled: {
+            let settled = settled.clone();
+            Rc::new(move || settled.set(settled.get() + 1))
+        },
+    };
+    let mut begin = Box::pin(PendingRead::begin(Some(&lifecycle), || true));
+    std::future::poll_fn(|cx| {
+        assert!(begin.as_mut().poll(cx).is_pending());
+        Poll::Ready(())
+    })
+    .await;
+    assert_eq!(settled.get(), 0);
+    drop(begin);
+    assert_eq!(settled.get(), 1);
+    drop(lifecycle);
+    assert_eq!(settled.get(), 1);
 }

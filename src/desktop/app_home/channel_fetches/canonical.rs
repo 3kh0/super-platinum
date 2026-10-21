@@ -74,6 +74,28 @@ pub(crate) fn capture(shell: &mut ShellState, team: &str) -> Result<Arc<Canonica
         ready,
     }))
 }
+/// Observe an already initialized source from a read-only consumer. No source
+/// allocation, selector hit, freshness admission or network work occurs here.
+pub(crate) fn observed(shell: &ShellState, team: &str) -> Result<Arc<Canonical>, Error> {
+    let context = Arc::new(Context::capture(shell, team)?);
+    let lifecycle = crate::app_home::cfm_lifecycle::observed_readonly(shell, team)?;
+    let w = shell.core.workspaces.get(team).ok_or_else(unavailable)?;
+    let ready = w
+        .directory_channels
+        .ready(
+            &context.account,
+            &context.session,
+            context.epoch,
+            GENERATION,
+            &w.channels,
+        )
+        .map_err(|_| unavailable())?;
+    Ok(Arc::new(Canonical {
+        context,
+        lifecycle,
+        ready,
+    }))
+}
 /// The ordinary-title branch is deliberately smaller than the generic channel
 /// model: file/Canvas/tab, DM, record, huddle and meeting names need other facts.
 pub(crate) fn ordinary_label(token: &Value, row: &Value) -> Result<String, Error> {
@@ -128,12 +150,34 @@ pub(crate) fn ordinary_tab(token: &Value) -> bool {
 
 /// Closed fixture only; exercise the actual accepted boot/Init/drain path.
 pub(crate) async fn fixture_seed(
-    mut state: Signal<ShellState>,
+    state: Signal<ShellState>,
     boot_raw: Value,
     init_raw: Value,
 ) -> Result<(), String> {
+    fixture_seed_inner(state, boot_raw, init_raw, None).await
+}
+/// Only the named Activity cases supply an actual original Extras response.
+pub(crate) async fn fixture_seed_with_extras(
+    state: Signal<ShellState>,
+    boot_raw: Value,
+    init_raw: Value,
+    extras_raw: Value,
+) -> Result<(), String> {
+    if !crate::app_home::about::management::activity::fixture::channel::shared_frozen::enabled(
+        &state.peek(),
+    ) {
+        return Err("Closed shared/frozen Activity fixture required".into());
+    }
+    fixture_seed_inner(state, boot_raw, init_raw, Some(extras_raw)).await
+}
+async fn fixture_seed_inner(
+    mut state: Signal<ShellState>,
+    boot_raw: Value,
+    init_raw: Value,
+    extras_raw: Option<Value>,
+) -> Result<(), String> {
     if !crate::fixture::is_fixture()
-        || !matches!(
+        || !(matches!(
             std::env::var("SUPER_PLATINUM_FIXTURE").as_deref(),
             Ok("profile-sections-mentions"
                 | "profile-sections-mentions-narrow"
@@ -147,7 +191,11 @@ pub(crate) async fn fixture_seed(
                 | "profile-member-freshness-narrow"
                 | "profile-group-recovery"
                 | "profile-group-recovery-narrow")
-        )
+        ) || crate::slack_lists::comments::fixture::completion::enabled(&state.peek())
+            || crate::canvas::comments::editor_recovery_fixture::enabled(&state.peek())
+            || crate::app_home::about::management::activity::fixture::channel::shared_frozen::enabled(&state.peek())
+            || crate::app_home::about::management::fixture::run_access::enabled(&state.peek())
+            || crate::app_home::about::management::fixture::managers::enabled(&state.peek()))
     {
         return Err("closed mention fixture required".into());
     }
@@ -155,7 +203,8 @@ pub(crate) async fn fixture_seed(
     // root keypress listener. Await its renderer acknowledgement; never synthesize
     // listener readiness from a fixture flag or the boot Pause transition.
     if (conditional::fixture::enabled()
-        || crate::directory_member_fetches::automatic::fixture_enabled())
+        || crate::directory_member_fetches::automatic::fixture_enabled()
+        || crate::profile_edit::sections::fixture::group_recovery::known_freshness::enabled())
         && !crate::app_home::cfm_lifecycle::install_listener().await
     {
         return Err("fixture channel keypress listener unavailable".into());
@@ -198,12 +247,31 @@ pub(crate) async fn fixture_seed(
         prepared,
     )
     .map_err(|e| format!("fixture Init settlement: {e}"))?;
+    if let Some(raw) = extras_raw.as_ref() {
+        let prepared = payload::prepare(
+            state,
+            &owner,
+            super_platinum_core::state::cfm_payload::PayloadKind::Extras,
+            raw,
+            raw.to_string(),
+        )
+        .await
+        .map_err(|e| format!("fixture Extras prepare: {e}"))?;
+        initial::settle_payload(
+            &mut state.write(),
+            &read,
+            super_platinum_core::state::directory_channels::freshness::refresh::Branch::Extras,
+            prepared,
+        )
+        .map_err(|e| format!("fixture Extras settlement: {e}"))?;
+    }
     payload::kick(state, owner);
     // Unprovided optional branches are explicitly failed, not synthesized.
     for branch in [
         super_platinum_core::state::directory_channels::freshness::refresh::Branch::Channels,
         super_platinum_core::state::directory_channels::freshness::refresh::Branch::Extras,
     ] {
+        if extras_raw.is_some() && branch == super_platinum_core::state::directory_channels::freshness::refresh::Branch::Extras { continue; }
         let mut shell = state.write();
         if shell.app_home.channel_fetches.slots[&read.owner.context.key()]
             .initial

@@ -76,13 +76,19 @@ impl Transport {
             .execute_once_using_decode_mode(
                 req,
                 false,
-                self.http()?,
-                false,
+                self.single_attempt_client()?,
+                true,
                 if ordered { Some(&mut keys) } else { None },
             )
             .await?;
         Ok(DirectoryUsergroupInfoResponse { raw, keys })
     }
+}
+// Only these admitted group reads opt into preserving API-level Retry-After.
+pub(super) fn rate_limited(req: &PreparedRequest, raw: &Value) -> bool {
+    (allowed(req, true) || allowed(req, false))
+        && raw["ok"] == false
+        && raw["error"] == "ratelimited"
 }
 fn retired() -> Error {
     Error::Offline("Profile group read owner retired".into())
@@ -94,8 +100,10 @@ fn allowed(req: &PreparedRequest, ordered: bool) -> bool {
     let Ok(url) = url::Url::parse(&req.url) else {
         return false;
     };
-    if url.scheme() != "https"
-        || url.port_or_known_default() != Some(443)
+    let origin = url.scheme() == "https" && url.port_or_known_default() == Some(443);
+    // Test-only loopback still requires the exact route and request body below.
+    let loopback = cfg!(test) && url.scheme() == "http" && url.host_str() == Some("127.0.0.1");
+    if !(origin || loopback)
         || !url.username().is_empty()
         || url.password().is_some()
         || url.fragment().is_some()
@@ -104,7 +112,7 @@ fn allowed(req: &PreparedRequest, ordered: bool) -> bool {
     }
     if ordered {
         let parts: Vec<_> = url.path().split('/').collect();
-        if url.host_str() != Some("edgeapi.slack.com")
+        if !(url.host_str() == Some("edgeapi.slack.com") || loopback)
             || parts.len() != 5
             || parts[1] != "cache"
             || parts[2].is_empty()
@@ -122,7 +130,7 @@ fn allowed(req: &PreparedRequest, ordered: bool) -> bool {
         };
         usergroup_info::valid_wire_body(body)
     } else {
-        if !url.host_str().is_some_and(|h| h.ends_with(".slack.com"))
+        if !(url.host_str().is_some_and(|h| h.ends_with(".slack.com")) || loopback)
             || url.path() != "/api/subteams.info"
         {
             return false;

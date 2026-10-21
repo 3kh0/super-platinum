@@ -40,6 +40,9 @@ pub fn paragraph_seeds(
             continue;
         }
         if let Ok(draft) = super::super::text::canonical_draft(section) {
+            if underline_shape(section, &draft).is_err() {
+                continue;
+            }
             out.push((section.id().into(), draft));
         }
     }
@@ -91,7 +94,7 @@ fn range_seeds_context(
     let inspection = inline::Inspection::new(snapshot).ok();
     let mut out = Vec::new();
     for section in &snapshot.sections {
-        if target_shape(section).is_err() || section_highlights.contains(section.id()) {
+        if range_target_shape(section).is_err() || section_highlights.contains(section.id()) {
             continue;
         }
         let Ok(original) = inline::original(section) else {

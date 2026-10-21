@@ -5,6 +5,8 @@ use super_platinum_core::slack::{PreparedRequest, client::RequestBody};
 use tokio::sync::oneshot;
 pub(crate) mod channel;
 pub(crate) mod check;
+pub(crate) mod file;
+pub(crate) mod mixed;
 #[cfg(test)]
 mod tests;
 pub(crate) mod users;
@@ -21,6 +23,7 @@ const CURSOR: &str = "activity+/page=2";
 pub(crate) struct Model(Arc<Mutex<Ledger>>);
 #[derive(Default)]
 struct Ledger {
+    file: Option<file::Model>,
     channel: Option<channel::Model>,
     users: Option<users::Model>,
     requests: Vec<Value>,
@@ -53,9 +56,26 @@ pub(crate) fn enabled(s: &ShellState) -> bool {
         && matches!(
             case().as_str(),
             "browse"
+                | "mixed-navigation"
+                | "mixed-navigation-reverse"
+                | "mixed-navigation-success"
+                | "file"
+                | "file-retirement"
+                | "file-emoji"
+                | "file-emoji-retirement"
+                | "file-emoji-cold"
+                | "file-encoded"
+                | "file-recovery"
+                | "file-recovery-retirement"
+                | "date-range"
+                | "date-range-retirement"
                 | "retirement"
                 | "picker"
                 | "channel"
+                | "channel-held-success"
+                | "channel-special"
+                | "channel-shared-frozen"
+                | "channel-frozen-grace"
                 | "user-real"
                 | "user-display"
                 | "user-refresh"
@@ -79,24 +99,67 @@ pub(crate) fn install(s: &mut ShellState) {
     install_case(s, &case());
 }
 fn install_case(s: &mut ShellState, scenario: &str) {
+    if matches!(
+        scenario,
+        "file"
+            | "file-retirement"
+            | "file-emoji"
+            | "file-emoji-retirement"
+            | "file-emoji-cold"
+            | "file-encoded"
+            | "file-recovery"
+            | "file-recovery-retirement"
+    ) || mixed::is_case(scenario)
+    {
+        s.core.active_account = Some(file::ACCOUNT.into());
+    }
     if scenario.starts_with("user-") {
         s.core.active_account = Some("synthetic-workflow-activity-user".into());
     }
-    if scenario == "channel" {
+    if matches!(
+        scenario,
+        "channel"
+            | "channel-held-success"
+            | "channel-special"
+            | "channel-shared-frozen"
+            | "channel-frozen-grace"
+    ) {
         // Real tab history requires account custody. Bind it before About and
         // management capture their owners; a non-UUID cannot persist history.
         s.core.active_account = Some("synthetic-workflow-activity-channel".into());
     }
     super::super::fixture::install(s, false, scenario == "retirement");
     s.app_home.about.management.activity_fixture = Some(Model::default());
+    if matches!(
+        scenario,
+        "file"
+            | "file-retirement"
+            | "file-emoji"
+            | "file-emoji-retirement"
+            | "file-emoji-cold"
+            | "file-encoded"
+            | "file-recovery"
+            | "file-recovery-retirement"
+    ) || mixed::is_case(scenario)
+    {
+        file::install(s);
+    }
     if scenario.starts_with("execution") {
         super::super::entry::fixture::install(s);
     }
     if scenario.starts_with("export") {
         export::fixture::install(s);
     }
-    if scenario == "channel" {
-        channel::install(s);
+    if matches!(
+        scenario,
+        "channel"
+            | "channel-held-success"
+            | "channel-special"
+            | "channel-shared-frozen"
+            | "channel-frozen-grace"
+    ) || mixed::is_case(scenario)
+    {
+        channel::install(s, scenario == "channel-special");
     }
     if scenario.starts_with("user-") {
         users::install(s);
@@ -108,6 +171,17 @@ fn install_case(s: &mut ShellState, scenario: &str) {
             serde_json::from_value(json!({"name":"activity_ready","value":ready})).unwrap(),
             serde_json::from_value(json!({"name":"activity_cold","value":cold})).unwrap(),
         ]);
+        if file::emoji_case(scenario) {
+            // Same local ready asset, through the real alias resolver. The
+            // custom wave collision must lose to Activity's standard catalog.
+            workspace.apply_emojis(vec![
+                serde_json::from_value(
+                    json!({"name":"activity_ready_alias","value":"alias:activity_ready"}),
+                )
+                .unwrap(),
+                serde_json::from_value(json!({"name":"wave","value":ready})).unwrap(),
+            ]);
+        }
     }
     let id = s.media.register_emoji("activity_ready", ready);
     s.media.insert(
@@ -231,12 +305,31 @@ fn reply(method: &str, args: &Value, empty: bool) -> Result<Value, Error> {
             "template":"L<@U1><b>x</b>{unknown}{no}{zero} \u{4e2d}\u{1f642} <@U1><i>y</i> :wave:",
             "variables":{"unknown":{"type":"FUTURE","value":"ignored"},"no":false,"zero":0}
           },"future":{"preserved":17}}]);
-        if case() == "channel" {
+        if matches!(
+            case().as_str(),
+            "channel"
+                | "channel-held-success"
+                | "channel-special"
+                | "channel-shared-frozen"
+                | "channel-frozen-grace"
+        ) {
             row["trigger_message"] = json!({"template":"Open {known} then {known}","variables":{"known":{"type":"CHANNEL","value":channel::KNOWN}}});
             row["step_events"][0]["outcome_message"] = json!({"template":"Check {missing}","variables":{"missing":{"type":"CHANNEL","value":channel::MISSING}}});
+            if channel::shared_frozen::requested() {
+                channel::shared_frozen::messages(&mut row);
+            }
+            if case() == "channel-special" {
+                channel::special_messages(&mut row);
+            }
         }
         if case().starts_with("user-") {
             users::messages(&mut row);
+        }
+        if file::requested() {
+            file::messages(&mut row);
+        }
+        if mixed::is_case(&case()) {
+            mixed::messages(&mut row);
         }
         return Ok(json!({"ok":true,"workflow_event":row}));
     }
@@ -346,7 +439,7 @@ pub(crate) fn snapshot(s: &ShellState) -> Value {
     let activity = s.app_home.about.management.surface.as_ref()
         .and_then(|h|super::super::document(s,h.id)).map(|d| {
         let a=&d.activity;
-        json!({"active":a.active,"documentRevision":d.revision,"filters":{"revision":a.filters.revision,"status":a.filters.status,"from":a.filters.from,"to":a.filters.to,"limit":a.filters.limit,"user":a.filters.user},
+        json!({"active":a.active,"documentRevision":d.revision,"filters":a.filters,
           "page":a.page.as_ref().map(|p|p.raw()),"query":a.page.as_ref().map(|p|p.query().request().arguments().clone()),
           "previous":a.previous.iter().map(|q|q.request().arguments().clone()).collect::<Vec<_>>(),
           "detail":a.detail.as_ref().map(|d|d.raw()),"detailRow":a.detail_row,"breadcrumbs":a.breadcrumbs,"notice":a.notice,"nameNotice":a.name_notice,"nameRefreshPending":a.name_refresh_read.is_some()})

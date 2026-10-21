@@ -12,7 +12,33 @@ use super_platinum_core::{
 };
 mod read;
 mod stage;
+#[cfg(test)]
+mod status_tests;
 const GENERATION: &str = "explicit-known-member-recovery";
+
+/// Current shared recovery feedback, without creating a slot or a read claim.
+/// Consumers retain their own source witness; this grants no publication.
+pub(crate) struct RecoveryStatus {
+    pub(crate) retry_at: Option<Option<Instant>>,
+    pub(crate) failure: Option<Error>,
+}
+pub(crate) fn recovery_status(shell: &ShellState, team: &str) -> Result<RecoveryStatus, Error> {
+    let context = Context::capture(shell, team)?;
+    let slot = shell.directory_member_fetches.slots.get(&context.key());
+    let Some(slot) = slot else {
+        return Ok(RecoveryStatus {
+            retry_at: None,
+            failure: None,
+        });
+    };
+    if !slot.context.current(shell) {
+        return Err(unavailable());
+    }
+    Ok(RecoveryStatus {
+        retry_at: slot.retry_at,
+        failure: slot.last_failure.as_ref().map(|error| (**error).clone()),
+    })
+}
 
 struct Attempt {
     context: Arc<Context>,
@@ -188,7 +214,10 @@ impl Drop for Running {
 }
 /// Passive closed-fixture completion, including renderer/adoption or refusal.
 pub(crate) fn fixture_status(_shell: &ShellState) -> Value {
-    if !crate::profile_edit::sections::fixture::member_recovery::enabled() {
+    if !crate::profile_edit::sections::fixture::member_recovery::enabled()
+        && !crate::profile_edit::sections::fixture::group_recovery::enabled()
+        && !crate::canvas::comments::editor_recovery_fixture::enabled(_shell)
+    {
         return Value::Null;
     }
     let started = STARTED.load(Ordering::Relaxed);
@@ -206,6 +235,7 @@ pub(crate) async fn recover(
 ) -> Result<(), Error> {
     if crate::fixture::is_fixture()
         && !crate::profile_edit::sections::fixture::member_recovery::enabled()
+        && !crate::canvas::comments::editor_recovery_fixture::enabled(&state.peek())
     {
         return Err(unavailable());
     }

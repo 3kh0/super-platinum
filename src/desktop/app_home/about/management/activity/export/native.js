@@ -5,7 +5,8 @@ async function workflowActivityExport(expected, channel) {
   const form = get('workflow-activity-filters'), action = get('workflow-activity-export');
   const notice = get('workflow-activity-export-native-notice');
   const input = get('workflow-activity-user-search'), state = root?.__workflowManagement;
-  const keys = ['status','from','to','limit','user'];
+  const dateWitness = workflowActivityDateWitness(expected, form);
+  const keys = ['status','limit','user'];
   const fields = keys.map(key => get('workflow-activity-' + key));
   const nodes = [root,activity,form];
   const dates = workflowActivitySnapshot(expected);
@@ -34,7 +35,7 @@ async function workflowActivityExport(expected, channel) {
       state.exportRefusals = Math.min(previous + 1, Number.MAX_SAFE_INTEGER);
     }
   };
-  const identity = () => state && root.__workflowManagement === state
+  const identity = () => dateWitness?.current() && state && root.__workflowManagement === state
     && (!notice || sameNotice())
     && nodes.every(node => node?.isConnected && get(node.id) === node)
     && root.contains(activity) && activity.contains(form)

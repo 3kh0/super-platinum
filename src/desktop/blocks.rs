@@ -8,14 +8,18 @@
 
 pub(crate) mod action;
 mod controls;
+mod file_mentions;
 mod text;
+mod underline;
 
 pub(crate) use action::fixture::apply as button_metadata_fixture;
 pub(crate) use action::fixture::check_native as check_button_metadata_native;
 pub(crate) use controls::fixture::apply as controls_fixture;
 
+pub(crate) use text::{
+    canvas_root_mrkdwn, custom_emoji_media, mrkdwn_blocks, mrkdwn_inline, plain_inline_nodes,
+};
 use text::{channel_mention, emoji_node};
-pub(crate) use text::{custom_emoji_media, mrkdwn_blocks, mrkdwn_inline, plain_inline_nodes};
 
 use serde_json::Value;
 use super_platinum_core::MediaAssetKind;
@@ -61,7 +65,7 @@ fn block_nodes_in(
     value: &Value,
     parent_block_id: Option<&str>,
 ) -> Vec<RichNode> {
-    match value.get("type").and_then(Value::as_str) {
+    let nodes = match value.get("type").and_then(Value::as_str) {
         // ── rich_text family ─────────────────────────────────────────────
         Some("rich_text") => elements(value)
             .flat_map(|element| block_nodes(ctx, element))
@@ -206,6 +210,7 @@ fn block_nodes_in(
                 url: url.into(),
             }]
         }
+        Some("canvas" | "file") => vec![file_mentions::node(ctx, value)],
         Some("emoji") => {
             let name = value
                 .get("name")
@@ -263,7 +268,8 @@ fn block_nodes_in(
                 .to_owned(),
         )],
         _ => Vec::new(),
-    }
+    };
+    underline::apply(value, nodes)
 }
 
 fn group_mention(ctx: BlockCtx<'_>, id: &str, fallback: &str) -> RichNode {
@@ -436,25 +442,9 @@ fn text_leaf_nodes(ctx: BlockCtx<'_>, value: &Value) -> Vec<RichNode> {
 pub(crate) fn split_section_on_newlines(children: Vec<RichNode>) -> Vec<RichNode> {
     let mut lines: Vec<Vec<RichNode>> = vec![Vec::new()];
     for child in children {
-        let (text, rebuild): (String, Box<dyn Fn(String) -> RichNode>) = match child {
-            RichNode::Text(text) if text.contains('\n') => (text, Box::new(RichNode::Text)),
-            RichNode::StyledText {
-                text,
-                bold,
-                italic,
-                strike,
-                code,
-            } if text.contains('\n') => (
-                text,
-                Box::new(move |piece| RichNode::StyledText {
-                    text: piece,
-                    bold,
-                    italic,
-                    strike,
-                    code,
-                }),
-            ),
-            other => {
+        let (text, rebuild) = match underline::line_parts(child) {
+            Ok(parts) => parts,
+            Err(other) => {
                 lines.last_mut().expect("seeded line").push(other);
                 continue;
             }

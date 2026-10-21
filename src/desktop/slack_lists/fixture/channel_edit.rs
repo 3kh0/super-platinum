@@ -37,7 +37,7 @@ pub(crate) fn add_channel_edits(shell: &mut ShellState) -> Option<ChannelEditSna
   json!({"id":"C_EDIT_CHANNELS","key":"edit_channels","name":"Related channels","type":"channel","options":{"format":"multi_entity"}}),
  ]);
     fixture.document["list_metadata"]["views"].as_array_mut()?.push(json!({"id":"V_EDIT_CHANNELS","name":"Channel editing","type":"table","position":"502","columns":[
-  {"id":"C_NAME","key":"NAME","visible":true},{"id":"C_EDIT_CHANNEL","key":"edit_channel","visible":true},{"id":"C_EDIT_CHANNELS","key":"edit_channels","visible":true}
+  {"id":"C_NAME","key":"NAME","visible":true},{"id":"C_USER","key":"assignee","visible":true},{"id":"C_EDIT_CHANNEL","key":"edit_channel","visible":true},{"id":"C_EDIT_CHANNELS","key":"edit_channels","visible":true}
  ],"filters":[{"key":"estimate","column_id":"C_NUMBER","operator":"less_than_or_equal","values":[2]}],"sorts":[]}));
     for record in fixture.records["records"].as_array_mut()? {
         if record["id"] == "R_LIST_000" {

@@ -1,9 +1,7 @@
-//! Nonpersistent, incomplete Profile file collection. Credential scope survives
+//! Nonpersistent, incomplete credential-owned file collection. Scope survives
 //! queries and sockets; acquisition receipts do not borrow a successor socket.
-use super::{Search, member_names};
-use crate::{
-    directory_member_fetches::Context, profile_edit::sections::rich::query, state::ShellState,
-};
+use super::{Search, channel_host::Host, member_names};
+use crate::{directory_member_fetches::Context, state::ShellState};
 use serde_json::Value;
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -13,8 +11,23 @@ use super_platinum_core::slack::{
     Error,
     api::custom::texty::{file_title_source as source, files},
 };
+mod observation;
+mod singleton;
 #[cfg(test)]
 mod tests;
+pub(crate) use observation::FileObservation;
+pub(crate) use singleton::FileInfoRead;
+
+#[cfg(test)]
+pub(super) fn fixture_target_source(
+    shell: &mut ShellState,
+    team: &str,
+    rows: Vec<Value>,
+) -> Result<Arc<Snapshot>, Error> {
+    let owner = Arc::new(Context::capture(shell, team)?);
+    let fence = Fence::capture(shell, owner, team.into(), 100)?;
+    fence.publish(shell, &serde_json::json!({"ok":true,"files":rows}), &rows)
+}
 
 fn unavailable() -> Error {
     Error::Api("profile_file_search_source_unavailable".into())
@@ -67,6 +80,16 @@ impl Stamp {
 }
 impl State {
     fn ensure(shell: &mut ShellState, owner: &Arc<Context>, namespace: &str, now_ms: i64) {
+        Self::ensure_source(shell, owner);
+        shell
+            .profile_edit
+            .sections
+            .file_search
+            .queries
+            .entry(namespace.into())
+            .or_insert_with(|| files::QueryCache::new(now_ms));
+    }
+    fn ensure_source(shell: &mut ShellState, owner: &Arc<Context>) {
         let keep = shell
             .profile_edit
             .sections
@@ -83,10 +106,6 @@ impl State {
             .slots
             .entry(owner.session.team_id.clone())
             .or_default();
-        state
-            .queries
-            .entry(namespace.into())
-            .or_insert_with(|| files::QueryCache::new(now_ms));
     }
 }
 
@@ -228,7 +247,11 @@ impl Snapshot {
 /// Closed offline fixture observation of the same current source used to rank
 /// choices. This grants no acquisition, mutation, or live inspection authority.
 pub(crate) fn fixture_completion_proof(shell: &ShellState) -> Result<Value, Error> {
-    if !crate::profile_edit::sections::fixture::completion::files::enabled(shell) {
+    let cold = crate::slack_lists::comments::fixture::cold_files::enabled(shell);
+    if !crate::profile_edit::sections::fixture::completion::files::enabled(shell)
+        && !crate::slack_lists::comments::fixture::completion::files::enabled(shell)
+        && !cold
+    {
         return Err(unavailable());
     }
     let team = shell.core.active_team.as_deref().ok_or_else(unavailable)?;
@@ -236,11 +259,20 @@ pub(crate) fn fixture_completion_proof(shell: &ShellState) -> Result<Value, Erro
     let rows: Vec<_> = snapshot
         .rows()
         .iter()
-        .filter(|row| matches!(row.id(), "FCOMPLETE1" | "FCOMPLETE2"))
+        .filter(|row| {
+            matches!(
+                row.id(),
+                "FCOMPLETE1" | "FCOMPLETE2" | "FLISTFILE1" | "FLISTFILE2"
+            )
+        })
         .map(|row| {
-            serde_json::json!({
+            let mut proof = serde_json::json!({
                 "id": row.id(), "source": row.source(), "effective": row.effective()
-            })
+            });
+            if cold {
+                proof["receipt"] = row.receipt().clone();
+            }
+            proof
         })
         .collect();
     Ok(serde_json::json!({
@@ -253,7 +285,7 @@ pub(crate) fn fixture_completion_proof(shell: &ShellState) -> Result<Value, Erro
 /// query, source collection, account, cookie, transport, socket, or file event.
 pub(super) struct Read {
     fence: Fence,
-    lease: query::Lease,
+    owner: Arc<dyn Fn(&ShellState) -> bool + Send + Sync>,
     context: Arc<crate::scheduled::Context>,
     names: Arc<member_names::Observation>,
 }
@@ -477,7 +509,7 @@ impl Fence {
 impl Read {
     pub(super) fn capture(
         shell: &mut ShellState,
-        search: &Search,
+        search: &Search<impl Host>,
         names: Arc<member_names::Observation>,
         now_ms: i64,
     ) -> Result<Self, Error> {
@@ -491,24 +523,27 @@ impl Read {
             .unwrap_or_else(|| owner.session.team_id.clone());
         Ok(Self {
             fence: Fence::capture(shell, owner, namespace, now_ms)?,
-            lease: search.lease.clone(),
+            owner: {
+                let lease = search.lease.clone();
+                Arc::new(move |shell| lease.current(shell))
+            },
             context: search.context.clone(),
             names,
         })
     }
-    fn query_current(&self, shell: &ShellState, search: &Search) -> bool {
-        self.lease.current(shell)
+    fn query_current(&self, shell: &ShellState, search: &Search<impl Host>) -> bool {
+        (self.owner)(shell)
             && search.current(shell)
             && self.names.current(shell, search)
             && Arc::ptr_eq(&self.context, &search.context)
     }
-    pub(super) fn current(&self, shell: &ShellState, search: &Search) -> bool {
+    pub(super) fn current(&self, shell: &ShellState, search: &Search<impl Host>) -> bool {
         self.query_current(shell, search) && self.fence.current(shell)
     }
     pub(super) fn publish(
         &self,
         shell: &mut ShellState,
-        search: &Search,
+        search: &Search<impl Host>,
         response: &files::OrderedResponse,
     ) -> Result<Arc<Snapshot>, Error> {
         if !self.current(shell, search) {
@@ -524,7 +559,7 @@ impl Read {
     pub(super) fn cached(
         &self,
         shell: &mut ShellState,
-        search: &Search,
+        search: &Search<impl Host>,
         query: &str,
         now_ms: i64,
     ) -> Result<CacheStatus, Error> {
@@ -547,7 +582,7 @@ impl Read {
     pub(super) fn begin_request(
         &self,
         shell: &mut ShellState,
-        search: &Search,
+        search: &Search<impl Host>,
         now_ms: i64,
     ) -> Result<files::RequestToken, Error> {
         if !self.current(shell, search) {
@@ -566,7 +601,7 @@ impl Read {
     pub(super) fn record_response(
         &self,
         shell: &mut ShellState,
-        search: &Search,
+        search: &Search<impl Host>,
         query: &str,
         carrier: &Value,
         rows: &[Value],
@@ -584,7 +619,7 @@ impl Read {
     pub(super) fn record_upsert(
         &self,
         shell: &mut ShellState,
-        search: &Search,
+        search: &Search<impl Host>,
         published: &Snapshot,
         query: &str,
         count: usize,

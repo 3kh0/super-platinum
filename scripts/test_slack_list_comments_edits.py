@@ -72,7 +72,7 @@ def sample(case='edits',narrow=False):
         if i in ((5,7,10) if case=='edits' else (1,9)):serial+=3
         c.update(read=serial,hasMore=not final,page=copy.deepcopy(readback if final else page),
             loading=case=='edits' and i in (5,6),error=V['NOTICE'] if case=='edits' and i in (7,8,9) else None,editCustody=[])
-        p.update(heldResponse=copy.deepcopy(page) if case=='edits' and i>=5 else None,serverResponse=copy.deepcopy(readback) if final else None)
+        p.update(heldResponse=copy.deepcopy(page) if case=='edits' and i>=5 else None,serverResponse=copy.deepcopy(readback) if final else None,reactionAvailable=False)
         if case=='edits':
             p['release']=dict(delivered=False,cancelledBeforeReply=True) if i>=8 else None
             current=(first,rich,plain,cleared,cleared,cleared,cleared,updated,updated,updated,typed(canonical))[i]
@@ -103,7 +103,9 @@ def sample(case='edits',narrow=False):
         target=FIRST if case=='edits' or i<2 else SENT
         box=copy.deepcopy(g['editor']['rect']);count=lookup[target]['reactions'][0]['count'] if lookup[target]['reactions'] else 0
         g['editBody']=dict(ts=target,text=body_text,bold=bold,italic=italic,visible=True,rect=box,
-            pills=[dict(name='wave',visible=True,rect=copy.deepcopy(box),tag='SPAN')] if count else [],tools=0)
+            pills=[dict(name='wave',visible=True,hit=True,rect=copy.deepcopy(box),tag='BUTTON',type='button',
+                disabled=True,ariaDisabled='true',
+                pressed='false',own=False,count=count)] if count else [],tools=0)
         rows.append(row)
     if case=='edits':
         specs=[(name,'T1',7,fr,ch,before,after) for name,fr,ch,before,after in
@@ -160,7 +162,22 @@ class EditsTests(unittest.TestCase):
             self.assertEqual(row['model']['comments']['pageMessages'][1]['channel'],CH)
             self.assertNotIn('channel',row['model']['comments']['page']['messages'][1])
         self.assertNotIn('channel',receipt['editEvents'][0]['witness']['raw'])
-        V['validate']('slack-list',receipt,Path(outer['readyDirectory']),png=False)
+        # This preserved binary predates List reaction actions. Admit its exact
+        # historical SPAN only in this regression adapter; runtime validation
+        # always requires the new accessible button admission contract.
+        probe=V['body_probe']
+        def historical(row,*args,**kwargs):
+            adapted=copy.deepcopy(row)
+            adapted['proof']['reactionAvailable']=False
+            for pill in adapted['geometry']['editBody']['pills']:
+                self.assertEqual(pill['tag'],'SPAN')
+                self.assertTrue(pill['visible'])
+                disabled=True
+                pill.update(tag='BUTTON',type='button',hit=True,disabled=disabled,
+                            ariaDisabled=str(disabled).lower(),pressed='false',own=False,count=args[4])
+            return probe(adapted,*args,**kwargs)
+        with patch.dict(V['validate_edits'].__globals__,body_probe=historical):
+            V['validate']('slack-list',receipt,Path(outer['readyDirectory']),png=False)
         changed=copy.deepcopy(receipt);changed['stages'][1]['model']['comments']['pageMessages'][1]['channel']=None
         with self.assertRaises(RuntimeError):V['validate']('slack-list',changed,Path(outer['readyDirectory']),png=False)
 
@@ -300,8 +317,16 @@ class EditsTests(unittest.TestCase):
         self.reject(lambda s:s['geometry']['editor'].update(generation='999'))
         self.reject(lambda s:s['geometry']['editBody'].update(visible=False))
         self.reject(lambda s:s['geometry']['editBody'].update(tools=1))
-        self.reject(lambda s:s['geometry']['editBody']['pills'][0].update(tag='BUTTON'),1)
+        self.reject(lambda s:s['geometry']['editBody']['pills'][0].update(tag='SPAN'),1)
         self.reject(lambda s:s['geometry']['editBody']['pills'][0].update(visible=False),1)
+
+    def test_list_pills_have_only_closed_fixture_button_semantics(self):
+        self.reject(lambda s:s['proof'].update(reactionAvailable=True),1)
+        for key,value in [('type','submit'),('disabled',False),('ariaDisabled','false'),
+                          ('pressed','true'),('own',True),('count',3),('hit',False)]:
+            self.reject(lambda s,k=key,v=value:s['geometry']['editBody']['pills'][0].update({k:v}),1)
+        for key,value in [('disabled',False),('ariaDisabled','false')]:
+            self.reject(lambda s,k=key,v=value:s['geometry']['editBody']['pills'][0].update({k:v}),2,'edit-ack')
         self.reject(lambda s:s['geometry']['editBody'].update(italic=False),10)
 
     def test_counts_controls_notices_and_captures(self):

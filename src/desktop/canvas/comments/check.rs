@@ -1,10 +1,20 @@
 //! Actual DOM controls with synthetic, builder-recorded read responses only.
 use super::*;
 use serde_json::{Value, json};
+mod attribution;
+mod canonical_files;
+mod file_fallback;
 mod ready;
+mod special;
 pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::DesktopContext) {
+    annotation::heading_check::start(state, desktop.clone());
+    annotation::underline_check::start(state, desktop.clone());
     mutation::check::start(state, desktop.clone());
     reply::check::start(state, desktop.clone());
+    special::start(state, desktop.clone());
+    file_fallback::start(state, desktop.clone());
+    canonical_files::start(state, desktop.clone());
+    attribution::start(state, desktop.clone());
     if !fixture::requested()
         || std::env::var("SUPER_PLATINUM_CANVAS_COMMENTS_CHECK").as_deref() != Ok("1")
     {
@@ -15,7 +25,8 @@ pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::Desktop
             Ok(v) => v,
             Err(error) => json!({"ok":false,"error":error}),
         };
-        eprintln!("canvas-comments-check: {receipt}");
+        let _ = tokio::task::spawn_blocking(move || eprintln!("canvas-comments-check: {receipt}"))
+            .await;
     });
 }
 async fn run(
@@ -46,7 +57,7 @@ async fn run(
     click(desktop, "#canvas-comments-all").await?;
     wait(desktop,"!!document.getElementById('canvas-comments-filter') && document.querySelectorAll('.canvas-comment').length===2").await?;
     filter(desktop, "archived").await?;
-    wait(desktop,"document.querySelectorAll('.canvas-comment').length===1 && document.getElementById('canvas-comments').textContent.includes('Resolved:')").await?;
+    wait(desktop,"document.querySelectorAll('.canvas-comment').length===2 && document.getElementById('canvas-comments').textContent.includes('Resolved:')").await?;
     stage(state, desktop, "resolved", 4, &mut layouts).await?;
     filter(desktop, "unread").await?;
     wait(
@@ -132,7 +143,7 @@ async fn run(
         return Err("Fixture acquired a live session".into());
     }
     Ok(
-        json!({"ok":true,"noSession":true,"noTransport":true,"disconnected":true,"readOnly":true,"exactRequests":true,"filterIsolation":true,"canonicalThread":true,"pagination":true,"errorNotEmpty":true,"explicitRetry":true,"returnedToCanvas":true,"focusContinuity":true,"syntheticInput":true,"requests":requests,"requestCount":requests.len(),"layouts":layouts,"layout":layouts.last()}),
+        json!({"ok":true,"noSession":true,"noTransport":true,"disconnected":true,"readOnly":true,"exactRequests":true,"filterIsolation":true,"canonicalThread":true,"pagination":true,"errorNotEmpty":true,"explicitRetry":true,"returnedToCanvas":true,"focusContinuity":true,"syntheticInput":true,"requests":requests,"responses":fixture::responses(),"requestCount":requests.len(),"layouts":layouts,"layout":layouts.last()}),
     )
 }
 async fn filter(desktop: &dioxus::desktop::DesktopContext, value: &str) -> Result<(), String> {
@@ -194,8 +205,13 @@ async fn stage(
         "document.activeElement?.id==='canvas-comments-back'",
     )
     .await?;
-    let layout = eval(desktop, include_str!("layout.js")).await?;
-    layouts.push(layout);
+    if name == "recovered" {
+        eval(desktop, r#"(()=>{const row=document.querySelector('.canvas-comment[data-comment-ts="1719800020.000100"]');if(!row)return {ok:false};row.scrollIntoView({block:'nearest'});return {ok:true};})()"#).await?;
+    }
+    let mut layout = eval(desktop, include_str!("layout.js")).await?;
+    let bodies = eval(desktop, include_str!("check/root_bodies.js")).await?;
+    layout["bodyProof"] = bodies.clone();
+    layouts.push(layout.clone());
     if state.peek().core.session.is_some() || state.peek().core.transport.is_some() {
         return Err("Comment fixture must remain disconnected".into());
     }
@@ -206,7 +222,7 @@ async fn stage(
     let ack = directory.join(format!("{ordinal}.ack"));
     eprintln!(
         "canvas-comments-stage: {}",
-        json!({"ok":true,"stage":name,"ordinal":ordinal,"noSession":true,"noTransport":true})
+        json!({"ok":true,"stage":name,"ordinal":ordinal,"noSession":true,"noTransport":true,"layout":layout})
     );
     for _ in 0..600 {
         let path = ack.clone();
@@ -214,7 +230,12 @@ async fn stage(
             .await
             .map_err(|_| "Capture acknowledgement task failed")?
         {
-            Ok(bytes) if bytes == b"captured\n" => return Ok(()),
+            Ok(bytes) if bytes == b"captured\n" => {
+                if eval(desktop, include_str!("check/root_bodies.js")).await? != bodies {
+                    return Err(format!("Comment body changed during {name} capture"));
+                }
+                return Ok(());
+            }
             Ok(_) => return Err("Malformed capture acknowledgement".into()),
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => (),
             Err(_) => return Err("Capture acknowledgement read failed".into()),

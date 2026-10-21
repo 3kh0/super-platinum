@@ -32,8 +32,12 @@ pub(in crate::canvas) fn Editor(
     let replacement = matches!(d.kind, Kind::Replacement);
     let deletion = replacement || d.kind.action() == Some(Action::Delete);
     let insertion = matches!(d.kind.action(), Some(Action::Before | Action::After));
+    let heading = d.kind.heading();
+    let allow_underline = matches!(d.kind, Kind::Text(_));
     let field_label = if insertion || deletion {
         label
+    } else if heading {
+        "Heading"
     } else {
         "Paragraph"
     }
@@ -79,9 +83,9 @@ pub(in crate::canvas) fn Editor(
                     event.prevent_default();event.stop_propagation();if cancellable {cancel(state,draft,generation);}
                 }
             },
-            crate::view::rich_editor::RichEditor {id:"canvas-text-draft",label:field_label,blocks,allow_lists:false,disabled:disabled||deletion,autofocus:!deletion,expected_generation:Some(generation)},
-            p {class:"canvas-text-hint",if replacement {"Delete this paragraph and leave an empty paragraph in its place? Its text and formatting will be removed. If the result cannot be confirmed, both changes stay locked for review."} else if deletion {"Delete this paragraph? Its text and formatting will be removed from this canvas."} else if insertion {"Add one paragraph here. Use Shift+Enter for a line break."} else {"Edit this paragraph. Use Shift+Enter for a line break."}}
-            if stale {p {role:"status","This canvas changed. Cancel and refresh before saving this paragraph."}}
+            crate::view::rich_editor::RichEditor {id:"canvas-text-draft",label:field_label,blocks,allow_lists:false,allow_underline,disabled:disabled||deletion,autofocus:!deletion,expected_generation:Some(generation)},
+            p {class:"canvas-text-hint",if replacement {"Delete this paragraph and leave an empty paragraph in its place? Its text and formatting will be removed. If the result cannot be confirmed, both changes stay locked for review."} else if deletion {"Delete this paragraph? Its text and formatting will be removed from this canvas."} else if insertion {"Add one paragraph here. Use Shift+Enter for a line break."} else if heading {"Edit this heading. Its heading level stays the same."} else {"Edit this paragraph. Use Shift+Enter for a line break."}}
+            if stale {p {role:"status",if heading {"This canvas changed. Cancel and refresh before saving this heading."} else {"This canvas changed. Cancel and refresh before saving this paragraph."}}}
             if let Some(error)=error {p {role:"alert","{error}"}}
             div {class:"canvas-text-actions",
                 button {id:"canvas-text-cancel",r#type:"button",disabled:!cancellable,onclick:move |_|cancel(state,draft,generation),"Cancel"}

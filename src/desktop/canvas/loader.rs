@@ -21,6 +21,18 @@ pub(super) async fn load(
         checklist::reader::update_mapping(&shell, &mut reader.write());
         return;
     }
+    if text::underline_fixture::enabled(&state.peek()) {
+        let mut shell = state.write();
+        text::underline_fixture::refresh(&mut shell);
+        checklist::reader::update_mapping(&shell, &mut reader.write());
+        return;
+    }
+    if text::heading_fixture::enabled(&state.peek()) {
+        let mut shell = state.write();
+        text::heading_fixture::refresh(&mut shell);
+        checklist::reader::update_mapping(&shell, &mut reader.write());
+        return;
+    }
     if text::fixture::enabled(&state.peek()) {
         let mut shell = state.write();
         text::fixture::refresh(&mut shell);
@@ -59,8 +71,11 @@ pub(super) async fn read_pair(
     read: checklist::Read,
 ) {
     checklist::recovery::load(state, &read).await;
+    let destination =
+        comments::fixture::canonical_files::destination_canvas::enabled(&state.peek(), &read.file)
+            && read.current(&state.peek());
     let context = read.request(&state.peek());
-    let Some(ctx) = context else {
+    if !destination && context.is_none() {
         if checklist::finish_read(
             &mut state.write(),
             &read,
@@ -69,7 +84,7 @@ pub(super) async fn read_pair(
             reader.write().error = Some("Connect to your workspace to read this canvas.".into());
         }
         return;
-    };
+    }
     let generation = {
         let mut r = reader.write();
         r.generation = r.generation.wrapping_add(1);
@@ -79,10 +94,28 @@ pub(super) async fn read_pair(
     };
     // Neither half spawns a detached task or installs state independently.
     // The event effect stays busy until both bounded requests have settled.
-    let (canonical, export) = tokio::join!(
-        api::fetch_canvas_collab(&ctx.transport, &ctx.client, &ctx.session, &read.file),
-        api::fetch_canvas(&ctx.transport, &ctx.client, &ctx.session, &read.file),
-    );
+    let (canonical, export) = if destination {
+        match comments::fixture::canonical_files::destination_canvas::read_pair(state, &read).await
+        {
+            Ok((canonical, export)) => (Ok(canonical), Ok(export)),
+            Err(error) => (Err(error.clone()), Err(error)),
+        }
+    } else if crate::slack_lists::comments::fixture::file_navigation::named() {
+        match crate::slack_lists::comments::fixture::file_navigation::canvas_read_pair(
+            state, &read.file,
+        )
+        .await
+        {
+            Ok((canonical, export)) => (Ok(canonical), Ok(export)),
+            Err(error) => (Err(error.clone()), Err(error)),
+        }
+    } else {
+        let ctx = context.expect("live Canvas read requires its original context");
+        tokio::join!(
+            api::fetch_canvas_collab(&ctx.transport, &ctx.client, &ctx.session, &read.file),
+            api::fetch_canvas(&ctx.transport, &ctx.client, &ctx.session, &read.file),
+        )
+    };
     let canonical = canonical.map(Arc::new).map_err(|error| {
         if error.is_offline() {
             "Reconnect to refresh canvas state. The current view is still here."

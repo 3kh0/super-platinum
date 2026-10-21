@@ -24,7 +24,8 @@ pub(in crate::canvas::edit::annotation) fn payload(
     let original = super::existing::parse(anchor)?;
     let model =
         range::capture_removing(&original, selection.start, selection.end, control, removal)?;
-    payload_model(anchor, parent, model, session)
+    let attributes = super::super::super::text::heading_content_attributes(anchor)?;
+    payload_model(anchor, parent, model, session, attributes.as_ref())
 }
 
 pub(super) fn payload_model(
@@ -32,10 +33,17 @@ pub(super) fn payload_model(
     parent: &RawMessage,
     model: range::RangeModel,
     session: &str,
+    attributes: Option<&RawMessage>,
 ) -> Result<Checked, Error> {
+    let mut expected_tags = vec![1, 2, 9, 12, 13, 19, 20, 33, 38];
+    if attributes.is_some() {
+        expected_tags.push(16);
+        expected_tags.sort_unstable();
+    }
     let mut tags = parent.fields().iter().map(|f| f.tag()).collect::<Vec<_>>();
     tags.sort_unstable();
-    if tags != [1, 2, 9, 12, 13, 19, 20, 33, 38]
+    if tags != expected_tags
+        || parent.message(16)?.as_ref() != attributes
         || parent.string(1)? != Some(anchor.id())
         || parent.uint(2)? != anchor.sequence()?
         || parent.uint(9)? != Some(0)
@@ -102,6 +110,8 @@ pub(super) fn parent_mode(
 ) -> Result<(), Error> {
     if whole_section {
         super::super::section_body_shape(original)?;
+    } else {
+        super::super::range_target_shape(original)?;
     }
     if received.id() != original.id()
         || received.document_id()? != original.document_id()?
@@ -109,12 +119,7 @@ pub(super) fn parent_mode(
         || received.deleted()? == Some(true)
         || received.read_only()? == Some(true)
         || received.section_type()?.unwrap_or(0) != 0
-        || received.style()?.unwrap_or(0)
-            != if whole_section {
-                original.style()?.unwrap_or(0)
-            } else {
-                0
-            }
+        || received.style()?.unwrap_or(0) != original.style()?.unwrap_or(0)
         || received.raw().uint(11)?.unwrap_or(0) != 0
         // Whole-section v10 validates table ownership in SectionPlan. The
         // received body must retain the exact layout flag; the ordinary range
@@ -135,7 +140,10 @@ pub(super) fn parent_mode(
     {
         return Err(Error::Unconfirmed);
     }
-    if expected.wire.uint(2)? == Some(0)
+    // Heading range comments cannot confirm an unrelated structural change,
+    // including with an existing positive-base history or later canonical read.
+    let heading_range = !whole_section && (1..=3).contains(&original.style()?.unwrap_or(0));
+    if (expected.wire.uint(2)? == Some(0) || heading_range)
         && stable(original)? != stable(&original.merge_partial(received)?)?
     {
         return Err(Error::Unconfirmed);
@@ -186,8 +194,13 @@ fn stable(section: &super::super::Section) -> Result<RawMessage, Error> {
         raw = raw.remove(13)?;
     }
     let mut fields = raw.fields().iter().collect::<Vec<_>>();
+    // Partial merge appends present fields, relocating identical attrs16
+    // relative to opaque siblings. Only its outer position is independent;
+    // every nested byte and all other sibling order remain exact.
+    let heading = (1..=3).contains(&section.style()?.unwrap_or(0));
     fields.sort_by_key(|field| match field.tag() {
         1 | 6 | 7 => field.tag(),
+        16 if heading => 16,
         _ => 0,
     });
     let mut bytes = Vec::new();

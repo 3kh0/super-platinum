@@ -156,7 +156,7 @@ fn density(mark: &Mark) -> u8 {
 
 fn attributes(mark: &Mark) -> Result<Option<String>, Error> {
     match (mark.name(), mark.value()) {
-        ("b" | "i" | "del" | "code", ScalarValue::Boolean(true)) => Ok(None),
+        ("b" | "i" | "u" | "del" | "code", ScalarValue::Boolean(true)) => Ok(None),
         ("annotation", ScalarValue::Str(id)) if super::existing::safe_id(id) => {
             Ok(Some(format!("id=\"{id}\"")))
         }
@@ -199,7 +199,10 @@ pub(super) fn render(text: &str, marks: &[Mark]) -> Result<String, Error> {
     };
     let mut active = Vec::new();
     for mark in marks {
-        if !matches!(mark.name(), "b" | "i" | "del" | "code" | "a" | "annotation") {
+        if !matches!(
+            mark.name(),
+            "b" | "i" | "u" | "del" | "code" | "a" | "annotation"
+        ) {
             return Err(Error::Unsupported);
         }
         if mark.value() == &ScalarValue::Boolean(false) {
@@ -212,7 +215,7 @@ pub(super) fn render(text: &str, marks: &[Mark]) -> Result<String, Error> {
     }
     // The admitted typed model has at most one value for a mark name at any
     // offset. Refuse corrupted overlapping duplicates before building the
-    // recursive tree, bounding its depth by the six closed mark names.
+    // recursive tree, bounding its depth by the seven closed mark names.
     let mut spans = std::collections::BTreeMap::<&str, Vec<(usize, usize)>>::new();
     for (mark, _) in &active {
         spans

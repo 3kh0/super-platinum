@@ -1,3 +1,5 @@
+mod rate_limit;
+
 use super::*;
 use serde_json::json;
 use std::sync::atomic::AtomicBool;

@@ -11,8 +11,23 @@ mod edits;
 pub use edits::{ReplyEdit, ReplyEditError};
 pub mod journal;
 mod live;
+mod own_delete;
+pub use own_delete::{
+    OwnDeleteAccepted, OwnDeleteIntent, OwnDeletePermission, OwnDeletePermissionQuery,
+    OwnDeletePolicy, OwnDeleteRecord,
+};
+mod own_edit;
+pub use own_edit::{
+    OwnEditAccepted, OwnEditAttempt, OwnEditIntent, OwnEditPhase, OwnEditPolicy, OwnEditRecord,
+    OwnEditSeed,
+};
 pub mod projection;
+mod reaction_action;
 mod reactions;
+pub use reaction_action::{
+    ReactionAccepted, ReactionFamilyIntent, ReactionFamilyRecord, ReactionIntent, ReactionRecord,
+    ReactionResponse, own_reaction_family_names, reaction_family_base,
+};
 mod reply;
 pub use reply::{ReplyAccepted, ReplyAttempt, ReplyIntent, ReplyPhase, ReplyPolicy, ReplyRecord};
 
@@ -158,7 +173,7 @@ pub fn channel(file: &str) -> Result<String, ListError> {
 pub fn timestamp(value: &str) -> bool {
     crate::canvas::comments::timestamp(value)
 }
-pub(super) fn identity(value: &str) -> bool {
+pub(crate) fn identity(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= 256
         && !value.chars().any(|c| c.is_control() || c.is_whitespace())

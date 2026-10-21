@@ -27,7 +27,7 @@ fn groups(seed: &AnnotationParagraph) -> Vec<Group<'_>> {
 }
 fn styled(run: &AnnotationRun, epoch: u64, state: Signal<ShellState>) -> Element {
     rsx! { span {
-        class: format!("{}{}{}{}", if run.style.bold {" bold"} else {""}, if run.style.italic {" italic"} else {""}, if run.style.strike {" strike"} else {""}, if run.style.code {" inline-code"} else {""}),
+        class: format!("{}{}{}{}{}", if run.style.bold {" bold"} else {""}, if run.style.italic {" italic"} else {""}, if run.style.strike {" strike"} else {""}, if run.style.code {" inline-code"} else {""}, if run.style.underline {" canvas-text-underline"} else {""}),
         if let Some(url) = &run.style.link {
             {crate::view::rich::rich_node(&crate::model::RichNode::Link {label:run.text.clone(),url:url.clone()},epoch,state)}
         } else { "{run.text}" }
@@ -75,6 +75,7 @@ mod tests {
                 control: control.map(str::to_owned),
                 style: TextStyle {
                     bold,
+                    underline: control.is_some(),
                     ..Default::default()
                 },
             })
@@ -93,5 +94,6 @@ mod tests {
             "ABCDE"
         );
         assert!(groups[2].runs[1].style.bold);
+        assert!(groups[2].runs.iter().all(|run| run.style.underline));
     }
 }

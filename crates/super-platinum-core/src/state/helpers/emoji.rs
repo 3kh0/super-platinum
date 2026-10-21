@@ -3,6 +3,8 @@ use std::collections::HashMap;
 use crate::slack::models::Emoji;
 
 use super::files::is_browser_url;
+#[path = "emoji/tones.rs"]
+mod tones;
 
 #[derive(Debug)]
 pub struct StandardEmoji {
@@ -32,13 +34,20 @@ pub fn reaction_summary(reaction: &crate::slack::models::Reaction) -> String {
 }
 
 /// Map a Slack emoji name to its unicode glyph, falling back to `:name:` for
-/// custom/unknown emoji. Slack appends skin-tone modifiers like
-/// `thumbsup::skin-tone-3`; the base name resolves the glyph.
+/// custom/unknown emoji. Tone sequences come only from exact retained standard
+/// variants; an unsupported suffix must not silently display the base tone.
 pub fn emoji_glyph(name: &str) -> String {
-    let base = name.split("::").next().unwrap_or(name);
-    emojis::get_by_shortcode(base)
-        .map(|e| e.as_str().to_owned())
+    standard_glyph(name)
+        .map(str::to_owned)
         .unwrap_or_else(|| format!(":{name}:"))
+}
+
+fn standard_glyph(name: &str) -> Option<&'static str> {
+    if name.contains("::") {
+        tones::glyph(name)
+    } else {
+        emojis::get_by_shortcode(name).map(|emoji| emoji.as_str())
+    }
 }
 
 pub fn is_standard_emoji(name: &str) -> bool {
@@ -137,8 +146,7 @@ pub fn custom_emoji_source<'a>(
             return None;
         }
         let Some(emoji) = emojis.get(current) else {
-            return emojis::get_by_shortcode(current)
-                .map(|emoji| EmojiSource::Unicode(emoji.as_str()));
+            return standard_glyph(current).map(EmojiSource::Unicode);
         };
         if let Some(alias) = emoji.value.strip_prefix("alias:") {
             current = alias;
@@ -177,3 +185,7 @@ fn merge_text_tokens(tokens: Vec<EmojiTextToken>) -> Vec<EmojiTextToken> {
     }
     merged
 }
+
+#[cfg(test)]
+#[path = "emoji/tests.rs"]
+mod tests;

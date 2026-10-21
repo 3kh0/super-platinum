@@ -8,6 +8,8 @@ use std::{fs::OpenOptions, path::Path, time::Duration};
 const MAX_BODY: usize = 1024 * 1024;
 const MAX_SCOPES: i64 = 128;
 const MAX_HISTORY: i64 = 128;
+pub mod own_delete;
+pub mod own_edit;
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -208,6 +210,8 @@ impl Journal {
             [found] if found == &account => {}
             _ => return Err(invalid()),
         }
+        own_edit::initialize(&tx)?;
+        own_delete::initialize(&tx)?;
         tx.commit()?;
         Ok(Self { conn })
     }

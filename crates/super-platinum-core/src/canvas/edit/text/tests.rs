@@ -2,6 +2,9 @@ use super::*;
 use crate::canvas::wire::EditAck;
 use serde_json::{Value, json};
 
+mod headings;
+mod underline;
+
 fn msg(fields: &[F]) -> RawMessage {
     RawMessage::from_fields(fields).unwrap()
 }
@@ -99,7 +102,7 @@ fn captured_visitor_marks_use_escaped_utf16_and_soft_break_rules() {
 #[test]
 fn unknown_markup_attributes_and_multiple_rich_paragraphs_never_flatten() {
     for source in [
-        "<u>underlined</u>",
+        "<span>unsupported</span>",
         "<control id='x'></control>",
         "<b data-extra='1'>x</b>",
         "<a href='x' data-nolink='true'>x</a>",
@@ -120,7 +123,7 @@ fn unknown_markup_attributes_and_multiple_rich_paragraphs_never_flatten() {
         .push(json!({"type":"rich_text_section","elements":[]}));
     assert!(TextDraft::from_rich_blocks(&blocks).is_err());
     let mut blocks = draft.rich_blocks();
-    blocks[0]["elements"][0]["elements"][0]["style"] = json!({"underline":true});
+    blocks[0]["elements"][0]["elements"][0]["style"] = json!({"highlight":true});
     assert!(TextDraft::from_rich_blocks(&blocks).is_err());
     assert!(
         TextDraft {

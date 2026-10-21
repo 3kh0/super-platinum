@@ -6,9 +6,9 @@ use super_platinum_core::drafts::presence::{self, Read, Step};
 
 /// Initial ranking uses the current store immediately. Actual lazy changes may
 /// refresh that same Input; they never create a replacement query or selection.
-pub(in crate::profile_edit::sections::rich::search) fn schedule(
+pub(in crate::profile_edit::sections::rich::search) fn schedule<L: Host>(
     mut state: Signal<ShellState>,
-    search: Arc<Search>,
+    search: Arc<Search<L>>,
     on_changed: impl Fn(Signal<ShellState>, Result<(), Error>) + Clone + 'static,
 ) -> Result<(), Error> {
     let (read, purge) = {
@@ -36,7 +36,7 @@ pub(in crate::profile_edit::sections::rich::search) fn schedule(
 }
 async fn pages(
     mut state: Signal<ShellState>,
-    search: &Search,
+    search: &Search<impl Host>,
     read: Rc<RefCell<Read>>,
     ids: bool,
     on_changed: &impl Fn(Signal<ShellState>, Result<(), Error>),

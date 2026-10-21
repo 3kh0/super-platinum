@@ -189,7 +189,7 @@ pub(super) async fn capture(
         format!("&&v.notices.includes({})", json!(n))
     });
     let expression = format!(
-        "(()=>{{const v=window.__listCompose.snapshot(),r=v.rows.find(r=>r.ts==={ts}),node=[...document.querySelectorAll('[data-list-comment-ts]')].find(r=>r.dataset.listCommentTs==={ts}),b=node?.querySelector('.message-body'),scroll=document.querySelector('.slack-list-comments-scroll');const rect=e=>{{const r=e.getBoundingClientRect();return {{left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:r.width,height:r.height}};}};const visible=e=>{{if(!e||!scroll)return false;const r=rect(e),s=rect(scroll);return r.width>0&&r.height>0&&r.top>=Math.max(0,s.top)-1&&r.bottom<=Math.min(innerHeight,s.bottom)+1&&r.left>=0&&r.right<=innerWidth+1;}};const strong=b&&[...b.querySelectorAll('.bold,strong,b')].find(e=>e.textContent==={text}),italic=b&&[...b.querySelectorAll('.italic,em,i')].find(e=>e.textContent==={text});v.editBody={{ts:{ts},text:b?.textContent||'',bold:!!strong&&Number(getComputedStyle(strong).fontWeight)>=600,italic:!!italic&&getComputedStyle(italic).fontStyle==='italic',visible:visible(b),rect:b?rect(b):null,pills:[...(node?.querySelectorAll('[data-reaction-name]')||[])].map(e=>({{name:e.dataset.reactionName,visible:visible(e),rect:rect(e),tag:e.tagName}})),tools:node?.querySelectorAll('.message-tools').length||0}};v.ok=v.ok&&!!r&&r.text.includes({text})&&(r.reactions.find(p=>p.name==='wave')?.count||0)==={wave}&&v.editor?.sameNode==={same}&&v.editor?.editable==={editable}{notice};return v;}})()"
+        "(()=>{{const v=window.__listCompose.snapshot(),r=v.rows.find(r=>r.ts==={ts}),node=[...document.querySelectorAll('[data-list-comment-ts]')].find(r=>r.dataset.listCommentTs==={ts}),b=node?.querySelector('.message-body'),scroll=document.querySelector('.slack-list-comments-scroll');const rect=e=>{{const r=e.getBoundingClientRect();return {{left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:r.width,height:r.height}};}};const visible=e=>{{if(!e||!scroll)return false;const r=rect(e),s=rect(scroll);return r.width>0&&r.height>0&&r.top>=Math.max(0,s.top)-1&&r.bottom<=Math.min(innerHeight,s.bottom)+1&&r.left>=0&&r.right<=innerWidth+1;}};const strong=b&&[...b.querySelectorAll('.bold,strong,b')].find(e=>e.textContent==={text}),italic=b&&[...b.querySelectorAll('.italic,em,i')].find(e=>e.textContent==={text});v.editBody={{ts:{ts},text:b?.textContent||'',bold:!!strong&&Number(getComputedStyle(strong).fontWeight)>=600,italic:!!italic&&getComputedStyle(italic).fontStyle==='italic',visible:visible(b),rect:b?rect(b):null,pills:[...(node?.querySelectorAll('[data-reaction-name]')||[])].map(e=>({{name:e.dataset.reactionName,visible:visible(e),rect:rect(e),tag:e.tagName,type:e.type,disabled:e.disabled,ariaDisabled:e.getAttribute('aria-disabled'),pressed:e.getAttribute('aria-pressed'),own:e.classList.contains('own'),count:Number(e.querySelector('.reaction-count')?.textContent),hit:(()=>{{const r=e.getBoundingClientRect(),p=document.elementFromPoint((r.left+r.right)/2,(r.top+r.bottom)/2);return p===e||e.contains(p);}})()}})),tools:node?.querySelectorAll('.message-tools').length||0}};v.ok=v.ok&&!!r&&r.text.includes({text})&&(r.reactions.find(p=>p.name==='wave')?.count||0)==={wave}&&v.editor?.sameNode==={same}&&v.editor?.editable==={editable}{notice};return v;}})()"
     );
     wait_dom(d, &expression).await?;
     checked(d,&format!("(()=>{{const r=[...document.querySelectorAll('[data-list-comment-ts]')].find(r=>r.dataset.listCommentTs==={ts});if(!r)return {{ok:false}};(r.querySelector('[data-reaction-name]')||r.querySelector('.message-body')||r).scrollIntoView({{block:'nearest'}});return {{ok:true}};}})()")).await?;
@@ -197,6 +197,16 @@ pub(super) async fn capture(
     let before = compose::snapshot(&state.peek(), model);
     let mut proof = proof.clone();
     proof["journal"] = compose::journal_snapshot(state).await?;
+    let generation = before["comments"]["generation"]
+        .as_u64()
+        .ok_or("Comments generation missing")?;
+    let pill_disabled = !crate::slack_lists::comments::reaction_actions::available(
+        &state.peek(),
+        generation,
+        e.ts,
+        "wave",
+    );
+    proof["reactionAvailable"] = json!(!pill_disabled);
     let body = &geometry["editBody"];
     if !ready(&before, &e)
         || before["noSession"] != true
@@ -211,9 +221,19 @@ pub(super) async fn capture(
         || (e.text != "First page comment."
             && e.text != "Final review \u{4e2d}\u{1f642}"
             && body["visible"] != true)
-        || body["pills"]
-            .as_array()
-            .is_none_or(|p| p.iter().any(|p| p["tag"] != "SPAN" || p["visible"] != true))
+        || body["pills"].as_array().is_none_or(|p| {
+            p.iter().any(|p| {
+                p["tag"] != "BUTTON"
+                    || p["type"] != "button"
+                    || p["visible"] != true
+                    || p["hit"] != true
+                    || p["disabled"] != pill_disabled
+                    || p["ariaDisabled"] != pill_disabled.to_string()
+                    || p["pressed"] != "false"
+                    || p["own"] != false
+                    || p["count"] != e.wave
+            })
+        })
     {
         return Err(format!(
             "Edit stage {name} lost exact draft/body/readonly geometry"

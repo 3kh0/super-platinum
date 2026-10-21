@@ -55,6 +55,8 @@ pub(crate) struct Tracker {
     serial: u64,
     scope: Option<(u64, Weak<Transport>)>,
     latest_events: HashMap<(String, String), u64>,
+    local_scope: Option<(u64, Option<Weak<Transport>>)>,
+    local_events: HashMap<(String, String), u64>,
     pending: HashMap<(String, String), Pending>,
 }
 pub(crate) struct Read {
@@ -89,6 +91,14 @@ pub(crate) fn snapshot_revision(shell: &ShellState) -> u64 {
 }
 pub(crate) fn changed_since(shell: &ShellState, team: &str, id: &str, revision: u64) -> bool {
     let tracker = &shell.file_events;
+    if local_current(shell)
+        && tracker
+            .local_events
+            .get(&(team.into(), id.into()))
+            .is_some_and(|latest| *latest > revision)
+    {
+        return true;
+    }
     tracker.scope.as_ref().is_some_and(|(epoch, transport)| {
         *epoch == shell.core.account_epoch
             && transport.upgrade().is_some_and(|old| {
@@ -104,6 +114,23 @@ pub(crate) fn changed_since(shell: &ShellState, team: &str, id: &str, revision: 
         .is_some_and(|latest| *latest > revision)
 }
 
+fn local_current(shell: &ShellState) -> bool {
+    shell
+        .file_events
+        .local_scope
+        .as_ref()
+        .is_some_and(|(epoch, transport)| {
+            *epoch == shell.core.account_epoch
+                && match (transport, &shell.core.transport) {
+                    (None, None) => true,
+                    (Some(old), Some(current)) => {
+                        old.upgrade().is_some_and(|old| Arc::ptr_eq(&old, current))
+                    }
+                    _ => false,
+                }
+        })
+}
+
 /// A local verification may itself have begun before a newer remote event.
 /// Keep pending work, but require a fresh read after this local snapshot lands.
 pub(crate) fn invalidate(shell: &mut ShellState, team: &str, id: &str) {
@@ -111,9 +138,22 @@ pub(crate) fn invalidate(shell: &mut ShellState, team: &str, id: &str) {
     crate::profile_edit::sections::rich::search::file_source::invalidate(shell, team, id);
     // Local confirmed metadata also retires content reads begun before it.
     crate::file_preview::refresh::changed(shell, team, id);
+    let local_current = local_current(shell);
     let tracker = &mut shell.file_events;
+    if !local_current {
+        tracker.local_events.clear();
+        tracker.local_scope = Some((
+            shell.core.account_epoch,
+            shell.core.transport.as_ref().map(Arc::downgrade),
+        ));
+    }
+    // Confirmed local changes also retire observers when no realtime worker
+    // exists. Keep this receipt separate from the remote worker's coalescing.
+    tracker.serial = tracker.serial.wrapping_add(1);
+    tracker
+        .local_events
+        .insert((team.into(), id.into()), tracker.serial);
     if let Some(pending) = tracker.pending.get_mut(&(team.into(), id.into())) {
-        tracker.serial = tracker.serial.wrapping_add(1);
         pending.revision = tracker.serial;
     }
 }

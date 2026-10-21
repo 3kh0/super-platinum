@@ -76,6 +76,25 @@ fn actual_self_source_restricted_gate_and_explicit_unified_default() {
         assert!(selected(&subset(&store, &native), OTHER).is_err());
     }
 }
+
+#[test]
+fn ultra_restricted_alone_preserves_group_gate_and_hidden_active_group_is_allowed() {
+    let (mut store, mut native) = seeded(false);
+    adopt(
+        &mut store,
+        &mut native,
+        vec![json!({"id":SELF,"profile":{},"is_restricted":false,"is_ultra_restricted":true})],
+    );
+    let policy = selected(&subset(&store, &native), SELF).unwrap();
+    assert!(policy.enabled());
+    let raw = json!({"id":"SLISTGRP1","handle":"hidden-team","is_hidden":true,"date_delete":0});
+    let active = groups::Snapshot::capture(raw.clone(), raw.clone()).unwrap();
+    assert!(policy.allows(&active, None).unwrap());
+    let mut deleted = raw;
+    deleted["date_delete"] = json!(101);
+    let deleted = groups::Snapshot::capture(deleted.clone(), deleted).unwrap();
+    assert!(!policy.allows(&deleted, None).unwrap());
+}
 #[test]
 fn native_only_self_never_becomes_canonical_permission() {
     let native = HashMap::from([(

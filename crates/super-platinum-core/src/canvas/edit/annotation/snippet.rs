@@ -24,7 +24,13 @@ pub(super) fn capture(
     _workspace: &str,
 ) -> Result<Value, Error> {
     let draft = super::super::text::canonical_draft(section)?;
-    capture_nodes(section, control, quip_user, slack_user, nodes(&draft)?)
+    capture_nodes(
+        section,
+        control,
+        quip_user,
+        slack_user,
+        section_nodes(section, &draft)?,
+    )
 }
 
 pub(super) fn capture_styled(
@@ -273,6 +279,7 @@ fn nodes(draft: &super::super::text::TextDraft) -> Result<Vec<Node>, Error> {
             (run.style.code, "code"),
             (run.style.strike, "del"),
             (run.style.italic, "i"),
+            (run.style.underline, "u"),
             (run.style.bold, "b"),
         ] {
             if enabled {
@@ -286,6 +293,19 @@ fn nodes(draft: &super::super::text::TextDraft) -> Result<Vec<Node>, Error> {
     // is absent. This is source snippet presentation, not canonical write data.
     nodes.push(Node::Element("br", vec![], None));
     Ok(nodes)
+}
+fn section_nodes(
+    section: &Section,
+    draft: &super::super::text::TextDraft,
+) -> Result<Vec<Node>, Error> {
+    if draft.runs.iter().any(|run| run.style.underline) {
+        // Preserve canonical placement inside/outside typed Slack anchors.
+        // A flattened TextStyle cannot supply that source distinction.
+        underline_shape(section, draft)?;
+        inline::body_nodes(section)
+    } else {
+        nodes(draft)
+    }
 }
 fn markdown(draft: &super::super::text::TextDraft) -> Result<String, Error> {
     markdown_nodes(nodes(draft)?)
@@ -360,6 +380,20 @@ fn rich_node(
                 } else {
                     parsed.as_str()
                 };
+                if let Some(runs) = link_runs(children) {
+                    for (text, inner) in runs {
+                        let mut element = json!({"type":"link","text":text,"url":url});
+                        let mut combined = style.clone();
+                        for name in inner {
+                            combined.insert(name.into(), json!(true));
+                        }
+                        if !combined.is_empty() {
+                            element["style"] = Value::Object(combined);
+                        }
+                        out.push(element);
+                    }
+                    return Ok(());
+                }
                 json!({"type":"link","text":label,"url":url})
             }
         }
@@ -367,6 +401,7 @@ fn rich_node(
             if let Some(name) = match *tag {
                 "b" => Some("bold"),
                 "i" => Some("italic"),
+                "u" => Some("underline"),
                 "del" => Some("strike"),
                 "code" => Some("code"),
                 _ => None,
@@ -387,6 +422,48 @@ fn rich_node(
     }
     out.push(value);
     Ok(())
+}
+
+// Retained styledTextRunsInAnchor applies only to ordinary links. Typed Slack
+// user/channel identities above retain inherited styles, not nested styles.
+fn link_runs(nodes: &[Node]) -> Option<Vec<(String, Vec<&'static str>)>> {
+    fn walk(
+        nodes: &[Node],
+        styles: &[&'static str],
+        out: &mut Vec<(String, Vec<&'static str>)>,
+    ) -> Option<()> {
+        for node in nodes {
+            match node {
+                Node::Text(text) => {
+                    if let Some((prior, _)) = out
+                        .last_mut()
+                        .filter(|(_, prior)| prior.as_slice() == styles)
+                    {
+                        prior.push_str(text);
+                    } else if !text.is_empty() {
+                        out.push((text.clone(), styles.to_vec()));
+                    }
+                }
+                Node::Element(tag, children, _) => {
+                    let name = match *tag {
+                        "b" => "bold",
+                        "i" => "italic",
+                        "u" => "underline",
+                        "del" => "strike",
+                        "code" => "code",
+                        _ => return None,
+                    };
+                    let mut nested = styles.to_vec();
+                    nested.push(name);
+                    walk(children, &nested, out)?;
+                }
+            }
+        }
+        Some(())
+    }
+    let mut result = Vec::new();
+    walk(nodes, &[], &mut result)?;
+    Some(result)
 }
 
 #[cfg(test)]
@@ -454,3 +531,6 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod underline_tests;

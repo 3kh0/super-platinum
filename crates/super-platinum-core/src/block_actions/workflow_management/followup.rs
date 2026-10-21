@@ -2,6 +2,7 @@
 //! transport is run here; unknown outcomes never authorize another stage.
 mod context;
 mod permissions;
+mod publication;
 use super::*;
 pub use permissions::{ConnectorApps, EditPermissions};
 

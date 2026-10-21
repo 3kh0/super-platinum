@@ -18,6 +18,7 @@ pub(in crate::app_home) fn capture_for(
             || (crate::fixture::is_fixture()
                 && !crate::app_home::about::management::activity::members::fixture::enabled(&s))
                 && !crate::profile_edit::sections::fixture::completion::enabled(&s)
+                && !crate::slack_lists::comments::fixture::completion::enabled(&s)
         {
             return Err(unavailable());
         }
@@ -156,6 +157,15 @@ fn refresh_for(
         };
         let result = if crate::profile_edit::sections::fixture::completion::enabled(&state.peek()) {
             crate::profile_edit::sections::fixture::completion::ranking_request(
+                &state.peek(),
+                &request,
+            )
+            .map(|(raw, keys)| match kind {
+                Kind::Model => Reply::Value(raw),
+                Kind::Offline => Reply::Offline(raw, keys),
+            })
+        } else if crate::slack_lists::comments::fixture::completion::enabled(&state.peek()) {
+            crate::slack_lists::comments::fixture::completion::ranking_request(
                 &state.peek(),
                 &request,
             )

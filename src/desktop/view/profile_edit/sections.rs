@@ -95,21 +95,21 @@ fn rich_pane(
     if labels.is_none() {
         let retry_id = id.clone();
         let recovering = controller::rich::recovering(&state.peek(), visit, serial);
-        let status = if controller::rich::has_files(&blocks) {
-            if recovering {
-                "Loading document titles. Your description is unchanged."
+        let group_rate = controller::rich::group_rate(&state.peek(), visit, serial, &id, key);
+        let group_blocked = group_rate.is_some_and(|status| status.blocked);
+        let status = if !recovering && group_rate.is_some() {
+            if group_blocked {
+                crate::usergroups::recovery::LIMITED
             } else {
-                "Document titles are unavailable or changed while opening. Your description is unchanged. Retry to load document details."
+                crate::usergroups::recovery::READY
             }
-        } else if recovering {
-            "Loading mention names. Your description is unchanged."
         } else {
-            "Mention names are unavailable or changed while opening. Your description is unchanged. Retry to load member, channel, and group details."
+            controller::rich::reference_guidance(&blocks, recovering)
         };
         return rsx! {
             div{id:"profile-section-rich-pane","data-rich-visit":key,
                 p{id:"profile-section-rich-status",role:"status","{status}"}
-                button{r#type:"button",disabled:locked||recovering,onclick:move |_|{controller::rich::retry(state,visit,serial,&retry_id,key);},"Retry description"}
+                button{r#type:"button",disabled:locked||recovering||group_blocked,onclick:move |_|{controller::rich::retry(state,visit,serial,&retry_id,key);},"Retry description"}
                 button{r#type:"button",disabled:locked,onclick:move |_|{controller::rich::cancel(state,visit,serial);rich.set(None);},"Cancel description edit"}
             }
         };

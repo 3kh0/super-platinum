@@ -22,6 +22,15 @@ impl Transport {
         if !allowed(&req) {
             return Err(Error::Api("invalid_profile_member_search_request".into()));
         }
+        self.execute_profile_member_read_admitted(req, current)
+            .await
+    }
+    /// Shared only after a closed caller-specific validator admits the read.
+    pub(super) async fn execute_profile_member_read_admitted(
+        &self,
+        req: PreparedRequest,
+        current: impl Fn() -> bool,
+    ) -> Result<ProfileMemberSearchResponse, Error> {
         let mut attempt = 0;
         let mut last_failure = None;
         loop {

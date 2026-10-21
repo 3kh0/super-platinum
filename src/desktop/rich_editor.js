@@ -8,16 +8,30 @@
   const snapshots = new WeakMap();
   const clone = value => JSON.parse(JSON.stringify(value));
   const knownStyles = ['bold', 'italic', 'strike', 'code'];
+  const styleKeys = model => model.allowUnderline ? [...knownStyles, 'underline'] : knownStyles;
+  const isUnderlined = element => element.tagName === 'U'
+    || (element.style.textDecorationLine || element.style.textDecoration || '').split(/\s+/).includes('underline');
+  function checkUnderline(blocks, allowUnderline) {
+    for (const value of blocks) {
+      // Only editable runs are interpreted. Opaque token metadata stays opaque.
+      if (['text', 'link'].includes(value.type) && Object.hasOwn(value.style || {}, 'underline')
+        && (!allowUnderline || typeof value.style.underline !== 'boolean'))
+        throw new Error('Underline is unavailable for this editor or has an unsupported value.');
+      if (Array.isArray(value.elements)) checkUnderline(value.elements, allowUnderline);
+    }
+  }
   const blockTags = new Set(['DIV', 'P', 'BLOCKQUOTE', 'PRE', 'UL', 'OL']);
-  function mount(id, blocks, labels = {}, autofocus = true, expectedGeneration = null) {
+  function mount(id, blocks, labels = {}, autofocus = true, expectedGeneration = null, allowUnderline = false) {
     const root = document.getElementById(id);
     // Delayed native evals may arrive after a different cell reuses this ID.
     // Check ownership before the WeakMap can claim the newer DOM element.
     if (expectedGeneration !== null && root?.closest('[data-editor-generation]')?.dataset.editorGeneration !== String(expectedGeneration)) return;
     if (!root || editors.has(root)) return;
+    allowUnderline = allowUnderline === true;
+    checkUnderline(blocks, allowUnderline);
     const originals = new WeakMap();
     const initial = clone(blocks);
-    const model = { originals, tokenLabels: new WeakMap(), completionAtoms: new WeakSet(), initial, dirty: false, revision: 0, composing: false, expectedGeneration, previousFocus: document.activeElement };
+    const model = { allowUnderline, originals, tokenLabels: new WeakMap(), completionAtoms: new WeakSet(), initial, dirty: false, revision: 0, composing: false, expectedGeneration, previousFocus: document.activeElement };
     editors.set(root, model);
     const remember = (element, value) => { originals.set(element, clone(value)); return element; };
     function inline(value) {
@@ -25,7 +39,7 @@
         const element = remember(document.createElement(value.type === 'link' ? 'a' : 'span'), value);
         if (value.type === 'link' && /^(https?:|mailto:|slack:)/i.test(value.url || '')) element.href = value.url;
         let leaf = element;
-        for (const [flag, tag] of [['bold', 'strong'], ['italic', 'em'], ['strike', 's'], ['code', 'code']]) {
+        for (const [flag, tag] of [['bold', 'strong'], ['italic', 'em'], ['strike', 's'], ['code', 'code'], ...(allowUnderline ? [['underline', 'u']] : [])]) {
           if (value.style?.[flag]) { const child = document.createElement(tag === 'code' ? 'font' : tag); if (tag === 'code') child.setAttribute('face','monospace'); leaf.append(child); leaf = child; }
         }
         leaf.textContent = value.text ?? value.url ?? '';
@@ -36,7 +50,7 @@
       element.className = 'rich-editor-token';
       // Mounted opaque tokens need the same visible formatting as newly
       // completed ones. Their original wire value remains in the WeakMap.
-      applyRunStyle(element, value.style || {});
+      applyRunStyle(element, value.style || {}, allowUnderline);
       const exactLabel = labels[JSON.stringify(value)];
       element.textContent = typeof exactLabel === 'string' ? exactLabel : labels[value.user_id || value.channel_id || value.usergroup_id || value.name]
         || value.fallback || value.text || (value.type === 'emoji' ? `:${value.name}:`
@@ -78,6 +92,7 @@
     model.replace = (blocks, nextLabels) => {
       const oldLabels = labels;
       try {
+        checkUnderline(blocks, allowUnderline);
         const initial = clone(blocks);
         labels = nextLabels;
         const nodes = initial.map(block);
@@ -103,6 +118,13 @@
     });
     root.addEventListener('compositionstart', () => {model.composing=true;changed();});
     root.addEventListener('compositionend', () => {model.composing=false;changed();});
+    // A disabled capability never becomes a silently flattened browser mark.
+    root.addEventListener('beforeinput', event => {
+      if (!allowUnderline && event.inputType === 'formatUnderline') event.preventDefault();
+    });
+    root.addEventListener('keydown', event => {
+      if (!allowUnderline && (event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 'u') event.preventDefault();
+    });
     root.addEventListener('paste', event => {
       event.preventDefault();
       document.execCommand('insertText', false, event.clipboardData?.getData('text/plain') || '');
@@ -144,12 +166,15 @@
         rejected.recovered=true;rejected.recoveredHTML=root.innerHTML;return value;
       }finally{model.rejectedCompletion=rejected;}
     }
+    if (!model.allowUnderline && [...root.querySelectorAll('*')].some(isUnderlined))
+      throw new Error('Underline is unavailable for this editor. Undo the formatting before saving.');
     if (!model.dirty) return clone(model.initial);
     const originals = model.originals;
     function styles(element, inherited) {
       const style = {...inherited};
       if (['B', 'STRONG'].includes(element.tagName) || Number(element.style.fontWeight) >= 600 || element.style.fontWeight === 'bold') style.bold = true;
       if (['I', 'EM'].includes(element.tagName) || element.style.fontStyle === 'italic') style.italic = true;
+      if (model.allowUnderline && isUnderlined(element)) style.underline = true;
       if (['S', 'STRIKE', 'DEL'].includes(element.tagName) || element.style.textDecoration.includes('line-through')) style.strike = true;
       if (element.tagName === 'CODE' || element.getAttribute('face') === 'monospace' || element.style.fontFamily === 'monospace') style.code = true;
       if (element.getAttribute('face') === 'inherit' || element.style.fontFamily === 'inherit') delete style.code;
@@ -165,7 +190,7 @@
           const value = {...source, ...originals.get(node), type: 'text', text: node.textContent};
           delete value.url;
           const retainedStyle = {...originals.get(node)?.style};
-          for (const key of knownStyles) delete retainedStyle[key];
+          for (const key of styleKeys(model)) delete retainedStyle[key];
           const textStyle = {...retainedStyle,...inherited};
           if (Object.keys(textStyle).length) value.style = textStyle; else delete value.style;
           result.push(value); continue;
@@ -178,7 +203,7 @@
         }
         if (node.tagName === 'BR') { result.push({type: 'text', text: '\n', ...(Object.keys(inherited).length ? {style: {...inherited}} : {})}); continue; }
         const unknownStyles = {...original?.style};
-        for (const key of knownStyles) delete unknownStyles[key];
+        for (const key of styleKeys(model)) delete unknownStyles[key];
         const style = styles(node, {...inherited, ...unknownStyles});
         if (node.tagName === 'A') {
           // One browser anchor may contain several independently styled/opaque
@@ -348,11 +373,12 @@
   }
   function completionStyle(node,root,model) {
     const chain=[];for(let e=node.parentElement;e&&e!==root;e=e.parentElement)chain.unshift(e);
-    let style={...model.originals.get(node)?.style};for(const flag of knownStyles)delete style[flag];
+    let style={...model.originals.get(node)?.style};for(const flag of styleKeys(model))delete style[flag];
     for(const e of chain){
-      const retained={...model.originals.get(e)?.style};for(const flag of knownStyles)delete retained[flag];Object.assign(style,retained);
+      const retained={...model.originals.get(e)?.style};for(const flag of styleKeys(model))delete retained[flag];Object.assign(style,retained);
       if(['B','STRONG'].includes(e.tagName)||Number(e.style.fontWeight)>=600||e.style.fontWeight==='bold')style.bold=true;
       if(['I','EM'].includes(e.tagName)||e.style.fontStyle==='italic')style.italic=true;
+      if(model.allowUnderline&&isUnderlined(e))style.underline=true;
       if(['S','STRIKE','DEL'].includes(e.tagName)||e.style.textDecoration.includes('line-through'))style.strike=true;
       if(e.tagName==='CODE'||e.getAttribute('face')==='monospace'||e.style.fontFamily==='monospace')style.code=true;
       if(e.getAttribute('face')==='inherit'||e.style.fontFamily==='inherit')delete style.code;
@@ -404,11 +430,11 @@
       selection.removeAllRanges();selection.addRange(range);return;
     }
   }
-  function applyRunStyle(element,style) {
+  function applyRunStyle(element,style,allowUnderline=false) {
     element.style.fontWeight=style.bold?'bold':'normal';element.style.fontStyle=style.italic?'italic':'normal';
-    element.style.textDecoration=style.strike?'line-through':'none';element.style.fontFamily=style.code?'monospace':'inherit';
+    element.style.textDecoration=[style.strike?'line-through':'',allowUnderline&&style.underline?'underline':''].filter(Boolean).join(' ')||'none';element.style.fontFamily=style.code?'monospace':'inherit';
   }
-  function completionRun(value,label,style,atomic,marker,index) {
+  function completionRun(value,label,style,atomic,marker,index,allowUnderline=false) {
     // A generated inert inline tag avoids Chromium's special removal of span
     // wrappers during native style normalization. It has no custom-element
     // implementation and carries no raw token data; admission still checks it.
@@ -420,7 +446,7 @@
     // no node move or second editing command is needed, including on undo/redo.
     if(value.type==='link')element.setAttribute('href',value.url);
     element.textContent=label;element.setAttribute('data-rich-completion-insert',marker+'-'+index);
-    applyRunStyle(element,style);
+    applyRunStyle(element,style,allowUnderline);
     return {value,label,tag:element.tagName,atomic,html:element.outerHTML,node:null};
   }
   // Replace from the same paragraph's start: native MoveParagraph otherwise
@@ -443,7 +469,7 @@
         const original=model.originals.get(source);
         if(!original)return document.createTextNode(text);
         const element=document.createElement('sp-rich-run'),value={...inheritedSource,...original,type:'text',text};delete value.url;
-        if(value.style){value.style={...value.style};for(const key of knownStyles)delete value.style[key];if(!Object.keys(value.style).length)delete value.style;}
+        if(value.style){value.style={...value.style};for(const key of styleKeys(model))delete value.style[key];if(!Object.keys(value.style).length)delete value.style;}
         element.textContent=text;const run=retain(element,value,false);run.label=text;return element;
       }
       if(source.nodeType!==Node.ELEMENT_NODE)throw new Error('Unsupported completion prefix node.');
@@ -486,6 +512,7 @@
       ||typeof label!=='string'||label.length>1048576||!['',' '].includes(suffix)
       ||proof.html!==node.innerHTML||proof.blocks!==JSON.stringify(read(node)))return null;
     const token=completionValue(value);if(!token)return null;
+    try{checkUnderline([token],model.allowUnderline);}catch{return null;}
     let remaining=proof.before.length-replaceLength,start=null,offset=0;
     for(const part of proof.parts){if(remaining<part.end){start=part.node;offset=remaining;break;}remaining-=part.end;}
     if(!start||!node.contains(start))return null;
@@ -510,11 +537,11 @@
       const anchor=formatNode.parentElement.closest('a');
       let inline=anchor?{...model.originals.get(anchor),type:'link',url:anchor.getAttribute('href')||'',text:text+suffix}:{type:'text',text:text+suffix};
       if(Object.keys(style).length)inline.style=style;else delete inline.style;
-      runs.push(completionRun(inline,text+suffix,style,false,marker,runs.length));
+      runs.push(completionRun(inline,text+suffix,style,false,marker,runs.length,model.allowUnderline));
     }else{
       if(!label)return null;
-      runs.push(completionRun(token,label,style,true,marker,runs.length));
-      if(suffix)runs.push(completionRun({type:'text',text:suffix,...(Object.keys(style).length?{style}:{})},suffix,style,false,marker,runs.length));
+      runs.push(completionRun(token,label,style,true,marker,runs.length,model.allowUnderline));
+      if(suffix)runs.push(completionRun({type:'text',text:suffix,...(Object.keys(style).length?{style}:{})},suffix,style,false,marker,runs.length,model.allowUnderline));
     }
     range.setStart(proof.scope,0);
     model.completionInsertion={marker,runs,scope:proof.scope,accepted:false};
@@ -701,10 +728,12 @@
   function format(id, command) {
     const root = document.getElementById(id);
     if(command==='inlineCode')return root&&editors.has(root)?inlineCode(root,editors.get(root)):false;
+    const model = root && editors.get(root);
+    if(command==='underline'&&(!model?.allowUnderline||!completionCurrent(root,model)))return false;
     const selection = window.getSelection();
     if (!root || !selection?.rangeCount || !root.contains(selection.anchorNode) || !root.contains(selection.focusNode)) return;
     root.focus();
-    if (['bold','italic','strikeThrough','insertUnorderedList','insertOrderedList'].includes(command)) document.execCommand(command);
+    if (['bold','italic','strikeThrough','insertUnorderedList','insertOrderedList',...(model?.allowUnderline?['underline']:[])].includes(command)) return document.execCommand(command);
   }
   // A committing caller may seal this exact node after reading. Ordinary read
   // keeps its historical behavior; committing callers refuse unfinished input.

@@ -58,6 +58,12 @@ impl ChannelMapOrder {
     pub(super) fn matches(&self, carrier: &Value) -> bool {
         self.carrier.as_ref() == carrier
     }
+    pub(super) fn info_keys(&self) -> Option<&[String]> {
+        match self.root.field("file").field("channel_map") {
+            Node::Keys(keys) => Some(keys),
+            _ => None,
+        }
+    }
     pub(super) fn keys(&self, root: usize, embedded: Option<usize>) -> Option<&[String]> {
         let row = self.root.field("files").at(root);
         let row = embedded.map_or(row, |index| {
@@ -87,6 +93,7 @@ impl Select {
     fn child(self, key: &str) -> Option<Self> {
         match (self, key) {
             (Self::Envelope, "files") => Some(Self::Files),
+            (Self::Envelope, "file") => Some(Self::Root),
             (Self::Root | Self::Embedded, "channel_map") => Some(Self::Keys),
             (Self::Root, "canvas_metadata") => Some(Self::Metadata),
             (Self::Metadata, "items") => Some(Self::Items),

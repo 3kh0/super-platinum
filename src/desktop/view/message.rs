@@ -13,8 +13,8 @@ use dioxus::prelude::*;
 mod delivery;
 
 use super::rich::{
-    attachment_embeds, message_plain_text, pending_attachment_strip, reactions_row, reply_bar,
-    rich_node, rich_node_for_message,
+    attachment_embeds, attachment_embeds_for_list, message_plain_text, pending_attachment_strip,
+    reactions_row, reply_bar, rich_node, rich_node_for_list, rich_node_for_message,
 };
 use crate::state::{MessageVm, RichNode, ShellState};
 
@@ -29,11 +29,21 @@ pub(crate) enum RowSurface {
     Thread,
     /// An independently owned thread reader has no timeline mutation authority.
     ReadOnlyThread,
+    /// List comments own only their loaded reaction toggle, never timeline actions.
+    ListComments {
+        generation: u64,
+    },
 }
 
 impl RowSurface {
     fn in_thread(self) -> bool {
-        matches!(self, Self::Thread | Self::ReadOnlyThread)
+        matches!(
+            self,
+            Self::Thread | Self::ReadOnlyThread | Self::ListComments { .. }
+        )
+    }
+    fn read_only_actions(self) -> bool {
+        matches!(self, Self::ReadOnlyThread | Self::ListComments { .. })
     }
 }
 
@@ -48,7 +58,7 @@ fn message_tools(
     channel_id: &str,
     surface: RowSurface,
 ) -> Element {
-    if surface == RowSurface::ReadOnlyThread {
+    if surface.read_only_actions() {
         return rsx! {};
     }
     let shortcut_source = {
@@ -280,13 +290,19 @@ pub(crate) fn message_row(
 ) -> Element {
     // Text-only rows never need canonical bag scans or action revision clones.
     // This allocation-free walk short-circuits at the first supported app control or identified file.
-    let read_only = surface == RowSurface::ReadOnlyThread;
+    let read_only = surface.read_only_actions();
     let action_source = action_bag
         .filter(|_| !read_only)
         .filter(|_| !message.pending && body_has_owned_control(&message.body))
         .and_then(|bag| {
             crate::message_buttons::source::Source::capture(snapshot, message, channel_id, bag).ok()
         });
+    let list_source = match surface {
+        RowSurface::ListComments { generation } => Some(super::rich::ListFileSource::capture(
+            snapshot, generation, message,
+        )),
+        _ => None,
+    };
     let in_thread = surface.in_thread();
     let compact = message.compact && !message.pending;
     let class = if in_thread {
@@ -374,27 +390,31 @@ pub(crate) fn message_row(
                 } else {
                     div { class: if message.is_system { "message-body message-system" } else { "message-body" },
                         for node in &message.body {
-                            {if let Some(source)=action_source.as_ref() {
+                            {if let Some(source)=list_source.as_ref() {
+                                rich_node_for_list(node,snapshot.media_epoch,state,source)
+                            } else if let Some(source)=action_source.as_ref() {
                                 rich_node_for_message(node,snapshot.media_epoch,state,source)
                             } else {rich_node(node,snapshot.media_epoch,state)}}
                         }
                         if compact && message.edited {span {class:"message-edited"," (edited)"}}
                     }
                     if !message.attachments.is_empty() {
-                        {attachment_embeds(state, snapshot.media_epoch, &message.attachments)}
+                        {if let Some(source)=list_source.as_ref() {
+                            attachment_embeds_for_list(state, snapshot.media_epoch, &message.attachments,source)
+                        } else {attachment_embeds(state, snapshot.media_epoch, &message.attachments)}}
                     }
                     if let Some(attachments) = (!read_only).then(|| snapshot.pending_attachments_for_message(&message.id)).flatten() {
                         {pending_attachment_strip(attachments, snapshot.upload_ui_epoch)}
                         {delivery::row(state,snapshot,&message.id)}
                     }
                 }
-                if !message.reactions.is_empty() {
+                if !message.reactions.is_empty() || matches!(surface, RowSurface::ListComments { .. }) {
                     div { class: "message-actions",
                         ondoubleclick: |event| event.stop_propagation(),
-                        {if read_only {
-                            super::rich::reactions_read_only(state, &snapshot.media, snapshot.media_epoch, message)
-                        } else {
-                            reactions_row(state, &snapshot.media, snapshot.media_epoch, channel_id, message)
+                        {match surface {
+                            RowSurface::ListComments { generation } => super::rich::reactions_list_comments(state, snapshot, generation, message),
+                            RowSurface::ReadOnlyThread => super::rich::reactions_read_only(state, &snapshot.media, snapshot.media_epoch, message),
+                            _ => reactions_row(state, &snapshot.media, snapshot.media_epoch, channel_id, message),
                         }}
                     }
                 }
@@ -521,6 +541,21 @@ mod button_presence_tests {
     use super_platinum_core::block_actions::{
         BlockConfirmationState, BlockElementMetadata, BlockElementSource,
     };
+
+    #[test]
+    fn list_comments_keep_thread_layout_without_timeline_action_authority() {
+        for surface in [
+            RowSurface::ReadOnlyThread,
+            RowSurface::ListComments { generation: 7 },
+        ] {
+            assert!(surface.in_thread());
+            assert!(surface.read_only_actions());
+        }
+        assert!(RowSurface::Thread.in_thread());
+        assert!(!RowSurface::Thread.read_only_actions());
+        assert!(!RowSurface::Timeline.in_thread());
+        assert!(!RowSurface::Timeline.read_only_actions());
+    }
 
     fn button(source: BlockElementSource) -> RichNode {
         RichNode::Button {

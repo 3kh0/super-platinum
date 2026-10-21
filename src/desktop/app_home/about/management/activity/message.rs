@@ -3,7 +3,8 @@ use super::{members, presentation};
 use crate::{icons::Icon, state::ShellState, view::media_image::MediaImage};
 use dioxus::prelude::*;
 use serde_json::Value;
-use super_platinum_core::{MediaAssetId, state::EmojiSource};
+use super_platinum_core::MediaAssetId;
+pub(super) mod files;
 pub(super) mod navigation;
 #[cfg(test)]
 mod tests;
@@ -22,6 +23,13 @@ pub(super) enum Inline {
         id: String,
         label: String,
         icon: Option<Icon>,
+        part: usize,
+    },
+    File {
+        team: String,
+        id: String,
+        kind: files::Kind,
+        label: Option<files::Label>,
         part: usize,
     },
     Emoji {
@@ -74,14 +82,19 @@ pub(super) fn project(s: &ShellState, team: &str, visit: u64, raw: &Value) -> Ve
                 let name = channel
                     .and_then(|c| c.name.as_deref())
                     .filter(|name| !name.is_empty());
-                let icon = channel
-                    .filter(|c| ordinary_public_channel(c))
-                    .map(|_| Icon::Tag);
-                let label = match (name, icon) {
-                    (Some(name), Some(_)) => name.to_owned(),
-                    (Some(name), None) => format!("#{name}"),
-                    _ => "Channel unavailable".into(),
-                };
+                let (label, icon) = super::channel_labels::presentation(s, visit, &id)
+                    .unwrap_or_else(|| {
+                        let icon = channel.and_then(local_channel_icon);
+                        let label = match (name, icon) {
+                            (Some(name), Some(Icon::Archive | Icon::ArchiveFilled)) => {
+                                format!("{name} (archived)")
+                            }
+                            (Some(name), Some(_)) => name.to_owned(),
+                            (Some(name), None) => format!("#{name}"),
+                            _ => "Channel unavailable".into(),
+                        };
+                        (label, icon)
+                    });
                 nodes.push(Inline::Channel {
                     id,
                     label,
@@ -89,8 +102,26 @@ pub(super) fn project(s: &ShellState, team: &str, visit: u64, raw: &Value) -> Ve
                     part: ordinal,
                 });
             }
-            presentation::Part::Canvas(_) => nodes.push(Inline::Text("Canvas unavailable".into())),
-            presentation::Part::List(_) => nodes.push(Inline::Text("List unavailable".into())),
+            presentation::Part::Canvas(id) => {
+                let label = files::project(s, team, &id, files::Kind::Canvas);
+                nodes.push(Inline::File {
+                    team: team.into(),
+                    id,
+                    kind: files::Kind::Canvas,
+                    label,
+                    part: ordinal,
+                });
+            }
+            presentation::Part::List(id) => {
+                let label = files::project(s, team, &id, files::Kind::List);
+                nodes.push(Inline::File {
+                    team: team.into(),
+                    id,
+                    kind: files::Kind::List,
+                    label,
+                    part: ordinal,
+                });
+            }
         }
     }
     nodes
@@ -125,23 +156,20 @@ fn user_label(
         .unwrap_or_else(|_| unavailable())
 }
 
-/// EXeY/OK9l supply a separate icon and disable dfPN's public text prefix.
-/// Keep special, shared and archived naming on the existing fallback until
-/// their additional source facts are integrated. Material Tag is our native icon.
-fn ordinary_public_channel(c: &super_platinum_core::slack::models::Channel) -> bool {
-    if !c.is_channel
-        || c.is_group
+/// EXeY/OK9l disable the text prefix; BWO1 fills private icons and J+l2
+/// gives archived precedence over private. Frozen grace, shared and special
+/// channel policies remain outside this local metadata projection.
+fn local_channel_icon(c: &super_platinum_core::slack::models::Channel) -> Option<Icon> {
+    if !(c.is_channel || c.is_private || c.is_group)
         || c.is_im
         || c.is_mpim
-        || c.is_private
-        || c.is_archived
         || c.is_ext_shared
         || !c.connected_teams.is_empty()
         || c.name
             .as_deref()
             .is_none_or(|n| n.is_empty() || n.starts_with("mc:"))
     {
-        return false;
+        return None;
     }
     for key in [
         "is_file",
@@ -149,17 +177,18 @@ fn ordinary_public_channel(c: &super_platinum_core::slack::models::Channel) -> b
         "isNonExistent",
         "is_shared",
         "is_org_shared",
+        "is_frozen",
     ] {
         if c.extra
             .get(key)
             .is_some_and(|v| !matches!(v, Value::Null | Value::Bool(false)))
         {
-            return false;
+            return None;
         }
     }
     let properties = c.extra.get("properties").filter(|v| !v.is_null());
     if properties.is_some_and(|v| !v.is_object()) {
-        return false;
+        return None;
     }
     for (group, field) in [
         ("huddles", "is_huddle_channel"),
@@ -174,41 +203,23 @@ fn ordinary_public_channel(c: &super_platinum_core::slack::models::Channel) -> b
                 !matches!(v, Value::Null | Value::Bool(false)) && v.as_str() != Some("")
             })
         {
-            return false;
+            return None;
         }
     }
-    true
+    Some(match (c.is_archived, c.is_private || c.is_group) {
+        (true, true) => Icon::ArchiveFilled,
+        (true, false) => Icon::Archive,
+        (false, true) => Icon::LockFilled,
+        (false, false) => Icon::Tag,
+    })
 }
 
 fn single(s: &ShellState, team: &str, raw: &str, tooltip: bool) -> Inline {
-    // The single-component lookup lowercases and strips one boundary colon;
-    // it does not trim or tokenize. Preserve unsupported/tone-qualified values
-    // verbatim until exact catalog-variant/localization rendering is integrated.
-    let lowered = raw.to_lowercase();
-    let name = lowered.strip_prefix(':').unwrap_or(&lowered);
-    let name = name.strip_suffix(':').unwrap_or(name);
-    let fallback = || Inline::Text(raw.into());
-    if name.is_empty() || name.contains(':') {
-        return fallback();
-    }
-    // 5kVY resolves standard names before workspace custom names. The general
-    // Block Kit helper has a different precedence and cannot be used here.
-    let (text, image) = if super_platinum_core::state::is_standard_emoji(name) {
-        (super_platinum_core::state::emoji_glyph(name), None)
-    } else {
-        let Some(workspace) = s.core.workspaces.get(team) else {
-            return fallback();
-        };
-        match super_platinum_core::state::custom_emoji_source(&workspace.custom_emoji, name) {
-            Some(EmojiSource::Unicode(glyph)) => (glyph.into(), None),
-            Some(EmojiSource::Url(url)) => (raw.into(), Some(s.media.register_emoji(name, url))),
-            None => return fallback(),
+    match crate::emoji_text::single(s, team, raw, tooltip) {
+        crate::emoji_text::Part::Text(text) => Inline::Text(text),
+        crate::emoji_text::Part::Emoji { text, title, image } => {
+            Inline::Emoji { text, title, image }
         }
-    };
-    Inline::Emoji {
-        text,
-        title: tooltip.then(|| raw.to_owned()),
-        image,
     }
 }
 
@@ -246,6 +257,7 @@ pub(super) fn render(
                         None => content,
                     }
                 }
+                Inline::File{team,id,kind,label,part} => files::render(state,visit,location,*part,team,id.clone(),*kind,label.clone(),epoch),
                 Inline::Emoji {text, title, image} => {
                     let fallback = rsx! {span {class:"custom-emoji", title:title.clone(), "{text}"}};
                     match image.as_ref().filter(|id| state.read().media.is_ready(id)) {

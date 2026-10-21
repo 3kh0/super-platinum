@@ -1,3 +1,4 @@
+import {dateButton, dateWitnessSource} from './workflow_activity_date_fixture.mjs';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
@@ -29,15 +30,16 @@ function scene(filters = {}){
   const row=node('workflow-activity-run-EXECUTION',activity,'BUTTON');
   
   const input=node('workflow-activity-user-search',form,'INPUT');input.dataset.generation='5';input.setNative(expected.search);
-  const fields=Object.fromEntries(['status','from','to','limit','user'].map(k=>{const n=node('workflow-activity-'+k,form);n.setNative(expected.filters[k]);return[k,n];}));
+  const fields=Object.fromEntries(['status','limit','user'].map(k=>{const n=node('workflow-activity-'+k,form);n.setNative(expected.filters[k]);return[k,n];}));
+  const date=dateButton(expected.filters,node('workflow-activity-date-range',form,'BUTTON'));
   const dom={modal:null},sent=[],queue=[],receivers=[];
   const channel={send:v=>sent.push(v),recv:()=>queue.length?Promise.resolve(queue.shift()):new Promise(resolve=>receivers.push(resolve))};
   class MutationObserver{constructor(fn){this.fn=fn;this.active=false;observers.push(this);}observe(){this.active=true;}disconnect(){this.active=false;}}
   const realm=vm.createContext({Date,document:{documentElement:{},getElementById:id=>map.get(id),querySelector:()=>dom.modal},MutationObserver,
     requestAnimationFrame:fn=>{const id=++sequence;frames.set(id,fn);return id;},cancelAnimationFrame:id=>frames.delete(id),
     setTimeout:(fn,ms)=>{const id=++sequence;timers.set(id,{fn,ms});return id;},clearTimeout:id=>timers.delete(id)});
-  vm.runInContext(dateSource+"\n"+source,realm);let task;
-  const s={expected,root,activity,form,row,input,fields,dom,map,node,sent,channel,frames,timers,
+  vm.runInContext(dateWitnessSource+"\n"+dateSource+"\n"+source,realm);let task;
+  const s={expected,root,activity,form,row,input,fields,date,dom,map,node,sent,channel,frames,timers,
     start(){task=realm.workflowActivityExecution(expected,channel);return task;},
     command(value){if(receivers.length)receivers.shift()(value);else queue.push(value);},
     mutate(){for(const o of observers.filter(o=>o.active))o.fn([{type:"attributes",target:activity}],o);},
@@ -58,6 +60,12 @@ function scene(filters = {}){
     result:()=>task};return s;
 }
 async function refused(change){const s=scene();change(s);s.start();await flush();assert.equal(s.sent[0].ok,false);await s.cancel();return s;}
+for(const flag of ['calendarOpen','calendarDirty','calendarPending'])await test('original calendar '+flag+' refuses before admission',()=>refused(s=>{s.date.dataset[flag]='true';}));
+for(const change of [s=>{s.date.dataset.from='2026-01-01';},s=>{s.date.dataset.to='2026-02-01';},s=>{s.date.dataset.revision='999';},s=>{s.date.ariaLabel='Other';},s=>{s.date.disabled=true;}])await test('date trigger identity/committed mismatch refuses',()=>refused(change));
+await test('identical replacement date trigger cannot inherit original read custody',async()=>{const s=scene();await s.active();const replacement=dateButton(s.expected.filters,s.node(s.date.id,s.form,'BUTTON'));s.mutate();assert.equal((await s.lock()).ok,false);assert.equal(replacement.inert,false);await s.cancel();});
+await test('calendar opened and rolled back still retires original read epoch',async()=>{const s=scene();await s.active();s.date.dataset.calendarEpoch='2';s.date.dataset.calendarPending='false';s.mutate();assert.equal((await s.lock()).ok,false);await s.cancel();});
+await test('owned read busy accessibility transition does not retire original date witness',async()=>{const s=scene();await s.active();s.date.dataset.calendarReadBusy='true';s.date.ariaDisabled='true';s.mutate();assert.equal((await s.lock()).ok,true);await s.cancel();});
+await test('genuine filter panel may be hidden without inventing date inputs',async()=>{const s=scene();s.form.hidden=true;await s.active();assert.equal(s.map.has('workflow-activity-from'),false);assert.equal(s.map.has('workflow-activity-to'),false);await s.cancel();});
 await test('list-only capture activates the exact rendered detail and unlocks during IO',async()=>{const s=scene();assert.equal(s.map.has('workflow-activity-detail'),false);await s.active();assert.equal(s.root.inert,false);assert.equal(s.input.disabled,true);assert.equal(s.dom.focused,undefined);await s.cancel();});
 await test('MutationObserver record arrays after unlock revalidate custody without pretending user interaction',async()=>{
  const s=scene();await s.active();s.mutate();assert.equal((await s.lock()).ok,true);
@@ -74,8 +82,8 @@ await test('missing actual row times out without fabricating a node or focus',as
 await test('another list read cannot be mistaken for the accepted read retirement',()=>refused(s=>{s.activity.dataset.activityRead='99';}));
 await test('initial retired read cannot advance to a different read while waiting',async()=>{const s=scene();s.activity.dataset.activityRead='17';s.start();await flush();s.activity.dataset.activityRead='99';s.mutate();await flush();assert.equal(s.sent[0].ok,false);await s.cancel();});
 for(const key of ['visit','document','documentRevision','memberGeneration'])await test('initial '+key+' mismatch refuses without writes',()=>refused(s=>{s.expected[key]=99;}));
-for(const key of ['status','from','to','limit','user'])await test('initial native-ahead '+key+' refuses without input writes',()=>refused(s=>s.fields[key].setNative('newer')));
-await test('IME modal badInput and invalid calendar dates refuse',async()=>{for(const change of [s=>{s.root.__workflowManagement.composing=true;},s=>{s.dom.modal={};},s=>{s.input.validity.badInput=true;},s=>{s.expected.filters.from='2026-02-30';s.fields.from.setNative('2026-02-30');},s=>{s.fields.from.fieldsetDisabled=true;}])await refused(change);});
+for(const key of ['status','limit','user'])await test('initial native-ahead '+key+' refuses without input writes',()=>refused(s=>s.fields[key].setNative('newer')));
+await test('IME modal badInput and invalid calendar dates refuse',async()=>{for(const change of [s=>{s.root.__workflowManagement.composing=true;},s=>{s.dom.modal={};},s=>{s.input.validity.badInput=true;},s=>{s.expected.filters.from='2026-02-30';(s.date.dataset.from = '2026-02-30');},s=>{s.date.fieldsetDisabled=true;}])await refused(change);});
 await test('activation waits exact detail mount and owned read instead of trusting Rust preparation',async()=>{
  const s=scene();await s.captured();s.command({kind:'activate',serial:1,read:77,detail:'8'});await flush();assert.equal(s.sent.length,1);
  s.activity.dataset.activityRead='77';s.input.disabled=true;s.mutate();await flush();assert.equal(s.sent.length,1);

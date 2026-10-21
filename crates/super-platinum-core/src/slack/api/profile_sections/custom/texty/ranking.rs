@@ -1,7 +1,7 @@
-//! Channel-only Profile Texty policy over shared 4ucY/ukdy channel math.
+//! Channel-only Texty policies over shared 4ucY/ukdy channel math.
 //! Ejs0 and installed l24D channel features agree except the explicit missing
 //! offline-channel fallback below. No member/file/MPIM feature graph is imported.
-use super::matching::{Matched, ordinary_local};
+use super::matching::{Matched, ordinary_list_channel, ordinary_local};
 use crate::{
     block_actions::home::workflow::{directory_ranking as shared, directory_selectors},
     composer_emoji::{history::History, model::Model, ranking::SimilarityCache},
@@ -36,7 +36,11 @@ fn truth(v: &Value) -> bool {
         _ => true,
     }
 }
-fn observed_state(context: &Context<'_>, matched: &[Matched<'_>]) -> Result<Value, Error> {
+fn observed_state(
+    context: &Context<'_>,
+    matched: &[Matched<'_>],
+    eligible: fn(&Value) -> bool,
+) -> Result<Value, Error> {
     let state = context.state;
     if !context.now_ms.is_finite() {
         return Err(Error::InvalidClock);
@@ -67,7 +71,7 @@ fn observed_state(context: &Context<'_>, matched: &[Matched<'_>]) -> Result<Valu
         ));
     }
     for row in matched {
-        if !ordinary_local(row.raw()) {
+        if !eligible(row.raw()) {
             return Err(Error::InvalidInput);
         }
         let id = row.id();
@@ -100,7 +104,47 @@ pub fn rank_channels(
     collate: impl Fn(&str, &str) -> Result<Ordering, Error>,
     demote_passthrough_observed: bool,
 ) -> Result<Observation, Error> {
-    let state = observed_state(context, matched)?;
+    rank_channels_for(
+        query,
+        matched,
+        context,
+        cache,
+        collate,
+        demote_passthrough_observed,
+        ordinary_local,
+    )
+}
+/// Same Am1o Texty 75/model/25 policy for interactive ordinary List channels,
+/// including canonically observed another-team rows. This does not admit
+/// special channel names or weaken required ranking/renderer observations.
+pub fn rank_list_channels(
+    query: &str,
+    matched: &[Matched<'_>],
+    context: &Context<'_>,
+    cache: &mut SimilarityCache,
+    collate: impl Fn(&str, &str) -> Result<Ordering, Error>,
+    demote_passthrough_observed: bool,
+) -> Result<Observation, Error> {
+    rank_channels_for(
+        query,
+        matched,
+        context,
+        cache,
+        collate,
+        demote_passthrough_observed,
+        ordinary_list_channel,
+    )
+}
+fn rank_channels_for(
+    query: &str,
+    matched: &[Matched<'_>],
+    context: &Context<'_>,
+    cache: &mut SimilarityCache,
+    collate: impl Fn(&str, &str) -> Result<Ordering, Error>,
+    demote_passthrough_observed: bool,
+    eligible: fn(&Value) -> bool,
+) -> Result<Observation, Error> {
+    let state = observed_state(context, matched, eligible)?;
     let mut rows = Vec::new();
     for matched in matched {
         let scored = &matched.scored;

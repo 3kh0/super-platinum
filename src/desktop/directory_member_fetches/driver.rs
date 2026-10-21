@@ -25,7 +25,9 @@ impl Drop for Running {
 /// Closed fixture observation only: finished means the shared worker returned,
 /// not that a renderer elected/adopted its receipt. No source authority here.
 pub(crate) fn fixture_status(shell: &ShellState) -> Value {
-    if !crate::profile_edit::sections::fixture::member_recovery::enabled() {
+    if !crate::profile_edit::sections::fixture::member_recovery::enabled()
+        && !crate::profile_edit::sections::fixture::group_recovery::enabled()
+    {
         return Value::Null;
     }
     let activity = &shell.directory_member_fetches.activity;
@@ -49,8 +51,10 @@ impl Client {
             && !crate::profile_edit::sections::fixture::member_recovery::enabled()
         {
             let shell = state.peek();
-            if crate::profile_edit::sections::fixture::completion::files::enabled(&shell) {
-                // Mixed file reopening may need files.info while all USER rows
+            if crate::profile_edit::sections::fixture::completion::files::enabled(&shell)
+                || crate::profile_edit::sections::fixture::group_recovery::enabled()
+            {
+                // Mixed file/group reopening may need metadata while all USER rows
                 // are already settled. This grants no member dispatcher access:
                 // no subscription, slot, root task or network read is created.
                 settled_without_member_io(&shell, team, ids)?;

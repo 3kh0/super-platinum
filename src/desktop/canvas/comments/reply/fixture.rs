@@ -3,7 +3,12 @@
 use super::*;
 use serde_json::{Value, json};
 use std::sync::{Mutex, OnceLock};
-pub(super) const ACCOUNT: &str = "147b5480-9f1a-4443-89da-836472cbb209";
+mod attribution;
+mod destination;
+pub(super) mod late_capture;
+pub(in crate::canvas) use attribution::snapshot as attribution_snapshot;
+pub(in crate::canvas) use destination::DestinationWitness;
+pub(in crate::canvas) const ACCOUNT: &str = "147b5480-9f1a-4443-89da-836472cbb209";
 pub(super) const TS: &str = "1719800000.000100";
 #[derive(Default)]
 struct Record {
@@ -31,7 +36,11 @@ pub(in crate::canvas) fn rich_requested() -> bool {
         )
 }
 pub(in crate::canvas) fn requested() -> bool {
-    plain_requested() || rich_requested() || super::super::annotation::fixture::requested()
+    plain_requested()
+        || rich_requested()
+        || super::super::annotation::fixture::requested()
+        || super::super::fixture::attribution::requested()
+        || super::super::fixture::canonical_files::requested()
 }
 pub(in crate::canvas) fn initial_root(shell: &ShellState) -> Option<Message> {
     (rich_requested() && eligible(shell)).then(|| root(false))
@@ -41,16 +50,31 @@ pub(super) fn seed_rich(
     scope: &DiskScope,
     ts: &str,
 ) -> Result<(), super_platinum_core::error::AppError> {
-    if !rich_requested() {
+    if !rich_requested()
+        && !super::super::fixture::attribution::requested()
+        && !super::super::fixture::canonical_files::requested()
+    {
         return Ok(());
     }
     let inventory = j.reply_inventory(scope, ts)?;
-    if rich_requested()
+    if (rich_requested()
+        || super::super::fixture::attribution::requested()
+        || super::super::fixture::canonical_files::requested())
         && scope.file == "Ffixture"
         && ts == TS
         && inventory.drafts().is_empty()
         && inventory.attempt().is_none()
     {
+        if super::super::fixture::canonical_files::custody() {
+            let _ = j.save_rich_reply_draft(
+                scope,
+                ts,
+                None,
+                "a615065e-a780-4622-b9b8-9335e84e2edf",
+                super::super::fixture::canonical_files::blocks(),
+            )?;
+            return Ok(());
+        }
         // Stable fixture capture: its retired tombstone prevents reseeding a sent
         // or deliberately discarded version on a later inventory load.
         let _=j.save_rich_reply_draft(scope,ts,None,"a615065e-a780-4622-b9b8-9335e84e2edf",vec![json!({"type":"rich_text","elements":[{"type":"rich_text_section","elements":[
@@ -63,6 +87,9 @@ pub(super) fn seed_rich(
     Ok(())
 }
 fn eligible(shell: &ShellState) -> bool {
+    if super::super::fixture::attribution::requested() {
+        return super::super::fixture::attribution::enabled(shell);
+    }
     requested()
         && shell.core.session.is_none()
         && shell.core.transport.is_none()
@@ -74,7 +101,16 @@ pub(super) fn path(shell: &ShellState) -> Option<PathBuf> {
         return super::super::annotation::fixture::path(shell);
     }
     if !eligible(shell)
-        || std::env::var("SUPER_PLATINUM_CANVAS_COMMENT_REPLY_CHECK").as_deref() != Ok("1")
+        || !(std::env::var("SUPER_PLATINUM_CANVAS_COMMENT_REPLY_CHECK").as_deref() == Ok("1")
+            || super::super::fixture::attribution::requested()
+                && std::env::var("SUPER_PLATINUM_CANVAS_ROOT_ATTRIBUTION_CHECK").as_deref()
+                    == Ok("1")
+            || super::super::fixture::attribution::recovery::requested()
+                && std::env::var("SUPER_PLATINUM_CANVAS_EDITOR_RECOVERY_CHECK").as_deref()
+                    == Ok("1")
+            || super::super::fixture::canonical_files::requested()
+                && std::env::var("SUPER_PLATINUM_CANVAS_CANONICAL_FILE_CHECK").as_deref()
+                    == Ok("1"))
     {
         return None;
     }
@@ -142,6 +178,11 @@ pub(super) async fn execute(
     binding: &Binding,
     intent: ReplyIntent,
 ) -> Result<ReplyAccepted, CanvasEditFailure> {
+    if super::super::fixture::attribution::requested() {
+        return Err(CanvasEditFailure::NotSent(Error::Offline(
+            "Attribution fixture admits no comment writes".into(),
+        )));
+    }
     if super::super::annotation::fixture::requested() {
         return super::super::annotation::fixture::reply(&state.peek(), &binding.owner, intent);
     }

@@ -141,7 +141,14 @@
 /* Board: bounded horizontal lanes, with the same canonical cell controls. */
 .slack-list-board { display: flex; align-items: stretch; gap: 12px; flex: 1; min-height: 0; overflow-x: auto; padding: 12px 16px; border-top: 1px solid var(--border); overscroll-behavior: contain; }
 .slack-list-lane { display: flex; flex-direction: column; flex: 0 0 264px; min-width: 0; max-width: calc(100vw - 64px); min-height: 0; }
-.slack-list-lane-title { display: flex; align-items: center; gap: 8px; padding: 0 4px 12px; flex-shrink: 0; }
+.slack-list-lane-title { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-2); padding: 0 4px 12px; flex-shrink: 0; }
+.slack-list-lane-heading { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
+.slack-list-lane-heading h3 { flex: 1; min-width: 0; }
+.slack-list-lane-heading > .slack-list-group-count { flex-shrink: 0; }
+.slack-list-lane-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); min-width: 0; }
+.slack-list-dialog .slack-list-lane-actions > button { flex-shrink: 0; height: var(--control-height); white-space: nowrap; }
+.slack-list-dialog button.slack-list-board-add-group { display: inline-flex; align-items: center; align-self: flex-start; gap: var(--space-1); flex-shrink: 0; height: var(--control-height); margin: 0 16px var(--space-2); white-space: nowrap; }
+.slack-list-board-add-group > .icon { flex-shrink: 0; }
 .slack-list-lane-checkbox { width: 20px; height: 20px; opacity: 1; }
 .slack-list-lane-title h3 { margin: 0; font-size: var(--text-sm); font-weight: 600; overflow-wrap: anywhere; }
 .slack-list-lane-cards { overflow-y: auto; min-height: 0; padding: 2px; display: flex; flex-direction: column; gap: 8px; }
@@ -291,6 +298,14 @@
   .slack-list-dialog:not(:has(.slack-list-board)) .slack-list-header :is(button, select):focus-visible { outline-offset: -2px; }
 }
 
+/* Record details keep their original Board mounted but hidden. Reserve the same
+   short-window body space while retaining every main-header action via scrolling. */
+@media (max-height: 500px) and (max-width: 800px) {
+  .slack-list-dialog:has(#slack-list-record-detail) .slack-list-header { gap: var(--space-1); padding-block: var(--space-1); max-height: calc(2 * var(--control-height) + 3 * var(--space-1)); overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; }
+  .slack-list-dialog:has(#slack-list-record-detail) .slack-list-heading h2 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .slack-list-dialog:has(#slack-list-record-detail) .slack-list-header :is(button, select):focus-visible { outline-offset: -2px; }
+}
+
 /* Fixed Text creation uses the existing compact schema modal. */
 #slack-list-rename[data-new-text-field-view]:not([data-new-text-field-view=""]) .slack-list-editor-actions { flex-wrap: wrap; }
 #slack-list-rename[data-new-text-field-view]:not([data-new-text-field-view=""]) #slack-list-rename-confirm { min-width: 112px; }
@@ -402,6 +417,9 @@
 .slack-list-comments-scroll { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; }
 .slack-list-comments-scroll .message { min-width: 0; }
 .slack-list-comments-scroll .message-content { min-width: 0; overflow-wrap: anywhere; }
+.slack-list-comment-edit-action { margin: 0 16px 4px 64px; padding: 2px 4px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--muted); font: inherit; font-size: var(--text-sm); cursor: pointer; }
+.slack-list-comment-edit-action:hover { background: var(--surface); color: var(--text); }
+.slack-list-comment-edit-action:disabled { opacity: .5; cursor: default; }
 .slack-list-comments-footer { display: flex; justify-content: flex-end; padding: 8px 16px; }
 .slack-list-comment-compose { display: flex; flex-direction: column; flex: 0 1 auto; min-height: 0; max-height: 48vh; overflow: hidden; padding: 8px 16px 12px; border-top: 1px solid var(--border); }
 .slack-list-comment-compose-editor { min-height: 0; overflow: auto; overscroll-behavior: contain; }
@@ -409,6 +427,7 @@
 .slack-list-comment-compose .rich-reminder-editor { min-height: 64px; max-height: 144px; margin-bottom: var(--space-2); }
 .slack-list-comment-compose .format-toolbar { flex-wrap: wrap; }
 .slack-list-comment-compose-actions { display: flex; flex-shrink: 0; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-2); }
+.slack-list-comment-compose-actions > #slack-list-comments-reaction-status { flex: 1; min-width: 0; margin: 0; font-size: var(--text-sm); overflow-wrap: anywhere; }
 .slack-list-comment-compose-status { flex-shrink: 0; margin: 0 0 var(--space-2); font-size: var(--text-sm); overflow-wrap: anywhere; }
 .slack-list-comment-compose-preview { margin: var(--space-2) 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .slack-list-comments-footer:has(#slack-list-comment-write) { justify-content: space-between; gap: var(--space-2); }
@@ -423,4 +442,40 @@
  .slack-list-dialog:has(.slack-list-comment-compose) .slack-list-heading > :not(h2),
  .slack-list-dialog:has(.slack-list-comment-compose) .slack-list-header > button:not(#slack-list-close),
  .slack-list-dialog:has(.slack-list-comment-compose) #slack-list-create-help { display: none; }
+}
+
+/* This popup is positioned in the List dialog, outside the editor scroll clip. */
+.slack-list-channel-completions {
+  position: absolute;
+  z-index: 8;
+  overflow: auto;
+  background: var(--surface-raised);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-popover);
+}
+.slack-list-channel-completions:empty { display: none; }
+.slack-list-channel-options { padding: 4px; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.slack-list-channel-option {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  min-height: var(--control-height); padding: 6px 8px;
+  border: 0; border-radius: var(--radius-sm); background: transparent;
+  color: var(--text); text-align: left; font-size: 12px;
+}
+.slack-list-channel-option:hover, .slack-list-channel-option.selected { background: var(--hover-overlay); }
+.slack-list-channel-icon { width: 16px; height: 16px; flex: 0 0 16px; color: var(--muted); }
+.slack-list-channel-option-label { min-width: 0; overflow-wrap: anywhere; }
+.slack-list-channel-status { margin: 0; padding: 8px; color: var(--muted); font-size: 12px; }
+
+/* The original comment stays visible but inert inside its confirmation. */
+.slack-list-comment-delete { width: min(560px, calc(100% - 24px)); gap: 12px; }
+.slack-list-comment-delete > p { margin: 0; overflow-wrap: anywhere; }
+.slack-list-comment-delete-note { color: var(--muted); font-size: var(--text-sm); }
+.slack-list-comment-delete-preview { min-height: 0; max-height: min(280px, 36vh); overflow: auto; background: var(--surface); border-radius: var(--radius-md); }
+.slack-list-comment-delete-preview .message { margin: 0; }
+.slack-list-comment-delete footer { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; flex-shrink: 0; }
+.slack-list-dialog .slack-list-comment-delete button.slack-list-comment-delete-danger { background: var(--danger); color: var(--on-danger); }
+.slack-list-dialog .slack-list-comment-delete button.slack-list-comment-delete-danger:not(:disabled):hover { background: color-mix(in srgb, var(--danger) 88%, white); color: var(--on-danger-hover); }
+@media (max-width: 600px) {
+  .slack-list-comment-delete { gap: 8px; }
+  .slack-list-comment-delete-preview { max-height: 28vh; }
 }

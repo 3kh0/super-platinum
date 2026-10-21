@@ -3,14 +3,18 @@
 window.runRichEditorTests = () => {
   const api = window.superPlatinumRichEditor;
   const results = [];
+  window.richEditorTestResults=results;
   const assert = (condition, message) => {if (!condition) throw new Error(message);};
   let serial = 0;
-  function fixture(blocks, autofocus = true, generation = null) {
+  function fixture(blocks, autofocus = true, generation = null, allowUnderline = false) {
     document.body.replaceChildren();
     const origin=document.createElement('button');origin.textContent='Open';document.body.append(origin);origin.focus();
     const dialog=document.createElement('section');dialog.setAttribute('role','dialog');document.body.append(dialog);
     const first=document.createElement('button');first.textContent='Close';dialog.append(first);
     const root=document.createElement('div');root.id=`editor-${++serial}`;root.className='rich-reminder-editor';root.contentEditable='true';root.tabIndex=0;root.setAttribute('aria-readonly','false');root.setAttribute('role','textbox');dialog.append(root);
+    // Match src/desktop/styles/later.css: normal whitespace makes insertHTML
+    // replace a typed suffix space with NBSP, breaking exact completion custody.
+    root.style.whiteSpace='pre-wrap';
     const last=document.createElement('button');last.textContent='Save';dialog.append(last);
     const owner=document.createElement('div');owner.className='rich-editor';if(generation!==null)owner.dataset.editorGeneration=String(generation);
     root.before(owner);owner.append(root);
@@ -21,7 +25,7 @@ window.runRichEditorTests = () => {
     for(const [kind,label] of [['apply','Apply link'],['remove','Remove link'],['cancel','Cancel']]){const b=document.createElement('button');b.className='rich-link-'+kind;b.textContent=label;if(kind==='remove')b.hidden=true;panel.append(b);}
     const code=document.createElement('button');code.className='rich-code-toggle';code.textContent='Inline code';owner.prepend(code);
     const status=document.createElement('p');status.className='rich-code-status';status.hidden=true;owner.append(status);
-    api.mount(root.id,blocks,{U1:'@Fixture'},autofocus,generation);
+    api.mount(root.id,blocks,{U1:'@Fixture'},autofocus,generation,allowUnderline);
     return {root,origin,first,last,owner,trigger,panel,url,error,action:kind=>panel.querySelector('.rich-link-'+kind),read:()=>api.read(root.id)};
   }
   const text=(value,style)=>({type:'text',text:value,...(style?{style}:{})});
@@ -30,6 +34,97 @@ window.runRichEditorTests = () => {
   const select=node=>{const range=document.createRange();range.selectNodeContents(node);getSelection().removeAllRanges();getSelection().addRange(range);};
   const dirty=root=>root.dispatchEvent(new InputEvent('input',{bubbles:true}));
   const tokens=[{type:'user',user_id:'U1'},{type:'emoji',name:'heart'},{type:'future_inline',payload:{preserve:true}}];
+  {
+    const marks={bold:true,italic:true,strike:true,code:true,underline:true};
+    const original=documentBlocks([section([
+      {...text('Under \u4e2d\u{1f642} &<\n\nend',marks),opaque:{keep:1}},
+      {type:'link',url:'https://example.com/?a=1&b=2',text:'Linked \u65e5\u{1f98a}',style:{italic:true,underline:true}},
+      ...tokens
+    ])]);
+    const f=fixture(original,true,'100',true);
+    assert(f.root.querySelectorAll('u').length===2,'opt-in underline did not render');
+    assert(JSON.stringify(f.read())===JSON.stringify(original),'clean underline load changed raw fields');
+    f.root.querySelector('u').firstChild.textContent+='!';dirty(f.root);
+    const changed=f.read();
+    assert(JSON.stringify(changed[0].elements[0].elements[0].style)===JSON.stringify(marks),'overlapping underline lost companion marks');
+    assert(changed[0].elements[0].elements[0].opaque.keep===1,'underline edit lost opaque fields');
+    assert(JSON.stringify(changed[0].elements[0].elements.slice(1))===JSON.stringify(original[0].elements[0].elements.slice(1)),'underline edit changed sibling link/tokens: '+JSON.stringify(changed[0].elements[0].elements.slice(1)));
+    results.push('underline opt-in load and Unicode softbreak edit preserve overlapping marks and opaque siblings');
+  }
+  {
+    const f=fixture(documentBlocks([section([text('Toggle \u4e2d\u{1f642}',{bold:true,underline:true})])]),true,'101',true);
+    select(f.root.querySelector('u').firstChild);
+    assert(api.format(f.root.id,'underline')!==false,'opt-in native underline command refused');
+    const removed=f.read()[0].elements[0].elements[0];
+    assert(!removed.style?.underline&&removed.style?.bold,'native underline removal lost bold or retained underline');
+    assert(document.execCommand('undo'),'underline native undo failed');
+    assert(f.read()[0].elements[0].elements[0].style?.underline,'underline undo lost style');
+    assert(document.execCommand('redo'),'underline native redo failed');
+    assert(!f.read()[0].elements[0].elements[0].style?.underline,'underline redo failed');
+    api.format(f.root.id,'underline');
+    assert(f.read()[0].elements[0].elements[0].style?.underline,'native underline add failed');
+    results.push('underline native add remove undo redo preserve independent bold');
+  }
+  {
+    const f=fixture(documentBlocks([section([text('Unsupported \u4e2d\u{1f642}')])]));
+    select(f.root.querySelector('span').firstChild);
+    assert(api.format(f.root.id,'underline')===false,'default editor admitted underline command');
+    for(const event of [new InputEvent('beforeinput',{inputType:'formatUnderline',bubbles:true,cancelable:true}),new KeyboardEvent('keydown',{key:'u',ctrlKey:true,bubbles:true,cancelable:true})]){
+      f.root.dispatchEvent(event);assert(event.defaultPrevented,'default editor allowed underline gesture');
+    }
+    assert(document.execCommand('underline'),'browser test did not insert unsupported underline');
+    let refused=false;try{f.read();}catch(error){refused=error.message.includes('Underline');}
+    assert(refused,'default editor silently flattened native underline');
+    assert(document.execCommand('undo'),'unsupported underline undo failed');
+    assert(f.read()[0].elements[0].elements[0].text==='Unsupported \u4e2d\u{1f642}','undo failed to restore editable original');
+    results.push('default editor refuses underline command gestures and serialized browser bypass without flattening');
+  }
+  {
+    const original=documentBlocks([section([text('Plain')])]);
+    const underlined=documentBlocks([section([text('Unsupported',{underline:true})])]);
+    const f=fixture(original);const before=api.snapshot(f.root);
+    assert(api.replace(f.root,before,underlined)===null,'default replacement admitted underline');
+    assert(JSON.stringify(f.read())===JSON.stringify(original),'refused replacement mutated native content');
+    let refused=false;try{fixture(underlined);}catch(error){refused=error.message.includes('Underline');}
+    assert(refused,'default mount admitted unsupported underline raw');
+    refused=false;try{fixture(documentBlocks([section([text('Bad',{underline:'true'})])]),true,null,true);}catch(error){refused=error.message.includes('Underline');}
+    assert(refused,'opt-in mount admitted nonboolean underline');
+    results.push('underline replacement and initial raw capability/type failures preserve native data');
+  }
+  {
+    const f=fixture(documentBlocks([section([text('Guarded')])]),true,'102',true);
+    select(f.root.querySelector('span').firstChild);
+    f.root.contentEditable='false';assert(api.format(f.root.id,'underline')===false,'sealed underline editor modified');
+    f.root.contentEditable='true';f.root.dispatchEvent(new CompositionEvent('compositionstart',{bubbles:true}));
+    assert(api.format(f.root.id,'underline')===false,'composing underline editor modified');
+    f.root.dispatchEvent(new CompositionEvent('compositionend',{bubbles:true}));
+    f.owner.dataset.editorGeneration='103';assert(api.format(f.root.id,'underline')===false,'stale underline mount modified');
+    assert(!f.read()[0].elements[0].elements[0].style?.underline,'refused underline changed original');
+    results.push('underline toolbar preserves sealed composing and original generation guards');
+  }
+
+  {
+    const original=documentBlocks([section([{type:'link',url:'https://example.com/kept',text:'Linked \u65e5\u{1f98a}',opaque:{keep:true},style:{bold:true,italic:true,strike:true,code:true,underline:true}}])]);
+    const f=fixture(original,true,'104',true);select(f.root.querySelector('u').firstChild);
+    api.format(f.root.id,'underline');const value=f.read()[0].elements[0].elements[0];
+    assert(value.type==='link'&&value.url==='https://example.com/kept'&&value.opaque.keep&&value.text===original[0].elements[0].elements[0].text,'native underline removal changed link content/identity');
+    assert(!value.style.underline&&['bold','italic','strike','code'].every(key=>value.style[key]===true),'native underline removal lost overlapping link marks');
+    results.push('native underline removal preserves bold italic strike code link and unknown fields');
+  }
+  {
+    const f=fixture(documentBlocks([section([text('CSS underline')])]),true,'105',true);
+    f.root.querySelector('span').style.textDecoration='underline line-through';dirty(f.root);
+    assert(f.read()[0].elements[0].elements[0].style.underline&&f.read()[0].elements[0].elements[0].style.strike,'native CSS decoration lost independent marks');
+    const off=fixture(documentBlocks([section([text('No upgrade')])]));
+    api.mount(off.root.id,[],{},true,null,true);
+    select(off.root.querySelector('span').firstChild);
+    assert(api.format(off.root.id,'underline')===false,'same-node second mount upgraded original capability');
+    off.root.querySelector('span').style.textDecoration='underline';
+    let refused=false;try{off.read();}catch(error){refused=error.message.includes('Underline');}
+    assert(refused,'clean-model DOM underline was silently ignored');
+    results.push('CSS underline uses original mount capability and cannot bypass clean read guard');
+  }
+  if(window.richEditorTestFocus==='underline')return results;
   const original=[...documentBlocks([
     section([text('Hello 🚀',{bold:true}),{type:'link',url:'https://example.com',text:'reference',style:{italic:true}},...tokens]),
     {type:'rich_text_list',style:'ordered',indent:2,offset:3,elements:[section([text('List item')])]},
@@ -737,5 +832,6 @@ window.runRichEditorTests = () => {
     assert(refused,'same-ID unmounted replacement admitted');
     results.push('committing rich read rejects detached and unmounted replacement nodes');
   }
+
   return results;
 };

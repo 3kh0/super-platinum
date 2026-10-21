@@ -1,4 +1,5 @@
 //! File rank inputs supplement one existing member/group cache observation.
+use super::channel_host::Host;
 use super::{Search, file_source};
 use crate::{app_home::autocomplete, state::ShellState};
 use serde_json::{Value, json};
@@ -22,7 +23,7 @@ pub(super) struct Input {
     ignore_fuzzy: bool,
 }
 impl Input {
-    pub(super) fn current(&self, shell: &ShellState, search: &Search) -> bool {
+    pub(super) fn current(&self, shell: &ShellState, search: &Search<impl Host>) -> bool {
         self.source.current(shell)
             && native(shell, search.lease.team(), &self.creators).is_ok_and(|v| v == self.native)
     }
@@ -44,7 +45,7 @@ fn treatment(raw: &Value) -> Result<bool, Error> {
 }
 pub(super) fn capture(
     shell: &ShellState,
-    search: &Search,
+    search: &Search<impl Host>,
     source: Arc<file_source::Snapshot>,
     cache: &autocomplete::Ranking,
     assignments: &Value,

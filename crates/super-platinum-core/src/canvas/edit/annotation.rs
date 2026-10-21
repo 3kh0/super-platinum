@@ -110,6 +110,15 @@ fn target_shape(section: &Section) -> Result<(), Error> {
     }
     section_shape(section)
 }
+// Range comments preserve the canonical host level; this does not admit whole
+// paragraph operations, list/table/title bodies, or structural conversions.
+fn range_target_shape(section: &Section) -> Result<(), Error> {
+    if section.section_type()?.unwrap_or(0) != 0 || section.style()?.unwrap_or(0) > 3 {
+        return Err(Error::Unsupported);
+    }
+    super::text::heading_content_attributes(section)?;
+    section_shape(section)
+}
 fn section_shape(section: &Section) -> Result<(), Error> {
     section_shape_with_layout(section, false)
 }
@@ -165,6 +174,8 @@ fn target<'a>(
     let section = snapshot.section(id).ok_or(Error::Changed)?;
     if whole_section {
         admitted_section_shape(snapshot, section)?;
+    } else if ranged {
+        range_target_shape(section)?;
     } else {
         target_shape(section)?;
     }
@@ -189,7 +200,8 @@ fn target<'a>(
             presentation,
         )?;
     } else {
-        super::text::canonical_draft(section)?;
+        let draft = super::text::canonical_draft(section)?;
+        underline_shape(section, &draft)?;
     }
     position::base(section.raw().string(8)?.ok_or(Error::Unsupported)?)?;
     for other in snapshot.sections.iter().filter(|_| !whole_section) {
@@ -206,6 +218,22 @@ fn target<'a>(
         }
     }
     Ok(section)
+}
+
+// The underline reference covers ordinary flat paragraph/H1-H3 hosts only.
+// Inline formatting support must not implicitly admit table/list/title bodies.
+fn underline_shape(section: &Section, draft: &super::text::TextDraft) -> Result<(), Error> {
+    if draft.runs.iter().any(|run| run.style.underline)
+        && (section.section_type()?.unwrap_or(0) != 0
+            || section.style()?.unwrap_or(0) > 3
+            || section
+                .parents()?
+                .is_some_and(|parents| !parents.fields().is_empty())
+            || section.raw().boolean(29)? == Some(true))
+    {
+        return Err(Error::Unsupported);
+    }
+    Ok(())
 }
 
 /// Existing is a read-only control identity. New remains a captured live intent;

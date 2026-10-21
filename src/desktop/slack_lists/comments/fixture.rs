@@ -7,7 +7,17 @@ use super_platinum_core::{
     slack::client::{PreparedRequest, RequestBody},
 };
 use tokio::sync::oneshot;
+pub(crate) mod cold_files;
+pub(crate) mod completion;
 pub(crate) mod compose;
+pub(crate) mod file_navigation;
+pub(crate) mod own_delete;
+pub(crate) mod own_edit;
+pub(crate) mod reaction_actions;
+pub(crate) mod reaction_additions;
+pub(crate) mod reaction_family;
+pub(crate) mod reaction_selection;
+pub(crate) mod reaction_tones;
 
 pub(crate) const LIST: &str = "FCOMMENT01";
 pub(crate) const ROOT: &str = "1781524800.000001";
@@ -24,8 +34,7 @@ pub(crate) fn check_enabled() -> bool {
 pub(crate) fn enabled(s: &ShellState) -> bool {
     check_enabled()
         && crate::slack_lists::fixture::enabled(s)
-        && s.core.session.is_none()
-        && s.core.transport.is_none()
+        && ((s.core.session.is_none() && s.core.transport.is_none()) || completion::enabled(s))
         && s.slack_lists.comments.fixture.is_some()
 }
 pub(crate) fn seed(document: &mut Value, records: &mut Vec<Value>) {
@@ -79,6 +88,13 @@ struct Ledger {
     incoming_readbacks: Vec<Value>,
     edit_readback: Option<Value>,
     compose: compose::Ledger,
+    actions: reaction_actions::Ledger,
+    selection_seed: Option<Value>,
+    additions: reaction_additions::Preferences,
+    navigation: Option<file_navigation::State>,
+    cold_files: Option<cold_files::State>,
+    own_edit: Option<own_edit::State>,
+    own_delete: Option<own_delete::State>,
 }
 #[derive(Clone)]
 pub(crate) struct Model(Arc<Mutex<Ledger>>);
@@ -114,8 +130,29 @@ pub(crate) fn begin(s: &mut ShellState) -> Result<Model, String> {
         incoming_readbacks: Vec::new(),
         edit_readback: None,
         compose: Default::default(),
+        actions: Default::default(),
+        selection_seed: None,
+        additions: Default::default(),
+        navigation: None,
+        cold_files: None,
+        own_edit: None,
+        own_delete: None,
     })));
     s.slack_lists.comments.fixture = Some(model.clone());
+    if reaction_additions::enabled(s) {
+        reaction_additions::seed(s)?;
+    }
+    if reaction_tones::enabled(s) {
+        reaction_tones::seed(s)?;
+    }
+    if reaction_selection::enabled(s) {
+        let seed = reaction_selection::seed(s)?;
+        model
+            .0
+            .lock()
+            .map_err(|_| "Selection ledger poisoned")?
+            .selection_seed = Some(seed);
+    }
     Ok(model)
 }
 pub(crate) fn mode(model: &Model, mode: Mode) -> Result<(), String> {
@@ -285,6 +322,7 @@ pub(crate) fn held_response(s: &ShellState, model: &Model) -> Result<Value, Stri
         && !deletion_fixture(s, model)
         && !incoming_fixture(s, model)
         && !edit_fixture(s, model)
+        && !reaction_actions::enabled(s)
     {
         return Err("Original closed held-read fixture required".into());
     }
@@ -438,6 +476,9 @@ fn reply(ts: &str, next: bool) -> Value {
         {"ts":root,"subtype":"list_record_comment","slack_list":{"list_id":LIST,"list_record_id":id},"text":"Record comment root","unknown":{"keep":true}},
         {"ts":if synthetic{"1781524901.000001"}else{"1781524801.000001"},"thread_ts":root,"user":"U1","text":if synthetic{"Synthetic root resolved."}else{"First page comment."}}
     ],"has_more":!synthetic,"response_metadata":{"next_cursor":if synthetic{""}else{CURSOR}}});
+    if completion::named() && completion::members::named() {
+        response["messages"][0]["reply_users"] = json!([completion::members::SECOND]);
+    }
     if !synthetic {
         response["messages"][1]["blocks"] = json!([{"type":"rich_text","elements":[
             {"type":"rich_text_section","elements":[{"type":"text","text":"First page comment.","style":{"bold":true}}]},
@@ -509,6 +550,20 @@ pub(crate) async fn request(
                 l.replies += 1;
                 let mode = std::mem::replace(&mut l.mode, Mode::Success);
                 let mut raw = reply(&args["ts"], args.contains_key("cursor"));
+                file_navigation::decorate(&l.navigation, &mut raw);
+                own_edit::decorate(&l.own_edit, &mut raw);
+                if reaction_tones::enabled(&state.peek()) {
+                    reaction_tones::decorate(&mut raw);
+                }
+                if reaction_family::enabled(&state.peek()) {
+                    reaction_family::decorate(&mut raw);
+                }
+                if reaction_additions::enabled(&state.peek()) {
+                    reaction_additions::decorate(&mut raw);
+                }
+                if reaction_selection::enabled(&state.peek()) {
+                    reaction_selection::decorate(&mut raw);
+                }
                 compose::append_readback(&l.compose, &mut raw);
                 apply_reaction_readbacks(&l.reaction_readbacks, &mut raw);
                 append_incoming_readback(&l.incoming_readbacks, &mut raw);
@@ -517,6 +572,7 @@ pub(crate) async fn request(
                         raw = readback.clone();
                     }
                 }
+                own_delete::decorate(&l.own_delete, &args["ts"], &mut raw);
                 match mode {
                     Mode::Held => {
                         let (tx, rx) = oneshot::channel();
@@ -610,6 +666,7 @@ pub(crate) fn snapshot(s: &ShellState, model: &Model) -> Value {
     });
     json!({"account":s.core.active_account,"epoch":s.core.account_epoch,"noSession":s.core.session.is_none(),"noTransport":s.core.transport.is_none(),
         "writes":crate::slack_lists::fixture::attempt_count(s),"networkCalls":0,
+        "reactionLedger":reaction_actions::snapshot(&l.actions),
         "ledger":{"requests":l.requests,"replies":l.replies,"completed":l.completed,"cancelled":l.cancelled,"held":l.held.is_some()},
         "initialDocument":l.document,"initialRecords":initial_records,"initialUnrelated":initial_unrelated,
         "document":current.and_then(|v|v.loaded.as_ref()).map(|l|&l.document.raw),

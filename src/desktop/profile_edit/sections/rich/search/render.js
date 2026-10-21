@@ -61,3 +61,10 @@ function profileGroupStrings(request) {
         }))
     };
 }
+
+// 814n ordinary member insertion normalizes the final display label only.
+function listMemberLabels(request) {
+    if (!request || typeof request.ticket !== "string" || !Array.isArray(request.labels) || request.labels.length > 128 ||
+        !request.labels.every(value => typeof value === "string")) return null;
+    return {ticket:request.ticket, labels:request.labels.map(value => value.normalize())};
+}

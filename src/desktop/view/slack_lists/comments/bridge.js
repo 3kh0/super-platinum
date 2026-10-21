@@ -69,7 +69,7 @@ async function listCommentsComposeBridge(options, bridge, environment = globalTh
         if(!waiting||c.sequence!==waiting.sequence)throw Error('List draft acknowledgment changed');
         waiting.resolve();
       } else {
-        if(!['capture','release','finish'].includes(c.kind)||typeof c.request!=='string'||!c.request)
+        if(!['capture','release','finish','validate'].includes(c.kind)||typeof c.request!=='string'||!c.request)
           throw Error('Invalid List draft command');
         commands.push(c);notify();
       }
@@ -107,6 +107,17 @@ async function listCommentsComposeBridge(options, bridge, environment = globalTh
       } else if(command) {
         if(!lease||command.lease!==lease.request||command.sequence!==lease.sequence)
           throw Error('List draft lease changed');
+        if(command.kind==='validate') {
+          const current=snapshot();
+          const ok=alive()&&!current.value.composing&&wrapper.inert===true
+            &&root.contentEditable!=='false'&&!root.closest('[hidden]')&&!wrapper.parentElement?.closest('[inert]')
+            &&current.value.revision===lease.revision&&same(current.value.blocks,lease.blocks)
+            &&wrapper.querySelector('.rich-link-controls')?.hidden!==false;
+          // Keep the seal on either outcome. Rust's original lease owns release
+          // on refusal; a successful route leaves it held until actual detach.
+          await send({kind:'release-result',request:command.request,ok,finished:false,validated:true});
+          continue;
+        }
         if(command.kind==='finish') {
           const current=snapshot();
           if(!alive()||current.value.composing||!wrapper.inert||current.value.revision!==lease.revision||!same(current.value.blocks,lease.blocks)

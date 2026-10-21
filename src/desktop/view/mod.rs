@@ -543,7 +543,7 @@ pub fn shell() -> Element {
                     {thread_composer(state, &snapshot)}
                 }
             }
-            if snapshot.profile_user.is_some() {
+            if snapshot.profile_user.is_some() && !crate::canvas::comments::profile_active(&snapshot) {
                 {crate::profile::profile_pane(state, &snapshot)}
             }
             if snapshot.group_panel.is_some() {
@@ -557,6 +557,7 @@ pub fn shell() -> Element {
                     dioxus::document::eval("window.superPlatinumOverlayKeyboard?.observe(document.getElementById('shell-overlays'));");
                 },
                 if let Some(overlay) = snapshot.overlay { {overlay_view(state, overlay, &snapshot)} }
+                {crate::canvas::comments::profile_overlay(state, &snapshot)}
                 {crate::read_shortcuts::bulk::view(state, &snapshot)}
                 {enrollment_fixture_view(state)}
             }

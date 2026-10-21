@@ -34,7 +34,10 @@ pub(super) fn open_shell(shell: &mut ShellState, generation: u64) -> bool {
         .filter(|e| e.owner.same_record(&owner))
         .map_or(0, |e| e.retry_at)
         .max(cooldown(shell));
+    file_acquisition::retire(shell);
     shell.slack_lists.comments.entry = Some(Entry {
+        reaction_picker: None,
+        reaction_addition: None,
         owner,
         target,
         title,
@@ -63,11 +66,21 @@ pub(crate) fn close(mut state: Signal<ShellState>, generation: u64) {
     }
 }
 pub(super) fn close_shell(shell: &mut ShellState) {
+    if shell.slack_lists.comments.entry.as_ref().is_some_and(|e| {
+        own_edit::blocks_departure(shell, e.owner.serial)
+            || own_delete::blocks_departure(shell, e.owner.serial)
+    }) {
+        return;
+    }
+    completion::retire(shell);
+    file_acquisition::retire(shell);
     shell.slack_lists.comments.open = false;
     if let Some(e) = &mut shell.slack_lists.comments.entry {
         e.loading = false;
         e.read = next_id();
         e.live_edits.clear();
+        e.reaction_picker = None;
+        e.reaction_addition = None;
     }
 }
 pub(crate) fn refresh(state: Signal<ShellState>, generation: u64) {
@@ -77,6 +90,11 @@ pub(crate) fn next_page(state: Signal<ShellState>, generation: u64) {
     load(state, generation, true);
 }
 fn load(mut state: Signal<ShellState>, generation: u64, paging: bool) {
+    if own_edit::blocks_departure(&state.peek(), generation)
+        || own_delete::blocks_departure(&state.peek(), generation)
+    {
+        return;
+    }
     if draft::presentation(&state.peek()).is_some_and(|d| d.busy) {
         return;
     }
@@ -96,7 +114,16 @@ fn load(mut state: Signal<ShellState>, generation: u64, paging: bool) {
         if let Some(lease) = lease {
             let _ = lease.release().await;
         }
-        let result = network::acquire(state, &owner, serial, &target, cursor.clone()).await;
+        let mut result = network::acquire(state, &owner, serial, &target, cursor.clone()).await;
+        let reaction_readback = if !paging {
+            if let Ok(loaded) = &result {
+                reaction_actions::readback(state, &owner, serial, &loaded.page).await
+            } else {
+                Vec::new()
+            }
+        } else {
+            Vec::new()
+        };
         if !owner.reading(&state.peek(), serial) {
             return;
         }
@@ -116,8 +143,15 @@ fn load(mut state: Signal<ShellState>, generation: u64, paging: bool) {
         if !owner.reading(&state.peek(), serial) {
             return;
         }
+        if !reaction_actions::readback_current(&state.peek(), &reaction_readback) {
+            result = Err(unavailable());
+        }
         let observed = result.as_ref().ok().map(|loaded| loaded.page.clone());
-        finish(&mut state.write(), &owner, serial, cursor, result);
+        {
+            let mut shell = state.write();
+            finish(&mut shell, &owner, serial, cursor, result);
+            reaction_actions::apply_readback(&mut shell, &owner, &reaction_readback);
+        }
         if let Some(lease) = lease {
             let _ = lease.release().await;
         }
@@ -263,6 +297,8 @@ pub(super) fn finish(
             ) else {
                 return;
             };
+            reaction_actions::observe_page(shell, owner, &loaded.page);
+            member_root::accepted_page(shell, owner, serial, &loaded.page);
             let e = shell.slack_lists.comments.entry.as_mut().unwrap();
             e.loading = false;
             if cursor.is_none() {

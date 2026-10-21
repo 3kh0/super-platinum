@@ -9,10 +9,13 @@ use super_platinum_core::block_actions::{
     },
 };
 pub(crate) mod activity;
+pub(crate) mod delete;
 pub(crate) mod entry;
 pub(crate) mod fixture;
 mod native;
 mod owner;
+pub(crate) mod permissions;
+pub(crate) mod unpublish;
 use owner::Owner;
 mod policy;
 mod read;
@@ -27,6 +30,9 @@ pub(super) struct State {
     surface: Option<Surface>,
     documents: Vec<Document>,
     attempts: Vec<write::Attempt>,
+    deletions: delete::Book,
+    unpublishing: unpublish::Book,
+    permissions: permissions::Book,
     fixture: Option<fixture::Model>,
     exports: Vec<activity::export::Attempt>,
     export_fixture: Option<activity::export::fixture::Model>,
@@ -220,6 +226,12 @@ fn edit(mut state: Signal<ShellState>, visit: u64, title: bool, value: String) {
     {
         return;
     }
+    if delete::confirming(&s, visit)
+        || unpublish::confirming(&s, visit)
+        || permissions::confirming(&s, visit)
+    {
+        return;
+    }
     if let Some(d) =
         document_mut(&mut s, visit).filter(|d| d.pending.is_none() && !d.activity.active)
     {
@@ -240,6 +252,9 @@ fn editable(s: &ShellState, visit: u64) -> bool {
     admitted(s, visit)
         && h.read.is_none()
         && d.pending.is_none()
+        && !delete::confirming(s, visit)
+        && !unpublish::confirming(s, visit)
+        && !permissions::confirming(s, visit)
         && !d.activity.active
         && h.policy
             .as_ref()
@@ -257,6 +272,30 @@ fn allowed_editor(e: &Editor, user: &str) -> bool {
 }
 pub(crate) fn carry_pending(previous: &mut ShellState, loaded: &mut ShellState) {
     let old = &mut previous.app_home.about.management;
+    old.deletions.retire_confirmation();
+    old.unpublishing.retire_confirmation();
+    old.permissions.retire_confirmation();
+    loaded
+        .app_home
+        .about
+        .management
+        .permissions
+        .attempts
+        .append(&mut old.permissions.attempts);
+    loaded
+        .app_home
+        .about
+        .management
+        .unpublishing
+        .attempts
+        .append(&mut old.unpublishing.attempts);
+    loaded
+        .app_home
+        .about
+        .management
+        .deletions
+        .attempts
+        .append(&mut old.deletions.attempts);
     // Keep drafts and independent slot receipts through the actual shell swap.
     // The old surface/credential owner cannot authorize any new operation.
     loaded

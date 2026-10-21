@@ -60,9 +60,11 @@ def sample(narrow=False):
         native_rows=[dict(ts=m['ts'],text=m['text'],visible=True,rect=copy.deepcopy(box))for m in (page or {}).get('messages',[]) if m.get('subtype')!='list_record_comment'] if active else []
         g=dict(ok=True,noOverflow=True,editable=0,comments=active,detail=True if i<14 else False,dialog=i<14,viewport=viewport,generation=str(entry['generation']) if active else None,
                controls=controls,notices=notices,rows=native_rows,active='slack-list-record-comments' if stage=='back' else '')
-        if stage=='first':g['readContent']=dict(bold=True,secondParagraph=True,reactionCount='2',reactionGlyph='\U0001f44b',reactionTag='SPAN',reactionVisible=True,messageTools=0,reactionButtons=0)
+        if stage=='first':g['readContent']=dict(bold=True,secondParagraph=True,reactionCount='2',reactionGlyph='\U0001f44b',
+            reactionTag='BUTTON',reactionType='button',reactionVisible=True,reactionHit=True,reactionDisabled=True,
+            reactionAriaDisabled='true',reactionOwn=False,reactionPressed='false',messageTools=0,reactionButtons=1)
         proof=None
-        if stage=='first':proof=dict(release=dict(delivered=True,cancelledBeforeReply=False))
+        if stage=='first':proof=dict(release=dict(delivered=True,cancelledBeforeReply=False),reactionAvailable=False)
         if stage=='cooldown':proof=dict(before=copy.deepcopy(ledger),after=copy.deepcopy(ledger),native=dict(ok=True,disabled=True))
         if stage in ('record-replaced','account-replaced'):proof=dict(before=copy.deepcopy(rows[-1]['model']),release=dict(delivered=False,cancelledBeforeReply=True))
         rows.append(dict(stage=stage,model=model,geometry=g,proof=proof,capture=str(DIR/f'{fixture}-{stage}.png')))
@@ -93,8 +95,16 @@ class CommentsTests(unittest.TestCase):
     def test_back_content_fits_native_flex(self):
         for key,value in [('display','grid'),('fits',False),('iconCount',0)]:
             self.reject(lambda s:s['geometry']['controls'][0].update({key:value}),stage='first')
-    def test_rich_comment_is_bold_multiline_and_inert(self):
-        for key,value in [('bold',False),('secondParagraph',False),('reactionCount','1'),('reactionGlyph','x'),('reactionTag','BUTTON'),('reactionVisible',False),('messageTools',1),('reactionButtons',1)]:
+    def test_rich_comment_is_bold_multiline_with_only_scoped_reaction_button(self):
+        for key,value in [('bold',False),('secondParagraph',False),('reactionCount','1'),('reactionGlyph','x'),
+                          ('reactionTag','SPAN'),('reactionVisible',False),('messageTools',1),('reactionButtons',0),
+                          ('reactionButtons',2),('reactionButtons',True)]:
+            self.reject(lambda s:s['geometry']['readContent'].update({key:value}),stage='first')
+    def test_loaded_pill_has_exact_closed_fixture_unowned_button_semantics(self):
+        self.reject(lambda s:s['proof'].update(reactionAvailable=True),stage='first')
+        for key,value in [('reactionType','submit'),('reactionDisabled',False),('reactionDisabled',1),
+                          ('reactionAriaDisabled','false'),('reactionPressed','true'),('reactionOwn',True),
+                          ('reactionOwn',0),('reactionHit',False)]:
             self.reject(lambda s:s['geometry']['readContent'].update({key:value}),stage='first')
     def test_both_widths(self):
         for narrow in (False,True):self.check(*sample(narrow))

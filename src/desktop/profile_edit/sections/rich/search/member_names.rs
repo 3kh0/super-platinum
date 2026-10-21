@@ -1,6 +1,7 @@
 //! Profile-owned name policy; no Home/Activity owner or policy cache is borrowed.
+use super::channel_host::Host;
 use super::{Search, facts, ranking};
-use crate::{profile_edit::sections::rich::query::Lease, state::ShellState};
+use crate::state::ShellState;
 use dioxus::prelude::*;
 use serde_json::Value;
 use std::{future::Future, sync::Arc, task::Poll, time::Duration};
@@ -25,32 +26,35 @@ pub(super) struct Observation {
     pub(super) default_workspace: Option<String>,
 }
 impl Observation {
-    pub(super) fn current(&self, shell: &ShellState, search: &Search) -> bool {
+    pub(super) fn current(&self, shell: &ShellState, search: &Search<impl Host>) -> bool {
         self.fence.current(shell, search) && self.authority.current(&shell.core)
     }
 }
 struct Fence {
-    lease: Lease,
+    owner: Arc<dyn Fn(&ShellState) -> bool + Send + Sync>,
     context: Arc<crate::scheduled::Context>,
     preferences: Arc<ranking::Preferences>,
 }
 impl Fence {
     fn capture(
         shell: &ShellState,
-        search: &Search,
+        search: &Search<impl Host>,
         preferences: Arc<ranking::Preferences>,
     ) -> Result<Self, Error> {
         if !search.current(shell) || !preferences.current(shell) {
             return Err(unavailable());
         }
         Ok(Self {
-            lease: search.lease.clone(),
+            owner: {
+                let lease = search.lease.clone();
+                Arc::new(move |shell| lease.current(shell))
+            },
             context: search.context.clone(),
             preferences,
         })
     }
-    fn current(&self, shell: &ShellState, search: &Search) -> bool {
-        self.lease.current(shell)
+    fn current(&self, shell: &ShellState, search: &Search<impl Host>) -> bool {
+        (self.owner)(shell)
             && self.preferences.current(shell)
             && search.current(shell)
             && Arc::ptr_eq(&self.context, &search.context)
@@ -58,7 +62,7 @@ impl Fence {
     async fn request(
         &self,
         state: Signal<ShellState>,
-        search: &Search,
+        search: &Search<impl Host>,
         authority: Option<&Authority>,
         request: PreparedRequest,
     ) -> Result<Value, Error> {
@@ -84,7 +88,7 @@ impl Fence {
         };
         let result = tokio::select! {
             biased;
-            _ = self.lease.cancelled() => Err(unavailable()),
+            _ = search.lease.cancelled() => Err(unavailable()),
             _ = retired => Err(unavailable()),
             result = guarded => result,
         };
@@ -97,7 +101,7 @@ impl Fence {
 
 pub(super) async fn capture(
     state: Signal<ShellState>,
-    search: &Search,
+    search: &Search<impl Host>,
     preferences: Arc<ranking::Preferences>,
 ) -> Result<Observation, Error> {
     let fence = Fence::capture(&state.peek(), search, preferences)?;
@@ -231,7 +235,7 @@ impl Drop for PendingBoot {
 
 async fn acquire_authority(
     mut state: Signal<ShellState>,
-    search: &Search,
+    search: &Search<impl Host>,
     fence: &Fence,
 ) -> Result<Authority, Error> {
     let ctx = &search.context;

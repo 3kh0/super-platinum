@@ -13,8 +13,10 @@ pub(super) async fn run(
     wait_dom(desktop,r#"({ok:!!document.querySelector('#slack-list-view-select option[value="V_EDIT_USERS"]')})"#).await?;
     choose(desktop, "V_EDIT_USERS").await?;
     wait_dom(desktop,r#"({ok:!!document.querySelector('tr[data-row-id="R_LIST_000"] [data-column-id="C_EDIT_USER"] .slack-list-edit-cell')&&!!document.querySelector('tr[data-row-id="R_LIST_000"] [data-column-id="C_EDIT_TASK_USER"] .slack-list-edit-cell')})"#).await?;
+    let pre_hover = editor_hover::hover(state, desktop, "user").await?;
     edit("user", desktop, "C_EDIT_USER").await?;
     typing_survives_results("user", state, desktop).await?;
+    let blocked_editor = editor_hover::blocked(state, desktop, "user").await?;
     wait_dom(desktop,r#"(()=>{const selected=[...document.querySelectorAll('[data-selected-user]')].map(e=>e.dataset.selectedUser),choices=[...document.querySelectorAll('input[name="slack-list-user-choice"]')].map(e=>e.value);return {ok:JSON.stringify(selected)==='["U00000001"]'&&JSON.stringify(choices)==='["U00000001","U00000002","W00000003"]'&&document.querySelector('input[name="slack-list-user-choice"]')?.type==='radio',selected,choices};})()"#).await?;
     query("user", desktop, "Bob").await?;
     wait_dom(desktop,r#"({ok:document.querySelectorAll('input[name="slack-list-user-choice"]').length===1&&document.querySelector('input[name="slack-list-user-choice"]')?.value==='U00000002'})"#).await?;
@@ -23,6 +25,8 @@ pub(super) async fn run(
     wait_dom(desktop,r#"({ok:!document.getElementById('slack-list-cell-editor')&&document.activeElement===document.querySelector('tr[data-row-id="R_LIST_000"] [data-column-id="C_EDIT_USER"]')})"#).await?;
     assert_attempts(state, attempts)?;
     canonical(state, "edit_user", json!(["U00000001"]))?;
+    let after_close = editor_hover::hover(state, desktop, "user").await?;
+    editor_hover::dismiss(desktop, "user").await?;
 
     edit("user", desktop, "C_EDIT_USER").await?;
     choice("user", desktop, "U00000002").await?;
@@ -39,7 +43,9 @@ pub(super) async fn run(
     choice("user", desktop, "W00000003").await?;
     query("user", desktop, "Whitney").await?;
     wait_dom(desktop,r#"(()=>{const input=document.getElementById('slack-list-user-query'),save=document.getElementById('slack-list-editor-save');const visible=e=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0&&r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight;};return {ok:visible(input)&&visible(save)&&document.querySelectorAll('[data-selected-user]').length===2};})()"#).await?;
+    let capture_before = editor_hover::capture_before(desktop, "user").await?;
     let editor = capture_stage(desktop, "user-editor").await?;
+    let hover_capture = editor_hover::capture_after(desktop, "user", &capture_before).await?;
     save("user", state, desktop, attempts + 3).await?;
     canonical(state, "edit_users", json!(["U00000001", "W00000003"]))?;
     if !fixture::prepared_valid(&state.peek()) {
@@ -50,7 +56,7 @@ pub(super) async fn run(
     wait_dom(desktop,r#"({ok:!document.querySelector('#slack-list-view-select option[value="V_EDIT_USERS"]')&&document.querySelector('.slack-list-grid tbody tr[data-row-id]')?.cells.length===11})"#).await?;
     assert_attempts(state, attempts + 3)?;
     Ok(
-        json!({"candidateFilters":true,"guestAndExternal":true,"typingAndCancelNoWrite":true,"inputSurvivesResultRender":true,"singleReplace":true,"clear":true,"uncachedRemoval":true,"multiSelection":true,"taskAssigneeReadOnly":true,"keyboardEntryAndFocus":true,"duplicateLocked":true,"canonicalWrites":true,"cleanup":true,"captures":{"editor":editor}}),
+        json!({"candidateFilters":true,"guestAndExternal":true,"typingAndCancelNoWrite":true,"inputSurvivesResultRender":true,"singleReplace":true,"clear":true,"uncachedRemoval":true,"multiSelection":true,"taskAssigneeReadOnly":true,"keyboardEntryAndFocus":true,"duplicateLocked":true,"canonicalWrites":true,"cleanup":true,"hover":{"preHover":pre_hover,"blockedEditor":blocked_editor,"afterClose":after_close,"capture":hover_capture},"captures":{"editor":editor}}),
     )
 }
 fn canonical(state: Signal<ShellState>, key: &str, value: Value) -> Result<(), String> {

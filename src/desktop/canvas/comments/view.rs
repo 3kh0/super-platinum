@@ -1,4 +1,10 @@
 use super::*;
+mod attribution;
+mod canonical_file;
+pub(in crate::canvas) use attribution::ProfileToken;
+pub(crate) use attribution::clear_profile_token;
+pub(crate) use attribution::{HoverToken, clear_profile_hover_token, profile_hover_token};
+pub(crate) use attribution::{profile_active, profile_overlay};
 
 #[component]
 pub(in crate::canvas) fn Panel(
@@ -6,7 +12,21 @@ pub(in crate::canvas) fn Panel(
     mut model: Signal<State>,
     mut opened: Signal<bool>,
 ) -> Element {
+    use_effect(move || file_acquisition::observe(state, model));
     let value = model.read();
+    if fixture::special::requested() {
+        fixture::special::observe(&state.read(), &value);
+    }
+    if fixture::file_fallback::requested() {
+        fixture::file_fallback::observe(&state.read(), &value);
+    }
+    if fixture::attribution::requested() {
+        fixture::attribution::observe(&state.read(), &value);
+    }
+    if fixture::canonical_files::requested() {
+        fixture::canonical_files::remember_model(model);
+        fixture::canonical_files::observe(&state.read(), &value);
+    }
     let current = value
         .owner
         .as_ref()
@@ -51,7 +71,10 @@ pub(in crate::canvas) fn Panel(
                     if stream && value.review.is_none() && value.selected_control.is_none() {annotation::Author{state,model}}
                     if value.review.is_none() {for row in &value.rows {
                         article {class:"canvas-comment",key:"{row.body.id}","data-comment-ts":row.body.ts.clone(),
-                            {body(&row.body,state,epoch)}
+                            if row.message.subtype.as_deref()==Some("document_comment_root") {
+                                {attribution::header(state,model,&row.message,&row.body)}
+                                {canonical_file::content(state,model,&row.message,&row.body,epoch)}
+                            } else {{body(&row.body,state,epoch)}}
                             if value.mutation_ready && !disabled {
                                 if let Some(file) = &value.file {
                                     if let Some(desired) = super_platinum_core::canvas::comments::archive::ArchiveIntent::action(file, &row.message) {
@@ -78,7 +101,10 @@ pub(in crate::canvas) fn Panel(
             }
             {mutation::review::actions(state, model)}
             if value.review.is_none() {
-            if let Some(error)=value.mutation_error {p {role:"alert","{error}"}}
+            if let Some(error)=value.mutation_error {p {role:"alert",
+                "data-canvas-file-refusal":error=="This file could not be opened. Your reply draft is retained here.",
+                "{error}"
+            }}
             if let Some(reason)=mutation_reason { if value.mutation_ready {p {class:"canvas-comments-note",role:"status","{reason}"}} }
             }
         }
@@ -89,4 +115,7 @@ fn body(message: &crate::model::MessageVm, state: Signal<ShellState>, epoch: u64
         header {strong {"{message.author}"}time {"{message.timestamp}"}}
         div {class:"message-body",for node in &message.body {{crate::view::rich::rich_node(node,epoch,state)}}}
     }
+}
+fn content(message: &crate::model::MessageVm, state: Signal<ShellState>, epoch: u64) -> Element {
+    rsx! {div {class:"message-body",for node in &message.body {{crate::view::rich::rich_node(node,epoch,state)}}}}
 }

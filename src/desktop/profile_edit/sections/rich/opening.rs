@@ -161,6 +161,10 @@ pub(super) enum Hit {
         id: String,
     },
     Member(crate::directory_member_fetches::automatic::Hit),
+    Group {
+        owner: Arc<crate::directory_member_fetches::Context>,
+        id: String,
+    },
 }
 impl Hit {
     pub(super) fn schedule(self, state: Signal<ShellState>) {
@@ -172,6 +176,9 @@ impl Hit {
             }
             Self::Member(hit) => {
                 hit.schedule(state);
+            }
+            Self::Group { owner, id } => {
+                let _ = crate::usergroups::freshness::hit(state, owner, &id);
             }
         }
     }
@@ -278,6 +285,9 @@ fn prepare(
                 .ok_or_else(unavailable)
         })
         .collect::<Result<BTreeSet<_>, _>>()?;
+    // A known selector returns its original row immediately. Scheduling is
+    // separate from admission and survives another unavailable reference.
+    hits.extend(Groups::hits(shell, &token, &group_ids));
     let groups = if group_ids.is_empty() {
         None
     } else {

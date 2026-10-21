@@ -73,6 +73,14 @@ pub(super) struct Draft {
     pub(super) attempt: Option<u64>,
     error: Option<String>,
 }
+/// The visible cell dialog owns pointer actions even when its draft is stale or saving.
+pub(crate) fn cell_editor_blocks_profile_hover(shell: &ShellState) -> bool {
+    shell
+        .slack_lists
+        .view
+        .as_ref()
+        .is_some_and(|view| view.editor.is_some() && checkbox_visit_current(shell, view.generation))
+}
 pub(super) fn presentation(shell: &ShellState) -> Option<EditorView> {
     let view = shell.slack_lists.view.as_ref()?;
     let draft = view.editor.as_ref()?;
@@ -350,6 +358,7 @@ pub(super) fn begin_with_authority(
     view.board_move_return = None;
     view.editor = Some(draft);
     view.error = None;
+    crate::profile::dismiss_profile_hover(shell);
     Ok(())
 }
 pub(crate) fn save_editor(

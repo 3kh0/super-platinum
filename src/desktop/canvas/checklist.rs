@@ -31,6 +31,8 @@ pub(crate) struct State {
     pub(in crate::canvas) comment_annotations: super::comments::annotation::Root,
     pub(in crate::canvas) comment_replies: super::comments::reply::Root,
     pub(in crate::canvas) comment_operations: super::comments::mutation::State,
+    pub(in crate::canvas) comment_profile: Option<super::comments::ProfileToken>,
+    pub(in crate::canvas) comment_profile_hover: Option<super::comments::ProfileToken>,
     serial: u64,
     view: Option<Visit>,
     operations: Vec<Operation>,
@@ -39,6 +41,8 @@ pub(crate) struct State {
     fixture: Option<fixture::State>,
     pub(in crate::canvas) structure_fixture: Option<super::text::structure_fixture::State>,
     pub(in crate::canvas) text_fixture: Option<super::text::fixture::State>,
+    pub(in crate::canvas) underline_fixture: Option<super::text::underline_fixture::State>,
+    pub(in crate::canvas) heading_fixture: Option<super::text::heading_fixture::State>,
 }
 struct OwnedSession {
     scope: Scope,

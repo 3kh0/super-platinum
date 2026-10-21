@@ -1,5 +1,6 @@
 """Portable canvas fixture runner; intermediate states wait for captured pixels."""
 import argparse
+from contextlib import nullcontext
 from dataclasses import dataclass
 import json
 import os
@@ -23,9 +24,39 @@ class CanvasCheck:
     stages: tuple[str, ...]
     private_files: tuple[tuple[str, str], ...] = ()
     readiness: bool = False
+    synthetic_context: bool = False
+
+
+SYNTHETIC_FIXTURES = {
+    "canvas-root-attribution": "SUPER_PLATINUM_CANVAS_ROOT_ATTRIBUTION_CHECK",
+    "canvas-editor-recovery": "SUPER_PLATINUM_CANVAS_EDITOR_RECOVERY_CHECK",
+}
+
+
+def context_valid(spec, fixture, receipt):
+    if not spec.synthetic_context:
+        return receipt.get("noSession") is True and receipt.get("noTransport") is True
+    if (spec.fixture not in SYNTHETIC_FIXTURES
+            or SYNTHETIC_FIXTURES[spec.fixture] != spec.flag
+            or fixture not in (spec.fixture, spec.fixture + "-narrow")):
+        return False
+    # The native fixture proves exact synthetic credentials and a disconnected
+    # transport with no HTTP client. Never label this mode session/transport-free.
+    return (receipt.get("noSession") is False and receipt.get("noTransport") is False
+            and receipt.get("isolation") == {
+                "syntheticSession": True, "noHttp": True,
+                "fixture": spec.fixture,
+                "account": "147b5480-9f1a-4443-89da-836472cbb209",
+                "team": "T1", "self": "UATTRSELF",
+            }
+            and receipt["isolation"]["syntheticSession"] is True
+            and receipt["isolation"]["noHttp"] is True)
 
 
 def private_checks(spec, directory):
+    if spec.synthetic_context and (spec.fixture not in SYNTHETIC_FIXTURES
+            or SYNTHETIC_FIXTURES[spec.fixture] != spec.flag):
+        raise RuntimeError("Synthetic Canvas context requires an exact owned fixture and flag")
     checks = {spec.flag: "1", "SUPER_PLATINUM_CANVAS_CAPTURE_ACK_DIR": str(directory)}
     for key, name in spec.private_files:
         if (not key.startswith("SUPER_PLATINUM_") or key in checks
@@ -41,7 +72,9 @@ def validate(spec, fixture, receipt):
         raise RuntimeError(f"{fixture}: native assertion failed: {receipt}")
     if field(receipt, "layout.viewport") != expected_viewport(fixture):
         raise RuntimeError(f"{fixture}: incorrect native viewport")
-    required = (*spec.required, "noSession", "noTransport", "layout.ok")
+    if not context_valid(spec, fixture, receipt):
+        raise RuntimeError(f"{fixture}: invalid Canvas context isolation")
+    required = (*spec.required, "layout.ok")
     missing = [key for key in required if field(receipt, key) is not True]
     if missing or any(type(receipt.get(key)) is not int or receipt.get(key) != count
                       for key, count in spec.counts.items()):
@@ -52,7 +85,7 @@ def capture_stage(native, spec, fixture, stage, ordinal, captures, acknowledgmen
     if (stage.get("ok") is not True or type(stage.get("ordinal")) is not int
             or stage.get("ordinal") != ordinal
             or ordinal >= len(spec.stages) or stage.get("stage") != spec.stages[ordinal]
-            or stage.get("noSession") is not True or stage.get("noTransport") is not True):
+            or not context_valid(spec, fixture, stage)):
         raise RuntimeError(f"Unexpected canvas stage: {stage}")
     screenshot = captures / f"{fixture}-{spec.stages[ordinal]}.png"
     if audit is None:
@@ -81,12 +114,12 @@ def validate_closed(spec, fixture, log, stages, terminal):
     for ordinal, stage in enumerate(expected):
         if (stage.get("ordinal") != ordinal or type(stage.get("ordinal")) is not int
                 or stage.get("stage") != spec.stages[ordinal]
-                or any(stage.get(k) is not True for k in ("ok", "noSession", "noTransport"))):
+                or stage.get("ok") is not True or not context_valid(spec, fixture, stage)):
             raise RuntimeError("Closed Canvas stage order/isolation differs")
     validate(spec, fixture, terminal)
 
 
-def run(spec, fixture, binary, captures):
+def run(spec, fixture, binary, captures, storage_factory=None):
     captures.mkdir(parents=True, exist_ok=True)
     # Preserve older evidence; a new run needs new names/directory.
     names = [f"{fixture}.log", f"{fixture}.json", f"{fixture}.png",
@@ -101,8 +134,14 @@ def run(spec, fixture, binary, captures):
             acknowledgments = Path(directory)
             checks = private_checks(spec, acknowledgments)
             readiness = canvas_readiness.prepare(spec, fixture, acknowledgments, checks)
+            storage = (storage_factory.prepare(acknowledgments, fixture, checks)
+                       if storage_factory is not None else None)
+            if storage is not None:
+                evidence["storageControl"] = storage.evidence
             native = NativeFixture(fixture, captures / f"{fixture}.log", binary, checks)
-            with audited_fixture(native, evidence) as audit:
+            with audited_fixture(native, evidence) as audit, storage if storage is not None else nullcontext():
+                if storage is not None:
+                    storage.bind(native)
                 if readiness is not None:
                     evidence["readiness"] = canvas_readiness.release(native, spec, acknowledgments, readiness)
                 deadline = time.monotonic() + 180
@@ -110,6 +149,8 @@ def run(spec, fixture, binary, captures):
                 sampled = 0.
                 while True:
                     native.require_running()
+                    if storage is not None:
+                        storage.service(native)
                     if time.monotonic() - sampled >= .2:
                         audit.checkpoint("running")
                         sampled = time.monotonic()
@@ -127,6 +168,8 @@ def run(spec, fixture, binary, captures):
                         validate(spec, fixture, receipts[0])
                         if seen != len(spec.stages):
                             raise RuntimeError("Canvas check ended before all intermediate captures")
+                        if storage is not None:
+                            storage.finish(native)
                         break
                     if time.monotonic() >= deadline:
                         raise TimeoutError(f"{fixture}: no final canvas receipt; see {native.log}")
@@ -135,6 +178,8 @@ def run(spec, fixture, binary, captures):
                 audit.capture(screenshot, "final")
                 evidence["screenshot"] = str(screenshot)
             validate_closed(spec, fixture, native.log, evidence["stages"], evidence["native"])
+            if storage is not None:
+                storage.validate_closed(native)
             if readiness is not None:
                 canvas_readiness.validate_closed(native.log, spec, evidence["readiness"])
             evidence["closedLogRevalidated"] = True

@@ -299,13 +299,17 @@ pub(super) async fn run(
         )
         .await?;
     }
+    native::reveal_filters(desktop).await?;
+    // Keep required detail status visible, and settle popup rendering before
+    // injecting the genuine mounted search control's native-ahead/IME state.
+    native::reveal_control(desktop, "workflow-activity-close-detail").await?;
     for label in ["raw-refused", "composition-refused"] {
         let before = snapshot(&state.peek());
         let requests = endpoint::snapshot(&state.peek())["ledger"]["requests"].clone();
         if label == "raw-refused" {
-            wait_dom(desktop,"(()=>{const e=document.getElementById('workflow-activity-from');e.value='2026-06-01';return{ok:e.value==='2026-06-01'}})()").await?;
+            wait_dom(desktop,"(()=>{const e=document.getElementById('workflow-activity-user-search');e.value='Uncommitted native search';return{ok:e.value==='Uncommitted native search'}})()").await?;
         } else {
-            wait_dom(desktop,"(()=>{const e=document.getElementById('workflow-activity-from');e.dispatchEvent(new CompositionEvent('compositionstart',{bubbles:true,data:'2'}));return{ok:document.getElementById('workflow-management').__workflowManagement?.composing===true}})()").await?;
+            wait_dom(desktop,"(()=>{const e=document.getElementById('workflow-activity-user-search');e.dispatchEvent(new CompositionEvent('compositionstart',{bubbles:true,data:'2'}));return{ok:document.getElementById('workflow-management').__workflowManagement?.composing===true}})()").await?;
         }
         let inv = event(state)?;
         tokio::time::sleep(Duration::from_millis(500)).await;
@@ -318,12 +322,12 @@ pub(super) async fn run(
         {
             return Err("Refused refresh changed buffers, policy requests or detail".into());
         }
-        let native=wait_dom(desktop,"(()=>{const e=document.getElementById('workflow-activity-from');return{ok:!!e,value:e?.value,composing:!!document.getElementById('workflow-management').__workflowManagement?.composing}})()").await?;
+        let native=wait_dom(desktop,"(()=>{const e=document.getElementById('workflow-activity-user-search');return{ok:!!e,value:e?.value,composing:!!document.getElementById('workflow-management').__workflowManagement?.composing}})()").await?;
         stage(state,desktop,name,label,json!({"invalidation":inv,"before":before,"after":after,"native":native,"requestsUnchanged":true}),&mut stages,&mut captures).await?;
         if label == "raw-refused" {
-            wait_dom(desktop,"(()=>{document.getElementById('workflow-activity-from').value='';return{ok:true}})()").await?;
+            wait_dom(desktop,"(()=>{document.getElementById('workflow-activity-user-search').value='';return{ok:true}})()").await?;
         } else {
-            wait_dom(desktop,"(()=>{document.getElementById('workflow-activity-from').dispatchEvent(new CompositionEvent('compositionend',{bubbles:true,data:'2'}));return{ok:!document.getElementById('workflow-management').__workflowManagement?.composing}})()").await?;
+            wait_dom(desktop,"(()=>{document.getElementById('workflow-activity-user-search').dispatchEvent(new CompositionEvent('compositionend',{bubbles:true,data:'2'}));return{ok:!document.getElementById('workflow-management').__workflowManagement?.composing}})()").await?;
         }
     }
     endpoint::mode(&state.peek(), endpoint::Mode::Held)?;

@@ -76,6 +76,14 @@ pub(super) fn submit(
         super::continuation_fixture::dispatch(&mut state.write(), &attempt, captured.3);
         return;
     }
+    if super::underline_fixture::enabled(&state.peek()) {
+        super::underline_fixture::dispatch(&mut state.write(), &attempt, captured.3);
+        return;
+    }
+    if super::heading_fixture::enabled(&state.peek()) {
+        super::heading_fixture::dispatch(&mut state.write(), &attempt, captured.3);
+        return;
+    }
     if super::fixture::enabled(&state.peek()) {
         super::fixture::dispatch(&mut state.write(), &attempt, captured.3);
         return;
@@ -106,7 +114,7 @@ pub(super) fn submit(
                     draft,
                     generation,
                     &attempt,
-                    "Could not check the paragraph before saving. Cancel and refresh.",
+                    "Could not check this text before saving. Cancel and refresh.",
                 );
                 return;
             }
@@ -138,7 +146,7 @@ pub(super) fn submit(
                     draft,
                     generation,
                     &attempt,
-                    "This paragraph or your access changed. Cancel and refresh.",
+                    "This text or your access changed. Cancel and refresh.",
                 );
                 return;
             }
@@ -173,7 +181,7 @@ pub(super) fn submit(
                         &mut shell,
                         &attempt,
                         checklist::Outcome::Rejected(
-                            "The paragraph edit was not sent. Refresh before trying again.",
+                            "The text edit was not sent. Refresh before trying again.",
                         ),
                     );
                 }
@@ -193,9 +201,8 @@ pub(super) fn submit(
             if let Ok(mut d) = draft.try_write() {
                 if let Some(d) = d.as_mut().filter(|d| d.generation == generation) {
                     d.pending = None;
-                    d.error = Some(
-                        "The paragraph edit was not sent. Cancel and refresh before trying again.",
-                    );
+                    d.error =
+                        Some("The text edit was not sent. Cancel and refresh before trying again.");
                 }
             }
         }

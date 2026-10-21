@@ -112,6 +112,24 @@ pub(crate) fn observed(shell: &mut ShellState, team: &str) -> Result<Snapshot, E
     capture(shell, team)
 }
 
+/// Read an existing positive observation without allocating a lifecycle entry.
+pub(crate) fn observed_readonly(shell: &ShellState, team: &str) -> Result<Snapshot, Error> {
+    let context = Context::capture(shell, team)?;
+    let entry = shell
+        .app_home
+        .cfm_lifecycle
+        .entries
+        .get(&context.key())
+        .filter(|entry| entry.major_initialized && entry.context.account_current(shell))
+        .ok_or_else(|| Error::Api("channel_lifecycle_unavailable".into()))?;
+    Ok(Snapshot {
+        context: entry.context.clone(),
+        identity: entry.identity.clone(),
+        slow_connections: entry.slow_connections,
+        major: entry.major,
+    })
+}
+
 /// Called only by the accepted split initializer after its synchronous source
 /// payload sink succeeds. A userBoot success or entry allocation cannot call it.
 pub(super) fn initialized(shell: &mut ShellState, context: &Context) -> bool {

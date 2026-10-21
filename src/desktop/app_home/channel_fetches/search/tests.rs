@@ -75,6 +75,13 @@ fn row() -> Value {
 // Exercise the real renderer-neutral pending/finish contract with ASCII-only
 // test fields, then the exact production atomic sink. No second live drainer.
 fn staged(shell: &ShellState, owner: &Owner) -> (Store, BTreeMap<String, Channel>) {
+    staged_origin(shell, owner, Origin::Directory)
+}
+fn staged_origin(
+    shell: &ShellState,
+    owner: &Owner,
+    origin: Origin,
+) -> (Store, BTreeMap<String, Channel>) {
     let ctx = &owner.context;
     let w = &shell.core.workspaces[&ctx.session.team_id];
     let (mut store, mut native) = (w.directory_channels.clone(), w.channels.clone());
@@ -93,7 +100,7 @@ fn staged(shell: &ShellState, owner: &Owner) -> (Store, BTreeMap<String, Channel
                 facts.clone(),
             )
             .unwrap();
-        assert_eq!(pending.origin(), Origin::Directory);
+        assert_eq!(pending.origin(), origin);
         let reply = RendererReply {
             generation: pending.generation().into(),
             fields: pending.fields().to_vec(),
@@ -123,8 +130,11 @@ fn staged(shell: &ShellState, owner: &Owner) -> (Store, BTreeMap<String, Channel
     (store, native)
 }
 fn publish(shell: &mut ShellState, owner: &Owner) {
+    publish_origin(shell, owner, Origin::Directory);
+}
+fn publish_origin(shell: &mut ShellState, owner: &Owner, origin: Origin) {
     let observed = observe(shell, &owner.context).unwrap();
-    let (store, native) = staged(shell, owner);
+    let (store, native) = staged_origin(shell, owner, origin);
     let token = Arc::new(());
     shell
         .app_home
@@ -141,6 +151,66 @@ fn publish(shell: &mut ShellState, owner: &Owner) {
         .get_mut(&owner.context.key())
         .unwrap()
         .drain = None;
+}
+
+#[test]
+fn requested_direct_row_preserves_raw_then_returns_current_complete_canonical_catalog() {
+    let (mut shell, owner) = prepared();
+    let team = owner.context.session.team_id.clone();
+    let before = canonical::capture(&mut shell, &team).unwrap();
+    let mut read = receipt(&mut shell, &owner);
+    read.origin = Origin::Direct;
+    read.requested = Some(NEW.into());
+    let raw = json!({"id":NEW,"name":"direct shared","is_channel":true,
+        "is_ext_shared":true,"opaque":{"retain":[0,false,null]}});
+    read.accept(&mut shell, &[raw.clone()], &|_| true).unwrap();
+    assert_eq!(
+        observe(&shell, &owner.context).unwrap().incoming(),
+        [raw.clone()]
+    );
+    assert!(!before.current(&shell));
+    assert!(!shell.core.workspaces[&team].channels.contains_key(NEW));
+    publish_origin(&mut shell, &owner, Origin::Direct);
+    let current = canonical::capture(&mut shell, &team).unwrap();
+    assert!(current.current(&shell));
+    assert!(current.row(OLD).is_some());
+    assert_eq!(current.row(NEW).unwrap()["fromAnotherTeam"], false);
+    assert_eq!(current.row(NEW).unwrap()["opaque"], raw["opaque"]);
+    assert_eq!(
+        shell.core.workspaces[&team].channels[NEW].extra["fromAnotherTeam"],
+        false
+    );
+}
+
+#[test]
+fn direct_requested_id_batch_and_original_query_or_socket_are_strict() {
+    for mode in 0..5 {
+        let (mut shell, owner) = prepared();
+        let mut read = receipt(&mut shell, &owner);
+        read.origin = Origin::Direct;
+        read.requested = Some(NEW.into());
+        let rows = match mode {
+            0 => vec![],
+            1 => vec![json!({"id":"CFOREIGN","name":"wrong"})],
+            2 => vec![row(), row()],
+            _ => vec![row()],
+        };
+        if mode == 4 {
+            shell
+                .core
+                .workspaces
+                .get_mut(&owner.context.session.team_id)
+                .unwrap()
+                .rt_generation += 1;
+        }
+        assert!(
+            read.accept(&mut shell, &rows, &|_| mode != 3).is_err(),
+            "{mode}"
+        );
+        let w = &shell.core.workspaces[&owner.context.session.team_id];
+        assert!(!w.directory_channels.has_pending(), "{mode}");
+        assert!(!w.channels.contains_key(NEW), "{mode}");
+    }
 }
 
 #[test]

@@ -1,3 +1,4 @@
+import {dateButton, dateWitnessSource} from './workflow_activity_date_fixture.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
@@ -23,23 +24,24 @@ function scene(filters = {}) {
     visit: '9007199254740997', document: 'F_ACTIVITY',
     filters: {revision: '9007199254740999', status: '', from: '', to: '', limit: '100', user: '', ...filters},
   };
-  const nodes = Object.fromEntries(['status', 'from', 'to', 'limit', 'user'].map(name => [name, {
+  const nodes = Object.fromEntries(['status', 'limit', 'user'].map(name => [name, {
     value: expected.filters[name], disabled: false, validity: {badInput: false},
   }]));
-  const form = {dataset: {revision: expected.filters.revision},
+  const date=dateButton(expected.filters);
+  const form = {isConnected:true, contains:node=>node===date, dataset: {revision: expected.filters.revision},
     querySelector: selector => nodes[selector.replace('#workflow-activity-', '')] ?? null};
   const root = {isConnected: true, dataset: {managementVisit: expected.visit, managementDocument: expected.document},
     __workflowManagement: {composing: false}, contains: node => node === form};
-  const dom = {root, form, modal: null};
+  const dom = {root, form, date, modal: null};
   const document = {
-    getElementById: id => id === 'workflow-management' ? dom.root : id === 'workflow-activity-filters' ? dom.form : null,
+    getElementById: id => id === 'workflow-management' ? dom.root : id === 'workflow-activity-filters' ? dom.form : id === 'workflow-activity-date-range' ? dom.date : null,
     querySelector: selector => {
       assert.equal(selector, '[role="dialog"][aria-modal="true"]'); return dom.modal;
     },
   };
   const realm = vm.createContext({document, Date});
-  vm.runInContext(source, realm, {filename: sourceUrl.pathname});
-  return {expected, nodes, form, root, dom, read: channel => realm.workflowActivityRead(expected, channel),
+  vm.runInContext(dateWitnessSource+"\n"+source, realm, {filename: sourceUrl.pathname});
+  return {expected, nodes, form, root, date, dom, read: channel => realm.workflowActivityRead(expected, channel),
     snapshot: () => JSON.parse(JSON.stringify(realm.workflowActivitySnapshot(expected)))};
 }
 const epoch = iso => Date.parse(iso) / 1000;
@@ -56,7 +58,7 @@ test('read is repeatable and does not mutate inputs or expectation', () => {
   assert.equal(JSON.stringify({expected: s.expected, nodes: s.nodes}), before);
 });
 test('live input ahead of serial state refuses for every captured control', () => {
-  for (const [name, value] of Object.entries({status: 'failed', from: '2026-01-01', to: '2026-02-01', limit: '25', user: 'U12345678'})) {
+  for (const [name, value] of Object.entries({status: 'failed', limit: '25', user: 'U12345678'})) {
     const s = scene(); s.nodes[name].value = value; assert.equal(s.snapshot(), null, name);
     s.expected.filters[name] = value; assert.notEqual(s.snapshot(), null, name);
   }
@@ -79,16 +81,19 @@ test('composition or a modal refuses until the blocker is cleared', () => {
   s.dom.modal = null; assert.notEqual(s.snapshot(), null);
 });
 test('missing or disabled control refuses every captured field', () => {
-  for (const name of ['status', 'from', 'to', 'limit', 'user']) {
+  for (const name of ['status', 'limit', 'user']) {
     const s = scene(); s.nodes[name].disabled = true; assert.equal(s.snapshot(), null, name);
     delete s.nodes[name]; assert.equal(s.snapshot(), null, name);
   }
 });
 test('badInput refuses even when the browser exposes the expected empty string', () => {
-  for (const name of ['status', 'from', 'to', 'limit', 'user']) {
+  for (const name of ['status', 'limit', 'user']) {
     const s = scene(); s.nodes[name].validity.badInput = true; assert.equal(s.snapshot(), null, name);
   }
 });
+test('calendar open, Tab-retained dirty, and pending IPC all refuse committed reads',()=>{for(const flag of ['calendarOpen','calendarDirty','calendarPending']){const s=scene();s.date.dataset[flag]='true';assert.equal(s.snapshot(),null,flag);}});
+test('actual date button identity semantics and committed attributes are required',()=>{for(const change of [s=>{s.date.tagName='INPUT';},s=>{s.date.type='submit';},s=>{s.date.ariaLabel='Other';},s=>{s.date.textContent='';},s=>{s.date.isConnected=false;},s=>{s.date.disabled=true;},s=>{s.date.fieldsetDisabled=true;},s=>{s.form.contains=()=>false;},s=>{s.date.dataset.calendarEpoch='01';},s=>{s.date.dataset.revision='other';},s=>{s.date.dataset.from='2026-01-01';},s=>{s.date.dataset.to='2026-01-01';}]){const s=scene();change(s);assert.equal(s.snapshot(),null);}});
+test('read-busy accessibility state preserves owned date observation but policy disabled refuses',()=>{const s=scene();s.date.dataset.calendarReadBusy='true';s.date.ariaDisabled='true';assert.deepEqual(s.snapshot(),{from:null,to:null});s.date.disabled=true;assert.equal(s.snapshot(),null);s.date.disabled=false;s.date.fieldsetDisabled=true;assert.equal(s.snapshot(),null);});
 test('strict date syntax and impossible calendar dates refuse', () => {
   for (const invalid of ['2026-2-01', '26-02-01', '2026-02-1', ' 2026-02-01', '2026-02-01 ',
     '2026-02-30', '2026-04-31', '2026-00-01', '2026-13-01', '2026-01-00',
@@ -117,7 +122,7 @@ test('same date includes the whole local day and reversed dates refuse', () => t
 }));
 test('89-day separation allows 90 inclusive dates while 90 and 91 refuse', () => {
   // Matches retained tePt/Day.js boundary oracle; negative ranges additionally
-  // refuse here because manual native inputs are already ordered from/to.
+  // refuse here because committed endpoint values are already ordered from/to.
   for (const zone of ['UTC', 'America/New_York']) timezone(zone, () => {
     for (const [from, allowed, boundary, beyond] of [
       ['2026-01-01', '2026-03-31', '2026-04-01', '2026-04-02'],
@@ -129,6 +134,8 @@ test('89-day separation allows 90 inclusive dates while 90 and 91 refuse', () =>
     }
   });
 });
+test('untouched exact initial default permits 90-day difference without broadening new selection',()=>{for(const zone of ['UTC','America/New_York'])timezone(zone,()=>{const values={from:'2026-01-01',to:'2026-04-01',date_origin:'default',default_from:'2026-01-01',default_to:'2026-04-01'};assert.notEqual(scene(values).snapshot(),null);assert.equal(scene({...values,to:'2026-04-02',default_to:'2026-04-02'}).snapshot(),null);assert.equal(scene({...values,date_origin:'selection',default_from:'',default_to:''}).snapshot(),null);assert.equal(scene({...values,default_from:'2025-12-31'}).snapshot(),null);assert.equal(scene({...values,date_origin:'invented'}).snapshot(),null);});});
+test('default provenance is model-bound rather than inferred from DOM or range length',()=>{const s=scene({from:'2026-01-01',to:'2026-04-01'});s.date.dataset.rangeOrigin='default';s.date.dataset.defaultFrom=s.date.dataset.from;s.date.dataset.defaultTo=s.date.dataset.to;assert.equal(s.snapshot(),null);const a=scene();a.date.dataset.defaultFrom='2026-01-01';assert.equal(a.snapshot(),null);});
 test('New York spring DST day has 23 hours and fall day has 25', () => timezone('America/New_York', () => {
   for (const [date, from, to, hours] of [
     ['2026-03-08', '2026-03-08T05:00:00Z', '2026-03-09T03:59:59Z', 23],
@@ -169,4 +176,4 @@ assert.equal(process.env.TZ, originalTimezone);
 assert.equal(fs.readFileSync(sourceUrl, 'utf8'), source, 'installed helper changed during test');
 console.log(JSON.stringify({status: 'pass', groups: groups.length,
   helperSha256: crypto.createHash('sha256').update(source).digest('hex'),
-  scope: 'Actual installed helper with synthetic DOM only; no native/visual acceptance. Range checks apply to manual-input snapshots, not URL initialization or source defaults.'}));
+  scope: 'Actual installed helper with synthetic DOM only; no native/visual acceptance. Committed selection range and exact source-default provenance are separate; synthetic DOM tests do not claim native calendar acceptance.'}));

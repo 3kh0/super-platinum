@@ -164,3 +164,54 @@ fn newer_source_and_unrequested_or_unobserved_rows_are_not_overwritten() {
         );
     }
 }
+
+#[test]
+fn background_progress_retains_original_batch_order_and_unsent_ids() {
+    let progress = RefreshProgress::default();
+    progress.admitted(&[B.into(), B.into()]);
+    assert_eq!(progress.ids(&[A.into(), B.into()]), [B]);
+    progress.admitted(&[A.into()]);
+    assert_eq!(progress.ids(&[A.into(), B.into()]), [A, B]);
+}
+
+#[test]
+fn legacy_background_witness_cannot_borrow_later_canonical_lineage() {
+    let mut shell = shell();
+    let owner = Context::capture(&shell, TEAM).unwrap();
+    let source = RefreshSource::capture(&shell, &owner).unwrap();
+    assert!(source.current(&shell, &owner));
+    let w = shell.core.workspaces.get_mut(TEAM).unwrap();
+    let boot = w.directory_usergroups.begin_boot(&w.usergroups).unwrap();
+    let commit = w
+        .directory_usergroups
+        .observe_boot(
+            boot,
+            &owner.account,
+            &owner.session,
+            owner.epoch,
+            &w.usergroups,
+            &json!({"ok":true,"team":{"id":TEAM},"self":{"id":"USELF0001"},"subteams":{"self":[]}}),
+        )
+        .unwrap();
+    (w.directory_usergroups, w.usergroups) = commit.into_parts();
+    assert!(!source.current(&shell, &owner));
+    let tracked = RefreshSource::capture(&shell, &owner).unwrap();
+    assert!(tracked.current(&shell, &owner));
+    let w = shell.core.workspaces.get_mut(TEAM).unwrap();
+    let _ticket = w
+        .directory_usergroups
+        .enqueue(
+            &owner.account,
+            &owner.session,
+            owner.epoch,
+            "accepted-newer",
+            &w.usergroups,
+            super_platinum_core::state::directory_usergroups::Operation::Membership { ids: vec![] },
+        )
+        .unwrap();
+    assert!(!tracked.current(&shell, &owner));
+    assert!(
+        RefreshSource::capture(&shell, &owner).is_err(),
+        "pending source is not a legacy fallback"
+    );
+}

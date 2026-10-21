@@ -83,6 +83,67 @@ fn factories_admit_only_exact_read_acquisition_shapes() {
         assert!(!read_allowed(&r));
     }
 }
+
+#[test]
+fn full_reaction_factory_is_a_closed_original_message_read() {
+    let request = api::reactions_get(
+        &SlackClient::default(),
+        &workspace(),
+        "C01234567".into(),
+        "1700000001.000001".into(),
+    );
+    assert!(request.url.contains("/api/reactions.get"));
+    let RequestBody::Form(fields) = &request.body else {
+        panic!()
+    };
+    assert_eq!(
+        fields
+            .iter()
+            .map(|(k, v)| (k.as_str(), v.as_str()))
+            .collect::<BTreeMap<_, _>>(),
+        BTreeMap::from([
+            ("token", "fixture"),
+            ("channel", "C01234567"),
+            ("timestamp", "1700000001.000001"),
+            ("full", "true")
+        ])
+    );
+    assert!(acquire_allowed(&request));
+    assert!(!read_allowed(&request));
+    for (key, value) in [
+        ("full", "false"),
+        ("timestamp", "bad"),
+        ("channel", "C_OTHER"),
+        ("file", "F01234567"),
+        ("name", "wave"),
+        ("ts", "1700000001.000001"),
+    ] {
+        let mut changed = request.clone();
+        set(&mut changed, key, value);
+        assert!(!acquire_allowed(&changed), "{key}");
+    }
+    let mut missing = request.clone();
+    let RequestBody::Form(fields) = &mut missing.body else {
+        panic!()
+    };
+    fields.retain(|(key, _)| key != "full");
+    assert!(!acquire_allowed(&missing));
+    let mut duplicate = request.clone();
+    let RequestBody::Form(fields) = &mut duplicate.body else {
+        panic!()
+    };
+    fields.push(("full".into(), "true".into()));
+    assert!(!acquire_allowed(&duplicate));
+    for url in [
+        "https://fixture.slack.com.evil.test/api/reactions.get",
+        "https://fixture.slack.com/api/reactions.get?full=true",
+        "https://fixture.slack.com/api/reactions.remove",
+    ] {
+        let mut changed = request.clone();
+        changed.url = url.into();
+        assert!(!acquire_allowed(&changed));
+    }
+}
 #[test]
 fn malformed_foreign_or_ambiguous_read_forms_are_refused() {
     for (k, v) in [

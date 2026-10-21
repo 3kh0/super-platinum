@@ -6,6 +6,7 @@ pub mod file_title_source;
 pub mod file_titles;
 pub mod files;
 pub mod groups;
+pub mod list_membership;
 pub mod matching;
 pub mod member_matching;
 pub mod member_policy;

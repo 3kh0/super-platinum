@@ -138,7 +138,17 @@ impl ButtonStyle {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RichNode {
     Canvas(CanvasTarget),
+    /// A whole rich-text file occurrence, retaining original source team and raw
+    /// style/opaque fields. Canonical titles are resolved only while rendering.
+    FileMention {
+        team: String,
+        raw: serde_json::Value,
+        fallback: String,
+    },
     Text(String),
+    /// Display-only underline from an observed rich text/link/mention leaf.
+    /// Keeps its existing typed child and action identity; not an editor schema.
+    Underlined(Box<RichNode>),
     StyledText {
         text: String,
         bold: bool,
@@ -253,6 +263,8 @@ impl RichNode {
         };
         match self {
             Self::Canvas(target) => output.push_str(&target.title),
+            Self::FileMention { fallback, .. } => output.push_str(fallback),
+            Self::Underlined(node) => node.write_plain(output),
             Self::Text(text) | Self::StyledText { text, .. } | Self::Code(text) => {
                 output.push_str(text)
             }

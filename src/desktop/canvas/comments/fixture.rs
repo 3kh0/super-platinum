@@ -2,14 +2,26 @@
 use super::*;
 use serde_json::{Value, json};
 use std::sync::{Mutex, OnceLock};
+pub(crate) mod attribution;
+pub(in crate::canvas) mod canonical_files;
+pub(super) mod file_fallback;
+mod root_bodies;
+pub(super) mod special;
 #[derive(Default)]
 struct Record {
     requests: Vec<Value>,
+    responses: Vec<Value>,
     fail_next: bool,
+    special_retained: Value,
+    file_fallback_retained: Value,
 }
 static RECORD: OnceLock<Mutex<Record>> = OnceLock::new();
 pub(in crate::canvas) fn requested() -> bool {
     annotation::fixture::requested()
+        || attribution::requested()
+        || special::requested()
+        || file_fallback::requested()
+        || canonical_files::requested()
         || reply::fixture::requested()
         || mutation::fixture::requested()
         || crate::fixture::is_fixture()
@@ -19,6 +31,9 @@ pub(in crate::canvas) fn requested() -> bool {
             )
 }
 fn eligible(shell: &ShellState) -> bool {
+    if attribution::requested() {
+        return attribution::enabled(shell);
+    }
     requested()
         && shell.core.session.is_none()
         && shell.core.transport.is_none()
@@ -30,6 +45,14 @@ pub(super) fn ledger() -> Vec<Value> {
         .lock()
         .unwrap()
         .requests
+        .clone()
+}
+pub(super) fn responses() -> Vec<Value> {
+    RECORD
+        .get_or_init(Default::default)
+        .lock()
+        .unwrap()
+        .responses
         .clone()
 }
 pub(super) fn fail_next() {
@@ -49,7 +72,7 @@ pub(super) fn response(shell: &ShellState, ticket: &Ticket) -> Result<Value, Err
     if annotation::fixture::requested() {
         return annotation::fixture::response(shell, ticket);
     }
-    if reply::fixture::requested() {
+    if reply::fixture::requested() && !attribution::requested() && !canonical_files::requested() {
         return reply::fixture::response(shell, ticket);
     }
     if mutation::fixture::requested() {
@@ -76,28 +99,41 @@ pub(super) fn response(shell: &ShellState, ticket: &Ticket) -> Result<Value, Err
         .requests
         .push(json!({"url":request.url,"method":request.method,"fields":fields}));
     if std::mem::take(&mut record.fail_next) {
+        record.responses.push(Value::Null);
         return Err(Error::Api("fixture_read_failed".into()));
     }
     let r = "1719800000.000100";
-    Ok(match (&ticket.query, ticket.cursor.as_deref()) {
-        (Query::Stream(Filter::Recent), None) => {
-            json!({"ok":true,"has_more":true,"response_metadata":{"next_cursor":"stream-next"},"messages":[root(r,"Review the launch checklist before Friday. :wave:"),reply("1719800001.000100",r,"The keyboard review is complete.\nReady for the final pass."),root("1719800020.000100","A second thread keeps its own identity.")]})
+    let response = if attribution::requested() {
+        attribution::response(ticket)?
+    } else if special::requested() {
+        special::response(ticket)?
+    } else if file_fallback::requested() {
+        file_fallback::response(ticket)?
+    } else if canonical_files::requested() {
+        canonical_files::response(ticket)?
+    } else {
+        match (&ticket.query, ticket.cursor.as_deref()) {
+            (Query::Stream(Filter::Recent), None) => {
+                json!({"ok":true,"has_more":true,"response_metadata":{"next_cursor":"stream-next"},"messages":[root_bodies::rich(),reply("1719800001.000100",r,"The keyboard review is complete.\nReady for the final pass."),root_bodies::fallback()]})
+            }
+            (Query::Stream(Filter::Recent), Some("stream-next")) => {
+                json!({"ok":true,"has_more":false,"messages":[root_bodies::markdown()]})
+            }
+            (Query::Stream(Filter::Resolved), None) => {
+                json!({"ok":true,"messages":[root_bodies::literal(),root_bodies::hidden()]})
+            }
+            (Query::Stream(Filter::Unread), None) => json!({"ok":true,"messages":[]}),
+            (Query::Replies(id), None) if id == r => {
+                json!({"ok":true,"has_more":true,"response_metadata":{"next_cursor":"reply-next"},"messages":[root_bodies::rich(),reply("1719800001.000100",r,"The keyboard review is complete.\nReady for the final pass.")]})
+            }
+            (Query::Replies(id), Some("reply-next")) if id == r => {
+                json!({"ok":true,"messages":[reply("1719800002.000100",r,"Unicode remains readable: \u{65e5}\u{672c}\u{8a9e} \u{1f98a} e\u{301}.")]})
+            }
+            _ => return Err(Error::Api("fixture_unexpected_comment_query".into())),
         }
-        (Query::Stream(Filter::Recent), Some("stream-next")) => {
-            json!({"ok":true,"has_more":false,"messages":[root("1719800030.000100","An older thread loaded from the next page.")]})
-        }
-        (Query::Stream(Filter::Resolved), None) => {
-            json!({"ok":true,"messages":[root("1719700000.000100","Resolved: the launch date is confirmed.")]})
-        }
-        (Query::Stream(Filter::Unread), None) => json!({"ok":true,"messages":[]}),
-        (Query::Replies(id), None) if id == r => {
-            json!({"ok":true,"has_more":true,"response_metadata":{"next_cursor":"reply-next"},"messages":[root(r,"Review the launch checklist before Friday. :wave:"),reply("1719800001.000100",r,"The keyboard review is complete.\nReady for the final pass.")]})
-        }
-        (Query::Replies(id), Some("reply-next")) if id == r => {
-            json!({"ok":true,"messages":[reply("1719800002.000100",r,"Unicode remains readable: \u{65e5}\u{672c}\u{8a9e} \u{1f98a} e\u{301}.")]})
-        }
-        _ => return Err(Error::Api("fixture_unexpected_comment_query".into())),
-    })
+    };
+    record.responses.push(response.clone());
+    Ok(response)
 }
 
 pub(super) fn file() -> super_platinum_core::slack::models::File {

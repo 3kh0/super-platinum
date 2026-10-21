@@ -215,7 +215,7 @@ pub(super) async fn editor_layout(
       return {ok:d.scrollWidth<=d.clientWidth+1&&sc.scrollWidth<=sc.clientWidth+1&&bounds.every(b=>b.visible)&&field.clientHeight>=46,viewport:[innerWidth,innerHeight],clip,bounds,editor:[er.x,er.y,er.width,er.height],readerScroll:sc.scrollTop};
     })()"#).await
 }
-pub(super) async fn click(
+pub(in crate::canvas) async fn click(
     desktop: &dioxus::desktop::DesktopContext,
     selector: &str,
 ) -> Result<(), String> {
@@ -229,7 +229,7 @@ pub(super) async fn set_draft(
     checked(desktop,&format!(r#"(()=>{{const e=document.getElementById('canvas-text-draft');e.innerHTML={};e.dispatchEvent(new InputEvent('input',{{bubbles:true,inputType:'insertText'}}));e.focus();return {{ok:e.isContentEditable}};}})()"#,json!(html))).await?;
     Ok(())
 }
-pub(super) async fn wait(
+pub(in crate::canvas) async fn wait(
     desktop: &dioxus::desktop::DesktopContext,
     script: &str,
 ) -> Result<Value, String> {
@@ -243,7 +243,7 @@ pub(super) async fn wait(
     }
     Err(format!("Canvas did not reach expected state: {last}"))
 }
-pub(super) async fn checked(
+pub(in crate::canvas) async fn checked(
     desktop: &dioxus::desktop::DesktopContext,
     script: &str,
 ) -> Result<Value, String> {

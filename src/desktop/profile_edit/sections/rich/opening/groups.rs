@@ -10,6 +10,30 @@ pub(super) struct Groups {
     labels: BTreeMap<String, String>,
 }
 impl Groups {
+    pub(super) fn hits(shell: &ShellState, token: &Token, ids: &BTreeSet<String>) -> Vec<Hit> {
+        if !token.current(shell) {
+            return vec![];
+        }
+        let Ok(owner) = Context::capture(shell, &token.owner.team) else {
+            return vec![];
+        };
+        let Some(workspace) = shell.core.workspaces.get(&token.owner.team) else {
+            return vec![];
+        };
+        let owner = Arc::new(owner);
+        ids.iter()
+            .filter(|id| {
+                workspace
+                    .usergroups
+                    .get(*id)
+                    .is_some_and(|g| &g.id == *id && g.profile_label().is_some())
+            })
+            .map(|id| Hit::Group {
+                owner: owner.clone(),
+                id: id.clone(),
+            })
+            .collect()
+    }
     pub(super) fn capture(
         shell: &ShellState,
         token: &Token,

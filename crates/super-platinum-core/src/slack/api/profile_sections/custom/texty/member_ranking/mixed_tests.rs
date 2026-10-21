@@ -240,3 +240,163 @@ fn member_only_wrapper_matches_original_vectors_with_empty_group_slice() {
         }
     }
 }
+
+fn run_list(
+    state: &Value,
+    members: &[local::Scored<'_>],
+    groups: &[GroupScored<'_>],
+    list: &ListContext<'_>,
+) -> Result<Vec<Ranked>, Error> {
+    let history = History::from_wire("{}").unwrap();
+    let model = Model::from_weights(std::collections::BTreeMap::from([
+        ("USER_ENTITY_TYPE_CTR_30DD".into(), 3.0),
+        ("MEMBER_OF_CURRENT_CHANNEL".into(), 10.0),
+        ("USER_IS_IN_CURRENT_THREAD".into(), 20.0),
+    ]))
+    .unwrap();
+    let normalize = |s: &str| Ok(s.to_lowercase());
+    rank_list_mixed(
+        "",
+        members,
+        groups,
+        list,
+        &Context {
+            state,
+            history: &history,
+            model: &model,
+            now_ms: 1760000000000.0,
+            normalize: &normalize,
+        },
+        &mut SimilarityCache::default(),
+        |raw| Ok(raw["profile"]["display_name"].as_str().unwrap().into()),
+        |a, b| Ok(a.cmp(b)),
+        false,
+    )
+}
+
+#[test]
+fn list_mixed_keeps_original_channel_root_and_duplicate_occurrences() {
+    let raw = vec![member(1), member(2), member(2)];
+    let snapshots = vec![group(1), group(1)];
+    let channel = json!({"id":"CLIST0001","is_file":true});
+    let membership =
+        std::collections::BTreeMap::from([("U00000001".into(), false), ("U00000002".into(), true)]);
+    let thread_users = vec!["U00000002".into()];
+    let list = ListContext {
+        current_channel: Some(&channel),
+        current_thread_users: &thread_users,
+        channel_membership: &membership,
+    };
+    let result = run_list(&state(), &scored(&raw), &groups(&snapshots), &list).unwrap();
+    assert_eq!(result.len(), 5);
+    assert_eq!(result[0].original_index, 1);
+    assert_eq!(result[1].original_index, 2);
+    let mut occurrences = result
+        .iter()
+        .map(|row| row.original_index)
+        .collect::<Vec<_>>();
+    occurrences.sort();
+    assert_eq!(occurrences, [0, 1, 2, 3, 4]);
+    for row in result {
+        assert_eq!(row.row["numResults"], 5);
+        if row.original_index < raw.len() {
+            assert_eq!(row.row["id"], raw[row.original_index]["id"]);
+            let contextual = row.original_index != 0;
+            assert_eq!(row.row["isMemberOfCurrentChannel"], contextual);
+            assert_eq!(row.row["isMemberOfCurrentThread"], contextual);
+        } else {
+            let group = &snapshots[row.original_index - raw.len()];
+            assert_eq!(row.row["id"], group.id());
+            assert_eq!(row.row["item"]["name"], "Report people");
+            assert_eq!(row.row["item"]["opaque"], json!({"retained":true}));
+            assert_eq!(row.row["item"]["facts"]["member"], false);
+            assert_eq!(row.row["bonusPointMap"]["isUserGroupOrKeyword"], -25.0);
+            assert!(row.row.get("isMemberOfCurrentChannel").is_none());
+            assert!(row.row.get("isMemberOfCurrentThread").is_none());
+        }
+    }
+}
+
+#[test]
+fn list_mixed_has_one_shortlist_and_final_cap_with_global_indexes() {
+    let channel = json!({"id":"CLIST0001","is_file":true});
+    for count in [40, 80] {
+        let raw: Vec<_> = (0..count).map(member).collect();
+        let snapshots: Vec<_> = (0..count).map(group).collect();
+        let membership = raw
+            .iter()
+            .map(|row| (row["id"].as_str().unwrap().into(), false))
+            .collect();
+        let list = ListContext {
+            current_channel: Some(&channel),
+            current_thread_users: &[],
+            channel_membership: &membership,
+        };
+        let result = run_list(&state(), &scored(&raw), &groups(&snapshots), &list).unwrap();
+        assert_eq!(result.len(), 25);
+        assert!(result.iter().all(|row| row.row["numResults"] == 75));
+        if count == 40 {
+            // Retained groups can win the model score only after the one shared
+            // shortlist; their original indexes remain after all member rows.
+            assert!(result.iter().all(|row| row.row["type"] == "userGroup"));
+            assert_eq!(
+                result
+                    .iter()
+                    .map(|row| row.original_index)
+                    .collect::<Vec<_>>(),
+                (40..65).collect::<Vec<_>>()
+            );
+        } else {
+            // 80 members fill the initial shortlist. A separate group shortlist
+            // would incorrectly allow the higher-CTR groups into final results.
+            assert!(result.iter().all(|row| row.row["type"] == "member"));
+            assert!(result.iter().all(|row| row.original_index < 75));
+        }
+    }
+}
+
+#[test]
+fn list_mixed_refuses_missing_member_observation_or_group_identity() {
+    let raw = vec![member(1)];
+    let snapshots = vec![group(1)];
+    let channel = json!({"id":"CLIST0001","isUnknown":true});
+    let mut membership = std::collections::BTreeMap::new();
+    {
+        let list = ListContext {
+            current_channel: Some(&channel),
+            current_thread_users: &[],
+            channel_membership: &membership,
+        };
+        assert!(matches!(
+            run_list(&state(), &scored(&raw), &groups(&snapshots), &list),
+            Err(Error::MissingObservation(_))
+        ));
+        // Group IDs need no fabricated member-membership observation.
+        assert!(run_list(&state(), &[], &groups(&snapshots), &list).is_ok());
+    }
+    membership.insert("U00000001".into(), false);
+    let list = ListContext {
+        current_channel: Some(&channel),
+        current_thread_users: &[],
+        channel_membership: &membership,
+    };
+    let invalid = [GroupScored {
+        snapshot: &snapshots[0],
+        id: "SOTHER001",
+        score: 0,
+        is_exact_match: None,
+    }];
+    assert_eq!(
+        run_list(&state(), &scored(&raw), &invalid, &list).unwrap_err(),
+        Error::InvalidInput
+    );
+    let mut missing_ctr = state();
+    missing_ctr["entityCtr"]
+        .as_object_mut()
+        .unwrap()
+        .remove("userGroup");
+    assert!(matches!(
+        run_list(&missing_ctr, &scored(&raw), &groups(&snapshots), &list),
+        Err(Error::MissingObservation(_))
+    ));
+}

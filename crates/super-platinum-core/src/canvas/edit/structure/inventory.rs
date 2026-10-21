@@ -125,6 +125,11 @@ impl Inventory {
             return Err(Error::Unsupported);
         }
         let draft = text::canonical_draft(section)?;
+        // Underline is admitted for CONTENT-only edits; structural writes retain
+        // their previously verified formatting boundary.
+        if draft.runs.iter().any(|run| run.style.underline) {
+            return Err(Error::Unsupported);
+        }
         if let Some(wire) = section.crdt()? {
             // A modern stable ID may retain the initial base_sequence0 after
             // its canonical section sequence advances. It is not a new local

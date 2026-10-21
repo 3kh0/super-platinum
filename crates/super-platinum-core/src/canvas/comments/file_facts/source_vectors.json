@@ -1,0 +1,1567 @@
+{
+  "source": "tmp/canvas-canonical-file-roots-20261020/process-file-results.json",
+  "sha256": "dac0a8cc48ca022f4dc831168c7613db491704f349e7f7d4c6f6abe3ce759f07",
+  "scope": "Selected display/history facts; undefined becomes omission; native link admits only string name and nonempty string URL.",
+  "vectors": [
+    {
+      "case": "fresh generic hosted",
+      "previous": null,
+      "incoming": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical",
+        "mode": "hosted",
+        "isUnknown": false,
+        "isNonExistent": false,
+        "is_tombstoned": false,
+        "created": 10
+      },
+      "link": {
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical"
+      }
+    },
+    {
+      "case": "ordinary quip",
+      "previous": null,
+      "incoming": {
+        "id": "FFILE0001",
+        "mode": "quip",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical",
+        "mode": "quip",
+        "isUnknown": false,
+        "isNonExistent": false,
+        "is_tombstoned": false,
+        "created": 10
+      },
+      "link": {
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical"
+      }
+    },
+    {
+      "case": "ordinary list",
+      "previous": null,
+      "incoming": {
+        "id": "FFILE0001",
+        "mode": "list",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical",
+        "mode": "list",
+        "isUnknown": false,
+        "isNonExistent": false,
+        "is_tombstoned": false,
+        "created": 10
+      },
+      "link": {
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical"
+      }
+    },
+    {
+      "case": "ordinary external",
+      "previous": null,
+      "incoming": {
+        "id": "FFILE0001",
+        "mode": "external",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical",
+        "mode": "external",
+        "isUnknown": false,
+        "isNonExistent": false,
+        "is_tombstoned": false,
+        "created": 10
+      },
+      "link": {
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical"
+      }
+    },
+    {
+      "case": "ordinary post",
+      "previous": null,
+      "incoming": {
+        "id": "FFILE0001",
+        "mode": "post",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical",
+        "mode": "post",
+        "isUnknown": false,
+        "isNonExistent": false,
+        "is_tombstoned": false,
+        "created": 10
+      },
+      "link": {
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical"
+      }
+    },
+    {
+      "case": "ordinary snippet",
+      "previous": null,
+      "incoming": {
+        "id": "FFILE0001",
+        "mode": "snippet",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical",
+        "mode": "snippet",
+        "isUnknown": false,
+        "isNonExistent": false,
+        "is_tombstoned": false,
+        "created": 10
+      },
+      "link": {
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical"
+      }
+    },
+    {
+      "case": "ordinary docs",
+      "previous": null,
+      "incoming": {
+        "id": "FFILE0001",
+        "mode": "docs",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical",
+        "mode": "docs",
+        "isUnknown": false,
+        "isNonExistent": false,
+        "is_tombstoned": false,
+        "created": 10
+      },
+      "link": {
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical"
+      }
+    },
+    {
+      "case": "partial name retained but permalink erased",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "updated": 11
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "Canonical name",
+        "mode": "hosted",
+        "isUnknown": false,
+        "isNonExistent": false,
+        "is_tombstoned": false,
+        "updated": 11,
+        "created": 10
+      },
+      "link": null
+    },
+    {
+      "case": "partial explicit permalink retains name",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "permalink": "https://example.test/canonical/new"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical/new",
+        "mode": "hosted",
+        "is_tombstoned": false,
+        "created": 10
+      },
+      "link": {
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical/new"
+      }
+    },
+    {
+      "case": "rename requires no title substitution",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "name": "Renamed",
+        "title": "Decoy",
+        "permalink": "https://example.test/canonical"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "Renamed",
+        "permalink": "https://example.test/canonical",
+        "mode": "hosted",
+        "is_tombstoned": false,
+        "created": 10
+      },
+      "link": {
+        "name": "Renamed",
+        "permalink": "https://example.test/canonical"
+      }
+    },
+    {
+      "case": "explicit null permalink",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "permalink": null
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "Canonical name",
+        "permalink": null,
+        "mode": "hosted",
+        "is_tombstoned": false,
+        "created": 10
+      },
+      "link": null
+    },
+    {
+      "case": "explicit \"\" permalink",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "permalink": ""
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "Canonical name",
+        "permalink": "",
+        "mode": "hosted",
+        "is_tombstoned": false,
+        "created": 10
+      },
+      "link": null
+    },
+    {
+      "case": "missing name has no title fallback",
+      "previous": null,
+      "incoming": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "title": "Decoy",
+        "permalink": "https://example.test/canonical"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "permalink": "https://example.test/canonical",
+        "mode": "hosted",
+        "is_tombstoned": false
+      },
+      "link": null
+    },
+    {
+      "case": "empty name remains empty",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "name": "",
+        "permalink": "https://example.test/canonical"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "",
+        "permalink": "https://example.test/canonical",
+        "mode": "hosted",
+        "is_tombstoned": false,
+        "created": 10
+      },
+      "link": {
+        "name": "",
+        "permalink": "https://example.test/canonical"
+      }
+    },
+    {
+      "case": "whitespace name remains exact",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "name": "  \t ",
+        "permalink": "https://example.test/canonical"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "  \t ",
+        "permalink": "https://example.test/canonical",
+        "mode": "hosted",
+        "is_tombstoned": false,
+        "created": 10
+      },
+      "link": {
+        "name": "  \t ",
+        "permalink": "https://example.test/canonical"
+      }
+    },
+    {
+      "case": "null name remains null",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "name": null,
+        "permalink": "https://example.test/canonical"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": null,
+        "permalink": "https://example.test/canonical",
+        "mode": "hosted",
+        "is_tombstoned": false,
+        "created": 10
+      },
+      "link": null
+    },
+    {
+      "case": "nonstring name passes source block unchanged",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "name": {
+          "unsupported": "native"
+        },
+        "permalink": "https://example.test/canonical"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": {
+          "unsupported": "native"
+        },
+        "permalink": "https://example.test/canonical",
+        "mode": "hosted",
+        "is_tombstoned": false,
+        "created": 10
+      },
+      "link": null
+    },
+    {
+      "case": "nonstring permalink passes source block unchanged",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "permalink": {
+          "unsupported": "native"
+        }
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "Canonical name",
+        "permalink": {
+          "unsupported": "native"
+        },
+        "mode": "hosted",
+        "is_tombstoned": false,
+        "created": 10
+      },
+      "link": null
+    },
+    {
+      "case": "incoming refusal {\"isNonExistent\":true}",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "isNonExistent": true
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "isNonExistent": true
+      },
+      "link": null
+    },
+    {
+      "case": "incoming refusal {\"mode\":\"tombstone\"}",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "mode": "tombstone"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "mode": "tombstone"
+      },
+      "link": null
+    },
+    {
+      "case": "incoming refusal {\"mode\":\"not_found\"}",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "mode": "not_found"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "mode": "not_found"
+      },
+      "link": null
+    },
+    {
+      "case": "incoming refusal {\"file_access\":\"file_not_found\"}",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "file_access": "file_not_found"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "file_access": "file_not_found"
+      },
+      "link": null
+    },
+    {
+      "case": "incoming refusal {\"mode\":\"hidden_by_limit\"}",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "mode": "hidden_by_limit"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "mode": "hidden_by_limit"
+      },
+      "link": null
+    },
+    {
+      "case": "incoming refusal {\"is_hidden_by_limit\":true}",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "is_hidden_by_limit": true
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "is_hidden_by_limit": true
+      },
+      "link": null
+    },
+    {
+      "case": "incoming refusal {\"mode\":\"access_denied\"}",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "mode": "access_denied"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "mode": "access_denied"
+      },
+      "link": null
+    },
+    {
+      "case": "incoming refusal {\"file_access\":\"access_denied\"}",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "file_access": "access_denied"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "file_access": "access_denied"
+      },
+      "link": null
+    },
+    {
+      "case": "incoming refusal {\"mode\":\"canvas_slack_connect_blocked\"}",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "mode": "canvas_slack_connect_blocked"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "mode": "canvas_slack_connect_blocked"
+      },
+      "link": null
+    },
+    {
+      "case": "incoming refusal {\"mode\":\"lists_slack_connect_blocked\"}",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "mode": "lists_slack_connect_blocked"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "mode": "lists_slack_connect_blocked"
+      },
+      "link": null
+    },
+    {
+      "case": "incoming refusal {\"mode\":\"not_visible\"}",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "mode": "not_visible"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "mode": "not_visible"
+      },
+      "link": null
+    },
+    {
+      "case": "incoming refusal {\"file_access\":\"not_visible\"}",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "file_access": "not_visible"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "file_access": "not_visible"
+      },
+      "link": null
+    },
+    {
+      "case": "incoming refusal {\"file_access\":\"template_not_visible\"}",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "file_access": "template_not_visible"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "file_access": "template_not_visible"
+      },
+      "link": null
+    },
+    {
+      "case": "incoming refusal {\"mode\":\"template_not_visible\"}",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "mode": "template_not_visible"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "mode": "template_not_visible"
+      },
+      "link": null
+    },
+    {
+      "case": "incoming refusal {\"file_access\":\"canvas_globally_disabled\"}",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "file_access": "canvas_globally_disabled"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "file_access": "canvas_globally_disabled"
+      },
+      "link": null
+    },
+    {
+      "case": "incoming refusal {\"file_access\":\"slack_connect_team_blocked\"}",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "file_access": "slack_connect_team_blocked"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "file_access": "slack_connect_team_blocked"
+      },
+      "link": null
+    },
+    {
+      "case": "incoming refusal {\"file_access\":\"slack_connect_canvas_sharing_blocked\"}",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "file_access": "slack_connect_canvas_sharing_blocked"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "file_access": "slack_connect_canvas_sharing_blocked"
+      },
+      "link": null
+    },
+    {
+      "case": "incoming refusal {\"file_access\":\"canvas_disabled_user_team\"}",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "file_access": "canvas_disabled_user_team"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "file_access": "canvas_disabled_user_team"
+      },
+      "link": null
+    },
+    {
+      "case": "incoming refusal {\"file_access\":\"canvas_disabled_file_team\"}",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "file_access": "canvas_disabled_file_team"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "file_access": "canvas_disabled_file_team"
+      },
+      "link": null
+    },
+    {
+      "case": "incoming refusal {\"file_access\":\"slack_connect_lists_team_blocked\"}",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "file_access": "slack_connect_lists_team_blocked"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "file_access": "slack_connect_lists_team_blocked"
+      },
+      "link": null
+    },
+    {
+      "case": "incoming refusal {\"file_access\":\"slack_connect_lists_sharing_blocked\"}",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "file_access": "slack_connect_lists_sharing_blocked"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "file_access": "slack_connect_lists_sharing_blocked"
+      },
+      "link": null
+    },
+    {
+      "case": "incoming refusal {\"is_deleted\":true}",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "is_deleted": true
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "is_deleted": true
+      },
+      "link": null
+    },
+    {
+      "case": "incoming refusal {\"is_tombstoned\":true}",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "is_tombstoned": true
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "is_tombstoned": true
+      },
+      "link": null
+    },
+    {
+      "case": "incoming refusal {\"restriction_type\":1}",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "restriction_type": 1
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "restriction_type": 1
+      },
+      "link": null
+    },
+    {
+      "case": "absent current",
+      "previous": null,
+      "incoming": {
+        "id": "FFILE0001"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "is_tombstoned": false
+      },
+      "link": null
+    },
+    {
+      "case": "unknown without timestamp stays unknown",
+      "previous": {
+        "id": "FFILE0001",
+        "isUnknown": true
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "name": "Known-looking",
+        "permalink": "https://example.test/canonical"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "Known-looking",
+        "permalink": "https://example.test/canonical",
+        "isUnknown": true,
+        "is_tombstoned": false
+      },
+      "link": {
+        "name": "Known-looking",
+        "permalink": "https://example.test/canonical"
+      }
+    },
+    {
+      "case": "incoming timestamp clears predecessor unknown flags",
+      "previous": {
+        "id": "FFILE0001",
+        "isUnknown": true,
+        "isNonExistent": true
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical",
+        "mode": "hosted",
+        "isUnknown": false,
+        "isNonExistent": false,
+        "is_tombstoned": false,
+        "created": 10
+      },
+      "link": {
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical"
+      }
+    },
+    {
+      "case": "incoming nonexistent with timestamp stays early-refused",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10,
+        "isNonExistent": true,
+        "updated": 20
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical",
+        "mode": "hosted",
+        "isNonExistent": true,
+        "updated": 20,
+        "created": 10
+      },
+      "link": null
+    },
+    {
+      "case": "is_locked alone is not display refusal",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "is_locked": true,
+        "permalink": "https://example.test/canonical"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical",
+        "mode": "hosted",
+        "is_tombstoned": false,
+        "created": 10
+      },
+      "link": {
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical"
+      }
+    },
+    {
+      "case": "older timestamp is not automatically rejected",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "updated": 1,
+        "name": "Older named receipt",
+        "permalink": "https://example.test/canonical"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "Older named receipt",
+        "permalink": "https://example.test/canonical",
+        "mode": "hosted",
+        "isUnknown": false,
+        "isNonExistent": false,
+        "is_tombstoned": false,
+        "updated": 1,
+        "created": 10
+      },
+      "link": {
+        "name": "Older named receipt",
+        "permalink": "https://example.test/canonical"
+      }
+    },
+    {
+      "case": "deleted predecessor retained by ordinary partial",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10,
+        "is_deleted": true
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "permalink": "https://example.test/canonical"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical",
+        "mode": "hosted",
+        "is_deleted": true,
+        "is_tombstoned": false,
+        "created": 10
+      },
+      "link": null
+    },
+    {
+      "case": "explicit undelete allows preserved name",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10,
+        "is_deleted": true
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "is_deleted": false,
+        "permalink": "https://example.test/canonical"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical",
+        "mode": "hosted",
+        "is_deleted": false,
+        "is_tombstoned": false,
+        "created": 10
+      },
+      "link": {
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical"
+      }
+    },
+    {
+      "case": "tombstone flag transition resets preimage",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10,
+        "is_tombstoned": true
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "permalink": "https://example.test/canonical"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "permalink": "https://example.test/canonical",
+        "mode": "hosted",
+        "is_tombstoned": false
+      },
+      "link": null
+    },
+    {
+      "case": "tombstone mode persists without explicit replacement",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "tombstone",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "permalink": "https://example.test/canonical"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical",
+        "mode": "tombstone",
+        "is_tombstoned": false,
+        "created": 10
+      },
+      "link": null
+    },
+    {
+      "case": "explicit tombstone mode replacement preserves nonreset name",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "tombstone",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "permalink": "https://example.test/canonical"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical",
+        "mode": "hosted",
+        "is_tombstoned": false,
+        "created": 10
+      },
+      "link": {
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical"
+      }
+    },
+    {
+      "case": "DSA transition resets preimage",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10,
+        "restriction_type": 1
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "permalink": "https://example.test/canonical"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "permalink": "https://example.test/canonical",
+        "mode": "hosted"
+      },
+      "link": null
+    },
+    {
+      "case": "nonDSA restriction change also resets preimage",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10,
+        "restriction_type": 2
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "restriction_type": 3,
+        "permalink": "https://example.test/canonical"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "permalink": "https://example.test/canonical",
+        "restriction_type": 3
+      },
+      "link": null
+    },
+    {
+      "case": "equal nonDSA restriction preserves name",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10,
+        "restriction_type": 2
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "restriction_type": 2,
+        "permalink": "https://example.test/canonical"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical",
+        "mode": "hosted",
+        "is_tombstoned": false,
+        "restriction_type": 2,
+        "created": 10
+      },
+      "link": {
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical"
+      }
+    },
+    {
+      "case": "tombstone then restriction reset order",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10,
+        "is_tombstoned": true,
+        "restriction_type": 2
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "restriction_type": 2,
+        "permalink": "https://example.test/canonical"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "permalink": "https://example.test/canonical",
+        "restriction_type": 2
+      },
+      "link": null
+    },
+    {
+      "case": "Canvas template removal does not erase display name",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "quip",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10,
+        "canvas_template_mode": "published",
+        "is_org_visible": true
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "permalink": "https://example.test/canonical"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical",
+        "mode": "quip",
+        "is_tombstoned": false,
+        "created": 10
+      },
+      "link": {
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical"
+      }
+    },
+    {
+      "case": "List template removal does not erase display name",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "list",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10,
+        "list_template_mode": "published"
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "permalink": "https://example.test/canonical"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical",
+        "mode": "list",
+        "is_tombstoned": false,
+        "created": 10
+      },
+      "link": {
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical"
+      }
+    },
+    {
+      "case": "file_access omitted survives",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10,
+        "file_access": "access_denied"
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "permalink": "https://example.test/canonical"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical",
+        "mode": "hosted",
+        "file_access": "access_denied",
+        "is_tombstoned": false,
+        "created": 10
+      },
+      "link": null
+    },
+    {
+      "case": "file_access explicit clears",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10,
+        "file_access": "access_denied"
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "file_access": null,
+        "permalink": "https://example.test/canonical"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical",
+        "mode": "hosted",
+        "file_access": null,
+        "is_tombstoned": false,
+        "created": 10
+      },
+      "link": {
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical"
+      }
+    },
+    {
+      "case": "is_hidden_by_limit omitted survives",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10,
+        "is_hidden_by_limit": true
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "permalink": "https://example.test/canonical"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical",
+        "mode": "hosted",
+        "is_tombstoned": false,
+        "is_hidden_by_limit": true,
+        "created": 10
+      },
+      "link": null
+    },
+    {
+      "case": "is_hidden_by_limit explicit clears",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10,
+        "is_hidden_by_limit": true
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "is_hidden_by_limit": false,
+        "permalink": "https://example.test/canonical"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical",
+        "mode": "hosted",
+        "is_tombstoned": false,
+        "is_hidden_by_limit": false,
+        "created": 10
+      },
+      "link": {
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical"
+      }
+    },
+    {
+      "case": "isNonExistent omitted survives",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10,
+        "isNonExistent": true
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "permalink": "https://example.test/canonical"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical",
+        "mode": "hosted",
+        "isNonExistent": true,
+        "is_tombstoned": false,
+        "created": 10
+      },
+      "link": null
+    },
+    {
+      "case": "isNonExistent explicit clears",
+      "previous": {
+        "id": "FFILE0001",
+        "mode": "hosted",
+        "name": "Canonical name",
+        "title": "Wrong title",
+        "permalink": "https://example.test/canonical",
+        "created": 10,
+        "isNonExistent": true
+      },
+      "incoming": {
+        "id": "FFILE0001",
+        "isNonExistent": false,
+        "permalink": "https://example.test/canonical"
+      },
+      "effective": {
+        "id": "FFILE0001",
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical",
+        "mode": "hosted",
+        "isNonExistent": false,
+        "is_tombstoned": false,
+        "created": 10
+      },
+      "link": {
+        "name": "Canonical name",
+        "permalink": "https://example.test/canonical"
+      }
+    }
+  ]
+}

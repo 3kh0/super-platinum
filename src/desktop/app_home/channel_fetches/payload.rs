@@ -2,6 +2,7 @@
 use super::*;
 use super_platinum_core::state::{cfm_payload as source, directory_members};
 mod auxiliary;
+pub(crate) mod plan_info;
 pub(super) fn kick(mut state: Signal<ShellState>, owner: Owner) {
     let works = {
         let mut shell = state.write();
@@ -29,6 +30,7 @@ pub(super) fn kick(mut state: Signal<ShellState>, owner: Owner) {
 }
 
 pub(super) struct State {
+    plan_info: plan_info::State,
     auxiliary: auxiliary::State,
     group_work: Vec<crate::usergroups::source::Work>,
     pub(super) screen_reader: ScreenReader,
@@ -57,6 +59,7 @@ impl Default for State {
         // Electron's missing accessibility bridge yields undefined -> !!false;
         // retain that provenance instead of claiming an OS observation.
         Self {
+            plan_info: plan_info::State::default(),
             auxiliary: auxiliary::State::default(),
             group_work: vec![],
             screen_reader: ScreenReader::BridgeUnavailable,
@@ -249,6 +252,7 @@ impl source::Adopter for Sink<'_> {
             .get_mut(&ctx.session.team_id)
             .ok_or(source::Error::Superseded)?;
         match effect.kind {
+            Kind::PlanInfo => return plan_info::apply(self.shell, self.owner, effect),
             Kind::SelfId => {
                 if effect.payload["user_id"].as_str() != Some(&ctx.session.user_id) {
                     return Err(source::Error::Adoption);
@@ -299,6 +303,8 @@ impl source::Adopter for Sink<'_> {
                     .entry(id.into())
                     .or_insert_with(|| serde_json::json!({}));
                 target.as_object_mut().unwrap().extend(team.clone());
+                let merged = target.clone();
+                plan_info::team_upsert(self.shell, self.owner, &merged)?;
             }
             Kind::MemberUpsert => {
                 let member = self

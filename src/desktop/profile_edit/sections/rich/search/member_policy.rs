@@ -8,29 +8,31 @@ use super_platinum_core::{
     state::directory_members::Subset,
 };
 mod agents;
+mod caller;
 #[cfg(test)]
 mod tests;
 const GENERATION: &str = "profile-member-eligibility";
 
 struct Witness {
-    lease: query::Lease,
+    owner: Arc<dyn Fn(&ShellState) -> bool + Send + Sync>,
+    account: String,
     context: Arc<crate::scheduled::Context>,
     source: Subset,
     preferences: Arc<ranking::Preferences>,
 }
 impl Witness {
-    fn current(&self, shell: &ShellState, search: &Search) -> bool {
-        self.lease.current(shell)
+    fn current(&self, shell: &ShellState, search: &Search<impl Host>) -> bool {
+        (self.owner)(shell)
             && search.current(shell)
             && self.preferences.current(shell)
             && shell
                 .core
                 .workspaces
-                .get(self.lease.team())
+                .get(&self.context.session.team_id)
                 .is_some_and(|ws| {
                     self.source.current(
                         &ws.directory_members,
-                        self.lease.account(),
+                        &self.account,
                         &self.context.session,
                         self.context.epoch,
                         GENERATION,
@@ -44,7 +46,7 @@ pub(super) struct Observation {
     rows: BTreeMap<String, (Value, bool)>,
 }
 impl Observation {
-    pub(super) fn current(&self, shell: &ShellState, search: &Search) -> bool {
+    pub(super) fn current(&self, shell: &ShellState, search: &Search<impl Host>) -> bool {
         self.witness.current(shell, search)
     }
     /// Only the exact original raw source row can reuse an eligibility result.
@@ -99,7 +101,7 @@ fn select_rows(
 }
 async fn request(
     state: Signal<ShellState>,
-    search: &Search,
+    search: &Search<impl Host>,
     witness: &Witness,
     request: PreparedRequest,
 ) -> Result<Value, Error> {
@@ -114,7 +116,7 @@ async fn request(
 }
 pub(super) async fn capture(
     state: Signal<ShellState>,
-    search: &Search,
+    search: &Search<impl Host>,
     rows: &[Value],
     preferences: Arc<ranking::Preferences>,
 ) -> Result<Observation, Error> {
@@ -149,7 +151,11 @@ pub(super) async fn capture(
         let users = selected(&source, rows)?;
         (
             Witness {
-                lease: search.lease.clone(),
+                owner: {
+                    let lease = search.lease.clone();
+                    Arc::new(move |shell| lease.current(shell))
+                },
+                account: search.lease.account().into(),
                 context: search.context.clone(),
                 source,
                 preferences,
@@ -157,7 +163,7 @@ pub(super) async fn capture(
             users,
         )
     };
-    let flags = policy::Policy::decode(witness.preferences.assignments())?;
+    let flags = caller::Policy::capture(search, &state.peek(), witness.preferences.assignments())?;
     let mut apps = BTreeSet::new();
     let mut agent_users = Vec::new();
     let mut environment = false;
@@ -213,6 +219,7 @@ pub(super) async fn capture(
             false
         } else {
             flags.allows(
+                row,
                 &user,
                 policy::Facts {
                     restricted_app: app_eligibility::app_id(&user)

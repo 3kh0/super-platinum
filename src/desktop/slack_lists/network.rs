@@ -20,6 +20,12 @@ pub(super) async fn load(context: &crate::scheduled::Context, id: &str) -> Resul
     })
 }
 pub(crate) fn refresh(mut state: Signal<ShellState>) {
+    if fixture::activity_navigation::refresh(state) {
+        return;
+    }
+    if fixture::canvas_navigation::refresh(state) {
+        return;
+    }
     if fixture::enabled(&state.peek()) {
         fixture::refresh(&mut state.write());
         return;

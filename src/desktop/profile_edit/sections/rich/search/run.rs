@@ -14,10 +14,58 @@ struct Batch {
 }
 
 pub(crate) async fn run(
-    mut state: Signal<ShellState>,
+    state: Signal<ShellState>,
     lease: query::Lease,
     raw_query: String,
     on_results: impl Fn(query::Presentation) + 'static,
+) -> Result<(), Error> {
+    let publish_lease = lease.clone();
+    run_channels(state, lease, raw_query, move |mut state, batch| {
+        let presentation = query::publish_channels_checked(
+            &mut state.write(),
+            &publish_lease,
+            batch.source,
+            &batch.ids,
+            Some(batch.witness),
+        )
+        .ok_or_else(unavailable)?;
+        on_results(presentation);
+        Ok(())
+    })
+    .await
+}
+
+/// Ranked private receipt; caller owns publication and renderer insertion.
+#[derive(Clone)]
+pub(crate) struct ChannelBatch {
+    source: Arc<canonical::Canonical>,
+    ids: Vec<String>,
+    witness: Arc<dyn Fn(&ShellState) -> bool + Send + Sync>,
+}
+impl ChannelBatch {
+    pub(crate) fn current(&self, shell: &ShellState) -> bool {
+        (self.witness)(shell)
+    }
+    pub(crate) fn choices(&self, shell: &ShellState) -> Option<Vec<(Value, String)>> {
+        if !self.current(shell) {
+            return None;
+        }
+        self.ids
+            .iter()
+            .map(|id| {
+                let token = serde_json::json!({"type":"channel", "channel_id":id});
+                let label = canonical::ordinary_label(&token, self.source.row(id)?).ok()?;
+                Some((token, label))
+            })
+            .collect()
+    }
+}
+
+pub(crate) async fn run_channels<L: Host>(
+    mut state: Signal<ShellState>,
+    lease: L,
+    raw_query: String,
+    on_results: impl Fn(Signal<ShellState>, ChannelBatch) -> Result<(), Error> + 'static,
 ) -> Result<(), Error> {
     let search = Arc::new(Search::capture(state, lease)?);
     let formatted = render::formatted_query(&raw_query).to_owned();
@@ -95,9 +143,9 @@ pub(crate) async fn run(
     }
 }
 
-async fn capture(
+async fn capture<L: Host>(
     state: Signal<ShellState>,
-    search: &Search,
+    search: &Search<L>,
     source: Arc<canonical::Canonical>,
     raw_query: &str,
     remote_ids: BTreeSet<String>,
@@ -105,7 +153,7 @@ async fn capture(
     let rows = source
         .rows()
         .iter()
-        .filter(|row| matching::ordinary_local(row))
+        .filter(|row| channel_host::ordinary::<L>(row))
         .cloned()
         .collect::<Vec<_>>();
     let renderer =
@@ -120,11 +168,11 @@ async fn capture(
     }))
 }
 
-fn publish(
-    mut state: Signal<ShellState>,
-    search: Arc<Search>,
+fn publish<L: Host>(
+    state: Signal<ShellState>,
+    search: Arc<Search<L>>,
     batch: Arc<Batch>,
-    on_results: &impl Fn(query::Presentation),
+    on_results: &impl Fn(Signal<ShellState>, ChannelBatch) -> Result<(), Error>,
 ) -> Result<(), Error> {
     if !search.current(&state.peek())
         || !batch.renderer.current(&search, &state.peek())
@@ -132,15 +180,29 @@ fn publish(
     {
         return Err(unavailable());
     }
-    let matched = matching::channels(
-        &batch.renderer.formatted_query,
-        &batch.renderer.query,
-        &batch.rows,
-        &batch.remote_ids,
-        batch.input.passthrough,
-        |row| batch.renderer.channel_name(row),
-        |value| batch.renderer.normalize(value),
-    )
+    let name = |row: &Value| batch.renderer.channel_name(row);
+    let previous = |value: &str| batch.renderer.normalize(value);
+    let matched = if L::LIST {
+        matching::list_channels(
+            &batch.renderer.formatted_query,
+            &batch.renderer.query,
+            &batch.rows,
+            &batch.remote_ids,
+            batch.input.passthrough,
+            &name,
+            &previous,
+        )
+    } else {
+        matching::channels(
+            &batch.renderer.formatted_query,
+            &batch.renderer.query,
+            &batch.rows,
+            &batch.remote_ids,
+            batch.input.passthrough,
+            &name,
+            &previous,
+        )
+    }
     .map_err(|_| unavailable())?;
     let normalize = |value: &str| batch.renderer.normalize(value);
     let ranked = {
@@ -149,20 +211,33 @@ fn publish(
             .similarity()
             .lock()
             .unwrap_or_else(|e| e.into_inner());
-        rank::rank_channels(
-            &batch.renderer.formatted_query,
-            &matched,
-            &rank::Context {
-                state: &batch.input.selectors,
-                history: &batch.input.history,
-                model: search.ranking.model(),
-                now_ms: batch.input.now_ms,
-                normalize: &normalize,
-            },
-            &mut cache,
-            |a, b| batch.renderer.compare(a, b),
-            batch.renderer.demote_passthrough(),
-        )
+        let context = rank::Context {
+            state: &batch.input.selectors,
+            history: &batch.input.history,
+            model: search.ranking.model(),
+            now_ms: batch.input.now_ms,
+            normalize: &normalize,
+        };
+        let compare = |a: &str, b: &str| batch.renderer.compare(a, b);
+        if L::LIST {
+            rank::rank_list_channels(
+                &batch.renderer.formatted_query,
+                &matched,
+                &context,
+                &mut cache,
+                compare,
+                batch.renderer.demote_passthrough(),
+            )
+        } else {
+            rank::rank_channels(
+                &batch.renderer.formatted_query,
+                &matched,
+                &context,
+                &mut cache,
+                compare,
+                batch.renderer.demote_passthrough(),
+            )
+        }
         .map_err(|_| unavailable())?
     };
     let ids = ranked
@@ -184,14 +259,12 @@ fn publish(
             && retained.renderer.current(&owner, shell)
             && retained.input.current(shell, &owner)
     });
-    let presentation = query::publish_channels_checked(
-        &mut state.write(),
-        &search.lease,
-        batch.source.clone(),
-        &ids,
-        Some(witness),
+    on_results(
+        state,
+        ChannelBatch {
+            source: batch.source.clone(),
+            ids,
+            witness,
+        },
     )
-    .ok_or_else(unavailable)?;
-    on_results(presentation);
-    Ok(())
 }

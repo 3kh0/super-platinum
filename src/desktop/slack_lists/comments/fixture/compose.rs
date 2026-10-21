@@ -155,6 +155,9 @@ pub(crate) async fn preflight_request(
         s.slack_lists.comments.fixture.clone().unwrap()
     };
     let form = wire(request)?;
+    if form["method"] == "reactions.get" {
+        return super::reaction_actions::get(state, request).await;
+    }
     if form["method"] != "conversations.genericInfo" {
         return super::request(state, request).await;
     }
@@ -398,7 +401,10 @@ pub(crate) async fn journal_snapshot(state: Signal<ShellState>) -> Result<Value,
     use super_platinum_core::slack_lists::comments::journal::{Journal, Scope};
     let (path, account, scope) = {
         let shell = state.peek();
-        if !enabled(&shell) || shell.core.session.is_some() || shell.core.transport.is_some() {
+        if !enabled(&shell)
+            || ((shell.core.session.is_some() || shell.core.transport.is_some())
+                && !super::completion::enabled(&shell))
+        {
             return Err("Disconnected compose fixture required".into());
         }
         let credential = session(&shell).map_err(|_| "Fixture session missing")?;
@@ -432,6 +438,7 @@ pub(crate) async fn journal_snapshot(state: Signal<ShellState>) -> Result<Value,
 /// Seed existing opaque content through the same isolated durable store used by the editor.
 pub(crate) async fn seed_draft(state: Signal<ShellState>) -> Result<Value, String> {
     use super_platinum_core::slack_lists::comments::journal::{Journal, Scope};
+    let completion = super::completion::enabled(&state.peek());
     let (path, account, scope) = {
         let shell = state.peek();
         let credential = session(&shell).map_err(|_| "Fixture session missing")?;
@@ -456,10 +463,15 @@ pub(crate) async fn seed_draft(state: Signal<ShellState>) -> Result<Value, Strin
     tokio::task::spawn_blocking(move||{
         let mut journal=Journal::open(&path,&account).map_err(|e|e.to_string())?;
         let inventory=journal.inventory(&scope).map_err(|e|e.to_string())?;
-        let blocks=vec![json!({"type":"rich_text","elements":[{"type":"rich_text_section","elements":[
+        let mut blocks=vec![json!({"type":"rich_text","elements":[{"type":"rich_text_section","elements":[
             {"type":"text","text":"Existing context "},{"type":"user","user_id":"U_FIXTURE_OPAQUE","opaque":{"retain":[1,2]}},
             {"type":"text","text":" "},{"type":"link","url":"https://example.test/reference","text":"Reference","opaque":{"source":"fixture"}},
             {"type":"text","text":"\n"}]}]})];
+        if completion {
+            let elements=blocks[0]["elements"][0]["elements"].as_array_mut().unwrap();
+            elements.insert(4,json!({"type":"channel","channel_id":super::completion::LOCAL,"style":{"bold":true},"opaque":{"occurrence":1}}));
+            elements.insert(5,json!({"type":"channel","channel_id":super::completion::LOCAL,"style":{"italic":true},"opaque":{"occurrence":2}}));
+        }
         let saved=journal.save(&inventory,&uuid::Uuid::new_v4().to_string(),blocks).map_err(|e|e.to_string())?;
         drop(journal);
         let reopened=Journal::open(&path,&account).map_err(|e|e.to_string())?.inventory(&scope).map_err(|e|e.to_string())?;

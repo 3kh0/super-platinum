@@ -140,7 +140,8 @@ pub(in crate::app_home::about::management::activity) async fn capture(
     expected: &Value,
 ) -> Option<(Guard, Release)> {
     let eval = eval(&format!(
-        "{}\n{}\nawait workflowActivityExecution({expected},dioxus);",
+        "{}\n{}\n{}\nawait workflowActivityExecution({expected},dioxus);",
+        include_str!("../date_witness.js"),
         include_str!("../native.js"),
         include_str!("native.js")
     ));

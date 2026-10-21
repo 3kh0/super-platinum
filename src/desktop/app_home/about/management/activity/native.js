@@ -8,7 +8,8 @@ function workflowActivitySnapshot(expected) {
       || form.dataset.revision!==String(expected.filters.revision)
       || root.__workflowManagement?.composing
       || document.querySelector('[role="dialog"][aria-modal="true"]')) return null;
-  for (const name of ['status','from','to','limit','user']) {
+  if (!workflowActivityDateWitness(expected, form)) return null;
+  for (const name of ['status','limit','user']) {
     const node=form.querySelector('#workflow-activity-'+name);
     if (!node || node.disabled || node.validity?.badInput || node.value!==expected.filters[name]) return null;
   }
@@ -29,7 +30,13 @@ function workflowActivitySnapshot(expected) {
         const [y,m,d]=text.split('-').map(Number), date=new Date(0);
         date.setUTCFullYear(y,m-1,d);date.setUTCHours(0,0,0,0);return date.getTime();
       };
-      if (from>to || (calendar(expected.filters.to)-calendar(expected.filters.from))/86400000>=90) return null;
+      const days=(calendar(expected.filters.to)-calendar(expected.filters.from))/86400000;
+      const initialDefault=expected.filters.date_origin==='default'
+        && expected.filters.default_from===expected.filters.from
+        && expected.filters.default_to===expected.filters.to;
+      // The source initializes a 90-day-difference default pair without the
+      // new-selection bound. Only that exact committed provenance permits it.
+      if (from>to || days>(initialDefault?90:89)) return null;
     }
     return {from,to};
   } catch (_) {return null;}

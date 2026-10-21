@@ -12,6 +12,7 @@ use std::{
 };
 
 mod effective;
+pub mod freshness;
 mod lifecycle;
 mod projection;
 pub use lifecycle::BootLease;

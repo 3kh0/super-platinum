@@ -1,10 +1,12 @@
+mod file_mentions;
 use super::media_image::MediaImage;
 use dioxus::prelude::*;
+pub(super) use file_mentions::ListSource as ListFileSource;
 
 use crate::state::{AttachmentVm, MessageVm, Overlay, ReactionVm, RichNode, ShellState};
 
 pub(crate) fn rich_node(node: &RichNode, media_epoch: u64, state: Signal<ShellState>) -> Element {
-    rich_node_with_source(node, media_epoch, state, None, None)
+    rich_node_with_source(node, media_epoch, state, None, None, None)
 }
 
 /// Only canonical message bodies provide action ownership. Attachments, app
@@ -15,7 +17,7 @@ pub(crate) fn rich_node_for_message(
     state: Signal<ShellState>,
     source: &crate::message_buttons::source::Source,
 ) -> Element {
-    rich_node_with_source(node, media_epoch, state, Some(source), None)
+    rich_node_with_source(node, media_epoch, state, Some(source), None, None)
 }
 
 pub(crate) fn rich_node_for_home(
@@ -24,7 +26,18 @@ pub(crate) fn rich_node_for_home(
     state: Signal<ShellState>,
     key: crate::app_home::view::Key,
 ) -> Element {
-    rich_node_with_source(node, media_epoch, state, None, Some(key))
+    rich_node_with_source(node, media_epoch, state, None, Some(key), None)
+}
+
+/// List ownership stays distinct even when capture refused; it must never fall
+/// through to ownerless URL navigation.
+pub(super) fn rich_node_for_list(
+    node: &RichNode,
+    media_epoch: u64,
+    state: Signal<ShellState>,
+    source: &ListFileSource,
+) -> Element {
+    rich_node_with_source(node, media_epoch, state, None, None, Some(source))
 }
 
 fn rich_node_with_source(
@@ -33,13 +46,24 @@ fn rich_node_with_source(
     state: Signal<ShellState>,
     source: Option<&crate::message_buttons::source::Source>,
     home: Option<crate::app_home::view::Key>,
+    list: Option<&ListFileSource>,
 ) -> Element {
     match node {
         RichNode::Canvas(target) => {
             let target = target.clone();
             rsx! {button {class:"file-link",onclick:move |_|crate::canvas::open_target(state,target.clone()),{crate::icons::icon(crate::icons::Icon::AttachFile,"icon file-link-icon")} "{target.title}"}}
         }
+        RichNode::FileMention {
+            team,
+            raw,
+            fallback,
+        } => file_mentions::render(team, raw, fallback, state, node, list),
         RichNode::Text(text) => rsx! { span { "{text}" } },
+        RichNode::Underlined(child) => rsx! {
+            u { class: "rich-underline",
+                {rich_node_with_source(child, media_epoch, state, source, home, list)}
+            }
+        },
         RichNode::StyledText {
             text,
             bold,
@@ -121,13 +145,13 @@ fn rich_node_with_source(
                     .any(|node| matches!(node, RichNode::Media { file: Some(_), .. }))
             {
                 // File actions contain a form: a paragraph cannot own this flow content.
-                rsx! { div { class:"message-file-paragraph", for node in nodes { {rich_node_with_source(node, media_epoch, state, source, home)} } } }
+                rsx! { div { class:"message-file-paragraph", for node in nodes { {rich_node_with_source(node, media_epoch, state, source, home, list)} } } }
             } else {
-                rsx! { p { for node in nodes { {rich_node_with_source(node, media_epoch, state, source, home)} } } }
+                rsx! { p { for node in nodes { {rich_node_with_source(node, media_epoch, state, source, home, list)} } } }
             }
         }
         RichNode::Quote(nodes) => {
-            rsx! { blockquote { for node in nodes { {rich_node_with_source(node, media_epoch, state, source, home)} } } }
+            rsx! { blockquote { for node in nodes { {rich_node_with_source(node, media_epoch, state, source, home, list)} } } }
         }
         RichNode::Emoji { name, glyph } => rsx! {
             span { class: "custom-emoji", title: ":{name}:", "{glyph}" }
@@ -238,10 +262,10 @@ fn rich_node_with_source(
         // ── Block Kit layout ─────────────────────────────────────────────
         RichNode::Divider => rsx! { div { class: "block-divider" } },
         RichNode::Header(nodes) => rsx! {
-            h3 { class: "block-header", for node in nodes { {rich_node_with_source(node, media_epoch, state, source, home)} } }
+            h3 { class: "block-header", for node in nodes { {rich_node_with_source(node, media_epoch, state, source, home, list)} } }
         },
         RichNode::Context(nodes) => rsx! {
-            div { class: "block-context", for node in nodes { {rich_node_with_source(node, media_epoch, state, source, home)} } }
+            div { class: "block-context", for node in nodes { {rich_node_with_source(node, media_epoch, state, source, home, list)} } }
         },
         RichNode::Section {
             text,
@@ -250,24 +274,24 @@ fn rich_node_with_source(
         } => rsx! {
             div { class: "block-section",
                 div { class: "block-section-text",
-                    for node in text { {rich_node_with_source(node, media_epoch, state, source, home)} }
+                    for node in text { {rich_node_with_source(node, media_epoch, state, source, home, list)} }
                     if !fields.is_empty() {
                         div { class: "block-fields",
                             for (index, field) in fields.iter().enumerate() {
                                 div { key: "field-{index}", class: "block-field",
-                                    for node in field { {rich_node_with_source(node, media_epoch, state, source, home)} }
+                                    for node in field { {rich_node_with_source(node, media_epoch, state, source, home, list)} }
                                 }
                             }
                         }
                     }
                 }
                 if let Some(accessory) = accessory.as_ref() {
-                    div { class: "block-accessory", {rich_node_with_source(accessory, media_epoch, state, source, home)} }
+                    div { class: "block-accessory", {rich_node_with_source(accessory, media_epoch, state, source, home, list)} }
                 }
             }
         },
         RichNode::Actions(nodes) => rsx! {
-            div { class: "block-actions", for node in nodes { {rich_node_with_source(node, media_epoch, state, source, home)} } }
+            div { class: "block-actions", for node in nodes { {rich_node_with_source(node, media_epoch, state, source, home, list)} } }
         },
         RichNode::Button {
             label,
@@ -441,7 +465,7 @@ fn rich_node_with_source(
                     ol { class: "block-list", style: "{indent}", start: "{offset + 1}",
                         for (index, item) in items.iter().enumerate() {
                             li { key: "li-{index}",
-                                for node in item { {rich_node_with_source(node, media_epoch, state, source, home)} }
+                                for node in item { {rich_node_with_source(node, media_epoch, state, source, home, list)} }
                             }
                         }
                     }
@@ -449,7 +473,7 @@ fn rich_node_with_source(
                     ul { class: "block-list", style: "{indent}",
                         for (index, item) in items.iter().enumerate() {
                             li { key: "li-{index}",
-                                for node in item { {rich_node_with_source(node, media_epoch, state, source, home)} }
+                                for node in item { {rich_node_with_source(node, media_epoch, state, source, home, list)} }
                             }
                         }
                     }
@@ -523,10 +547,28 @@ pub(crate) fn attachment_embeds(
     media_epoch: u64,
     attachments: &[AttachmentVm],
 ) -> Element {
+    attachment_embeds_with_list(state, media_epoch, attachments, None)
+}
+
+pub(super) fn attachment_embeds_for_list(
+    state: Signal<ShellState>,
+    media_epoch: u64,
+    attachments: &[AttachmentVm],
+    source: &ListFileSource,
+) -> Element {
+    attachment_embeds_with_list(state, media_epoch, attachments, Some(source))
+}
+
+fn attachment_embeds_with_list(
+    state: Signal<ShellState>,
+    media_epoch: u64,
+    attachments: &[AttachmentVm],
+    list: Option<&ListFileSource>,
+) -> Element {
     rsx! {
         div { class: "message-attachments",
             for attachment in attachments {
-                {attachment_embed(state, media_epoch, attachment)}
+                {attachment_embed(state, media_epoch, attachment, list)}
             }
         }
     }
@@ -536,6 +578,7 @@ fn attachment_embed(
     state: Signal<ShellState>,
     media_epoch: u64,
     attachment: &AttachmentVm,
+    list: Option<&ListFileSource>,
 ) -> Element {
     let bar = attachment
         .color
@@ -548,7 +591,7 @@ fn attachment_embed(
             div { class: "attachment-body",
                 if !attachment.pretext.is_empty() {
                     div { class: "attachment-pretext",
-                        for node in &attachment.pretext { {rich_node(node, media_epoch, state)} }
+                        for node in &attachment.pretext { {rich_node_with_source(node, media_epoch, state, None, None, list)} }
                     }
                 }
                 if let Some(service) = attachment.service.as_ref() {
@@ -609,7 +652,7 @@ fn attachment_embed(
                 }
                 if !attachment.body.is_empty() {
                     div { class: "attachment-text",
-                        for node in &attachment.body { {rich_node(node, media_epoch, state)} }
+                        for node in &attachment.body { {rich_node_with_source(node, media_epoch, state, None, None, list)} }
                     }
                 }
                 if !attachment.fields.is_empty() {
@@ -620,7 +663,7 @@ fn attachment_embed(
                                 class: if *short { "attachment-field short" } else { "attachment-field" },
                                 if !title.is_empty() { div { class: "attachment-field-title", "{title}" } }
                                 div { class: "attachment-field-value",
-                                    for node in value { {rich_node(node, media_epoch, state)} }
+                                    for node in value { {rich_node_with_source(node, media_epoch, state, None, None, list)} }
                                 }
                             }
                         }
@@ -628,7 +671,7 @@ fn attachment_embed(
                 }
                 if !attachment.files.is_empty() {
                     div { class: "attachment-files",
-                        for node in &attachment.files { {rich_node(node, media_epoch, state)} }
+                        for node in &attachment.files { {rich_node_with_source(node, media_epoch, state, None, None, list)} }
                     }
                 }
                 if let Some(thumb) = attachment.thumb.as_ref() {
@@ -699,129 +742,8 @@ fn attachment_embed(
     }
 }
 
-/// The reaction pills under a message. Clicking one toggles it.
-pub(crate) fn reactions_row(
-    state: Signal<ShellState>,
-    media: &crate::media::MediaRegistry,
-    media_epoch: u64,
-    channel: &str,
-    message: &MessageVm,
-) -> Element {
-    rsx! {
-        for reaction in &message.reactions {
-            {reaction_pill(state, media, media_epoch, channel, &message.id, reaction)}
-        }
-    }
-}
-
-/// Display reactions for a reader that has no authority to change the thread.
-pub(crate) fn reactions_read_only(
-    state: Signal<ShellState>,
-    media: &crate::media::MediaRegistry,
-    media_epoch: u64,
-    message: &MessageVm,
-) -> Element {
-    rsx! {
-        for reaction in &message.reactions {
-            span {
-                key: "reaction-{reaction.name}",
-                "data-reaction-name": "{reaction.name}",
-                class: if reaction.own { "reaction own" } else { "reaction" },
-                title: reaction.reactors_label(),
-                "aria-label": reaction.reactors_label(),
-                {reaction_emoji(state, media, media_epoch, reaction, "reaction-emoji", "reaction-glyph")}
-                span { class: "reaction-count", "{reaction.count}" }
-            }
-        }
-    }
-}
-
-fn reaction_pill(
-    state: Signal<ShellState>,
-    media: &crate::media::MediaRegistry,
-    media_epoch: u64,
-    channel: &str,
-    ts: &str,
-    reaction: &ReactionVm,
-) -> Element {
-    let channel = channel.to_owned();
-    let ts = ts.to_owned();
-    let name = reaction.name.clone();
-    let own = reaction.own;
-    let label = reaction.reactors_label();
-    let who = reaction.reactors_who();
-    let faces = reaction
-        .reactors
-        .iter()
-        .take(crate::model::REACTOR_AVATARS_SHOWN);
-    // The card shows art only: a custom emoji (or its loading box) or a
-    // standard glyph. An unresolved `:shortcode:` is already in the line below.
-    let card_art = reaction.media.is_some() || reaction.resolved_glyph().is_some();
-    rsx! {
-        button {
-            key: "reaction-{reaction.name}",
-            class: if own { "reaction own" } else { "reaction" },
-            "aria-label": "{label}",
-            onclick: move |_| {
-                spawn(crate::bootstrap::toggle_reaction(state, channel.clone(), ts.clone(), name.clone(), own));
-            },
-            {reaction_emoji(state, media, media_epoch, reaction, "reaction-emoji", "reaction-glyph")}
-            span { class: "reaction-count", "{reaction.count}" }
-            if !reaction.reactors.is_empty() {
-                span { class: "reaction-faces",
-                    for reactor in faces {
-                        span { key: "reactor-{reactor.user_id}", class: "reaction-face",
-                            if let Some(avatar) = reactor.avatar.as_ref().filter(|avatar| media.is_ready(avatar)) {
-                                MediaImage {state,id:avatar.clone(),media_epoch,compact:true,fallback:rsx! {"{reactor.initials}"}}
-                            } else {
-                                "{reactor.initials}"
-                            }
-                        }
-                    }
-                }
-            }
-            // CSS-only hover card: no state write, so hovering a pill never
-            // re-renders the transcript.
-            span { class: "reaction-card", "aria-hidden": "true",
-                if card_art {
-                    span { class: "reaction-card-emoji",
-                        {reaction_emoji(state, media, media_epoch, reaction, "reaction-card-image", "reaction-card-glyph")}
-                    }
-                }
-                span { class: "reaction-card-label",
-                    strong { "{who}" }
-                    " reacted with {reaction.fallback()}"
-                }
-            }
-        }
-    }
-}
-
-/// A reaction's emoji at either size: custom art, a held gap while it loads,
-/// or the standard glyph.
-fn reaction_emoji(
-    state: Signal<ShellState>,
-    media: &crate::media::MediaRegistry,
-    media_epoch: u64,
-    reaction: &ReactionVm,
-    image_class: &str,
-    glyph_class: &str,
-) -> Element {
-    rsx! {
-        if let Some(emoji) = reaction.media.as_ref().filter(|emoji| media.is_ready(emoji)) {
-            MediaImage {
-                state, id:emoji.clone(), media_epoch, compact:true,
-                class:image_class.to_owned(), alt:format!(":{}:",reaction.name),
-            }
-        } else if reaction.media.is_some() {
-            // A custom emoji still downloading. Hold the pill's shape rather
-            // than leaving a gap where the art will be.
-            span { class: "{image_class} pending" }
-        } else {
-            span { class: "{glyph_class}", "{reaction.glyph.clone().unwrap_or_else(|| reaction.fallback())}" }
-        }
-    }
-}
+mod reactions;
+pub(crate) use reactions::{reactions_list_comments, reactions_read_only, reactions_row};
 
 /// Slack's thread reply bar: replier avatars, the count, and the last reply age.
 pub(crate) fn reply_bar(

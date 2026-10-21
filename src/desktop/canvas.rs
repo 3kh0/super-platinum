@@ -95,6 +95,9 @@ pub fn CanvasDialog(
 ) -> Element {
     let original = use_hook(|| target.clone());
     let local_generation = use_hook(|| state.peek().shortcut_generation);
+    let destination_fixture = use_hook(|| {
+        comments::fixture::canonical_files::destination_canvas::enabled(&state.peek(), &original.id)
+    });
     let mut reader = use_signal(|| {
         let fixture = std::env::var("SUPER_PLATINUM_FIXTURE").unwrap_or_default();
         if crate::fixture::is_fixture()
@@ -113,6 +116,10 @@ pub fn CanvasDialog(
                                 text::structure_fixture::HTML
                             } else if text::fixture::requested() {
                                 text::fixture::HTML
+                            } else if text::underline_fixture::requested() {
+                                text::underline_fixture::html()
+                            } else if text::heading_fixture::requested() {
+                                text::heading_fixture::html()
                             } else if checklist::fixture::requested() {
                                 checklist::fixture::HTML
                             } else {
@@ -139,11 +146,16 @@ pub fn CanvasDialog(
     let comments = use_signal(comments::State::default);
     let link_feedback = use_signal(links::Feedback::default);
     let mut comments_open = use_signal(|| {
-        comments::fixture::requested() && !comments::annotation::fixture::inline_requested()
+        !destination_fixture
+            && comments::fixture::requested()
+            && !comments::annotation::fixture::inline_requested()
     });
     comments::focus::use_focus(state, comments, comments_open);
     use_future(move || async move {
-        if comments::fixture::requested() && !comments::annotation::fixture::inline_requested() {
+        if !destination_fixture
+            && comments::fixture::requested()
+            && !comments::annotation::fixture::inline_requested()
+        {
             comments::open(state, comments);
         }
     });
@@ -182,6 +194,14 @@ pub fn CanvasDialog(
                 let mut shell = state.write();
                 text::structure_fixture::install(&mut shell);
                 checklist::reader::update_mapping(&shell, &mut reader.write());
+            } else if text::underline_fixture::requested() {
+                let mut shell = state.write();
+                text::underline_fixture::install(&mut shell);
+                checklist::reader::update_mapping(&shell, &mut reader.write());
+            } else if text::heading_fixture::requested() {
+                let mut shell = state.write();
+                text::heading_fixture::install(&mut shell);
+                checklist::reader::update_mapping(&shell, &mut reader.write());
             } else if text::fixture::requested() {
                 let mut shell = state.write();
                 text::fixture::install(&mut shell);
@@ -191,7 +211,16 @@ pub fn CanvasDialog(
                 let mut shell = state.write();
                 checklist::fixture::install(&mut shell);
                 checklist::reader::update_mapping(&shell, &mut reader.write());
-            } else if !crate::fixture::is_fixture() {
+            } else if !crate::fixture::is_fixture()
+                || comments::fixture::canonical_files::destination_canvas::enabled(
+                    &state.peek(),
+                    &initial.id,
+                )
+                || (initial.id == crate::slack_lists::comments::fixture::file_navigation::CANVAS
+                    && crate::slack_lists::comments::fixture::file_navigation::enabled(
+                        &state.peek(),
+                    ))
+            {
                 load(state, reader, initial).await;
             }
         }
@@ -334,7 +363,7 @@ pub fn CanvasDialog(
                 else {button {class:"icon-btn","aria-label":"Close canvas",onclick:move |_|state.write().dismiss_overlay(),{icon(Icon::Close,"icon")}}}
             }
             nav {class:"canvas-toolbar","aria-label":"Canvas actions",
-                span {class:"canvas-status",if text_draft.read().is_some() {"Editing paragraph"} else if loading {"Loading…"} else {"Read view"}}
+                span {class:"canvas-status",if let Some(draft)=text_draft.read().as_ref() {"{draft.editing_label()}"} else if loading {"Loading…"} else {"Read view"}}
                 span {class:"spacer"}
                 button {id:"canvas-comment-selection",disabled:editing||writing||loading||*comments_open.read(),
                     onmousedown:|event|event.prevent_default(),
@@ -399,7 +428,7 @@ fn render_node(
     match kind {
         K::Group => rsx! {div {{content()}}},
         K::Inline => rsx! {span {{content()}}},
-        K::Paragraph => text::paragraph(
+        K::Paragraph | K::Heading(1..=3) => text::paragraph(
             state,
             reader,
             text_draft,
@@ -407,10 +436,11 @@ fn render_node(
             epoch,
             rename,
             content(),
+            match kind {
+                K::Heading(level) => Some(*level),
+                _ => None,
+            },
         ),
-        K::Heading(1) => rsx! {h1 {{content()}}},
-        K::Heading(2) => rsx! {h2 {{content()}}},
-        K::Heading(3) => rsx! {h3 {{content()}}},
         K::Heading(_) => rsx! {h4 {{content()}}},
         K::Bold => rsx! {strong {{content()}}},
         K::Italic => rsx! {em {{content()}}},

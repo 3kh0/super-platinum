@@ -1,6 +1,7 @@
 use super::*;
 mod content;
 mod timestamps;
+mod title;
 pub(crate) use content::{CellContent, PeopleReference};
 use std::sync::Arc;
 use super_platinum_core::{slack_lists::ParentRelation, state::Workspace};
@@ -23,6 +24,7 @@ pub(crate) struct Presentation {
     pub completion_column: Option<String>,
     pub matched_rows: usize,
     pub title: String,
+    pub title_fragments: Vec<crate::emoji_text::Part>,
     pub list_id: String,
     pub columns: Arc<Vec<ColumnView>>,
     pub rows: Arc<Vec<Arc<RowView>>>,
@@ -102,6 +104,8 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<Presentation> {
                 .map(str::to_owned)
         })
     };
+    let title = title::display(view);
+    let title_fragments = crate::emoji_text::project(shell, &scope.team, &title, true);
     Some(Presentation {
         editor: editor::presentation(shell),
         board_move_return: board_move::returned(shell),
@@ -121,7 +125,8 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<Presentation> {
         lanes: view.layout.lanes.clone(),
         completion_column: view.layout.completion_column.clone(),
         matched_rows: view.layout.matched,
-        title: view.title.clone(),
+        title,
+        title_fragments,
         list_id: view.id.clone(),
         columns: view.layout.columns.clone(),
         rows: view.rows.clone(),

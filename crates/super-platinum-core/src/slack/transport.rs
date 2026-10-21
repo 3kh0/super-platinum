@@ -29,7 +29,10 @@ mod list_column_rename;
 mod list_comments;
 pub use list_column_delete::ListColumnDeleteFailure;
 pub use list_column_precision::ListColumnPrecisionFailure;
-pub use list_comments::ListCommentReplyFailure;
+pub use list_comments::{
+    ListCommentDeleteFailure, ListCommentReactionFailure, ListCommentReplyFailure,
+    ListCommentUpdateFailure,
+};
 mod list_assignee;
 pub use list_assignee::ListAssigneeFailure;
 mod list_todo;
@@ -63,6 +66,8 @@ mod directory_channel_info;
 mod directory_member_info;
 mod directory_response;
 mod directory_usergroup_info;
+mod file_info;
+mod list_membership;
 mod list_record_delete;
 mod mention_search;
 mod notification_preferences;
@@ -82,13 +87,17 @@ mod read_shortcuts;
 mod slash_command;
 mod upload_readback;
 mod workflow_management;
+mod workflow_settings;
+pub use crate::slack::api::custom::texty::file_title_source::OrderedFileInfo;
 pub use crate::slack::api::custom::texty::files::OrderedResponse as ProfileFileSearchResponse;
 pub use channel_read_dispatch::{ChannelReadAttempt, ChannelReadReceipt, ChannelReadResponse};
+pub use directory_response::DirectoryResponse as WorkflowSettingsResponse;
 pub use directory_response::DirectoryResponse as ActivityMemberResponse;
 pub use directory_response::DirectoryResponse as AutocompleteOfflineResponse;
 pub use directory_response::DirectoryResponse as DirectoryMemberInfoResponse;
 pub use directory_response::DirectoryResponse as DirectoryUsergroupInfoResponse;
 pub use directory_response::DirectoryResponse as DirectoryChannelInfoResponse;
+pub use directory_response::DirectoryResponse as ListMembershipResponse;
 pub use directory_response::DirectoryResponse as ProfileChannelSearchResponse;
 pub use directory_response::DirectoryResponse as ProfileMemberSearchResponse;
 pub use directory_response::DirectoryResponse as ProfileGroupSearchResponse;
@@ -442,13 +451,13 @@ impl Transport {
         req: &PreparedRequest,
         structured_block_response: bool,
         http: &wreq::Client,
-        file_share_rate_limit: bool,
+        retain_api_retry_after: bool,
     ) -> Result<Value, Error> {
         self.execute_once_using_decode_mode(
             req,
             structured_block_response,
             http,
-            file_share_rate_limit,
+            retain_api_retry_after,
             None,
         )
         .await
@@ -459,14 +468,14 @@ impl Transport {
         req: &PreparedRequest,
         structured_block_response: bool,
         http: &wreq::Client,
-        file_share_rate_limit: bool,
+        retain_api_retry_after: bool,
         ordered_keys: Option<&mut Option<Vec<String>>>,
     ) -> Result<Value, Error> {
         self.execute_once_using_observed_decode_mode(
             req,
             structured_block_response,
             http,
-            file_share_rate_limit,
+            retain_api_retry_after,
             ordered_keys,
             None,
             None,
@@ -479,7 +488,7 @@ impl Transport {
         req: &PreparedRequest,
         structured_block_response: bool,
         http: &wreq::Client,
-        file_share_rate_limit: bool,
+        retain_api_retry_after: bool,
         ordered_keys: Option<&mut Option<Vec<String>>>,
         receipt: Option<&ChannelReadReceipt>,
         original_bytes: Option<&mut Option<String>>,
@@ -488,7 +497,7 @@ impl Transport {
             req,
             structured_block_response,
             http,
-            file_share_rate_limit,
+            retain_api_retry_after,
             ordered_keys,
             receipt,
             original_bytes,
@@ -502,7 +511,7 @@ impl Transport {
         req: &PreparedRequest,
         structured_block_response: bool,
         http: &wreq::Client,
-        file_share_rate_limit: bool,
+        retain_api_retry_after: bool,
         ordered_keys: Option<&mut Option<Vec<String>>>,
         receipt: Option<&ChannelReadReceipt>,
         original_bytes: Option<&mut Option<String>>,
@@ -610,9 +619,10 @@ impl Transport {
 
         // This narrow read owner must retain the actual header even when Slack
         // reports a rate limit inside a successful HTTP response.
-        if file_share_rate_limit
+        if retain_api_retry_after
             && !structured_block_response
-            && file_share_read::rate_limited(req, &value)
+            && (file_share_read::rate_limited(req, &value)
+                || directory_usergroup_info::rate_limited(req, &value))
         {
             return Err(Error::RateLimited { retry_after_secs });
         }

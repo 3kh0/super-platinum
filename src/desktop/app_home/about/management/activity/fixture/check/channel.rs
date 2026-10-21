@@ -1,6 +1,10 @@
 //! Native CHANNEL occurrence navigation and real About reentry.
 use super::super::channel as endpoint;
 use super::*;
+mod composition;
+mod loading;
+mod shared_frozen;
+mod special;
 const KNOWN_BUTTON: &str = "workflow-activity-channel-trigger-1";
 const MISSING_BUTTON: &str = "workflow-activity-channel-step-0-1";
 const REFUSAL: &str =
@@ -36,6 +40,12 @@ async fn sidebar(desktop: &DesktopContext, model: &Value, measure: bool) -> Resu
     }})()"#,model,json!(measure))).await
 }
 async fn channel_labels(desktop: &DesktopContext, fetched: bool) -> Result<Value, String> {
+    if endpoint::shared_frozen::requested() {
+        return shared_frozen::labels(desktop, fetched).await;
+    }
+    if case() == "channel-special" {
+        return special::labels(desktop, fetched).await;
+    }
     let script = r#"(()=>{
         const fetched=FETCHED,tagPath=TAG_PATH;
         const ids=['workflow-activity-channel-trigger-1','workflow-activity-channel-trigger-3','workflow-activity-channel-step-0-1'];
@@ -67,20 +77,18 @@ async fn stage(
     let mut proof = json!({"channel":endpoint::snapshot(&state.peek()),"exercise":exercise});
     if matches!(
         label,
-        "detail"
-            | "filter-refused"
-            | "search-refused"
-            | "composition-refused"
-            | "malformed"
-            | "offline"
-            | "held"
+        "detail" | "filter-refused" | "search-refused" | "malformed" | "offline" | "held"
     ) {
         proof["channelLabels"] = channel_labels(desktop, false).await?;
+        if endpoint::shared_frozen::requested() {
+            proof["channel"] = endpoint::snapshot(&state.peek());
+        }
     }
     proof["sidebarNative"] = sidebar(
         desktop,
         &proof["channel"]["sidebar"],
-        matches!(label, "known" | "retried"),
+        matches!(label, "known" | "retried" | "archived" | "private-archived")
+            || shared_frozen::target(label).is_some(),
     )
     .await?;
     let missing = proof["channel"]["sidebar"]["rows"]
@@ -91,10 +99,14 @@ async fn stage(
             "Fetched sidebar row appeared before accepted response or disappeared afterwards: {label}"
         ));
     }
-    if !matches!(label, "known" | "retried") {
+    if !matches!(label, "known" | "retried" | "archived" | "private-archived")
+        && shared_frozen::target(label).is_none()
+    {
         return capture(state, desktop, name, label, proof, stages, captures).await;
     }
-    let expected = if label == "known" {
+    let expected = if let Some((name, _)) = shared_frozen::target(label) {
+        name
+    } else if label == "known" {
         "activity-known"
     } else {
         "activity-fetched"
@@ -107,7 +119,17 @@ async fn stage(
         )
     };
     proof["conversationOwner"] = json!({"timeline":timeline,"composer":composer});
-    let mut geometry=wait_dom(desktop,&format!(r#"(()=>{{
+    let archived = matches!(label, "archived" | "private-archived")
+        || shared_frozen::target(label).is_some_and(|(_, archived)| archived);
+    let mut geometry = if archived {
+        proof["conversationOwner"]["composer"] = Value::Null;
+        if shared_frozen::target(label).is_some() {
+            shared_frozen::archived_target(desktop, expected, &timeline).await?
+        } else {
+            special::target(desktop, label, &timeline).await?
+        }
+    } else {
+        wait_dom(desktop,&format!(r#"(()=>{{
         const timeline=document.getElementById('message-timeline'),header=document.querySelector('.conversation-header .header-name'),composer=document.getElementById('channel-composer');
         const rect=e=>{{const r=e.getBoundingClientRect();return{{left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:r.width,height:r.height}}}};
         const visible=e=>{{const r=rect(e),s=getComputedStyle(e),h=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);return r.width>0&&r.height>0&&r.top>=0&&r.left>=0&&r.bottom<=innerHeight+1&&r.right<=innerWidth+1&&s.display!=='none'&&s.visibility==='visible'&&(h===e||e.contains(h));}};
@@ -115,7 +137,8 @@ async fn stage(
         const controls=[header,timeline,composer].map(e=>({{id:e.id,visible:visible(e),rect:rect(e)}}));
         const timelineScope=timeline.dataset.timelineScope,composerScope=composer.dataset.draftScope,headerText=header.textContent,placeholder=composer.placeholder;
         return{{ok:timelineScope==={}&&composerScope==={}&&headerText==={}&&placeholder==={}&&controls.every(e=>e.visible),viewport:[innerWidth,innerHeight],noOverflow:document.documentElement.scrollWidth<=innerWidth+1,conversation:true,timelineScope,composerScope,headerText,placeholder,controls,notices:[]}};
-    }})()"#,json!(timeline),json!(composer),json!(format!("#{expected}")),json!(format!("Message #{expected}")))).await?;
+    }})()"#,json!(timeline),json!(composer),json!(format!("#{expected}")),json!(format!("Message #{expected}")))).await?
+    };
     let directory = std::env::var_os("SUPER_PLATINUM_UI_CAPTURE_DIR")
         .map(std::path::PathBuf::from)
         .filter(|p| p.is_absolute())
@@ -162,13 +185,28 @@ async fn detail(state: Signal<ShellState>, desktop: &DesktopContext) -> Result<V
             && v["metadata"]["busy"] == false
     })
     .await?;
-    wait_dom(desktop,r#"(()=>{const ids=['workflow-activity-channel-trigger-1','workflow-activity-channel-trigger-3','workflow-activity-channel-step-0-1'],rows=ids.map(id=>{const e=document.getElementById(id);return{id,channel:e?.dataset.channel,text:e?.textContent,tag:e?.tagName}});return{ok:rows.every(r=>r.tag==='BUTTON')&&rows[0].channel==='CACTKNOWN01'&&rows[1].channel==='CACTKNOWN01'&&rows[2].channel==='CACTMISS01',rows}})()"#).await
+    if endpoint::shared_frozen::requested() {
+        return channel_labels(desktop, false).await;
+    }
+    let script = r#"(()=>{
+        const expected=[['workflow-activity-channel-trigger-1','CACTKNOWN01'],['workflow-activity-channel-trigger-3','CACTKNOWN01'],['workflow-activity-channel-step-0-1','CACTMISS01']];
+        if(SPECIAL)expected.push(['workflow-activity-channel-step-1-1','CACTARCH01'],['workflow-activity-channel-step-1-3','CACTPRARCH01']);
+        const rows=expected.map(([id])=>{const e=document.getElementById(id);return{id,channel:e?.dataset.channel,text:e?.textContent,tag:e?.tagName}});
+        return{ok:rows.every((r,i)=>r.tag==='BUTTON'&&r.channel===expected[i][1]),rows};
+    })()"#.replace("SPECIAL", &json!(case() == "channel-special").to_string());
+    wait_dom(desktop, &script).await
 }
 async fn refused(
     state: Signal<ShellState>,
     desktop: &DesktopContext,
     kind: &str,
 ) -> Result<Value, String> {
+    native::reveal_filters(desktop).await?;
+    // Finish the actual popup transaction before the uncommitted native probe.
+    native::reveal_control(desktop, KNOWN_BUTTON).await?;
+    if kind == "composition-refused" {
+        return composition::begin(state, desktop).await;
+    }
     let before = snapshot(&state.peek());
     let channel = endpoint::snapshot(&state.peek());
     let (id, buffer) = if kind == "filter-refused" {
@@ -177,7 +215,7 @@ async fn refused(
         ("workflow-activity-user-search", "Uncommitted native search")
     };
     let probe = if kind == "composition-refused" {
-        "document.getElementById('workflow-activity-from').dispatchEvent(new CompositionEvent('compositionstart',{bubbles:true,data:'draft'}));".to_owned()
+        "document.getElementById('workflow-activity-user-search').dispatchEvent(new CompositionEvent('compositionstart',{bubbles:true,data:'draft'}));".to_owned()
     } else {
         format!(
             "const e=document.getElementById({});Object.getOwnPropertyDescriptor(e.tagName==='SELECT'?HTMLSelectElement.prototype:HTMLInputElement.prototype,'value').set.call(e,{});",
@@ -204,7 +242,7 @@ async fn restore(desktop: &DesktopContext, kind: &str) -> Result<(), String> {
             "Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(document.getElementById('workflow-activity-user-search'),'');"
         }
         _ => {
-            "document.getElementById('workflow-activity-from').dispatchEvent(new CompositionEvent('compositionend',{bubbles:true,data:'draft'}));"
+            "document.getElementById('workflow-activity-user-search').dispatchEvent(new CompositionEvent('compositionend',{bubbles:true,data:'draft'}));"
         }
     };
     wait_dom(desktop,&format!("(()=>{{{script}document.getElementById('workflow-activity-navigation-notice').textContent='';return{{ok:true}}}})()")).await.map(|_|())
@@ -221,8 +259,8 @@ async fn return_document(
     })
     .await?;
     let scope = state.peek().timeline_scope();
-    let tab = wait_dom(desktop,&format!(r#"(()=>{{const timeline=document.getElementById('message-timeline'),selected=document.querySelector('.sidebar button.channel.active .channel-name'),tabs=document.querySelector('.conversation > .channel-tabs'),e=tabs&&[...tabs.querySelectorAll('button')].find(e=>e.textContent.trim()==='About');if(timeline?.dataset.timelineScope!=={}||selected?.textContent!=='Review requests'||!e||e.disabled||e.getAttribute('aria-pressed')!=='false')return{{ok:false,scope:timeline?.dataset.timelineScope,selected:selected?.textContent}};e.scrollIntoView({{block:'nearest'}});const r=e.getBoundingClientRect(),hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);if(hit!==e&&!e.contains(hit))return{{ok:false}};e.click();return{{ok:true,scope:timeline.dataset.timelineScope,selected:selected.textContent}}}})()"#,json!(scope))).await?;
-    wait_dom(desktop,r#"(()=>{const e=[...document.querySelectorAll('.conversation > .channel-tabs button')].find(e=>e.textContent.trim()==='About');return{ok:e?.getAttribute('aria-pressed')==='true'}})()"#).await?;
+    let tab = wait_dom(desktop,&format!(r#"(()=>{{const timeline=document.getElementById('message-timeline'),selected=document.querySelector('.sidebar button.channel.active .channel-name'),tabs=document.querySelector('.conversation > div > .channel-tabs'),e=tabs&&[...tabs.querySelectorAll('button')].find(e=>e.textContent.trim()==='About');if(timeline?.dataset.timelineScope!=={}||selected?.textContent!=='Review requests'||!e||e.disabled||e.getAttribute('aria-pressed')!=='false')return{{ok:false,scope:timeline?.dataset.timelineScope,selected:selected?.textContent}};e.scrollIntoView({{block:'nearest'}});const r=e.getBoundingClientRect(),hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);if(hit!==e&&!e.contains(hit))return{{ok:false}};e.click();return{{ok:true,scope:timeline.dataset.timelineScope,selected:selected.textContent}}}})()"#,json!(scope))).await?;
+    wait_dom(desktop,r#"(()=>{const e=[...document.querySelectorAll('.conversation > div > .channel-tabs button')].find(e=>e.textContent.trim()==='About');return{ok:e?.getAttribute('aria-pressed')==='true'}})()"#).await?;
     wait_dom(desktop,"({ok:!!document.getElementById('workflow-configuration')&&!document.getElementById('workflow-configuration').disabled})").await?;
     click(desktop, "workflow-configuration").await?;
     wait(state, "reattached dirty document", |v| {
@@ -235,11 +273,9 @@ async fn return_document(
         "({ok:!!document.getElementById('workflow-activity-back')})",
     )
     .await?;
-    let reentry_labels = channel_labels(
-        desktop,
-        endpoint::snapshot(&state.peek())["missingPresent"] == true,
-    )
-    .await?;
+    // End the Signal read before native evaluation can drive runtime writes.
+    let missing_present = endpoint::snapshot(&state.peek())["missingPresent"] == true;
+    let reentry_labels = channel_labels(desktop, missing_present).await?;
     click(desktop, "workflow-activity-back").await?;
     wait_dom(desktop,&format!("(()=>{{const e=document.getElementById('workflow-management-title');return{{ok:e?.value==={}}}}})()",json!(TITLE))).await?;
     let after = endpoint::snapshot(&state.peek());
@@ -260,6 +296,9 @@ pub(super) async fn run(
     desktop: &DesktopContext,
     name: &str,
 ) -> Result<Value, String> {
+    if endpoint::shared_frozen::requested() {
+        endpoint::shared_frozen::seed(state).await?;
+    }
     let readiness = readiness(name).await?;
     let mut stages = vec![];
     let mut captures = serde_json::Map::new();
@@ -315,7 +354,19 @@ pub(super) async fn run(
             &mut captures,
         )
         .await?;
-        restore(desktop, kind).await?;
+        if kind == "composition-refused" {
+            let restored = composition::finish(state, desktop).await?;
+            let exercise =
+                &mut stages.last_mut().ok_or("Missing composition stage")?["proof"]["exercise"];
+            if restored["model"] != exercise["before"]
+                || restored["channel"] != exercise["channelBefore"]
+            {
+                return Err("Composition restoration changed original model or endpoint".into());
+            }
+            exercise["restored"] = restored;
+        } else {
+            restore(desktop, kind).await?;
+        }
     }
     let before = endpoint::snapshot(&state.peek());
     click(desktop, "workflow-activity-channel-trigger-3").await?;
@@ -344,6 +395,12 @@ pub(super) async fn run(
         &mut captures,
     )
     .await?;
+    if case() == "channel-special" {
+        special::navigate(state, desktop, name, &mut stages, &mut captures).await?;
+    }
+    if endpoint::shared_frozen::requested() {
+        shared_frozen::navigate(state, desktop, name, &mut stages, &mut captures).await?;
+    }
     click(desktop, "workflow-management-activity").await?;
     detail(state, desktop).await?;
     for (label, mode) in [
@@ -405,48 +462,81 @@ pub(super) async fn run(
     endpoint::mode(&state.peek(), endpoint::Mode::Held)?;
     click(desktop, MISSING_BUTTON).await?;
     channel_wait(state, "held channel read", |v| v["ledger"]["held"] == true).await?;
+    let held = loading::held(state, desktop).await?;
     stage(
         state,
         desktop,
         name,
         "held",
-        Value::Null,
+        held,
         &mut stages,
         &mut captures,
     )
     .await?;
-    click(desktop, "workflow-activity-close-detail").await?;
-    channel_wait(state, "detail retired pending read", |v| {
-        v["ledger"]["cancelled"] == 1
+    let held_success = case() == "channel-held-success";
+    let (before, held_completion) = if held_success {
+        let before = endpoint::snapshot(&state.peek());
+        let completion = endpoint::release(&state.peek())?;
+        if completion["delivered"] != true
+            || completion["cancelledBeforeReply"] != false
+            || completion["serial"] != 3
+            || completion["requestCount"] != 3
+        {
+            return Err(format!(
+                "Original held channel completion changed: {completion}"
+            ));
+        }
+        (before, Some(completion))
+    } else {
+        click(desktop, "workflow-activity-close-detail").await?;
+        channel_wait(state, "detail retired pending read", |v| {
+            v["ledger"]["cancelled"] == 1
+        })
+        .await?;
+        let mut release = endpoint::release(&state.peek())?;
+        if release["cancelledBeforeReply"] != true {
+            return Err("Retired channel response was delivered".into());
+        }
+        release["cleanup"] = loading::retired(desktop).await?;
+        stage(
+            state,
+            desktop,
+            name,
+            "retired",
+            release,
+            &mut stages,
+            &mut captures,
+        )
+        .await?;
+        detail(state, desktop).await?;
+        let before = endpoint::snapshot(&state.peek());
+        click(desktop, MISSING_BUTTON).await?;
+        (before, None)
+    };
+    channel_wait(state, "retry channel selected", |v| {
+        v["selected"] == endpoint::MISSING && v["missingPresent"] == true
     })
     .await?;
-    let release = endpoint::release(&state.peek())?;
-    if release["cancelledBeforeReply"] != true {
-        return Err("Retired channel response was delivered".into());
+    let mut exercise = json!({"before":before});
+    if let Some(completion) = held_completion {
+        let actual = endpoint::snapshot(&state.peek());
+        if actual["ledger"]["requests"].as_array().map(Vec::len) != Some(3)
+            || actual["ledger"]["completed"] != 3
+            || actual["ledger"]["cancelled"] != 0
+            || actual["ledger"]["held"] != false
+        {
+            return Err(
+                "Held success performed another channel read or cancelled its receiver".into(),
+            );
+        }
+        exercise["heldCompletion"] = completion;
     }
     stage(
         state,
         desktop,
         name,
-        "retired",
-        release,
-        &mut stages,
-        &mut captures,
-    )
-    .await?;
-    detail(state, desktop).await?;
-    let before = endpoint::snapshot(&state.peek());
-    click(desktop, MISSING_BUTTON).await?;
-    channel_wait(state, "retry channel selected", |v| {
-        v["selected"] == endpoint::MISSING && v["missingPresent"] == true
-    })
-    .await?;
-    stage(
-        state,
-        desktop,
-        name,
         "retried",
-        json!({"before":before}),
+        exercise,
         &mut stages,
         &mut captures,
     )
@@ -463,6 +553,6 @@ pub(super) async fn run(
     )
     .await?;
     Ok(
-        json!({"ok":true,"fixture":name,"case":"channel","readiness":readiness,"viewport":stages.last().unwrap()["geometry"]["viewport"],"aboutConfiguration":true,"actualActivityEntry":true,"noLiveNetwork":true,"stages":stages,"captures":captures,"final":snapshot(&state.peek())}),
+        json!({"ok":true,"fixture":name,"case":case(),"readiness":readiness,"viewport":stages.last().unwrap()["geometry"]["viewport"],"aboutConfiguration":true,"actualActivityEntry":true,"noLiveNetwork":true,"stages":stages,"captures":captures,"final":snapshot(&state.peek())}),
     )
 }

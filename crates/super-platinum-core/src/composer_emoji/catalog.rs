@@ -4,6 +4,9 @@
 use super::{insertion::Representation, search, standard};
 use crate::slack::models::Emoji;
 use std::collections::{HashMap, HashSet};
+#[path = "catalog/reaction.rs"]
+mod reaction;
+pub use reaction::ReactionChoice;
 
 /// The catalog needs only shortcode identity and image/alias value. Canonical
 /// workspace Emoji records retain timestamps and every unknown metadata field.
@@ -11,6 +14,19 @@ use std::collections::{HashMap, HashSet};
 pub struct CustomRecord {
     pub name: String,
     pub value: String,
+    pub is_nonexistent: bool,
+}
+
+impl CustomRecord {
+    pub fn nonexistent(emoji: &Emoji) -> bool {
+        match emoji.extra.get("isNonExistent") {
+            None | Some(serde_json::Value::Null) => false,
+            Some(serde_json::Value::Bool(v)) => *v,
+            Some(serde_json::Value::Number(v)) => v.as_f64().is_some_and(|v| v != 0.0),
+            Some(serde_json::Value::String(v)) => !v.is_empty(),
+            Some(serde_json::Value::Array(_) | serde_json::Value::Object(_)) => true,
+        }
+    }
 }
 
 impl From<&Emoji> for CustomRecord {
@@ -18,20 +34,24 @@ impl From<&Emoji> for CustomRecord {
         Self {
             name: emoji.name.clone(),
             value: emoji.value.clone(),
+            is_nonexistent: Self::nonexistent(emoji),
         }
     }
 }
 
 impl From<Emoji> for CustomRecord {
     fn from(emoji: Emoji) -> Self {
+        let is_nonexistent = Self::nonexistent(&emoji);
         Self {
             name: emoji.name,
             value: emoji.value,
+            is_nonexistent,
         }
     }
 }
 
 pub struct Catalog {
+    reaction_identity: std::sync::Arc<()>,
     pub standard: standard::Catalog,
     pub search_entries: Vec<search::Entry>,
     /// Includes each source name once. Presentation may filter/sort this list;
@@ -126,6 +146,7 @@ impl Catalog {
         // unresolvable selection; valid groups retain exact source order.
         groups.retain(|entry| !entry.id.is_empty());
         Ok(Self {
+            reaction_identity: std::sync::Arc::new(()),
             standard,
             search_entries: groups,
             names,

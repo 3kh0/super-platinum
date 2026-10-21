@@ -11,7 +11,7 @@ pub(super) struct Acquired {
 
 pub(super) async fn remote(
     mut state: Signal<ShellState>,
-    search: &Search,
+    search: &Search<impl Host>,
     names: &member_names::Observation,
     raw_query: &str,
 ) -> Result<Acquired, Error> {
@@ -23,7 +23,7 @@ pub(super) async fn remote(
 }
 async fn read(
     state: Signal<ShellState>,
-    search: &Search,
+    search: &Search<impl Host>,
     names: &member_names::Observation,
     raw_query: &str,
 ) -> Result<Acquired, Error> {
@@ -92,7 +92,7 @@ async fn read(
             tokio::select! {
                 biased;
                 _ = search.lease.cancelled() => Err(unavailable()),
-                result = fixture::completion::search(state, &request) => result,
+                result = search.lease.fixture_request(state, &request, true) => result,
             }
         } else {
             tokio::select! {

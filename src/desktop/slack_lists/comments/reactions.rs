@@ -3,6 +3,16 @@ use super::*;
 use super_platinum_core::{slack::events::RtEvent, state::ChannelMessages};
 
 pub(crate) fn apply(shell: &mut ShellState, team: &str, generation: u64, event: &RtEvent) -> bool {
+    // A duplicate own socket delta is still newer evidence than a held ACK.
+    reaction_actions::observe_socket(shell, team, generation, event);
+    apply_local(shell, team, generation, event)
+}
+pub(super) fn apply_local(
+    shell: &mut ShellState,
+    team: &str,
+    generation: u64,
+    event: &RtEvent,
+) -> bool {
     let (channel, ts, user, name, added) = match event {
         RtEvent::ReactionAdded {
             channel,

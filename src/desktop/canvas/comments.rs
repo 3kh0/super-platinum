@@ -11,17 +11,27 @@ use super_platinum_core::{
     slack::{Error, api, models::Message},
 };
 pub(in crate::canvas) mod annotation;
+pub(crate) mod attribution;
 pub(crate) mod check;
 pub(in crate::canvas) mod fixture;
+pub(crate) use fixture::attribution::install as fixture_install_attribution;
+pub(crate) use fixture::attribution::recovery as editor_recovery_fixture;
+mod file_acquisition;
+mod file_navigation;
+mod file_source;
 pub(in crate::canvas) mod focus;
 pub(in crate::canvas) mod mutation;
 mod pages;
+mod projection;
 mod rate;
 pub(in crate::canvas) mod reply;
 mod selection;
 use pages::Direction;
 mod view;
 pub(super) use view::Panel;
+pub(in crate::canvas) use view::ProfileToken;
+pub(crate) use view::{clear_profile_hover_token, clear_profile_token, profile_hover_token};
+pub(crate) use view::{profile_active, profile_overlay};
 #[cfg(test)]
 mod tests;
 
@@ -65,6 +75,10 @@ enum Query {
 }
 #[derive(Default)]
 pub(super) struct State {
+    attribution: attribution::State,
+    file_source: file_source::State,
+    file_acquisition: file_acquisition::State,
+    pending_file: Option<String>,
     selected_control: Option<selection::Pending>,
     selected_thread: Option<selection::Selected>,
     owner: Option<Owner>,
@@ -110,6 +124,10 @@ impl State {
         self.rate_blocked || self.retry_at.is_some_and(|time| Instant::now() < time)
     }
     fn next_serial(&mut self) {
+        self.attribution = Default::default();
+        file_source::retire(&mut self.file_source);
+        file_acquisition::retire(&mut self.file_acquisition);
+        self.pending_file = None;
         self.review = None;
         self.serial = self.serial.wrapping_add(1);
     }
@@ -250,7 +268,7 @@ async fn fetch(state: Signal<ShellState>, mut model: Signal<State>, ticket: Tick
         return;
     }
     match result {
-        Ok((page, file)) => {
+        Ok((page, file, files)) => {
             // A selected annotation remains bound to the actual numeric root
             // through every reply read, before projection or write admission.
             if !selection::admit_page(&state.peek(), &model.peek(), &ticket, &page) {
@@ -302,18 +320,24 @@ async fn fetch(state: Signal<ShellState>, mut model: Signal<State>, ticket: Tick
             }
             value.file = Some(file);
             value.rows.clear();
+            if let Some((read, messages)) = files {
+                // Original JSON preserves absent fields. Publication is admitted
+                // only after the same page, selection and pagination checks.
+                let _ = file_source::publish(&shell, &mut value, &ticket, &read, &messages);
+            }
             for (message, preview) in messages {
                 if matches!(&ticket.query, Query::Replies(root) if message.ts.as_ref() == Some(root))
                 {
                     value.root = Some(message.clone());
                 }
                 let row = Row {
-                    body: crate::message_vm::message_vm_with_pending(
-                        workspace,
-                        &message,
-                        &shell.media,
-                        false,
-                    ),
+                    body: if message.subtype.as_deref() == Some("document_comment_root")
+                        && !message.files.is_empty()
+                    {
+                        projection::metadata_vm(workspace, &message, &shell.media)
+                    } else {
+                        projection::message_vm(workspace, &message, &shell.media)
+                    },
                     preview_body: preview.as_ref().map(|m| {
                         crate::message_vm::message_vm_with_pending(
                             workspace,
@@ -356,6 +380,8 @@ async fn fetch(state: Signal<ShellState>, mut model: Signal<State>, ticket: Tick
             }
         }
     }
+    file_acquisition::after_read(state, model, &ticket);
+    attribution::after_read(state, model, &ticket);
     mutation::after_read(state, model).await;
     selection::after_read(state, model, &ticket);
 }
@@ -384,11 +410,19 @@ enum Page {
 async fn read(
     state: Signal<ShellState>,
     ticket: &Ticket,
-) -> Result<(Page, super_platinum_core::slack::models::File), Error> {
+) -> Result<
+    (
+        Page,
+        super_platinum_core::slack::models::File,
+        Option<(file_source::Read, Vec<serde_json::Value>)>,
+    ),
+    Error,
+> {
     let invalid = || Error::Api("canvas_comments_unavailable".into());
     if !ticket.owner.current(&state.peek()) {
         return Err(invalid());
     }
+    let files_read = file_source::Read::capture(&state.peek(), &ticket.owner);
     let (response, file) = if crate::fixture::is_fixture() {
         (fixture::response(&state.peek(), ticket)?, fixture::file())
     } else {
@@ -410,6 +444,7 @@ async fn read(
         let request = request(&ctx.client, &ctx.session, ticket)?;
         (ctx.transport.execute(request).await?, file)
     };
+    let files = files_read.zip(response.get("messages").and_then(|v| v.as_array()).cloned());
     let ticket = ticket.clone();
     let page = tokio::task::spawn_blocking(move || match ticket.query {
         Query::Stream(_) => StreamPage::parse(&ticket.owner.file, &response).map(Page::Stream),
@@ -424,7 +459,7 @@ async fn read(
     .await
     .map_err(|_| invalid())?
     .map_err(|_| invalid())?;
-    Ok((page, file))
+    Ok((page, file, files))
 }
 fn request(
     client: &super_platinum_core::slack::client::SlackClient,
@@ -453,4 +488,5 @@ pub(crate) fn install_fixture(shell: &mut ShellState) {
     mutation::fixture::install(shell);
     reply::fixture::install(shell);
     annotation::fixture::install(shell);
+    fixture::canonical_files::install(shell);
 }

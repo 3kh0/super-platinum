@@ -3,6 +3,7 @@ use super::*;
 use dioxus::desktop::DesktopContext;
 use std::time::Duration;
 mod channel;
+mod date_range;
 #[path = "../../entry/fixture/check.rs"]
 mod execution;
 #[path = "../../entry/fixture/replacement.rs"]
@@ -12,6 +13,8 @@ mod execution_retirement;
 #[path = "../../entry/fixture/surfaces.rs"]
 mod execution_surfaces;
 mod export;
+mod file;
+mod mixed_navigation;
 mod native;
 mod picker;
 mod refresh;
@@ -85,8 +88,14 @@ pub(crate) fn start(state: Signal<ShellState>, desktop: DesktopContext) {
     }
     let name = std::env::var("SUPER_PLATINUM_FIXTURE").unwrap_or_default();
     dioxus::core::spawn_forever(async move {
-        let result = match tokio::time::timeout(Duration::from_secs(180), async {
-            if matches!(
+        let mut result = match tokio::time::timeout(Duration::from_secs(180), async {
+            if super::mixed::is_case(&case()) {
+                mixed_navigation::run(state, &desktop, &name).await
+            } else if super::file::requested() {
+                file::run(state, &desktop, &name).await
+            } else if case().starts_with("date-range") {
+                date_range::run(state, &desktop, &name).await
+            } else if matches!(
                 case().as_str(),
                 "execution-thread-replacement" | "execution-pin-removal"
             ) {
@@ -109,7 +118,14 @@ pub(crate) fn start(state: Signal<ShellState>, desktop: DesktopContext) {
                 refresh::run(state, &desktop, &name).await
             } else if case().starts_with("user-") {
                 users::run(state, &desktop, &name).await
-            } else if case() == "channel" {
+            } else if matches!(
+                case().as_str(),
+                "channel"
+                    | "channel-held-success"
+                    | "channel-special"
+                    | "channel-shared-frozen"
+                    | "channel-frozen-grace"
+            ) {
                 channel::run(state, &desktop, &name).await
             } else if case() == "picker" {
                 picker::run(state, &desktop, &name).await
@@ -121,13 +137,33 @@ pub(crate) fn start(state: Signal<ShellState>, desktop: DesktopContext) {
         {
             Ok(Ok(v)) => v,
             Ok(Err(error)) => {
-                json!({"ok":false,"fixture":name,"case":case(),"error":error,"lastModel":snapshot(&state.peek()),"channelModel":super::channel::snapshot(&state.peek()),"userPolicyModel":super::users::snapshot(&state.peek())})
+                json!({"ok":false,"fixture":name,"case":case(),"error":error,"lastModel":snapshot(&state.peek()),"calendarModel":failure_calendar(&state.peek()),"channelModel":super::channel::snapshot(&state.peek()),"userPolicyModel":super::users::snapshot(&state.peek())})
             }
             Err(_) => {
-                json!({"ok":false,"fixture":name,"case":case(),"error":"Activity native check timed out","lastModel":snapshot(&state.peek())})
+                json!({"ok":false,"fixture":name,"case":case(),"error":"Activity native check timed out","lastModel":snapshot(&state.peek()),"calendarModel":failure_calendar(&state.peek())})
             }
         };
-        eprintln!("workflow-activity-check: {result}");
+        if super::file::requested() && result["ok"] != true {
+            let shell = state.peek();
+            result["fileModel"] = json!({
+                "files":super::file::snapshot(&shell),
+                "canonical":shell.app_home.about.management.surface.as_ref()
+                    .map(|h|crate::app_home::about::management::activity::file_snapshot(&shell,h.id)),
+                "custody":super::file::custody(&shell)
+            });
+            result["destination"] =
+                crate::slack_lists::fixture::activity_navigation::snapshot(&shell);
+        }
+        // Large receipts contain original source observations for every stage.
+        // Formatting and writing them must not block the desktop message loop
+        // while the external harness checks the final capture's window owner.
+        if let Err(error) = tokio::task::spawn_blocking(move || {
+            eprintln!("workflow-activity-check: {result}");
+        })
+        .await
+        {
+            eprintln!("workflow-activity-receipt-error: {error}");
+        }
     });
 }
 async fn wait(
@@ -148,4 +184,18 @@ fn exact(v: &Value) -> bool {
     v["metadata"]["title"] == TITLE
         && v["metadata"]["description"] == DESCRIPTION
         && v["metadata"]["dirty"] == true
+}
+
+// Failure-only model witness; normal receipts and production state remain unchanged.
+fn failure_calendar(s: &ShellState) -> Value {
+    s.app_home
+        .about
+        .management
+        .surface
+        .as_ref()
+        .and_then(|surface| crate::app_home::about::management::document(s, surface.id))
+        .map(|document| {
+            crate::app_home::about::management::activity::date_range::snapshot(&document.activity)
+        })
+        .unwrap_or(Value::Null)
 }

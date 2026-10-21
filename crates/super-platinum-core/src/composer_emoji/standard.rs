@@ -14,6 +14,10 @@ pub struct Entry {
     pub unicode: String,
     #[serde(default, rename = "aliasOf")]
     pub alias_of: Option<String>,
+    /// UHpe's reaction-name fallback. Both retained full version payloads have
+    /// no such entries; keep the optional source branch distinct from that fact.
+    #[serde(default)]
+    pub obsoletes: Option<String>,
     #[serde(default, rename = "skinVariations")]
     pub skin_variations: BTreeMap<String, Variant>,
     #[serde(default, rename = "multiSkinTone")]

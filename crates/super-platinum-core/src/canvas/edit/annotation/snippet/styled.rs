@@ -43,7 +43,7 @@ pub(super) fn nodes(
     {
         return Ok(Vec::new());
     }
-    let mut value = super::nodes(draft)?;
+    let mut value = super::section_nodes(section, draft)?;
     if let Some(tag) = tag {
         // The ordinary paragraph builder adds exactly one export-only BR.
         // Wrapped TextContent export does not add it; a real final BR stays.

@@ -373,8 +373,10 @@ fn section_styles_use_actual_snippet_mapping_without_changing_legacy_or_body_aut
             preview.iter().find(|v| v.id == "item").unwrap().blocks,
             rich["blocks"].as_array().unwrap().clone()
         );
-        if style != 0 {
+        if style > 3 {
             assert!(AnnotationIntent::capture_range(&s, "item", 0, 1).is_err());
+        } else {
+            assert!(AnnotationIntent::capture_range(&s, "item", 0, 1).is_ok());
         }
     }
     // The new source export behavior is explicitly version 6. Historical v1

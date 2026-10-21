@@ -62,6 +62,8 @@
 }
 .block-context p { margin: 0; }
 .block-context .mention-chip { font-size: 12px; }
+/* Keep decoration explicit on the interactive mention, independent of button defaults. */
+.rich-underline > .mention-chip { text-decoration: underline; }
 
 .block-inline-image {
   width: 20px;

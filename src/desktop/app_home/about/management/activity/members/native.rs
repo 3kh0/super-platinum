@@ -34,7 +34,8 @@ pub(super) async fn snapshot(expected: &Expected, selection: Option<&str>) -> Re
         expected.filters.user = value.into();
     }
     let script = format!(
-        "{}\ndioxus.send(await workflowMemberCommittedSnapshot({}));await dioxus.recv();",
+        "{}\n{}\ndioxus.send(await workflowMemberCommittedSnapshot({}));await dioxus.recv();",
+        include_str!("../date_witness.js"),
         include_str!("native.js"),
         json!(expected)
     );

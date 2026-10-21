@@ -19,9 +19,11 @@ use super_platinum_core::{
     slack::{api::CanvasCollabSnapshot, transport::CanvasEditFailure},
 };
 pub(in crate::canvas) mod fixture;
+pub(crate) mod heading_check;
 pub(in crate::canvas) mod image;
 pub(in crate::canvas) mod range;
 mod run;
+pub(crate) mod underline_check;
 mod view;
 pub(super) use view::Author;
 const STORAGE: &str = "The local comment record could not be saved. Its original result is retained; retry local recovery before continuing.";

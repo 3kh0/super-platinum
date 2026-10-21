@@ -5,6 +5,8 @@ use super_platinum_core::slack_lists::comments::journal::Inventory;
 mod lifecycle;
 #[cfg(test)]
 pub(super) mod tests;
+pub(super) use lifecycle::guarded_departure;
+pub(super) use lifecycle::{ReplySuspension, suspend_for_edit};
 pub(crate) use lifecycle::{can_open, depart, open, retry};
 #[derive(Clone, Default)]
 pub(super) struct Root {
@@ -19,6 +21,9 @@ pub(crate) struct Binding {
     root: String,
 }
 impl Binding {
+    pub(crate) fn owner_team(&self) -> &str {
+        &self.owner.scope.team
+    }
     pub fn id(&self) -> &str {
         &self.id
     }
@@ -381,8 +386,8 @@ fn flushed(e: &Draft, blocks: &[Value]) -> Result<bool, Error> {
 
 pub(crate) fn fixture_snapshot(shell: &ShellState) -> Value {
     if !fixture::compose::check_enabled()
-        || shell.core.session.is_some()
-        || shell.core.transport.is_some()
+        || ((shell.core.session.is_some() || shell.core.transport.is_some())
+            && !fixture::completion::enabled(shell))
     {
         return Value::Null;
     }

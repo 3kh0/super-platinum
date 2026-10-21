@@ -213,3 +213,44 @@ fn cached_preferences_require_original_account_cookie_credentials_and_revision()
     shell.core.account_epoch = shell.core.account_epoch.wrapping_add(1);
     assert!(!prefs.current(&shell));
 }
+
+#[test]
+fn list_locality_expansion_keeps_profile_source_admission_unchanged() {
+    type List = crate::slack_lists::comments::completion::Lease;
+    let foreign =
+        json!({"id":"C12345678","name":"foreign","is_channel":true,"fromAnotherTeam":true});
+    assert!(admitted_rows(&[foreign.clone()], &[foreign.clone()]).is_err());
+    assert!(admitted_rows_for::<List>(&[foreign.clone()], &[foreign.clone()]).is_ok());
+    let mut guessed = foreign.clone();
+    guessed.as_object_mut().unwrap().remove("fromAnotherTeam");
+    assert!(admitted_rows_for::<List>(&[guessed.clone()], &[guessed]).is_err());
+    let mut modified = foreign.clone();
+    modified["name"] = json!("different");
+    assert!(admitted_rows_for::<List>(&[foreign], &[modified]).is_err());
+}
+#[test]
+fn friendly_assignment_requires_complete_success_and_preserves_absent_false() {
+    assert_eq!(
+        assignment(
+            &json!({"ok":true,"assignments":{}}),
+            "friendly_channel_names"
+        )
+        .unwrap(),
+        None
+    );
+    assert_eq!(
+        assignment(
+            &json!({"ok":true,"assignments":{"friendly_channel_names":{"group":"on"}}}),
+            "friendly_channel_names"
+        )
+        .unwrap(),
+        Some("on")
+    );
+    for raw in [
+        json!({}),
+        json!({"ok":false,"assignments":{}}),
+        json!({"ok":true,"assignments":{"friendly_channel_names":{"group":true}}}),
+    ] {
+        assert!(assignment(&raw, "friendly_channel_names").is_err());
+    }
+}

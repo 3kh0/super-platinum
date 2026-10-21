@@ -1,5 +1,5 @@
-//! Profile-owned channel acquisition. Results remain unselectable until the
-//! matching/ranking caller publishes IDs through the private query catalog.
+//! Host-owned channel acquisition shared by Profile and List comments. Results
+//! remain private until the original host publishes and consumes a ranked batch.
 use super::*;
 use crate::app_home::{autocomplete, channel_fetches::search as ingress};
 use std::time::Instant;
@@ -7,8 +7,13 @@ use super_platinum_core::{
     block_actions::{directory_endpoint::DirectoryEndpoint, shortcuts::grid},
     slack::{PreparedRequest, api::custom::texty::channels},
 };
+pub(crate) mod channel_host;
 mod facts;
+use channel_host::Host;
+pub(crate) use ranking::Preferences;
+pub(crate) use run::{ChannelBatch, run_channels};
 pub(super) mod file_choice;
+pub(crate) use file_choice::{FileTarget, draft_file_labels};
 mod file_policy;
 mod file_rank_input;
 mod file_read;
@@ -24,14 +29,16 @@ mod member_rank_input;
 mod member_read;
 mod member_render;
 mod member_run;
+mod ordinary_members;
 pub(crate) use member_run::run as run_members;
+pub(crate) use ordinary_members::{MemberBatch, run_list_members};
 pub(super) mod ranking;
 mod render;
 mod run;
 pub(crate) use run::run;
 
-pub(crate) struct Search {
-    lease: query::Lease,
+pub(crate) struct Search<L: Host = query::Lease> {
+    lease: L,
     context: Arc<crate::scheduled::Context>,
     pub(super) ranking: autocomplete::Ranking,
     fixture: bool,
@@ -40,40 +47,27 @@ pub(crate) struct Acquired {
     pub(super) pages: channels::Pages,
     pub(super) source: Arc<canonical::Canonical>,
 }
-impl Search {
+impl<L: Host> Search<L> {
     fn preferences(&self, shell: &ShellState) -> Option<Arc<ranking::Preferences>> {
         self.current(shell)
-            .then(|| {
-                shell
-                    .profile_edit
-                    .sections
-                    .draft
-                    .as_ref()?
-                    .rich
-                    .as_ref()?
-                    .preferences
-                    .clone()
-            })
+            .then(|| self.lease.preferences(shell))
             .flatten()
     }
     fn retain_preferences(&self, shell: &mut ShellState, value: Arc<ranking::Preferences>) -> bool {
-        if !self.current(shell) || !value.current(shell) {
-            return false;
-        }
-        let Some(session) = shell
-            .profile_edit
-            .sections
-            .draft
-            .as_mut()
-            .and_then(|d| d.rich.as_mut())
-        else {
-            return false;
-        };
-        session.preferences = Some(value);
-        true
+        self.current(shell) && value.current(shell) && self.lease.retain_preferences(shell, value)
     }
-    pub(crate) fn capture(state: Signal<ShellState>, lease: query::Lease) -> Result<Self, Error> {
-        let fixture = fixture::completion::enabled(&state.peek());
+    pub(crate) async fn friendly_policy(&self, state: Signal<ShellState>) -> Result<bool, Error> {
+        let prior = { self.preferences(&state.peek()) };
+        let preferences = ranking::capture_preferences(state, self, prior).await?;
+        let friendly = preferences.friendly_channels()?;
+        let mut state = state;
+        if !self.retain_preferences(&mut state.write(), preferences) {
+            return Err(unavailable());
+        }
+        Ok(friendly)
+    }
+    pub(crate) fn capture(state: Signal<ShellState>, lease: L) -> Result<Self, Error> {
+        let fixture = lease.fixture_enabled(&state.peek());
         if (crate::fixture::is_fixture() && !fixture) || !lease.can_dispatch(&state.peek()) {
             return Err(unavailable());
         }
@@ -90,7 +84,7 @@ impl Search {
         self.lease.current(shell)
             && self.context.current(shell)
             && self.ranking.current(shell)
-            && (!self.fixture || fixture::completion::enabled(shell))
+            && (!self.fixture || self.lease.fixture_enabled(shell))
     }
     fn can_dispatch(&self, shell: &ShellState) -> bool {
         (!crate::fixture::is_fixture() || self.fixture)
@@ -106,7 +100,11 @@ impl Search {
             return Err(unavailable());
         }
         let result = if self.fixture {
-            fixture::completion::request(&state.peek(), &request).map(|(raw, _)| raw)
+            tokio::select! {
+                biased;
+                _ = self.lease.cancelled() => Err(unavailable()),
+                result = self.lease.fixture_request(state, &request, false) => result.map(|(raw,_)| raw),
+            }
         } else {
             tokio::select! {
                 biased;
@@ -195,7 +193,7 @@ impl Search {
                 tokio::select! {
                     biased;
                     _ = self.lease.cancelled() => Err(unavailable()),
-                    result = fixture::completion::search(state, &request) => result,
+                    result = self.lease.fixture_request(state, &request, true) => result,
                 }
             } else {
                 tokio::select! {

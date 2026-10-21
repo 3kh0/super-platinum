@@ -1,4 +1,4 @@
-//! Cached, exact paragraph anchors. Canonical text is never taken from exports.
+//! Cached, exact text anchors. Canonical text is never taken from exports.
 use crate::{
     blocks::{BlockCtx, block_nodes},
     model::RichNode,
@@ -57,11 +57,16 @@ impl Mapping {
             };
             if let Some(id) = section.as_deref() {
                 *ids.entry(id).or_default() += 1;
-                if matches!(kind, CanvasKind::Paragraph) {
+                let level = match kind {
+                    CanvasKind::Paragraph => Some(None),
+                    CanvasKind::Heading(level @ 1..=3) => Some(Some(*level)),
+                    _ => None,
+                };
+                if let Some(level) = level {
                     let carriers = children.iter().filter(|child| matches!(child,
                         CanvasNode::Element { kind: CanvasKind::Inline, section: Some(child_id), .. } if child_id == id
                     )).count();
-                    targets.push((id, carriers));
+                    targets.push((id, carriers, level));
                 }
             }
             nodes.extend(children);
@@ -69,14 +74,21 @@ impl Mapping {
         let now = super::checklist::save::now_usec().unwrap_or(u64::MAX);
         let targets: Vec<_> = targets
             .into_iter()
-            .filter_map(|(id, carriers)| {
-                (carriers <= 1 && ids.get(id).copied() == Some(1 + carriers)).then_some(id)
+            .filter_map(|(id, carriers, level)| {
+                (carriers <= 1
+                    && ids.get(id).copied() == Some(1 + carriers)
+                    && snapshot.section(id).is_some_and(|section| {
+                        section
+                            .style()
+                            .is_ok_and(|style| style.unwrap_or(0) == u64::from(level.unwrap_or(0)))
+                    }))
+                .then_some((id, level))
             })
             .collect();
-        let intents = TextIntent::capture_batch(snapshot, &targets, now);
-        let actions = super_platinum_core::canvas::edit::structure::paragraph_actions(
-            snapshot, &targets, now,
-        );
+        let ids: Vec<_> = targets.iter().map(|(id, _)| *id).collect();
+        let intents = TextIntent::capture_batch(snapshot, &ids, now);
+        let actions =
+            super_platinum_core::canvas::edit::structure::paragraph_actions(snapshot, &ids, now);
         let mut annotations: BTreeMap<_, _> =
             super_platinum_core::canvas::edit::annotation::AnnotationPresentation::ordinary(
                 None, None,
@@ -90,8 +102,9 @@ impl Mapping {
             .into_iter()
             .collect();
         let mut items = BTreeMap::new();
-        for ((id, intent), structure) in targets.into_iter().zip(intents).zip(actions) {
+        for (((id, level), intent), structure) in targets.into_iter().zip(intents).zip(actions) {
             let intent = intent.ok();
+            let structure = structure.filter(|_| level.is_none());
             let annotation = annotations.remove(id);
             let seed = intent
                 .as_ref()
@@ -111,14 +124,15 @@ impl Mapping {
                 Item {
                     intent: intent.map(Arc::new),
                     annotation,
-                    replacement: super::checklist::presentation(shell).is_some_and(|view| {
-                        !view.loading
-                            && !view.stale
-                            && view
-                                .snapshot
-                                .as_ref()
-                                .is_some_and(|s| s.file_id() == snapshot.file_id())
-                    })
+                    replacement: level.is_none()
+                        && super::checklist::presentation(shell).is_some_and(|view| {
+                            !view.loading
+                                && !view.stale
+                                && view
+                                    .snapshot
+                                    .as_ref()
+                                    .is_some_and(|s| s.file_id() == snapshot.file_id())
+                        })
                         && super_platinum_core::canvas::edit::structure::can_replace_main_canvas(
                             snapshot, id, now,
                         ),
@@ -133,6 +147,9 @@ impl Mapping {
 }
 
 #[cfg(test)]
+mod heading_annotations;
+
+#[cfg(test)]
 mod annotation_tests {
     use super::*;
     #[test]
@@ -140,7 +157,8 @@ mod annotation_tests {
         use super_platinum_core::canvas::wire::EncodedField as F;
         let shell = ShellState::fixture(crate::media::MediaRegistry::default());
         let mut snapshot =
-            (*super::super::fixture::snapshot("<b>A&amp;\u{1f600}B</b><br><br>Last", 1000)).clone();
+            (*super::super::fixture::snapshot("<u><b>A&amp;\u{1f600}B</b></u><br><br>Last", 1000))
+                .clone();
         snapshot
             .file
             .extra
@@ -185,11 +203,100 @@ mod annotation_tests {
             "A&\u{1f600}B\n\nLast"
         );
         assert!(seed.runs[0].style.bold);
+        assert!(seed.runs[0].style.underline);
+        assert!(item.blocks.contains("underline"));
         let duplicate = CanvasDocument::parse("<div class='quip-canvas-content'><p id='paragraph'>one</p><p id='paragraph'>two</p></div>").unwrap();
         assert!(
             Mapping::project(&shell, &duplicate, Some(&snapshot))
                 .items
                 .is_empty()
         );
+    }
+}
+
+#[cfg(test)]
+mod heading_tests {
+    use super::*;
+    use super_platinum_core::canvas::wire::{EncodedField as F, Section};
+
+    #[test]
+    fn underline_mapping_keeps_canonical_marks_and_does_not_grant_structure() {
+        let shell = ShellState::fixture(crate::media::MediaRegistry::default());
+        let snapshot = super::super::fixture::snapshot("<u>A<b>bold</b></u><br>Last", 1000);
+        let export = CanvasDocument::parse(
+            "<div class='quip-canvas-content'><p id='paragraph'>Lagging export</p></div>",
+        )
+        .unwrap();
+        let map = Mapping::project(&shell, &export, Some(&snapshot));
+        let item = map.items.get("paragraph").unwrap();
+        let seed = item.intent.as_ref().unwrap().seed();
+        assert!(
+            seed.runs
+                .iter()
+                .any(|run| run.style.underline && run.style.bold)
+        );
+        assert!(item.blocks.contains("underline"));
+        assert!(!item.blocks.contains("Lagging export"));
+        assert!(item.structure.is_none());
+        assert!(item.annotation.is_none());
+        assert!(!item.replacement);
+    }
+
+    #[test]
+    fn heading_mapping_requires_exact_level_and_identity_without_structural_actions() {
+        let shell = ShellState::fixture(crate::media::MediaRegistry::default());
+        for level in 1..=3 {
+            let mut snapshot =
+                (*super::super::fixture::snapshot("<b>Same title</b>", 1000)).clone();
+            let section = snapshot
+                .sections
+                .iter_mut()
+                .find(|s| s.id() == "paragraph")
+                .unwrap();
+            *section = Section::from_raw(
+                section
+                    .raw()
+                    .replace_fields(10, &[F::uint(10, level).unwrap()])
+                    .unwrap(),
+            )
+            .unwrap();
+            let export = CanvasDocument::parse(&format!("<div class='quip-canvas-content'><h{level} id='paragraph'><span id='paragraph'>Lagging export</span></h{level}></div>")).unwrap();
+            let map = Mapping::project(&shell, &export, Some(&snapshot));
+            let item = map.items.get("paragraph").unwrap();
+            assert_eq!(
+                item.intent.as_ref().unwrap().heading_level(),
+                Some(level as u8)
+            );
+            assert!(item.structure.is_none());
+            assert!(item.annotation.is_none());
+            assert!(!item.replacement);
+            assert!(item.blocks.contains("Same title"));
+            assert!(!item.blocks.contains("Lagging export"));
+            for html in [
+                "<p id='paragraph'>Same title</p>".to_owned(),
+                format!(
+                    "<h{} id='paragraph'>Same title</h{}>",
+                    level % 3 + 1,
+                    level % 3 + 1
+                ),
+                format!(
+                    "<h{level} id='paragraph'>Same title</h{level}><h{level} id='paragraph'>Same title</h{level}>"
+                ),
+                format!(
+                    "<h{level} id='paragraph'><span id='paragraph'>one</span><span id='paragraph'>two</span></h{level}>"
+                ),
+            ] {
+                let export = CanvasDocument::parse(&format!(
+                    "<div class='quip-canvas-content'>{html}</div>"
+                ))
+                .unwrap();
+                assert!(
+                    Mapping::project(&shell, &export, Some(&snapshot))
+                        .items
+                        .is_empty(),
+                    "{html}"
+                );
+            }
+        }
     }
 }

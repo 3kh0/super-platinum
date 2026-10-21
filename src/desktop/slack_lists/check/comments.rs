@@ -94,16 +94,58 @@ async fn stage(
     model: &Model,
     d: &dioxus::desktop::DesktopContext,
     name: &str,
-    proof: Value,
+    mut proof: Value,
     rows: &mut Vec<Value>,
 ) -> Result<(), String> {
     if STAGES.get(rows.len()) != Some(&name) {
         return Err("Comments stage order".into());
     }
-    let geometry = wait_dom(d, "window.__listComments.snapshot()").await?;
+    // Rust read completion precedes the renderer commit. The general snapshot
+    // also admits the legitimate loading surface with no rows; first-page
+    // content assertions must wait for this exact loaded row and paging control.
+    let expression = if name == "first" {
+        "(()=>{const v=window.__listComments.snapshot();v.ok=v.ok&&v.rows.some(r=>r.ts==='1781524801.000001')&&v.controls.some(c=>c.id==='slack-list-comments-next'&&!c.disabled);return v;})()"
+    } else {
+        "window.__listComments.snapshot()"
+    };
+    let geometry = wait_dom(d, expression).await?;
     let before = fixture::snapshot(&state.peek(), model);
     if before["writes"] != 0 || before["noSession"] != true || before["noTransport"] != true {
         return Err("Comments fixture wrote or acquired live credentials".into());
+    }
+    if name == "first" {
+        let shell = state.peek();
+        let generation = before["comments"]["generation"]
+            .as_u64()
+            .ok_or("Comment generation missing")?;
+        let available = crate::slack_lists::comments::reaction_actions::available(
+            &shell,
+            generation,
+            "1781524801.000001",
+            "wave",
+        );
+        let content = &geometry["readContent"];
+        if content["bold"] != true
+            || content["secondParagraph"] != true
+            || content["reactionTag"] != "BUTTON"
+            || content["reactionType"] != "button"
+            || content["reactionDisabled"] != !available
+            || content["reactionAriaDisabled"] != (!available).to_string()
+            || content["reactionPressed"] != "false"
+            || content["reactionOwn"] != false
+            || content["reactionCount"] != "2"
+            || content["reactionName"] != "wave"
+            || content["reactionVisible"] != true
+            || content["reactionHit"] != true
+            || content["messageTools"] != 0
+            || content["reactionButtons"] != 1
+        {
+            return Err(format!(
+                "Loaded rich comment lost exact reaction button semantics: {}",
+                json!({"available":available,"readContent":content,"generation":geometry["generation"],"rows":geometry["rows"],"controls":geometry["controls"]})
+            ));
+        }
+        proof["reactionAvailable"] = json!(available);
     }
     let path = harness::capture(d, name).await?;
     let after = fixture::snapshot(&state.peek(), model);

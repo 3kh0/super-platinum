@@ -14,6 +14,7 @@ pub struct ShellState {
     pub(crate) message_buttons: crate::message_buttons::State,
     pub(crate) app_home: crate::app_home::Root,
     pub(crate) directory_member_fetches: crate::directory_member_fetches::Registry,
+    pub(crate) group_freshness: crate::usergroups::freshness::Registry,
     pub(crate) app_modal: Option<crate::app_modal::Session>,
     pub(crate) app_modal_closes: Vec<crate::app_modal::CloseTicket>,
     pub core: super_platinum_core::CoreAppState,
@@ -351,6 +352,7 @@ impl ShellState {
     }
 
     pub fn close_profile(&mut self) {
+        crate::canvas::comments::clear_profile_token(self);
         self.profile_generation = self.profile_generation.wrapping_add(1);
         self.cancel_profile_dm();
         self.profile_user = None;

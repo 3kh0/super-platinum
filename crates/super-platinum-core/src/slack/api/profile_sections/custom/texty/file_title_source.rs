@@ -11,9 +11,11 @@ use std::{collections::BTreeMap, sync::Arc};
 mod batch;
 mod candidate;
 mod category;
+mod info;
 mod order;
 pub use batch::{BatchEntry, BatchReceipt, CandidateObservation, Collection};
 pub use category::{CategoryObservation, Exclusion};
+pub use info::OrderedFileInfo;
 pub use order::ChannelMapOrder;
 
 const MAX_ROWS: usize = 128;
@@ -127,6 +129,24 @@ impl Store {
     /// Once poisoned, this history cannot be healed by guessing a full row;
     /// the owner must construct a genuinely new title cache.
     pub fn ingest(&mut self, received: &Value) -> Result<(), Error> {
+        self.ingest_observed(received, None, None)
+    }
+
+    /// Original files.info singleton, including the actual team and same-byte
+    /// channel_map order. This does not simulate the separate batch projector.
+    pub fn ingest_info(&mut self, team: &str, received: &OrderedFileInfo) -> Result<(), Error> {
+        if team.is_empty() {
+            return Err(malformed());
+        }
+        self.ingest_observed(received.raw(), Some(team), received.order.info_keys())
+    }
+
+    fn ingest_observed(
+        &mut self,
+        received: &Value,
+        team: Option<&str>,
+        order: Option<&[String]>,
+    ) -> Result<(), Error> {
         let (mut nodes, mut bytes) = (MAX_NODES, MAX_ROW_BYTES);
         bounded(received, 0, &mut nodes, &mut bytes)?;
         let envelope = received.as_object().ok_or_else(malformed)?;
@@ -168,14 +188,16 @@ impl Store {
             candidate::project(
                 &mapped,
                 previous.and_then(|row| row.candidate.as_ref()),
-                None,
-                None,
+                team,
+                order,
             )
             .ok()
         };
-        let channel_map_order = (!incoming.contains_key("channel_map"))
-            .then(|| previous.and_then(|row| row.channel_map_order.clone()))
-            .flatten();
+        let channel_map_order = if incoming.contains_key("channel_map") {
+            order.map(|keys| Arc::new(keys.to_vec()))
+        } else {
+            previous.and_then(|row| row.channel_map_order.clone())
+        };
         let category = category::project(&mapped, previous.map(AsRef::as_ref));
         let bytes = received.to_string().len()
             + raw.to_string().len()

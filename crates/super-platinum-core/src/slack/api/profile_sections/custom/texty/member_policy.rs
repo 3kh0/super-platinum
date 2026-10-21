@@ -8,6 +8,8 @@ use crate::{
 };
 use serde_json::Value;
 pub mod environment;
+mod list;
+pub use list::{ListChannel, ListMemberFacts, ListMembership, ListPolicy};
 #[cfg(test)]
 mod tests;
 

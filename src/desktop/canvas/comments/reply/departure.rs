@@ -1,7 +1,7 @@
 //! Cooperative panel departure consumes the final original-node capture. Other
 //! Canvas departure guards keep a mounted rich editor charged until this step.
 use super::*;
-fn saved(e: &Entry) -> bool {
+pub(super) fn saved(e: &Entry) -> bool {
     // A never-edited empty plain fixture/readonly panel has no local tail.
     if e.serial == 0
         && e.text.is_empty()

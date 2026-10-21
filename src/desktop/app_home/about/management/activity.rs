@@ -4,6 +4,8 @@ use protocol::{
     ActivityDetail, ActivityDetailRequest, ActivityFilters, ActivityPage, ActivityQuery,
 };
 use serde::{Deserialize, Serialize};
+pub(crate) mod channel_labels;
+pub(crate) mod date_range;
 pub(crate) mod execution;
 pub(crate) mod export;
 pub(crate) mod fixture;
@@ -37,6 +39,9 @@ pub(crate) fn drafts_changed(s: &mut ShellState, team: &str) {
 #[derive(Clone, Default)]
 pub(super) struct State {
     pub(super) active: bool,
+    channel_labels: channel_labels::State,
+    files: message::files::State,
+    calendar: date_range::Calendar,
     filters: Filters,
     page: Option<ActivityPage>,
     page_revision: u64,
@@ -69,6 +74,9 @@ struct Filters {
     to: String,
     limit: String,
     user: String,
+    date_origin: String,
+    default_from: String,
+    default_to: String,
 }
 impl Default for Filters {
     fn default() -> Self {
@@ -79,6 +87,9 @@ impl Default for Filters {
             to: String::new(),
             limit: "100".into(),
             user: String::new(),
+            date_origin: String::new(),
+            default_from: String::new(),
+            default_to: String::new(),
         }
     }
 }
@@ -119,12 +130,18 @@ pub(in crate::app_home::about::management) fn navigation_fields(
     let mut filters = json!(a.filters);
     filters["revision"] = json!(a.filters.revision.to_string());
     Some(
-        json!({"filters":filters,"search":a.user_search,"memberGeneration":a.member_generation.to_string()}),
+        json!({"filters":filters,"search":a.user_search,"memberGeneration":a.member_generation.to_string(),"calendar":date_range::snapshot(a)}),
     )
 }
 
 pub(super) fn permitted(s: &ShellState, visit: u64) -> bool {
-    admitted(s, visit)
+    !super::permissions::confirming(s, visit)
+        && !super::permissions::owns(s, visit)
+        && !super::unpublish::confirming(s, visit)
+        && !super::unpublish::owns(s, visit)
+        && !super::delete::confirming(s, visit)
+        && !super::delete::owns(s, visit)
+        && admitted(s, visit)
         && s.app_home
             .about
             .management
@@ -199,6 +216,7 @@ fn back(s: &mut ShellState, visit: u64) {
         return;
     };
     d.activity.active = false;
+    d.activity.calendar.reset();
     d.activity.execution = None;
     d.activity.member_generation = next();
     d.activity.member_pending = None;
@@ -370,4 +388,9 @@ fn depth(mut state: Signal<ShellState>, visit: u64, expected: Vec<Value>, depth:
     a.notice = None;
     drop(s);
     load(state, visit, Page::First);
+}
+
+/// Passive source/queue evidence for the protected Activity fixture. No secrets.
+pub(crate) fn file_snapshot(s: &ShellState, visit: u64) -> Value {
+    message::files::snapshot(s, visit)
 }

@@ -1,7 +1,11 @@
 use super::*;
 pub(super) async fn snapshot(expected: &Expected) -> Result<Dates, Error> {
     let encoded = serde_json::to_string(expected).map_err(|_| unavailable())?;
-    let script = include_str!("native.js");
+    let script = concat!(
+        include_str!("date_witness.js"),
+        "\n",
+        include_str!("native.js")
+    );
     let mut eval = dioxus::document::eval(&format!(
         "{script}\nawait workflowActivityRead({encoded},dioxus);"
     ));

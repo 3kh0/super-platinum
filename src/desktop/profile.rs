@@ -51,6 +51,18 @@ pub(crate) fn profile_hover_card(
     snapshot: &ShellState,
     hover: &ProfileHoverVm,
 ) -> Element {
+    if crate::slack_lists::cell_editor_blocks_profile_hover(snapshot) {
+        return rsx! {};
+    }
+    // Canvas supplies the original root/member witness, including stale tokens.
+    // Capture it with this rendered card: never reconstruct authority at click.
+    let canvas_hover = crate::canvas::comments::profile_hover_token(snapshot, hover);
+    if canvas_hover
+        .as_ref()
+        .is_some_and(|token| !token.current(snapshot))
+    {
+        return rsx! {};
+    }
     let Some(profile) = profile_display(snapshot, &hover.user_id) else {
         return rsx! {};
     };
@@ -62,6 +74,8 @@ pub(crate) fn profile_hover_card(
     let user_for_avatar = profile.user_id.clone();
     let user_for_message = profile.user_id.clone();
     let user_for_vip = profile.user_id.clone();
+    let canvas_avatar = canvas_hover.clone();
+    let canvas_name = canvas_hover.clone();
     let can_vip = !profile.is_self && !profile.deactivated;
     let vip_label = if profile.is_vip { "Remove VIP" } else { "VIP" };
     rsx! {
@@ -70,9 +84,15 @@ pub(crate) fn profile_hover_card(
             style: "{style}",
             role: "dialog",
             "aria-label": "{profile.name} profile preview",
-            onmouseenter: move |_| state.write().hold_profile_hover(),
+            onmouseenter: move |_| {
+                let mut shell = state.write();
+                if !crate::slack_lists::cell_editor_blocks_profile_hover(&shell) {
+                    shell.hold_profile_hover();
+                }
+            },
             onmouseleave: move |_| {
                 let mut shell = state.write();
+                if crate::slack_lists::cell_editor_blocks_profile_hover(&shell) { return; }
                 shell.profile_hover_card_active = false;
                 shell.profile_hover = None;
             },
@@ -80,13 +100,21 @@ pub(crate) fn profile_hover_card(
                 button {
                     class: "profile-hover-avatar",
                     title: "Open {profile.name}'s profile",
-                    onclick: move |_| { spawn(crate::bootstrap::open_profile(state, user_for_avatar.clone())); },
+                    onclick: move |_| {
+                        if crate::slack_lists::cell_editor_blocks_profile_hover(&state.peek()) { return; }
+                        if let Some(token) = &canvas_avatar { token.open(state); }
+                        else { spawn(open_hover_profile(state, user_for_avatar.clone())); }
+                    },
                     {profile_avatar(&profile, snapshot.media_epoch, "profile-hover-avatar-image", profile.avatar.as_ref().is_some_and(|avatar| snapshot.media.is_ready(avatar)))}
                 }
                 div { class: "profile-hover-identity",
                     button {
                         class: "profile-name-button",
-                        onclick: move |_| { spawn(crate::bootstrap::open_profile(state, user_for_profile.clone())); },
+                        onclick: move |_| {
+                            if crate::slack_lists::cell_editor_blocks_profile_hover(&state.peek()) { return; }
+                            if let Some(token) = &canvas_name { token.open(state); }
+                            else { spawn(open_hover_profile(state, user_for_profile.clone())); }
+                        },
                         strong { "{profile.name}" }
                         span { class: presence_class(profile.presence), "aria-label": "{profile.presence.label()}" }
                     }
@@ -107,12 +135,15 @@ pub(crate) fn profile_hover_card(
                         span { "{profile.local_time}" }
                     }
                 }
-                div { class: "profile-actions profile-hover-actions",
+                if canvas_hover.is_none() {div { class: "profile-actions profile-hover-actions",
                     button {
                         class: "profile-action profile-action-message",
                         disabled: snapshot.profile_dm_opening.as_deref() == Some(profile.user_id.as_str()),
                         "aria-busy": snapshot.profile_dm_opening.as_deref() == Some(profile.user_id.as_str()),
-                        onclick: move |_| { crate::bootstrap::open_profile_dm(state, user_for_message.clone()); },
+                        onclick: move |_| {
+                            if crate::slack_lists::cell_editor_blocks_profile_hover(&state.peek()) { return; }
+                            crate::bootstrap::open_profile_dm(state, user_for_message.clone());
+                        },
                         {crate::icons::icon(crate::icons::Icon::Message, "profile-action-icon")}
                         span { if snapshot.profile_dm_opening.as_deref() == Some(profile.user_id.as_str()) { "Opening…" } else { "Message" } }
                     }
@@ -122,12 +153,15 @@ pub(crate) fn profile_hover_card(
                             disabled: crate::profile_vip::busy(snapshot, &profile.user_id),
                             "aria-busy": crate::profile_vip::busy(snapshot, &profile.user_id),
                             title: if crate::profile_vip::busy(snapshot, &profile.user_id) { "Updating VIP preference…" } else { vip_label },
-                            onclick: move |_| { crate::bootstrap::toggle_profile_vip(state, user_for_vip.clone()); },
+                            onclick: move |_| {
+                                if crate::slack_lists::cell_editor_blocks_profile_hover(&state.peek()) { return; }
+                                crate::bootstrap::toggle_profile_vip(state, user_for_vip.clone());
+                            },
                             {crate::icons::icon(crate::icons::Icon::PersonAdd, "profile-action-icon")}
                             span { "{vip_label}" }
                         }
                     }
-                }
+                }}
             }
         }
     }
@@ -347,8 +381,28 @@ pub(crate) fn profile_pane(mut state: Signal<ShellState>, snapshot: &ShellState)
     }
 }
 
+async fn open_hover_profile(state: Signal<ShellState>, user: String) {
+    // A cell dialog can open after the click but before this spawned task starts.
+    let blocked = crate::slack_lists::cell_editor_blocks_profile_hover(&state.peek());
+    if !blocked {
+        crate::bootstrap::open_profile(state, user).await;
+    }
+}
+
 pub(crate) fn show_profile_hover(mut state: Signal<ShellState>, user_id: String, x: f64, y: f64) {
-    state.write().show_profile_hover(user_id, x, y);
+    let mut shell = state.write();
+    if crate::slack_lists::cell_editor_blocks_profile_hover(&shell) {
+        return;
+    }
+    crate::canvas::comments::clear_profile_hover_token(&mut shell);
+    shell.show_profile_hover(user_id, x, y);
+}
+
+pub(crate) fn dismiss_profile_hover(shell: &mut ShellState) {
+    crate::canvas::comments::clear_profile_hover_token(shell);
+    shell.profile_hover_generation = shell.profile_hover_generation.wrapping_add(1);
+    shell.profile_hover_card_active = false;
+    shell.profile_hover = None;
 }
 
 pub(crate) fn schedule_profile_hover_close(mut state: Signal<ShellState>) {

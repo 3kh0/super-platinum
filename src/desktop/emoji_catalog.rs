@@ -505,3 +505,28 @@ pub(crate) fn retirement_observation(shell: &ShellState) -> serde_json::Value {
         "revision":shell.core.workspaces.get("T1").map(|w|w.custom_emoji_revision)
     })
 }
+
+/// Tests exercise the same catalog owner/allocation boundary without spawning IO.
+#[cfg(test)]
+pub(crate) fn install_reaction_test_catalog(shell: &mut ShellState) -> Arc<Loaded> {
+    let owner = Owner::capture(shell).unwrap();
+    let workspace = &shell.core.workspaces[&owner.team];
+    let (catalog, picker) = build(
+        workspace
+            .custom_emoji
+            .values()
+            .map(CustomRecord::from)
+            .collect(),
+    )
+    .unwrap();
+    let loaded = Arc::new(Loaded {
+        owner: owner.clone(),
+        revision: workspace.custom_emoji_revision,
+        locale: workspace.locale.clone(),
+        token: "reaction-test".into(),
+        catalog,
+        picker,
+    });
+    shell.emoji_catalog.ready.insert(owner.team, loaded.clone());
+    loaded
+}

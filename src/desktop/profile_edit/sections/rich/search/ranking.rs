@@ -6,7 +6,6 @@ use std::collections::{BTreeMap, BTreeSet};
 use super_platinum_core::{
     block_actions::{home::workflow::directory_observations::Entity, name_policy},
     composer_emoji::history::History,
-    slack::api::custom::texty::matching,
 };
 mod drafts;
 pub(super) use drafts::schedule as schedule_drafts;
@@ -32,12 +31,12 @@ impl Input {
     pub(super) fn preferences(&self) -> Arc<Preferences> {
         self.preferences.clone()
     }
-    pub(super) fn current(&self, shell: &ShellState, search: &Search) -> bool {
+    pub(super) fn current(&self, shell: &ShellState, search: &Search<impl Host>) -> bool {
         self.base_current(shell, search)
             && draft_revision(shell, search.lease.team()) == Some(self.draft_revision)
             && native(shell, search.lease.team(), &self.ids).is_ok_and(|raw| raw == self.native)
     }
-    fn base_current(&self, shell: &ShellState, search: &Search) -> bool {
+    fn base_current(&self, shell: &ShellState, search: &Search<impl Host>) -> bool {
         search.current(shell)
             && self.source.current_for(shell, search.lease.team())
             && self.cache.current(shell)
@@ -49,7 +48,7 @@ impl Input {
     pub(super) fn refresh_drafts(
         &mut self,
         shell: &ShellState,
-        search: &Search,
+        search: &Search<impl Host>,
     ) -> Result<(), Error> {
         if !self.base_current(shell, search) {
             return Err(unavailable());
@@ -68,7 +67,11 @@ impl Input {
 /// The canonical collection is local, not a claim that remote search is complete.
 /// Each supplied row must be the original accepted source object, not typed or
 /// wire-provided replacement facts. Unsupported categories stay outside scope.
+#[cfg(test)]
 fn admitted_rows(source: &[Value], rows: &[Value]) -> Result<BTreeSet<String>, Error> {
+    admitted_rows_for::<query::Lease>(source, rows)
+}
+fn admitted_rows_for<L: Host>(source: &[Value], rows: &[Value]) -> Result<BTreeSet<String>, Error> {
     let source: BTreeMap<_, _> = source
         .iter()
         .filter_map(|row| row["id"].as_str().map(|id| (id, row)))
@@ -76,7 +79,7 @@ fn admitted_rows(source: &[Value], rows: &[Value]) -> Result<BTreeSet<String>, E
     let mut ids = BTreeSet::new();
     for row in rows {
         let id = row["id"].as_str().ok_or_else(unavailable)?;
-        if !matching::ordinary_local(row) || source.get(id).copied() != Some(row) {
+        if !channel_host::ordinary::<L>(row) || source.get(id).copied() != Some(row) {
             return Err(unavailable());
         }
         ids.insert(id.to_owned());
@@ -86,7 +89,7 @@ fn admitted_rows(source: &[Value], rows: &[Value]) -> Result<BTreeSet<String>, E
 
 /// Completed Profile-local preference reads can be reused across queries in the
 /// same session, without reusing a stale query's insertion authority.
-pub(in crate::profile_edit::sections::rich) struct Preferences {
+pub(crate) struct Preferences {
     context: Arc<crate::scheduled::Context>,
     account: String,
     cookie: String,
@@ -99,8 +102,12 @@ pub(in crate::profile_edit::sections::rich) struct Preferences {
     badge_all_unreads: bool,
 }
 impl Preferences {
+    pub(crate) fn friendly_channels(&self) -> Result<bool, Error> {
+        Ok(assignment(&self.assignments, "friendly_channel_names")? == Some("on"))
+    }
+
     #[cfg(test)]
-    pub(super) fn fixture(
+    pub(crate) fn fixture(
         context: Arc<crate::scheduled::Context>,
         account: String,
         cookie: String,
@@ -138,7 +145,7 @@ impl Preferences {
     pub(super) fn user_prefs(&self) -> &Value {
         &self.user_prefs
     }
-    pub(in crate::profile_edit::sections::rich) fn current(&self, shell: &ShellState) -> bool {
+    pub(crate) fn current(&self, shell: &ShellState) -> bool {
         self.context.current(shell)
             && shell.core.active_account.as_deref() == Some(self.account.as_str())
             && shell.core.session.as_ref().is_some_and(|session| {
@@ -155,7 +162,7 @@ impl Preferences {
 }
 pub(super) async fn capture_preferences(
     state: Signal<ShellState>,
-    search: &Search,
+    search: &Search<impl Host>,
     prior: Option<Arc<Preferences>>,
 ) -> Result<Arc<Preferences>, Error> {
     if !search.current(&state.peek()) {
@@ -206,7 +213,7 @@ pub(super) async fn capture_preferences(
 }
 pub(super) async fn capture(
     mut state: Signal<ShellState>,
-    search: &Search,
+    search: &Search<impl Host>,
     source: Arc<canonical::Canonical>,
     rows: &[Value],
 ) -> Result<Input, Error> {
@@ -217,9 +224,9 @@ pub(super) async fn capture(
     }
     Ok(input)
 }
-pub(super) async fn capture_with_preferences(
+pub(super) async fn capture_with_preferences<L: Host>(
     state: Signal<ShellState>,
-    search: &Search,
+    search: &Search<L>,
     source: Arc<canonical::Canonical>,
     rows: &[Value],
     prior: Option<Arc<Preferences>>,
@@ -230,7 +237,7 @@ pub(super) async fn capture_with_preferences(
             return Err(unavailable());
         }
     }
-    let ids = admitted_rows(source.rows(), rows)?;
+    let ids = admitted_rows_for::<L>(source.rows(), rows)?;
     let preferences = capture_preferences(state, search, prior).await?;
     let navigation = search.navigation(state).await?;
     let ctx = &search.context;

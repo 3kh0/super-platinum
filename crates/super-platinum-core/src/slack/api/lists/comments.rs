@@ -1,6 +1,10 @@
 //! Read-only List item replies; retained cYdQ -> gOq3 -> rGEL.
 use super::*;
 use crate::slack_lists::comments::{ReplyQuery, Target, Tombstones};
+mod own_edit;
+pub use own_edit::list_record_comment_update;
+mod own_delete;
+pub use own_delete::{list_comment_delete_permissions, list_record_comment_delete};
 
 pub fn list_record_comments_replies(
     c: &SlackClient,

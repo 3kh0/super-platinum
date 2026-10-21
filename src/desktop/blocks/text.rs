@@ -6,6 +6,16 @@ use crate::model::RichNode;
 
 /// Slack's `mrkdwn` at block level: fenced code, `>` quotes, and paragraphs.
 pub(crate) fn mrkdwn_blocks(ctx: BlockCtx<'_>, text: &str) -> Vec<RichNode> {
+    mrkdwn_blocks_with(ctx, text, false)
+}
+
+/// Canvas root snippets retain the trailing whitespace accepted by Slack's
+/// NORMAL formatter. Other message consumers keep their established policy.
+pub(crate) fn canvas_root_mrkdwn(ctx: BlockCtx<'_>, text: &str) -> Vec<RichNode> {
+    mrkdwn_blocks_with(ctx, text, true)
+}
+
+fn mrkdwn_blocks_with(ctx: BlockCtx<'_>, text: &str, trailing_space: bool) -> Vec<RichNode> {
     let mut nodes = Vec::new();
     let mut quote: Vec<RichNode> = Vec::new();
     let mut fenced: Option<Vec<&str>> = None;
@@ -37,14 +47,19 @@ pub(crate) fn mrkdwn_blocks(ctx: BlockCtx<'_>, text: &str) -> Vec<RichNode> {
             continue;
         }
         if let Some(rest) = line.strip_prefix('>') {
-            quote.push(RichNode::Paragraph(mrkdwn_inline(
+            quote.push(RichNode::Paragraph(mrkdwn_inline_with(
                 ctx,
                 rest.strip_prefix(' ').unwrap_or(rest),
+                trailing_space,
             )));
             continue;
         }
         flush_quote(&mut quote, &mut nodes);
-        nodes.push(RichNode::Paragraph(mrkdwn_inline(ctx, line)));
+        nodes.push(RichNode::Paragraph(mrkdwn_inline_with(
+            ctx,
+            line,
+            trailing_space,
+        )));
     }
     if let Some(buffer) = fenced {
         nodes.push(RichNode::Code(buffer.join("\n")));
@@ -56,8 +71,12 @@ pub(crate) fn mrkdwn_blocks(ctx: BlockCtx<'_>, text: &str) -> Vec<RichNode> {
 /// Slack's inline `mrkdwn`: `*bold*`, `_italic_`, `~strike~`, `` `code` ``,
 /// plus the `<…>` entities and `:emoji:` runs plain text already carries.
 pub(crate) fn mrkdwn_inline(ctx: BlockCtx<'_>, text: &str) -> Vec<RichNode> {
+    mrkdwn_inline_with(ctx, text, false)
+}
+
+fn mrkdwn_inline_with(ctx: BlockCtx<'_>, text: &str, trailing_space: bool) -> Vec<RichNode> {
     let mut nodes = Vec::new();
-    for span in mrkdwn_spans(text) {
+    for span in mrkdwn_spans(text, trailing_space) {
         if span.code {
             nodes.push(RichNode::StyledText {
                 text: span.text,
@@ -95,7 +114,7 @@ struct MrkdwnSpan {
 
 /// Split inline mrkdwn into styled runs. Delimiters only open when a matching
 /// closer exists later in the line, so stray `*` and `_` stay literal.
-fn mrkdwn_spans(text: &str) -> Vec<MrkdwnSpan> {
+fn mrkdwn_spans(text: &str, trailing_space: bool) -> Vec<MrkdwnSpan> {
     let bytes = text.as_bytes();
     let mut spans: Vec<MrkdwnSpan> = Vec::new();
     let mut buffer = String::new();
@@ -154,7 +173,7 @@ fn mrkdwn_spans(text: &str) -> Vec<MrkdwnSpan> {
             let toggles = if *flag {
                 true
             } else {
-                can_open(text, index, byte as char)
+                can_open(text, index, byte as char, trailing_space)
             };
             if toggles {
                 flush(&mut buffer, &mut spans, bold, italic, strike);
@@ -182,7 +201,7 @@ fn mrkdwn_spans(text: &str) -> Vec<MrkdwnSpan> {
 
 /// A delimiter opens only when the next character is content and a matching
 /// closer follows it — Slack's own rule, and what keeps `a * b` literal.
-fn can_open(text: &str, index: usize, marker: char) -> bool {
+fn can_open(text: &str, index: usize, marker: char, trailing_space: bool) -> bool {
     let rest = &text[index + marker.len_utf8()..];
     let Some(next) = rest.chars().next() else {
         return false;
@@ -192,10 +211,11 @@ fn can_open(text: &str, index: usize, marker: char) -> bool {
     }
     rest.char_indices().skip(1).any(|(offset, candidate)| {
         candidate == marker
-            && rest[..offset]
-                .chars()
-                .next_back()
-                .is_some_and(|previous| !previous.is_whitespace())
+            && (trailing_space
+                || rest[..offset]
+                    .chars()
+                    .next_back()
+                    .is_some_and(|previous| !previous.is_whitespace()))
     })
 }
 

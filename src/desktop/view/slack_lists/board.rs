@@ -106,17 +106,21 @@ fn Lane(
                         crate::slack_lists::rename::lane_order::apply(state,action);
                     }
                 },
-                h3 {"aria-label":lane.checkbox_heading.as_ref().map(|heading| heading.accessible_label.as_str()),
-                    if let Some(heading) = &lane.checkbox_heading {
-                        span {"data-checkbox-heading":if heading.checked {"checked"} else {"unchecked"},
-                            {icon(if heading.checked {Icon::CheckBox} else {Icon::CheckBoxOutlineBlank},"icon slack-list-lane-checkbox")}
-                        }
-                    } else {"{title}"}
+                div {class:"slack-list-lane-heading",
+                    h3 {"aria-label":lane.checkbox_heading.as_ref().map(|heading| heading.accessible_label.as_str()),
+                        if let Some(heading) = &lane.checkbox_heading {
+                            span {"data-checkbox-heading":if heading.checked {"checked"} else {"unchecked"},
+                                {icon(if heading.checked {Icon::CheckBox} else {Icon::CheckBoxOutlineBlank},"icon slack-list-lane-checkbox")}
+                            }
+                        } else {"{title}"}
+                    }
+                    span {class:"slack-list-group-count","{lane.count}"}
                 }
-                span {class:"slack-list-group-count","{lane.count}"}
-                {super::rename::board_choice::actions(state,&lane.key)}
-                lane_order::Actions {state,visit:view.generation,layout:view.layout_generation,lane_key:lane.key.clone()}
-                lane_add::LaneAdd {key:"add-{view.generation}-{view.layout_generation}-{lane.key}",state,visit:view.generation,layout:view.layout_generation,lane_key:lane.key.clone()}
+                div {class:"slack-list-lane-actions",
+                    {super::rename::board_choice::actions(state,&lane.key)}
+                    lane_order::Actions {state,visit:view.generation,layout:view.layout_generation,lane_key:lane.key.clone()}
+                    lane_add::LaneAdd {key:"add-{view.generation}-{view.layout_generation}-{lane.key}",state,visit:view.generation,layout:view.layout_generation,lane_key:lane.key.clone()}
+                }
             }
             div {class:"slack-list-lane-cards",
                 ondragover:move |event|{if allows_tail&&card_drag.read().is_some(){event.prevent_default();}},

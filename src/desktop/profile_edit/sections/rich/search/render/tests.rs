@@ -173,3 +173,14 @@ fn incomplete_foreign_or_noncontiguous_collation_receipts_refuse() {
     bad.collation_locale = "tr".into();
     assert!(decode_collation("7", "tr", &names, bad).is_err());
 }
+
+#[test]
+fn list_renderer_observes_foreign_ordinary_names_without_relaxing_profile() {
+    let mut foreign = row("Foreign Cafe\u{301}");
+    foreign["fromAnotherTeam"] = json!(true);
+    assert!(inputs("#foreign", &[foreign.clone()]).is_err());
+    let fields =
+        inputs_for::<crate::slack_lists::comments::completion::Lease>("#foreign", &[foreign])
+            .unwrap();
+    assert!(fields.contains("Foreign Cafe\u{301}"));
+}

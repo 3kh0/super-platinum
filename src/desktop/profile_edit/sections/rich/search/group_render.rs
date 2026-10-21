@@ -1,5 +1,6 @@
 //! Group strings supplement the SAME Profile member normalization/collation.
 //! No independent ranking, query authority, or insertion admission lives here.
+use super::channel_host::Host;
 use super::{Search, group_source, render};
 use crate::state::ShellState;
 use serde::Deserialize;
@@ -130,7 +131,7 @@ fn decode(
     Ok(reply.fields)
 }
 pub(super) async fn capture(
-    search: &Search,
+    search: &Search<impl Host>,
     current: &impl Fn() -> bool,
     ticket: &str,
     locale: &str,

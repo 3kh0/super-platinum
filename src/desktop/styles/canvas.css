@@ -51,6 +51,15 @@
 .modal.canvas-dialog > header { padding:16px 20px; }
 
 .canvas-toolbar button:disabled { opacity:.45; cursor:default; }
+.canvas-comment > header[data-canvas-attribution] { align-items:center; justify-content:flex-start; min-height:var(--control-height); padding:0; }
+.canvas-comment > header.canvas-attribution > .canvas-attribution-avatar { display:grid; width:24px; min-width:24px; height:24px; min-height:24px; padding:0; flex:0 0 24px; font-size:var(--text-xs); }
+.canvas-attribution-avatar img { width:100%; height:100%; object-fit:cover; border-radius:inherit; }
+.canvas-comment > header.canvas-attribution > .canvas-attribution-name { display:block; flex:0 1 auto; min-width:0; width:auto; max-width:100%; height:auto; min-height:var(--control-height); padding:0; color:var(--text); font:600 var(--text-md)/var(--leading-copy) var(--font-sans); text-align:left; background:transparent; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.canvas-comment > header[data-canvas-attribution] > time { flex:none; margin-inline-start:auto; }
+.canvas-comment > header[data-canvas-attribution] > .canvas-attribution-retry { display:block; flex:none; width:auto; height:var(--control-height); padding:0 var(--space-2); color:var(--text); font:400 var(--text-sm)/var(--leading-copy) var(--font-sans); white-space:nowrap; }
+.canvas-comment > header.canvas-attribution > button.canvas-attribution-name:hover { text-decoration:underline; }
+.canvas-comment-profile { position:fixed; z-index:16; top:24px; right:24px; bottom:24px; max-width:calc(100vw - 48px); box-shadow:var(--shadow-popover); }
+.canvas-comment-profile .profile-pane { position:relative; inset:auto; height:100%; max-width:calc(100vw - 48px); border:1px solid var(--border); border-radius:12px; }
 .canvas-rename { flex-shrink:0; padding:12px 20px; border-bottom:1px solid var(--border); }
 .canvas-rename label { display:block; margin-bottom:8px; color:var(--muted); font-size:var(--text-sm); }
 .canvas-rename-fields { display:flex; gap:8px; align-items:center; }
@@ -78,6 +87,10 @@
 
 .canvas-editable-paragraph { display:flex; align-items:flex-start; gap:var(--space-2); margin-bottom:var(--space-3); }
 .canvas-paragraph-content { flex:1; min-width:0; }
+.canvas-heading-text { white-space:pre-wrap; }
+.canvas-text-underline { text-decoration-line:underline; }
+.canvas-text-underline.strike { text-decoration-line:underline line-through; }
+.canvas-editable-heading { align-items:baseline; }
 .canvas-text-open { flex:0 0 auto; min-height:var(--control-height); padding:0 var(--space-2); border-radius:var(--radius-md); color:var(--muted); background:transparent; font-size:var(--text-sm); }
 .canvas-text-open:hover { background:var(--hover-overlay); color:var(--text); }
 .canvas-text-open:focus-visible,.canvas-text-actions button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
@@ -147,6 +160,7 @@
 .canvas-comments-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:8px 20px; border-bottom:1px solid var(--border); flex-shrink:0; }
 .canvas-comments button,.canvas-comments select { min-height:var(--control-height,32px); padding:0 10px; border-radius:6px; background:var(--surface-raised); color:var(--text); font-size:var(--text-sm); }
 .canvas-comments button:hover { background:var(--surface); }
+.canvas-comments .canvas-file-retry:disabled { opacity:.45; cursor:default; background:var(--surface-raised); }
 .canvas-comments label { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:var(--text-sm); }
 .canvas-comments-scroll { overflow:auto; min-height:0; flex:1; padding:16px 20px; overscroll-behavior:contain; }
 .canvas-comment { padding:12px 0; border-bottom:1px solid var(--border); overflow-wrap:anywhere; }
@@ -156,6 +170,9 @@
 .canvas-comment-preview { margin:12px 0 12px 16px; padding-left:12px; border-left:2px solid var(--border); }
 .canvas-comments-note { margin:0; padding:8px 20px; border-top:1px solid var(--border); flex-shrink:0; }
 .canvas-comments-error { color:var(--text); }
+/* Prefer the current composer's actionable error. Keep the panel fallback when
+   that reply is absent, stale, or has recovered; neither stored error is cleared. */
+.canvas-comments:has(> .canvas-comments-scroll > .canvas-comment-reply > [data-canvas-local-file-refusal="true"]) > [data-canvas-file-refusal="true"] { display:none; }
 @media(max-width:700px) { .canvas-dialog:has(.canvas-comments) .canvas-toolbar { flex-wrap:wrap; padding:6px 12px; gap:6px; } .canvas-comments-toolbar { padding:6px 12px; gap:6px; } .canvas-comments-scroll { padding:12px; } .canvas-comments-note { padding:6px 12px; } }
 
 /* Explicit local review keeps its actions outside the scrolling evidence. */

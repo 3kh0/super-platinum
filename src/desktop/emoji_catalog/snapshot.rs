@@ -18,9 +18,15 @@ pub(super) fn capture(source: &HashMap<String, Emoji>) -> Result<Snapshot, Strin
 
 fn capture_mode(source: &HashMap<String, Emoji>, use_packed: bool) -> Result<Snapshot, String> {
     if use_packed {
-        packed::Packed::capture(source.values().map(|e| (e.name.as_str(), e.value.as_str())))
-            .map(Snapshot::Packed)
-            .map_err(|error| format!("Packed capture: {error:?}"))
+        packed::Packed::capture_with_flags(source.values().map(|e| {
+            (
+                e.name.as_str(),
+                e.value.as_str(),
+                CustomRecord::nonexistent(e),
+            )
+        }))
+        .map(Snapshot::Packed)
+        .map_err(|error| format!("Packed capture: {error:?}"))
     } else {
         Ok(Snapshot::Current(
             source.values().map(CustomRecord::from).collect(),
@@ -103,7 +109,7 @@ mod tests {
     use super::*;
     #[test]
     fn both_snapshot_representations_preserve_order_and_actual_picker() {
-        let source: HashMap<_, _> = [
+        let mut source: HashMap<_, _> = [
             ("rocket", "https://example.invalid/rocket.png"),
             ("linked", "alias:rocket"),
             ("cycle", "alias:cycle"),
@@ -122,6 +128,11 @@ mod tests {
             )
         })
         .collect();
+        source
+            .get_mut("empty")
+            .unwrap()
+            .extra
+            .insert("isNonExistent".into(), serde_json::Value::Bool(true));
         let (direct, none) = capture_mode(&source, false).unwrap().decode().unwrap();
         assert!(none.is_none());
         let (decoded, buffer) = capture_mode(&source, true).unwrap().decode().unwrap();

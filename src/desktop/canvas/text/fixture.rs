@@ -9,7 +9,7 @@ use super_platinum_core::{
     config::WorkspaceSession,
     slack::api::{CanvasCollabSnapshot, CanvasControllerInit},
 };
-pub(in crate::canvas) const HTML: &str = "<div class='quip-canvas-content'><h1>Paragraph editing verification</h1><p id='paragraph'><span id='paragraph'>A <b>bold</b> line 🦊 日本語 &amp; details.</span></p><p id='unsupported'><u>This unsupported formatting stays readable.</u></p><div data-section-style='7'><ul><li id='item'><span id='item'>An untouched checklist item</span></li></ul></div></div>";
+pub(in crate::canvas) const HTML: &str = "<div class='quip-canvas-content'><h1>Paragraph editing verification</h1><p id='paragraph'><span id='paragraph'>A <b>bold</b> line 🦊 日本語 &amp; details.</span></p><p id='unsupported'><u data-unsupported='true'>This unsupported formatting stays readable.</u></p><div data-section-style='7'><ul><li id='item'><span id='item'>An untouched checklist item</span></li></ul></div></div>";
 const INITIAL: &str = "A <b>bold</b> line 🦊 日本語 &amp; details.";
 #[derive(Default)]
 pub(in crate::canvas) struct State {
@@ -105,7 +105,7 @@ pub(in crate::canvas) fn snapshot(text: &str, sequence: u64) -> Arc<CanvasCollab
         section("paragraph", text),
         section(
             "unsupported",
-            "<u>This unsupported formatting stays readable.</u>",
+            "<u data-unsupported='true'>This unsupported formatting stays readable.</u>",
         ),
         parent,
         item,

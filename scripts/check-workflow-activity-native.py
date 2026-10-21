@@ -22,6 +22,18 @@ from native_fixture import DEFAULT_BINARY, ROOT, NativeFixture
 from native_check import expected_viewport
 from workflow_activity_surfaces import STAGES as SURFACE_STAGES, validate as validate_surfaces
 from workflow_activity_source_replacement import STAGES as REPLACEMENT_STAGES, validate as validate_replacement
+from workflow_activity_dates import STAGES as DATE_STAGES, validate as validate_dates
+from workflow_activity_channel_gate import validate as validate_channel_composition
+from workflow_activity_channel_spec import ORDINARY, SPECIAL, NAMES as CHANNEL_NAMES, ARCHIVED_REASON, validate_source_flags
+from workflow_activity_shared_frozen import SPECS as SHARED_SPECS, NAMES as SHARED_NAMES, validate_observation
+from workflow_activity_export_gate import validate as validate_export_composition
+from workflow_activity_files import STAGES as FILE_STAGES, validate as validate_files
+from workflow_activity_file_recovery import STAGES as RECOVERY_STAGES, validate as validate_recovery
+from workflow_activity_mixed_navigation import STAGES as MIXED_STAGES, validate as validate_mixed
+from workflow_activity_channel_loading import (
+    HELD_SUCCESS, validate_held as validate_channel_loading,
+    validate_retired as validate_channel_retired, validate_completion as validate_channel_completion,
+)
 
 PREFIX = 'workflow-activity-check: '
 EDGE = 'workflow-activity-capture: '
@@ -39,6 +51,13 @@ STAGES = {
                'composition-refused', 'selected', 'query-retired', 'filter-retired',
                'malformed', 'failure', 'retried', 'empty', 'returned'),
 }
+STAGES['channel-special'] = STAGES['channel'][:8] + ('archived', 'archived-return', 'private-archived', 'private-archived-return') + STAGES['channel'][8:]
+STAGES[HELD_SUCCESS.case] = tuple(stage for stage in STAGES['channel'] if stage != 'retired')
+CHANNEL_NAMES = {**CHANNEL_NAMES, **SHARED_NAMES}
+for _case, _spec in SHARED_SPECS.items():
+    STAGES[_case] = (STAGES['channel'][:8]
+                     + tuple(s for stage, _, _ in _spec.pairs for s in (stage, stage+'-return'))
+                     + STAGES['channel'][8:])
 STAGES['user-deactivated'] = STAGES['user-refresh']
 STAGES['export'] = ('about','draft','gate-missing','gate-off','ready','raw-refused','composition-refused','preflight-refused','held','initiated','rejected','retried','offline','offline-retried','malformed','unknown-blocked','returned')
 STAGES['export-retirement'] = ('about','draft','list','route-held','route-retired','account-held','account-replaced')
@@ -47,6 +66,10 @@ STAGES['execution-failure'] = ('transcript','policy-denied','policy-retried','re
 STAGES['execution-retirement'] = ('transcript','route-held','route-retired','account-held','account-replaced')
 STAGES.update(SURFACE_STAGES)
 STAGES.update(REPLACEMENT_STAGES)
+STAGES.update(DATE_STAGES)
+STAGES.update(FILE_STAGES)
+STAGES.update(RECOVERY_STAGES)
+STAGES.update(MIXED_STAGES)
 BASE_FIXTURES = ('workflow-activity', 'workflow-activity-narrow')
 PICKER_FIXTURES = ('workflow-activity-members', 'workflow-activity-members-narrow')
 FIXTURES = BASE_FIXTURES + PICKER_FIXTURES
@@ -181,6 +204,14 @@ def validate_emoji(value, viewport):
 def validate(fixture, receipt, captures, scenario, *, platform=sys.platform, png=True):
     require(fixture in FIXTURES and scenario in STAGES, 'Unknown Activity fixture or case')
     require((fixture in PICKER_FIXTURES) is (scenario == 'picker'), 'Fixture/case mismatch')
+    if scenario in MIXED_STAGES:
+        return validate_mixed(fixture, receipt, captures, scenario, globals(), platform=platform, png=png)
+    if scenario in FILE_STAGES:
+        return validate_files(fixture, receipt, captures, scenario, globals(), platform=platform, png=png)
+    if scenario in RECOVERY_STAGES:
+        return validate_recovery(fixture, receipt, captures, scenario, globals(), platform=platform, png=png)
+    if scenario in DATE_STAGES:
+        return validate_dates(fixture, receipt, captures, scenario, globals(), platform=platform, png=png)
     if scenario in REPLACEMENT_STAGES:
         return validate_replacement(fixture, receipt, captures, scenario, globals(), platform=platform, png=png)
     if scenario in SURFACE_STAGES:
@@ -193,8 +224,9 @@ def validate(fixture, receipt, captures, scenario, *, platform=sys.platform, png
         return validate_refresh(fixture, receipt, captures, scenario=scenario, platform=platform, png=png)
     if scenario in ('user-real','user-display'):
         return validate_users(fixture,receipt,captures,scenario,platform=platform,png=png)
-    if scenario == 'channel':
-        return validate_channel(fixture, receipt, captures, platform=platform, png=png)
+    if scenario in ('channel', 'channel-special', HELD_SUCCESS.case) or scenario in SHARED_SPECS:
+        spec = HELD_SUCCESS if scenario == HELD_SUCCESS.case else SHARED_SPECS.get(scenario, SPECIAL if scenario == 'channel-special' else ORDINARY)
+        return validate_channel(fixture, receipt, captures, spec=spec, platform=platform, png=png)
     if scenario == 'picker':
         return validate_picker(fixture, receipt, captures, platform=platform, png=png)
     require(receipt.get('ok') is True, f"Native Activity assertion failed: {receipt.get('error', receipt)}")
@@ -312,8 +344,13 @@ def validate(fixture, receipt, captures, scenario, *, platform=sys.platform, png
         ids = [c.get('id') for c in controls]
         require(len(ids) == len(set(ids)) and all(isinstance(i, str) and i for i in ids), 'Invalid control identities')
         if geometry['activity']:
-            require({'workflow-activity-back', 'workflow-activity-status', 'workflow-activity-from', 'workflow-activity-to',
-                     'workflow-activity-limit', 'workflow-activity-apply'} <= set(ids), 'Missing Activity filter/navigation controls')
+            require({'workflow-activity-back', 'workflow-activity-filter'} <= set(ids),
+                    'Missing Activity filter/navigation controls')
+            require(type(geometry.get('filterOpen')) is bool, 'Missing actual Filter visibility')
+            if geometry['filterOpen']:
+                require({'workflow-activity-status', 'workflow-activity-date-range',
+                         'workflow-activity-limit', 'workflow-activity-apply'} <= set(ids),
+                        'Open Filter controls were not measured')
         if stage == 'error':
             require(FAILURE in [n.get('text') for n in notices], 'Failure guidance not visibly captured')
         if stage in ('uncommitted-refused', 'composition-refused'):
@@ -686,7 +723,7 @@ def validate_refresh(fixture, receipt, captures, *, scenario='user-refresh', pla
             require(failure in [x.get('text') for x in g.get('notices',[])],'Missing captured refresh failure')
         if stage in ('raw-refused','composition-refused'):
             native=ex.get('native',{});require(ex.get('requestsUnchanged') is True and native.get('ok') is True,'Missing native refresh refusal')
-            require(native.get('value')==('2026-06-01' if stage=='raw-refused' else '') and native.get('composing') is (stage=='composition-refused'),'Refusal changed native buffer or did not compose')
+            require(native.get('value')==('Uncommitted native search' if stage=='raw-refused' else '') and native.get('composing') is (stage=='composition-refused'),'Refusal changed native buffer or did not compose')
             before,after=ex.get('before',{}),ex.get('after',{});require(before.get('activity',{}).get('detail')==after.get('activity',{}).get('detail')==detail and before['activity']['filters']==after['activity']['filters'],'Refused refresh changed detail/filter')
         if stage=='latest-display':require(ex.get('release')==dict(delivered=False,cancelledBeforeReply=True),'Superseded policy reply remained deliverable')
         if stage=='account-replaced':
@@ -703,16 +740,20 @@ def validate_refresh(fixture, receipt, captures, *, scenario='user-refresh', pla
     return receipt
 
 
-def validate_channel_labels(proof, viewport, fetched=False):
+def validate_channel_labels(proof, viewport, fetched=False, *, spec=ORDINARY):
     require(isinstance(proof,dict) and proof.get('ok') is True and proof.get('fetched') is fetched
             and proof.get('measurement') == 'individual-scroll-samples', 'Missing channel icon/name proof')
     rows=proof.get('rows')
-    ids=['workflow-activity-channel-trigger-1','workflow-activity-channel-trigger-3','workflow-activity-channel-step-0-1']
+    vectors = spec.vectors(fetched)
+    ids = [v[0] for v in vectors]
     require(isinstance(rows,list) and [r.get('id') for r in rows]==ids, 'Channel label occurrence custody changed')
-    for i,row in enumerate(rows):
-        known=i<2 or fetched
-        name='activity-known' if i<2 else 'activity-fetched' if fetched else 'Channel unavailable'
-        require(row.get('channel')==('CACTKNOWN01' if i<2 else 'CACTMISS01')
+    for row, (_, channel_id, name, icon_kind) in zip(rows, vectors):
+        known = icon_kind is not None
+        if spec.special:
+            require('iconKind' in row and row['iconKind'] == icon_kind, 'Wrong special channel icon precedence')
+        else:
+            require('iconKind' not in row, 'Special icon proof leaked into ordinary case')
+        require(row.get('channel')==channel_id
                 and row.get('text')==row.get('name')==name and row.get('tag')=='BUTTON'
                 and row.get('labelTag')==row.get('nameTag')=='SPAN', 'Channel raw name or separate label shape changed')
         require(row.get('ok') is True and row.get('visible') is True and row.get('scrollSample') is True, 'Channel label hidden or clipped')
@@ -722,7 +763,7 @@ def validate_channel_labels(proof, viewport, fetched=False):
         if known:
             require(isinstance(icon,dict) and icon.get('tag')=='svg' and icon.get('ariaHidden')=='true'
                     and icon.get('viewBox')=='0 -960 960 960' and all(icon.get(k) is True for k in ('material','pathMatches','visible')),
-                    'Channel icon is not the decorative Material Tag SVG')
+                    'Channel icon is not the expected decorative Material SVG')
             rectangle(icon.get('rect'),viewport)
             a,b=icon['rect'],row['nameRect']
             require(row.get('inline') is True and a['right']<=b['left']+1
@@ -731,17 +772,23 @@ def validate_channel_labels(proof, viewport, fetched=False):
             require(icon is None and row.get('inline') is None, 'Unavailable channel acquired a fake icon')
 
 
-def validate_channel(fixture, receipt, captures, *, platform=sys.platform, png=True):
+def validate_channel(fixture, receipt, captures, *, spec=ORDINARY, platform=sys.platform, png=True):
+    stages = STAGES[spec.case]
+    labels = lambda proof, viewport, fetched=False: validate_channel_labels(proof, viewport, fetched, spec=spec)
     require(receipt.get('ok') is True, f"Native CHANNEL assertion failed: {receipt.get('error', receipt)}")
-    require(receipt.get('fixture') == fixture and receipt.get('case') == 'channel', 'Wrong CHANNEL identity')
+    require(receipt.get('fixture') == fixture and receipt.get('case') == spec.case, 'Wrong CHANNEL identity')
     require(all(receipt.get(k) is True for k in ('aboutConfiguration','actualActivityEntry','noLiveNetwork')), 'Missing CHANNEL entry proof')
     viewport = expected_viewport(fixture, platform)
     require(receipt.get('viewport') == viewport, 'Wrong CHANNEL viewport')
     rows, paths = receipt.get('stages'), receipt.get('captures')
-    require(isinstance(rows,list) and [r.get('stage') for r in rows] == list(STAGES['channel']), 'Missing CHANNEL stages')
-    require(isinstance(paths,dict) and set(paths) == set(STAGES['channel']), 'Wrong CHANNEL captures')
-    counts = dict.fromkeys(STAGES['channel'], 0)
+    require(isinstance(rows,list) and [r.get('stage') for r in rows] == list(stages), 'Missing CHANNEL stages')
+    require(isinstance(paths,dict) and set(paths) == set(stages), 'Wrong CHANNEL captures')
+    counts = dict.fromkeys(stages, 0)
     counts.update(malformed=1, offline=2, held=3, retired=3, retried=4, **{'final-return':4})
+    held_success = spec.case == HELD_SUCCESS.case
+    if held_success:
+        counts.update(retried=3, **{'final-return':3})
+    held_channel = None
     original = document = None
     activity_reads, channel_reads, about_reads = [], [], []
     metadata_reads = None
@@ -750,6 +797,12 @@ def validate_channel(fixture, receipt, captures, *, platform=sys.platform, png=T
         stage, model, g, proof = row['stage'], row.get('model',{}), row.get('geometry',{}), row.get('proof',{})
         require(model.get('account') == 'synthetic-workflow-activity-channel', 'Missing bound channel fixture account')
         channel = proof.get('channel',{})
+        if spec.case in SHARED_SPECS:
+            validate_observation(channel, spec, require)
+            if stage in ('detail', 'filter-refused', 'search-refused', 'malformed', 'offline', 'held'):
+                require(isinstance(channel.get('labels'), dict)
+                        and channel['labels'].get('current') is True,
+                        'Detail lost original canonical label observation')
         ledger = channel.get('ledger',{})
         metadata, activity = model.get('metadata',{}), model.get('ledger',{})
         require(ledger.get('networkCalls') == metadata.get('networkCalls') == activity.get('networkCalls') == 0
@@ -762,9 +815,9 @@ def validate_channel(fixture, receipt, captures, *, platform=sys.platform, png=T
         channel_reads = requests
         require(all(r == dict(method='conversations.info',args={'channel':'CACTMISS01','include_num_members':'false'}) for r in requests), 'Wrong CHANNEL request')
         require(ledger.get('completed') == counts[stage] - (stage == 'held') and ledger.get('held') is (stage == 'held')
-                and ledger.get('cancelled') == (1 if stage in ('retired','retried','final-return') else 0), 'CHANNEL callback settlement changed')
+                and ledger.get('cancelled') == (1 if not held_success and stage in ('retired','retried','final-return') else 0), 'CHANNEL callback settlement changed')
         about = ledger.get('aboutRequests')
-        total_about = 8 if stage == 'final-return' else 4 if STAGES['channel'].index(stage) >= STAGES['channel'].index('returned') else 0
+        total_about = 4 * sum(stages.index(stage) >= stages.index(returned) for returned in spec.returns)
         require(isinstance(about,list) and len(about) == total_about and about[:len(about_reads)] == about_reads, 'About did not freshly acquire on return')
         about_reads = about
         require([r.get('method') for r in about] == ['conversations.info','apps.about.info','apps.profile.get','experiments.getByUser'] * (total_about//4), 'Wrong fresh About endpoint sequence')
@@ -786,17 +839,18 @@ def validate_channel(fixture, receipt, captures, *, platform=sys.platform, png=T
             require(document is None or document == d.get('id'), 'Reentry installed another document')
             document=d.get('id')
             require(type(document) is int, 'Missing document identity')
-        selected = 'CACTKNOWN01' if stage=='known' else 'CACTMISS01' if stage=='retried' else original
+        selected = spec.selected(stage, original)
         require(channel.get('selected') == selected and channel.get('missingPresent') is (stage in ('retried','final-return')), 'Foreign or premature channel publication')
         sidebar=channel.get('sidebar',{})
         sidebar_rows,sections=sidebar.get('rows'),sidebar.get('sections')
         require(isinstance(sidebar_rows,list) and isinstance(sections,list) and sections, 'Missing actual sidebar projection')
-        expected_ids={original,'CACTKNOWN01'} | ({'CACTMISS01'} if stage in ('retried','final-return') else set())
+        expected_ids = spec.sidebar_ids(original, stage, stage in ('retried', 'final-return'))
+        source_ids = spec.source_ids(original, stage in ('retried', 'final-return'))
         require({r.get('id') for r in sidebar_rows} == expected_ids and len(sidebar_rows)==len(expected_ids), 'Missing, duplicate or premature sidebar channel')
         require(len({r.get('index') for r in sidebar_rows}) == len(sidebar_rows)
                 and all(type(r.get('index')) is int and r['index']>=0 for r in sidebar_rows), 'Invalid sidebar channel index')
         by_id={r['id']:r for r in sidebar_rows}
-        names={original:'Review requests','CACTKNOWN01':'activity-known','CACTMISS01':'activity-fetched'}
+        names = {original: 'Review requests', **CHANNEL_NAMES}
         require(all(r.get('name') == names[r['id']] for r in sidebar_rows), 'Sidebar label changed identity')
         require(sidebar.get('activeId') == selected and sidebar.get('activeIndex') == by_id[selected]['index']
                 and [r['id'] for r in sidebar_rows if r.get('active') is True] == [selected], 'Sidebar active row does not map current index')
@@ -807,42 +861,72 @@ def validate_channel(fixture, receipt, captures, *, platform=sys.platform, png=T
                 and native.get('headings') == [section.get('title') for section in sections]
                 and native.get('activeId') == selected and native.get('activeIndex') == sidebar['activeIndex']
                 and native.get('activePosition') == next(i for i,r in enumerate(sidebar_rows) if r['id']==selected), 'Native sidebar differs from exact projection')
-        if stage in ('known','retried'):
+        if stage in spec.destinations:
             require(native.get('measured') is True and native.get('visible') is True and native.get('hit') is True, 'Selected sidebar row is hidden or covered')
             rectangle(native.get('rect'),viewport)
         source=channel.get('sourceRows')
-        require(isinstance(source,list) and {r.get('id') for r in source}==expected_ids and len(source)==len(expected_ids), 'Unexpected source channel mutation')
+        require(isinstance(source,list) and {r.get('id') for r in source}==source_ids and len(source)==len(source_ids), 'Unexpected source channel mutation')
+        validate_source_flags(source, spec, require)
+        require(all(r.get('name') == CHANNEL_NAMES[r['id']] for r in source if r['id'] != original),
+                'Source channel name changed')
         source={r['id']:r for r in source}
         if source_baseline is None: source_baseline=source
         require(all(source.get(id)==row for id,row in source_baseline.items()), 'Sidebar projection changed original membership or count facts')
         if 'CACTMISS01' in source:
-            require(source['CACTMISS01']==dict(id='CACTMISS01',name='activity-fetched',isMember=True,isOpen=None,unreadCount=None,unreadDisplay=None,mentionCount=None,hasUnreads=False),
+            require(source['CACTMISS01']==dict(id='CACTMISS01',name='activity-fetched',isMember=True,isOpen=None,unreadCount=None,unreadDisplay=None,mentionCount=None,hasUnreads=False, **(dict(isPrivate=False,isGroup=False,isArchived=False) if spec.special else {})),
                     'Fetched source membership/counts differ from actual info response')
         exercise = proof.get('exercise')
-        if stage in ('detail','filter-refused','search-refused','composition-refused','malformed','offline','held'):
-            validate_channel_labels(proof.get('channelLabels'),viewport)
-        if stage in ('known','retried'):
-            name='activity-known' if stage=='known' else 'activity-fetched'
+        if stage in ('detail','filter-refused','search-refused','malformed','offline','held'):
+            labels(proof.get('channelLabels'),viewport)
+        if stage in spec.destinations:
+            name = names[selected]
             owner=proof.get('conversationOwner',{})
             timeline=f"{model.get('epoch')}-TWORKFLOW-{selected}-{channel.get('generation')}"
-            require(g.get('conversation') is True and g.get('timelineScope') == owner.get('timeline') == timeline
-                    and isinstance(owner.get('composer'),str) and owner['composer']
-                    and g.get('composerScope') == owner['composer'], 'Conversation DOM does not belong to selected visit')
-            require(g.get('headerText') == '#'+name and g.get('placeholder') == 'Message #'+name,
-                    'Selected conversation header/composer differs')
-            require({c.get('id') for c in g.get('controls',[])} == {'channel-details-trigger','message-timeline','channel-composer'},
-                    'Missing actual conversation geometry')
+            require(g.get('conversation') is True and g.get('timelineScope') == owner.get('timeline') == timeline,
+                    'Conversation DOM does not belong to selected visit')
+            require(g.get('headerText') == '#'+name, 'Selected conversation header differs')
+            if stage in spec.archived_destinations:
+                require('composer' in owner and owner['composer'] is None
+                        and g.get('composerUnavailable') is True and g.get('noComposer') is True
+                        and g.get('archivedReason') == ARCHIVED_REASON
+                        and g.get('composerScope') is None and g.get('placeholder') is None,
+                        'Archived destination must visibly refuse a composer')
+                require([c.get('id') for c in g.get('controls',[])] == ['channel-details-trigger', 'message-timeline', ''],
+                        'Missing actual archived header/timeline/status geometry')
+            else:
+                require(isinstance(owner.get('composer'),str) and owner['composer']
+                        and g.get('composerScope') == owner['composer']
+                        and g.get('placeholder') == 'Message #'+name, 'Selected conversation composer differs')
+                require({c.get('id') for c in g.get('controls',[])} == {'channel-details-trigger','message-timeline','channel-composer'},
+                        'Missing actual conversation geometry')
         if stage == 'detail':
-            require(exercise.get('rows') == [dict(id='workflow-activity-channel-trigger-1',channel='CACTKNOWN01',text='activity-known',tag='BUTTON'),dict(id='workflow-activity-channel-trigger-3',channel='CACTKNOWN01',text='activity-known',tag='BUTTON'),dict(id='workflow-activity-channel-step-0-1',channel='CACTMISS01',text='Channel unavailable',tag='BUTTON')], 'Duplicate CHANNEL occurrences lost')
-        if stage.endswith('-refused'):
+            occurrences = exercise.get('rows')
+            if spec.case in SHARED_SPECS:
+                labels(exercise, viewport)
+                occurrences = [
+                    {key: row[key] for key in ('id', 'channel', 'text', 'tag')}
+                    for row in occurrences
+                ]
+            require(occurrences == spec.occurrences(), 'Duplicate CHANNEL occurrences lost')
+        if stage in spec.local_clicks:
+            labels(exercise.get('originalLabels'), viewport)
+            require(exercise.get('button') == spec.local_clicks[stage],
+                    'Archived click lost original occurrence')
+            before, after = exercise.get('before', {}), exercise.get('after', {})
+            require(after == channel and before.get('documents') == after.get('documents')
+                    and before.get('ledger') == after.get('ledger')
+                    and before.get('sourceRows') == after.get('sourceRows'),
+                    'Local archived navigation changed source, draft or endpoint ledger')
+        if stage == 'composition-refused':
+            validate_channel_composition(exercise, model, channel, viewport, require, rectangle, labels, expected=spec.inert())
+        if stage in ('filter-refused', 'search-refused'):
             require(exercise.get('unchangedRustState') is True and exercise.get('before') == exercise.get('after') == channel, 'Refusal mutated Rust custody')
             require(exercise.get('native',{}).get('notice') == 'Finish editing the current text before opening this conversation. Your draft is unchanged.'
                     and exercise['native'].get('refusals') == exercise.get('attempt',{}).get('refusals',-1)+1, 'Missing actual native refusal')
             if stage=='filter-refused': require(exercise['attempt'].get('value') == exercise['native'].get('value') == 'ERROR', 'Filter buffer was not retained')
             if stage=='search-refused': require(exercise['attempt'].get('value') == exercise['native'].get('value') == 'Uncommitted native search', 'Search buffer was not retained')
-            if stage=='composition-refused': require(exercise['attempt'].get('composing') is True and exercise['native'].get('composing') is True, 'Composition refusal missing')
-        if stage in ('returned','final-return'):
-            validate_channel_labels(exercise.get('reentryLabels'),viewport,stage=='final-return')
+        if stage in spec.returns:
+            labels(exercise.get('reentryLabels'),viewport,stage=='final-return')
             before, after = exercise.get('before',{}), exercise.get('after',{})
             click = exercise.get('nativeAboutClick',{})
             require(click.get('ok') is True and click.get('selected') == 'Review requests'
@@ -863,7 +947,15 @@ def validate_channel(fixture, receipt, captures, *, platform=sys.platform, png=T
             require(after == channel and all(before.get(k)==after.get(k) for k in ('documents','selected','generation','aboutVisit','managementVisit','missingPresent')),
                     'Channel failure changed source or document custody')
             require(expected in [n.get('text') for n in g.get('notices',[])], 'Failure footer absent from layout capture')
-        if stage=='retired': require(exercise == dict(delivered=False,cancelledBeforeReply=True), 'Late channel reply remained publishable')
+        if stage == 'held':
+            validate_channel_loading(exercise, model, channel, g, viewport, require, rectangle)
+            held_channel = channel
+        if stage == 'retired':
+            validate_channel_retired(exercise, g, require)
+        if stage == 'retried' and held_success:
+            validate_channel_completion(exercise, require)
+            require(held_channel is not None and exercise.get('before') == held_channel,
+                    'Successful held delivery replaced its original pre-release source')
         require(g.get('ok') is True and g.get('noOverflow') is True and g.get('viewport') == viewport, 'Invalid CHANNEL layout')
         controls, notices = g.get('controls'),g.get('notices')
         require(isinstance(controls,list) and controls and isinstance(notices,list), 'Missing CHANNEL controls')
@@ -986,11 +1078,14 @@ def validate_export(fixture,receipt,captures,scenario,*,platform=sys.platform,pn
             if stage=='offline':require(a.get('receipt')=={'failure':'offline'},'Offline became unknown')
             if stage=='malformed':require(a.get('receipt')=={'ok':'malformed'},'Malformed ACK accepted or lost')
             if stage=='route-retired':require(a.get('receipt')=={'failure':'transport'},'Reply loss receipt not retained')
-        if stage in ('raw-refused','composition-refused'):
+        if stage == 'composition-refused':
+            require(not attempts and not requests, 'Composition export dispatched')
+            validate_export_composition(ex, m, ledger, native, viewport, require, rectangle)
+        if stage == 'raw-refused':
             require(ex.get('unchangedRustState') is True and not attempts and not requests,'Native refusal mutated Rust or dispatched')
             require(ex.get('composition') is (stage=='composition-refused'),'Wrong native refusal exercise')
             before,after=ex.get('before',{}),ex.get('after',{})
-            value='2026-06-01' if stage=='raw-refused' else '2026-06-15'
+            value='Uncommitted native search' if stage=='raw-refused' else ''
             require(type(before.get('refusals')) is int and after.get('refusals')==before['refusals']+1
                     and before.get('value')==after.get('value')==ex.get('rawValue')==value,'Refusal did not preserve original native buffer/ack')
             require((native.get('nativeNotice') or {}).get('text')==after.get('notice')==EXPORT_REFUSAL,'Missing exact native refusal feedback')

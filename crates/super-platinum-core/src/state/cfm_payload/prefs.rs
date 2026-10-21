@@ -1,6 +1,7 @@
 use super::*;
 use std::collections::BTreeMap;
 mod number;
+mod plan_info;
 const JSON_PREFS: &[&str] = &[
     "emoji_use",
     "frecency",
@@ -57,6 +58,10 @@ pub(super) fn number(v: &Value) -> Result<f64, Error> {
 /// existing native consumers. No owner/currentness or freshness is inferred.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct Stores {
+    /// Raw n4D5 state after an accepted action, never currentness authority.
+    /// Older caches and stores with no observed action remain unobserved.
+    #[serde(default)]
+    pub plan_info: Option<Value>,
     pub screen_reader_enabled: Option<bool>,
     pub member_roles: BTreeMap<String, BTreeMap<String, Value>>,
     pub workspace_roles: BTreeMap<String, Value>,
@@ -74,6 +79,7 @@ impl Stores {
     /// every other action; callers may not discard it and report publication.
     pub fn apply(&mut self, e: &Effect) -> Result<(), Error> {
         match e.kind {
+            Kind::PlanInfo => plan_info::apply(&mut self.plan_info, &e.payload)?,
             Kind::ScreenReaderEnabled => {
                 if let Some(value) = e.payload.as_bool() {
                     self.screen_reader_enabled = Some(value);

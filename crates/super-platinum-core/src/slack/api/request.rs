@@ -506,6 +506,24 @@ pub fn chat_delete(
     )
 }
 
+/// ILc8 fetchReactions: acquire the complete reaction-name list for one message.
+pub fn reactions_get(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    channel: ChannelId,
+    timestamp: MessageTs,
+) -> PreparedRequest {
+    client.rest_form(
+        workspace,
+        "reactions.get",
+        vec![
+            ("channel", channel),
+            ("timestamp", timestamp),
+            ("full", "true".into()),
+        ],
+    )
+}
+
 pub fn reactions_add(
     client: &SlackClient,
     workspace: &WorkspaceSession,

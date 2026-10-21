@@ -1,5 +1,6 @@
 //! Known nzRy/xqiG read plan; no UFM placeholder or whole-attempt retry policy.
 use super::*;
+use crate::canvas::comments::editor_recovery_fixture as canvas_fixture;
 use crate::profile_edit::sections::fixture::member_recovery as fixture;
 use std::cell::Cell;
 use super_platinum_core::{
@@ -276,11 +277,14 @@ async fn endpoint(
     let observed = Instant::now();
     let refused = Cell::new(0);
     let raw = if crate::fixture::is_fixture() {
-        if !fixture::enabled() {
+        let request = DirectoryEndpoint::discovery(&ctx.client, &ctx.session)?;
+        if fixture::enabled() {
+            fixture::discovery(state, ctx, &request).await
+        } else if canvas_fixture::enabled(&state.peek()) {
+            canvas_fixture::discovery(state, &request).await
+        } else {
             return Err(Error::Offline("closed member fixture".into()).into());
         }
-        let request = DirectoryEndpoint::discovery(&ctx.client, &ctx.session)?;
-        fixture::discovery(state, ctx, &request).await
     } else {
         let request = ChannelReadAttempt::discovery(&ctx.client, &ctx.session)?;
         match ctx
@@ -345,6 +349,8 @@ async fn pages(
         let response = if crate::fixture::is_fixture() {
             if fixture::enabled() {
                 fixture::member(state, ctx, &request).await
+            } else if canvas_fixture::enabled(&state.peek()) {
+                canvas_fixture::member(state, &request).await
             } else {
                 Err(Error::Offline("closed member fixture".into()))
             }

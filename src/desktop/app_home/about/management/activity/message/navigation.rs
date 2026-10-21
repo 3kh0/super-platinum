@@ -2,7 +2,7 @@
 //! a repeated channel ID nor an unchanged execution ID transfers that authority.
 use super::super::*;
 use std::rc::Rc;
-mod native;
+pub(super) mod native;
 #[cfg(test)]
 mod tests;
 
@@ -47,6 +47,8 @@ pub(super) struct Source {
     location: Location,
     part: usize,
     channel: String,
+    file_kind: Option<super::files::Kind>,
+    calendar: Option<(u64, bool, bool)>,
     profile: u64,
     thread: u64,
     palette: u64,
@@ -68,15 +70,40 @@ impl Source {
         part: usize,
         channel: &str,
     ) -> Option<Self> {
-        if !permitted(s, visit)
-            || !channel
-                .as_bytes()
-                .first()
-                .is_some_and(|c| matches!(c, b'C' | b'G' | b'D'))
+        if !channel
+            .as_bytes()
+            .first()
+            .is_some_and(|c| matches!(c, b'C' | b'G' | b'D'))
             || !channel
                 .bytes()
                 .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
         {
+            return None;
+        }
+        Self::capture_part(s, visit, location, part, channel, None)
+    }
+    pub(super) fn capture_file(
+        s: &ShellState,
+        visit: u64,
+        location: Location,
+        part: usize,
+        id: &str,
+        kind: super::files::Kind,
+    ) -> Option<Self> {
+        if !super::files::valid_id(id) {
+            return None;
+        }
+        Self::capture_part(s, visit, location, part, id, Some(kind))
+    }
+    fn capture_part(
+        s: &ShellState,
+        visit: u64,
+        location: Location,
+        part: usize,
+        channel: &str,
+        file_kind: Option<super::files::Kind>,
+    ) -> Option<Self> {
+        if !permitted(s, visit) {
             return None;
         }
         let h = s.app_home.about.management.surface.as_ref()?;
@@ -85,10 +112,18 @@ impl Source {
         if h.read.is_some() || !a.active || a.detail_read.is_some() || a.member_composing {
             return None;
         }
+        // File actions capture the original calendar transaction as well as
+        // committed filters. A cancelled transaction cannot revive an old link.
+        if file_kind.is_some() && (a.calendar.open || a.calendar.dirty) {
+            return None;
+        }
         let detail = a.detail.as_ref()?;
-        if presentation::parts(location.message(detail)?).get(part)
-            != Some(&presentation::Part::Channel(channel.into()))
-        {
+        let expected = match file_kind {
+            Some(super::files::Kind::List) => presentation::Part::List(channel.into()),
+            Some(super::files::Kind::Canvas) => presentation::Part::Canvas(channel.into()),
+            None => presentation::Part::Channel(channel.into()),
+        };
+        if presentation::parts(location.message(detail)?).get(part) != Some(&expected) {
             return None;
         }
         Some(Self {
@@ -111,6 +146,8 @@ impl Source {
             location,
             part,
             channel: channel.into(),
+            file_kind,
+            calendar: file_kind.map(|_| (a.calendar.epoch, a.calendar.open, a.calendar.dirty)),
             profile: s.profile_generation,
             thread: s.thread_generation,
             palette: s.palette_generation,
@@ -149,6 +186,9 @@ impl Source {
             && self.description == d.description
             && self.editor.responses() == d.editor.responses()
             && self.filters == a.filters
+            && self.calendar.is_none_or(|original| {
+                original == (a.calendar.epoch, a.calendar.open, a.calendar.dirty)
+            })
             && self.generation == a.member_generation
             && self.search == a.user_search
             && self.detail_revision == a.detail_revision
@@ -165,9 +205,26 @@ impl Source {
     }
 
     pub(super) fn button(&self) -> String {
-        self.location.button(self.part)
+        let button = self.location.button(self.part);
+        if self.file_kind.is_some() {
+            button.replacen("-channel-", "-file-", 1)
+        } else {
+            button
+        }
     }
-    fn expected(&self, chain: u64) -> Value {
+    pub(super) fn visit(&self) -> u64 {
+        self.visit
+    }
+    pub(super) fn team(&self) -> &str {
+        &self.owner.ctx.session.team_id
+    }
+    pub(super) fn id(&self) -> &str {
+        &self.channel
+    }
+    pub(super) fn detail_revision(&self) -> u64 {
+        self.detail_revision
+    }
+    pub(super) fn expected(&self, chain: u64) -> Value {
         json!({"visit":self.visit,"document":self.document,"revision":self.revision,
             "detail":self.detail_revision,"filters":self.filters,
             "generation":self.generation,"search":self.search,
@@ -193,6 +250,19 @@ pub(super) fn open(state: Signal<ShellState>, source: Source) {
                 Box::pin(async move { native::lock(&expected).await })
             })
         },
+        read: Some(crate::slack_links::ReadLifecycle {
+            started: {
+                let source = source.clone();
+                Rc::new(move || {
+                    let expected = source.expected(chain);
+                    Box::pin(async move { native::pending(&expected).await })
+                })
+            },
+            settled: {
+                let source = source.clone();
+                Rc::new(move || native::settled(&source.expected(chain)))
+            },
+        }),
     };
     let feedback: crate::slack_links::FailureFeedback = Some({
         let source = source.clone();

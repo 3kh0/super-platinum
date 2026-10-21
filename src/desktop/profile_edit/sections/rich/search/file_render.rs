@@ -1,4 +1,5 @@
 //! File strings join the same member/group normalization and collation batch.
+use super::channel_host::Host;
 use super::{Search, file_source, render};
 use crate::state::ShellState;
 use serde::Deserialize;
@@ -94,7 +95,7 @@ fn decode(ticket: &str, query: &str, locale: &str, reply: Reply) -> Result<bool,
     Ok(reply.has_link)
 }
 pub(super) async fn capture(
-    search: &Search,
+    search: &Search<impl Host>,
     current: &impl Fn() -> bool,
     ticket: &str,
     locale: &str,

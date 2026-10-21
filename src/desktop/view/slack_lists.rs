@@ -25,6 +25,7 @@ mod rename;
 mod row;
 mod sort;
 mod subitem;
+mod title;
 mod visibility;
 mod vote;
 const PAGE_SIZE: usize = 50;
@@ -51,6 +52,10 @@ fn ListDialog(mut state: Signal<ShellState>) -> Element {
         crate::slack_lists::comments::presentation(&state.read()).map(|view| view.generation);
     let comments_open = comments_generation.is_some();
     let is_board = view.layout_kind == crate::slack_lists::ProjectionLayout::Board;
+    // Empty canonical titles have no visible heading. The generic accessible
+    // name is a desktop fallback, not substitute canonical title text.
+    let title_labelledby = (!view.title.is_empty()).then_some("slack-list-title");
+    let title_label = view.title.is_empty().then_some("List");
     let count = view.entries.len();
     let page_count = count.div_ceil(PAGE_SIZE).max(1);
     let page_key = (
@@ -123,12 +128,12 @@ fn ListDialog(mut state: Signal<ShellState>) -> Element {
     };
     rsx! {
         div{class:"scrim",onclick:move |_|comments::close_list(state,generation)}
-        section{id:"shell-overlay-dialog",class:"modal slack-list-dialog",role:"dialog","aria-modal":"true","aria-labelledby":"slack-list-title",tabindex:"-1",
+        section{id:"shell-overlay-dialog",class:"modal slack-list-dialog",role:"dialog","aria-modal":"true","aria-labelledby":title_labelledby,"aria-label":title_label,tabindex:"-1",
             "data-keyboard-dialog":"true","data-dialog-kind":"other","data-dialog-generation":generation,"data-layout-generation":layout,"data-list-id":"{view.list_id}","data-view-selection":"{selection_generation}",
             onkeydown:move |event|if event.key()==Key::Escape{event.prevent_default();event.stop_propagation();if let Some(comments)=comments_generation {comments::back(state,comments);}else if let Some(detail)=detail_generation {crate::slack_lists::close_record_detail(state,detail);}else{comments::close_list(state,generation);}},
             onmounted:move |_|{dioxus::document::eval(INSTALL_KEYBOARD);},
             header{class:"slack-list-header",
-                div{class:"slack-list-heading",h2{id:"slack-list-title","{view.title}"}
+                div{class:"slack-list-heading",if !view.title.is_empty(){h2{id:"slack-list-title","data-list-title":view.title.clone(),{title::content(state,&view.title_fragments,media_epoch)}}}
                     label{class:"slack-list-view-picker",r#for:"slack-list-view-select",
                         span{"View"}
                         select{id:"slack-list-view-select",value:"{selected}",
@@ -154,7 +159,7 @@ fn ListDialog(mut state: Signal<ShellState>) -> Element {
             }
             if detail_generation.is_none()&&view.find_available {{find::bar(state,&view)}}
             div{class:"slack-list-notices","aria-live":"polite",
-                {create::status(state,generation)}
+                {create::status(state,generation,view.read_only_reason.as_deref())}
                 {refinement::status(state)}
                 {delete::status(state)}
                 {editor::assignment_recovery(state)}
@@ -176,7 +181,7 @@ fn ListDialog(mut state: Signal<ShellState>) -> Element {
                 p{id:"slack-list-keyboard",class:"slack-list-help","{KEYBOARD_HELP}"}
                 KeyboardHelp{id:"slack-list-shortcuts",label:"List keyboard shortcuts",help:KEYBOARD_HELP}
                 div{class:"slack-list-scroll","aria-busy":view.loading,
-                    table{class:"slack-list-grid",role:if view.selected_view.is_none(){"treegrid"}else{"grid"},"aria-labelledby":"slack-list-title","aria-describedby":"slack-list-keyboard","aria-rowcount":row_count,"aria-colcount":column_count,
+                    table{class:"slack-list-grid",role:if view.selected_view.is_none(){"treegrid"}else{"grid"},"aria-labelledby":title_labelledby,"aria-label":title_label,"aria-describedby":"slack-list-keyboard","aria-rowcount":row_count,"aria-colcount":column_count,
                         thead{tr{"aria-rowindex":1,for (index,column) in view.columns.iter().enumerate(){th{key:"{column.id}",scope:"col","aria-colindex":index+1,"data-column-id":"{column.id}","data-pinned":column.pinned.to_string(),"data-column-size":column.size,{rename::action(state,column,generation)}}}}}
                         tbody{ {rendered_rows.into_iter()} }
                     }

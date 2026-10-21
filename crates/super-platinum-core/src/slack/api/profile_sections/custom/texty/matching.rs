@@ -1,6 +1,6 @@
-//! Profile Am1o/fRHe channel matching over an already checked local catalog.
-//! This deliberately excludes special/external categories from this increment;
-//! it does not add a server filter or claim complete Texty category coverage.
+//! Ordinary Am1o/fRHe matching over checked canonical rows. Profile and List
+//! retain their separate locality boundaries. Special channel-name categories
+//! are unsupported; this never adds a server filter or claims full inventory.
 pub use super::ranking::Error;
 use crate::block_actions::home::workflow::directory_local as local;
 use serde_json::Value;
@@ -51,6 +51,13 @@ fn private(raw: &Value) -> bool {
 /// Explicit supported subset. False is not nonexistence or permission denial.
 /// fromAnotherTeam is a canonical derived field, not an inferred credential fact.
 pub fn ordinary_local(raw: &Value) -> bool {
+    raw["fromAnotherTeam"] == false && ordinary_list_channel(raw)
+}
+/// Ordinary named List Texty candidates admit another-team rows when locality
+/// was actually projected by the canonical store. Missing/ill-typed locality
+/// remains unavailable; credentials or wire team IDs are not a substitute.
+/// This is a supported category boundary, not an exhaustive Am1o inventory.
+pub fn ordinary_list_channel(raw: &Value) -> bool {
     let id = raw["id"].as_str().unwrap_or("");
     raw.is_object()
         && id.len() >= 9
@@ -58,7 +65,7 @@ pub fn ordinary_local(raw: &Value) -> bool {
         && id
             .bytes()
             .all(|b| b.is_ascii_uppercase() || b.is_ascii_digit())
-        && raw["fromAnotherTeam"] == false
+        && raw["fromAnotherTeam"].is_boolean()
         && (truth(&raw["is_channel"]) || private(raw))
         && [
             "is_im",
@@ -87,7 +94,51 @@ pub fn channels<'a>(
     name: impl Fn(&Value) -> Result<ChannelName, Error>,
     previous: impl Fn(&str) -> Result<String, Error>,
 ) -> Result<Vec<Matched<'a>>, Error> {
-    if rows.iter().any(|row| !ordinary_local(row)) {
+    channels_for(
+        raw_query,
+        query,
+        rows,
+        remote_ids,
+        passthrough_observed,
+        name,
+        previous,
+        ordinary_local,
+    )
+}
+/// Ordinary interactive List message-input: includePrivate=true,
+/// includeFromAnotherTeam=true, searchPreviousNames=true, allowEmptyQuery=true.
+/// No Canvas AI context is supplied, hence no AI-exclusion filter is inferred.
+pub fn list_channels<'a>(
+    raw_query: &str,
+    query: &local::PreparedQuery,
+    rows: &'a [Value],
+    remote_ids: &BTreeSet<String>,
+    passthrough_observed: bool,
+    name: impl Fn(&Value) -> Result<ChannelName, Error>,
+    previous: impl Fn(&str) -> Result<String, Error>,
+) -> Result<Vec<Matched<'a>>, Error> {
+    channels_for(
+        raw_query,
+        query,
+        rows,
+        remote_ids,
+        passthrough_observed,
+        name,
+        previous,
+        ordinary_list_channel,
+    )
+}
+fn channels_for<'a>(
+    raw_query: &str,
+    query: &local::PreparedQuery,
+    rows: &'a [Value],
+    remote_ids: &BTreeSet<String>,
+    passthrough_observed: bool,
+    name: impl Fn(&Value) -> Result<ChannelName, Error>,
+    previous: impl Fn(&str) -> Result<String, Error>,
+    eligible: fn(&Value) -> bool,
+) -> Result<Vec<Matched<'a>>, Error> {
+    if rows.iter().any(|row| !eligible(row)) {
         return Err(Error::InvalidInput);
     }
     let names = rows.iter().map(&name).collect::<Result<Vec<_>, _>>()?;

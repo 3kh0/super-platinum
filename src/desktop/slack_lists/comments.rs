@@ -3,14 +3,23 @@ use super::*;
 use std::sync::Arc;
 use super_platinum_core::slack_lists::comments::{Page, Target, projection::Projection};
 mod accepted;
+pub(crate) mod completion;
 mod controller;
 mod deletions;
 pub(crate) mod draft;
 mod edits;
+pub(crate) mod file_acquisition;
+pub(crate) mod file_navigation;
 pub(crate) mod fixture;
 mod incoming;
+pub(crate) mod member_root;
 mod network;
+pub(crate) mod own_delete;
+mod own_delete_policy;
+pub(crate) mod own_edit;
+pub(crate) mod own_edit_policy;
 mod owner;
+pub(crate) mod reaction_actions;
 mod reactions;
 pub(crate) mod reply;
 mod storage;
@@ -30,9 +39,19 @@ pub(crate) struct State {
     // Credential-free account/workspace debt survives switching List records.
     cooldown: Option<(Scope, i64)>,
     drafts: draft::Root,
+    completion: completion::State,
+    member_root: member_root::State,
+    file_acquisition: file_acquisition::State,
     pub(crate) fixture: Option<fixture::Model>,
+    reaction_actions: reaction_actions::State,
+    own_edit: own_edit::State,
+    own_delete: own_delete::State,
 }
 pub(crate) fn carry_pending(previous: &mut ShellState, loaded: &mut ShellState) {
+    own_edit::carry_pending(previous, loaded);
+    own_delete::carry_pending(previous, loaded);
+    loaded.slack_lists.comments.reaction_actions =
+        previous.slack_lists.comments.reaction_actions.clone();
     loaded
         .slack_lists
         .comments
@@ -66,6 +85,8 @@ struct Entry {
     error: Option<String>,
     retry_at: i64,
     cursors: Vec<String>,
+    reaction_picker: Option<reaction_actions::selection::Picker>,
+    reaction_addition: Option<reaction_actions::addition::Pending>,
 }
 #[derive(Clone)]
 pub(crate) struct Presentation {

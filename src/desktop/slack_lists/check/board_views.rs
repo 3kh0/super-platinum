@@ -28,6 +28,8 @@ pub(super) async fn run(
       return {ok:keyboardMounted==='true'&&copies.length===2&&new Set(copies.map(c=>c.dataset.instanceId)).size===2&&fields.every(f=>JSON.stringify(f.columns)===JSON.stringify(['C_NAME','C_NUMBER','C_CHECK']))&&stops.length===1,copies:copies.map(c=>c.dataset.instanceId),fields,stops,keyboardMounted};
     })()"#).await?;
     let keyboard_help = keyboard_help::run(desktop, "board").await?;
+    let header_geometry = checked(desktop, include_str!("board_layout.js")).await?;
+    let (header_captures, header_capture_geometry) = capture_headers(desktop).await?;
     checked(desktop,r#"(()=>{
       const first=document.querySelector('.slack-list-lane[data-group-key="OPT_ENGINEERING"] [data-column-id="C_NAME"]');first.focus();
       first.dispatchEvent(new KeyboardEvent('keydown',{key:'Tab',bubbles:true,cancelable:true}));
@@ -165,12 +167,46 @@ pub(super) async fn run(
     fixture::restore_board_views(&mut state.write(), snapshot);
     wait_dom(desktop,r#"({ok:!!document.querySelector('.slack-list-grid')&&!document.querySelector('.slack-list-board')&&document.querySelector('.slack-list-grid tbody tr[data-row-id]')?.cells.length===11})"#).await?;
     Ok(
-        json!({"laneOrder":true,"keyboardHelp":keyboard_help,"duplicateIdentity":true,"primaryFields":true,"emptyLanes":true,
+        json!({"laneOrder":true,"keyboardHelp":keyboard_help,"headerGeometry":header_geometry,"headerCaptures":header_captures,"headerCaptureGeometry":header_capture_geometry,"duplicateIdentity":true,"primaryFields":true,"emptyLanes":true,
         "filterMembership":true,"checkboxGroups":true,"keyboard":true,"horizontalScroll":true,
         "boundedPaging":true,"pagingFocus":true,"sameLanePagingFocus":true,"emptyLanePageFocus":true,"emptyCardFocus":true,"canonicalDuplicateWrite":true,"typedEditor":true,
         "headingCompletion":true,"completionFocus":true,"cleanup":true,
         "captures":{"multi":multi,"paging":paging,"completion":completion}}),
     )
+}
+
+async fn capture_headers(
+    desktop: &dioxus::desktop::DesktopContext,
+) -> Result<(Value, Value), String> {
+    let script = |command: &str, target: &str| {
+        include_str!("board_capture.js")
+            .replace("__COMMAND__", &json!(command).to_string())
+            .replace("__TARGET__", &json!(target).to_string())
+    };
+    checked(desktop, &script("begin", "")).await?;
+    let captured = async {
+        let mut paths = serde_json::Map::new();
+        let mut geometry = serde_json::Map::new();
+        for (target, stage) in [("header", "board-header"), ("addGroup", "board-add-group")] {
+            checked(desktop, &script("reveal", target)).await?;
+            let before = wait_dom(desktop, &script("state", target)).await?;
+            let path = capture_stage(desktop, stage).await?;
+            let after = checked(desktop, &script("state", target)).await?;
+            if before != after {
+                return Err(format!(
+                    "{stage}: original Board capture changed: before {before}; after {after}"
+                ));
+            }
+            paths.insert(target.into(), json!(path));
+            geometry.insert(target.into(), before);
+        }
+        Ok((Value::Object(paths), Value::Object(geometry)))
+    }
+    .await;
+    let restored = checked(desktop, &script("restore", "")).await;
+    let captured = captured?;
+    restored?;
+    Ok(captured)
 }
 
 async fn lanes(

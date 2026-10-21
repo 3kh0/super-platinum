@@ -160,7 +160,7 @@ pub(in crate::canvas::edit) fn check_document_state(
     let raw_marks = doc.marks(&object).map_err(|_| Error::Unsupported)?;
     if raw_marks.len() > 4096
         || raw_marks.iter().any(|mark| {
-            !matches!(mark.name(), "b" | "i" | "del" | "code" | "a")
+            !matches!(mark.name(), "b" | "i" | "u" | "del" | "code" | "a")
                 || !matches!(
                     mark.value(),
                     automerge::ScalarValue::Boolean(_) | automerge::ScalarValue::Str(_)
@@ -175,7 +175,7 @@ pub(in crate::canvas::edit) fn check_document_state(
         || actual.iter().any(|mark| {
             mark.start >= mark.end
                 || mark.end > units
-                || !matches!(mark.name(), "b" | "i" | "del" | "code" | "a")
+                || !matches!(mark.name(), "b" | "i" | "u" | "del" | "code" | "a")
         })
     {
         return Err(Error::Unsupported);

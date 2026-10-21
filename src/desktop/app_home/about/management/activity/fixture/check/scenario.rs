@@ -233,9 +233,9 @@ pub(super) async fn run(
         .await?;
     } else {
         input(desktop, "workflow-activity-status", "SUCCESS").await?;
-        input(desktop, "workflow-activity-from", "2026-06-15").await?;
-        input(desktop, "workflow-activity-to", "2026-06-16").await?;
         input(desktop, "workflow-activity-limit", "20").await?;
+        let before = count(state);
+        date_range::select(state, desktop, "2026-06-15", "2026-06-16").await?;
         let accepted = wait(state, "accepted exact Activity filters", |v| {
             let f = &v["activity"]["filters"];
             f["status"] == "SUCCESS"
@@ -246,8 +246,6 @@ pub(super) async fn run(
         .await?;
         wait_dom(desktop, &format!("({{ok:document.getElementById('workflow-activity-filters')?.dataset.revision===String({})}})", accepted["activity"]["filters"]["revision"])).await?;
         let dates=wait_dom(desktop,"(()=>{const from=new Date(2026,5,15),to=new Date(2026,5,16,23,59,59);return{ok:true,from:Math.floor(from.getTime()/1000),to:Math.floor(to.getTime()/1000)}})()").await?;
-        let before = count(state);
-        click(desktop, "workflow-activity-apply").await?;
         let filtered = settled(state, "filtered Activity page", before).await?;
         let q = &filtered["activity"]["query"];
         if q["limit"] != 20
@@ -335,6 +333,9 @@ pub(super) async fn run(
         let before = count(state);
         click(desktop, "workflow-activity-apply").await?;
         settled(state, "malformed response retained error", before).await?;
+        // Reveal the actual outside error feedback before capturing it.
+        click(desktop, "workflow-activity-filter").await?;
+        wait_dom(desktop,"({ok:document.getElementById('workflow-activity-filter')?.getAttribute('aria-expanded')==='false'&&document.getElementById('workflow-activity-date-range')?.dataset.calendarPending==='false'})").await?;
         stage(
             state,
             desktop,

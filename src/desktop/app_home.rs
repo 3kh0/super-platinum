@@ -350,7 +350,20 @@ pub(crate) fn realtime(s: &mut ShellState, team: &str, generation: u64, event: &
         && (matches!(event, RtEvent::PreferencesChanged { .. })
             || matches!(event, RtEvent::Unknown(raw) if matches!(raw.kind.as_str(),
                 "team_pref_change" | "enterprise_prefs_updated" | "team_join" | "team_leave")));
+    let list_preferences_changed =
+        (crate::slack_lists::comments::completion::observes_preferences(s, team, generation)
+            || crate::slack_lists::comments::own_edit::observes_preferences(s, team, generation))
+            && (matches!(event, RtEvent::PreferencesChanged { .. })
+                || matches!(event, RtEvent::Unknown(raw) if matches!(raw.kind.as_str(),
+                    "team_pref_change" | "enterprise_prefs_updated" | "team_join" | "team_leave")));
+    let canvas_preferences_changed =
+        crate::canvas::comments::attribution::observes_preferences(s, team, generation)
+            && (matches!(event, RtEvent::PreferencesChanged { .. })
+                || matches!(event, RtEvent::Unknown(raw) if matches!(raw.kind.as_str(),
+                    "team_pref_change" | "enterprise_prefs_updated" | "team_join" | "team_leave")));
     if profile_preferences_changed
+        || list_preferences_changed
+        || canvas_preferences_changed
         || (current_owner && (matches!(event, RtEvent::PreferencesChanged { .. }) || changed_self))
         || about_names_changed
     {
@@ -362,6 +375,8 @@ pub(crate) fn realtime(s: &mut ShellState, team: &str, generation: u64, event: &
     if current_owner
         && !about_names_changed
         && !profile_preferences_changed
+        && !list_preferences_changed
+        && !canvas_preferences_changed
         && matches!(
             raw.kind.as_str(),
             "team_pref_change" | "enterprise_prefs_updated" | "team_join" | "team_leave"

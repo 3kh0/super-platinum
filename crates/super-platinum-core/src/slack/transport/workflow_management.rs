@@ -1,5 +1,10 @@
 //! Workflow metadata writes and export initiation retain responses and never replay.
 use super::*;
+mod collaborators;
+mod copy_permission;
+mod delete;
+mod run_permission;
+mod unpublish;
 
 impl Transport {
     /// A plan's caller owns policy, exact draft, preflight and per-slot outcomes.

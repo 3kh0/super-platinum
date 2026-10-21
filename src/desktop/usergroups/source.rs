@@ -28,6 +28,7 @@ pub(crate) enum Admission {
 pub(crate) struct Work {
     owner: Arc<Context>,
     ticket: Option<source_core::Ticket>,
+    metadata: bool,
 }
 pub(crate) fn enqueue(
     shell: &mut ShellState,
@@ -45,6 +46,9 @@ pub(crate) fn enqueue(
         return Admission::Unavailable;
     };
     let generation = format!("usergroup-source-{serial}");
+    let metadata = matches!(&operation, Operation::Metadata { .. })
+        || matches!(&operation, Operation::Event { kind, .. }
+            if matches!(kind.as_str(), "subteam_created" | "subteam_updated"));
     match workspace.directory_usergroups.enqueue(
         &owner.account,
         &owner.session,
@@ -56,6 +60,7 @@ pub(crate) fn enqueue(
         Ok(ticket) => Admission::Tracked(Work {
             owner,
             ticket: Some(ticket),
+            metadata,
         }),
         Err(_) => Admission::Unavailable,
     }
@@ -152,10 +157,23 @@ impl Work {
             )
             .map_err(|_| unavailable())?;
         // No await or callback between paired publication and ticket retirement.
+        // Results retain every metadata occurrence, including equal-version
+        // Fetch skips. Membership changes alone are not d92s metadata upserts.
+        let fresh_ids = if self.metadata {
+            commit
+                .results()
+                .iter()
+                .filter_map(|row| row.effective["id"].as_str())
+                .map(str::to_owned)
+                .collect::<Vec<_>>()
+        } else {
+            vec![]
+        };
         let (source, native) = commit.into_parts();
         w.directory_usergroups = source;
         w.usergroups = native;
         self.ticket.take();
+        super::freshness::published(shell, self.owner.clone(), &fresh_ids);
         shell.refresh_from_core();
         Ok(())
     }

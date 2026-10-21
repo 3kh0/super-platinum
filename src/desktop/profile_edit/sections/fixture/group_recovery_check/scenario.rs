@@ -7,6 +7,29 @@ pub(super) async fn run(
 ) -> Result<Value, String> {
     let ready = readiness(name).await?;
     let case = recovery::case();
+    if recovery::known_freshness::enabled() {
+        return super::known_freshness::run(state, desktop, name, ready).await;
+    }
+    if recovery::mixed_absent::enabled() {
+        return super::mixed_absent::run(state, desktop, name, ready).await;
+    }
+    if case == "mixed-file-group" {
+        return super::mixed_files::run(state, desktop, name, ready).await;
+    }
+    if case == "rate-limit" {
+        return super::rate::run(state, desktop, name, ready).await;
+    }
+    if matches!(
+        case.as_str(),
+        "automatic"
+            | "pending"
+            | "automatic-offline"
+            | "automatic-malformed"
+            | "ready"
+            | "mixed-member"
+    ) {
+        return super::automatic::run(state, desktop, name, ready).await;
+    }
     if !matches!(case.as_str(), "legacy" | "absent" | "retirement") {
         return Err("Unknown group recovery case".into());
     }
@@ -27,22 +50,24 @@ pub(super) async fn run(
     )
     .await?;
     click(desktop, "Edit description", false).await?;
-    unavailable(desktop).await?;
-    tokio::time::sleep(Duration::from_millis(200)).await;
-    if !recovery::requests().is_empty() {
-        return Err("Ordinary opening forced a group read".into());
+    if case == "legacy" {
+        unavailable(desktop).await?;
+        tokio::time::sleep(Duration::from_millis(200)).await;
+        if !recovery::requests().is_empty() {
+            return Err("Ordinary legacy opening forced a group read".into());
+        }
+        capture(
+            state,
+            desktop,
+            name,
+            "ordinary-open",
+            json!({"noForcedRead":true}),
+            &mut stages,
+            &mut captures,
+        )
+        .await?;
+        click(desktop, "Retry description", true).await?;
     }
-    capture(
-        state,
-        desktop,
-        name,
-        "ordinary-open",
-        json!({"noForcedRead":true}),
-        &mut stages,
-        &mut captures,
-    )
-    .await?;
-    click(desktop, "Retry description", true).await?;
     let first = request(state, "directory", &recovery::ids()).await?;
     loading(desktop).await?;
     capture(
@@ -50,16 +75,17 @@ pub(super) async fn run(
         desktop,
         name,
         "held",
-        json!({"explicitRetryRead":true,"duplicateIdsCoalesced":true}),
+        json!({"explicitRetryRead":case=="legacy","automaticRead":case!="legacy","duplicateIdsCoalesced":true}),
         &mut stages,
         &mut captures,
     )
     .await?;
     if case == "retirement" {
+        let before = finished(state);
         click(desktop, "Cancel description edit", false).await?;
         form(desktop).await?;
-        let before = finished(state);
-        recovery::release(first, Ok(directory(&recovery::ids())))?;
+        retired(state, before, first).await?;
+        let release = recovery::release_retired(first, Ok(directory(&recovery::ids())))?;
         settled(state, before).await?;
         retained(state)?;
         form(desktop).await?;
@@ -71,14 +97,12 @@ pub(super) async fn run(
             desktop,
             name,
             "cancelled",
-            json!({"lateResultDidNotOpen":true,"draftRetained":true}),
+            json!({"lateResultDidNotOpen":true,"draftRetained":true,"retiredRelease":release}),
             &mut stages,
             &mut captures,
         )
         .await?;
         click(desktop, "Edit description", false).await?;
-        unavailable(desktop).await?;
-        click(desktop, "Retry description", false).await?;
         let stale = request(state, "directory", &recovery::ids()).await?;
         let mut changed = recovery::raw(recovery::GROUP);
         changed["handle"] = json!("Socket crew");
@@ -106,9 +130,11 @@ pub(super) async fn run(
         .await?;
         click(desktop, "Retry description", false).await?;
         let account = request(state, "directory", &[recovery::OTHER.into()]).await?;
-        let proof = recovery::replace_account(state);
         let before = finished(state);
-        recovery::release(account, Ok(directory(&[recovery::OTHER.into()])))?;
+        let mut proof = recovery::replace_account(state);
+        retired(state, before, account).await?;
+        proof["retiredRelease"] =
+            recovery::release_retired(account, Ok(directory(&[recovery::OTHER.into()])))?;
         settled(state, before).await?;
         wait_dom(desktop, "({ok:!document.querySelector('.profile-edit')})").await?;
         let model = recovery::snapshot(&state.peek());
@@ -292,7 +318,7 @@ pub(super) async fn run(
         "stages":stages,"captures":captures,"requests":recovery::requests(),"captureChecksPassed":true,"visualReview":"required"}),
     )
 }
-fn retained(state: Signal<ShellState>) -> Result<(), String> {
+pub(super) fn retained(state: Signal<ShellState>) -> Result<(), String> {
     let model = recovery::snapshot(&state.peek());
     if model["profile"]["blocks"] != json!(recovery::blocks(recovery::DRAFT))
         || model["profile"]["attempts"] != json!([])
@@ -302,7 +328,7 @@ fn retained(state: Signal<ShellState>) -> Result<(), String> {
     }
     Ok(())
 }
-fn unchanged(state: Signal<ShellState>, original: &Value) -> Result<(), String> {
+pub(super) fn unchanged(state: Signal<ShellState>, original: &Value) -> Result<(), String> {
     retained(state)?;
     let model = recovery::snapshot(&state.peek());
     if model["groups"] != original["groups"] {
@@ -310,15 +336,33 @@ fn unchanged(state: Signal<ShellState>, original: &Value) -> Result<(), String> 
     }
     Ok(())
 }
-fn directory(ids: &[String]) -> Value {
+pub(super) fn directory(ids: &[String]) -> Value {
     json!({"ok":true,"results":ids.iter().map(|id|recovery::raw(id)).collect::<Vec<_>>()})
 }
-fn finished(state: Signal<ShellState>) -> u64 {
+pub(super) fn finished(state: Signal<ShellState>) -> u64 {
     recovery::snapshot(&state.peek())["driver"]["finished"]
         .as_u64()
         .unwrap_or(0)
 }
-async fn settled(state: Signal<ShellState>, before: u64) -> Result<(), String> {
+async fn retired(state: Signal<ShellState>, before: u64, serial: u64) -> Result<(), String> {
+    for _ in 0..100 {
+        let model = recovery::snapshot(&state.peek());
+        if model["driver"]["finished"]
+            .as_u64()
+            .is_some_and(|n| n > before)
+            && model["driver"]["active"] == 0
+            && recovery::receiver_retired(serial)
+        {
+            return Ok(());
+        }
+        tokio::time::sleep(Duration::from_millis(100)).await;
+    }
+    Err(format!(
+        "Original group receiver retirement timed out: {}",
+        recovery::snapshot(&state.peek())
+    ))
+}
+pub(super) async fn settled(state: Signal<ShellState>, before: u64) -> Result<(), String> {
     for _ in 0..100 {
         let s = recovery::snapshot(&state.peek());
         if s["driver"]["finished"].as_u64().is_some_and(|n| n > before)
@@ -334,10 +378,14 @@ async fn settled(state: Signal<ShellState>, before: u64) -> Result<(), String> {
         recovery::snapshot(&state.peek())
     ))
 }
-async fn loading(desktop: &DesktopContext) -> Result<(), String> {
+pub(super) async fn loading(desktop: &DesktopContext) -> Result<(), String> {
     wait_dom(desktop,r#"({ok:!document.getElementById('profile-section-rich')&&document.getElementById('profile-section-rich-status')?.textContent==='Loading mention names. Your description is unchanged.'&&[...document.querySelectorAll('.profile-edit button')].some(b=>b.textContent==='Retry description'&&b.disabled)})"#).await.map(|_|())
 }
-async fn request(state: Signal<ShellState>, kind: &str, ids: &[String]) -> Result<u64, String> {
+pub(super) async fn request(
+    state: Signal<ShellState>,
+    kind: &str,
+    ids: &[String],
+) -> Result<u64, String> {
     for _ in 0..100 {
         let rows = recovery::pending();
         if rows.len() > 1 {
@@ -382,7 +430,14 @@ async fn request(state: Signal<ShellState>, kind: &str, ids: &[String]) -> Resul
         recovery::snapshot(&state.peek())
     ))
 }
-async fn save(mut state: Signal<ShellState>, desktop: &DesktopContext) -> Result<(), String> {
+async fn save(state: Signal<ShellState>, desktop: &DesktopContext) -> Result<(), String> {
+    save_text(state, desktop, recovery::DRAFT).await
+}
+pub(super) async fn save_text(
+    mut state: Signal<ShellState>,
+    desktop: &DesktopContext,
+    text: &str,
+) -> Result<(), String> {
     state
         .write()
         .profile_edit
@@ -408,7 +463,7 @@ async fn save(mut state: Signal<ShellState>, desktop: &DesktopContext) -> Result
     for _ in 0..100 {
         let model = mentions::snapshot(&state.peek());
         if model["reads"] == 1 && model["busy"] == false && model["dirty"] == false {
-            if model["blocks"] != json!(recovery::blocks(recovery::DRAFT)) {
+            if model["blocks"] != json!(recovery::blocks(text)) {
                 return Err("Save/readback changed group tokens".into());
             }
             let view = presentation(&state.peek()).ok_or("Missing saved section")?;

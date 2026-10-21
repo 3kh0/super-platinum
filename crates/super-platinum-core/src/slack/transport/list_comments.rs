@@ -1,7 +1,13 @@
 //! Closed List comment reads. Sending lives in a separate single-attempt module.
+mod own_delete;
+mod own_edit;
+mod reaction;
 mod reply;
 use super::*;
 use crate::slack_lists::comments;
+pub use own_delete::ListCommentDeleteFailure;
+pub use own_edit::ListCommentUpdateFailure;
+pub use reaction::ListCommentReactionFailure;
 pub use reply::ListCommentReplyFailure;
 use std::collections::BTreeMap;
 
@@ -174,6 +180,12 @@ fn read_allowed(request: &PreparedRequest) -> bool {
 }
 
 fn acquire_allowed(request: &PreparedRequest) -> bool {
+    if let Some(f) = fields(request, "/api/reactions.get") {
+        return f.len() == 4
+            && f.get("channel").is_some_and(|v| is_channel(v))
+            && f.get("timestamp").is_some_and(|v| comments::timestamp(v))
+            && f.get("full") == Some(&"true");
+    }
     if let Some(f) = fields(request, "/api/experiments.getByUser") {
         let platform = std::env::consts::OS.replace("macos", "darwin");
         return f.len() == 3

@@ -2,11 +2,14 @@
 //! A dispatched page keeps its original publication, not a recaptured inventory.
 use super::*;
 use super_platinum_core::slack::models::Channel;
+pub(crate) mod direct;
 
 #[cfg(test)]
 mod tests;
 
 struct Receipt {
+    origin: Origin,
+    requested: Option<String>,
     owner: Owner,
     publication: Arc<Observation>,
     transformations: Arc<members::Transformations>,
@@ -30,6 +33,8 @@ impl Receipt {
             .get(&context.key())
             .ok_or_else(unavailable)?;
         let captured = Self {
+            origin: Origin::Directory,
+            requested: None,
             owner: Owner {
                 context: slot.context.clone(),
                 token: slot.token.clone(),
@@ -68,6 +73,13 @@ impl Receipt {
         if !current(shell) || !self.current(shell) {
             return Err(unavailable());
         }
+        if self
+            .requested
+            .as_ref()
+            .is_some_and(|id| rows.len() != 1 || rows[0]["id"].as_str() != Some(id.as_str()))
+        {
+            return Err(unavailable());
+        }
         let typed = rows
             .iter()
             .cloned()
@@ -93,7 +105,7 @@ impl Receipt {
                 ctx.epoch,
                 GENERATION,
                 &w.channels,
-                Origin::Directory,
+                self.origin,
                 rows.to_vec(),
                 receipt.facts.clone(),
             )

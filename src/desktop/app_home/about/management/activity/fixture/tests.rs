@@ -125,3 +125,76 @@ fn closed_activity_requires_actual_form_workflow_and_source_reason() {
         }
     }
 }
+
+#[test]
+fn special_channel_seed_preserves_ordinary_case_and_local_flags() {
+    for special in [false, true] {
+        let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
+        install_case(
+            &mut shell,
+            if special {
+                "channel-special"
+            } else {
+                "channel"
+            },
+        );
+        let workspace = &shell.core.workspaces["TWORKFLOW"];
+        let known = &workspace.channels[channel::KNOWN];
+        assert_eq!(known.name.as_deref(), Some("activity-known"));
+        assert_eq!(known.is_private, special);
+        assert!(!known.is_archived);
+        assert!(!workspace.channels.contains_key(channel::MISSING));
+        assert_eq!(workspace.channels.contains_key(channel::ARCHIVED), special);
+        assert_eq!(
+            workspace.channels.contains_key(channel::PRIVATE_ARCHIVED),
+            special
+        );
+        if special {
+            for (id, private, name) in [
+                (channel::ARCHIVED, false, "activity-archived"),
+                (channel::PRIVATE_ARCHIVED, true, "activity-private-archived"),
+            ] {
+                let row = &workspace.channels[id];
+                assert_eq!(row.name.as_deref(), Some(name));
+                assert!(row.is_archived);
+                assert_eq!(row.is_private, private);
+                assert_eq!(row.extra["is_member"], true);
+            }
+        }
+        assert!(
+            shell
+                .app_home
+                .about
+                .surface
+                .as_ref()
+                .unwrap()
+                .owner
+                .current(&shell)
+        );
+    }
+}
+
+#[test]
+fn special_channel_message_retains_original_missing_occurrence_and_opaque_step() {
+    let original = json!({"trigger_message":{"template":"Open {known} then {known}",
+        "variables":{"known":{"type":"CHANNEL","value":channel::KNOWN}}},
+        "step_events":[{"step_execution_id":"STEP_REVIEW","outcome_message":{
+            "template":"Check {missing}","variables":{"missing":{"type":"CHANNEL","value":channel::MISSING}}},
+            "future":{"preserved":17}}],"opaque":{"keep":[false,0,null]}});
+    let mut row = original.clone();
+    channel::special_messages(&mut row);
+    assert_eq!(row["trigger_message"], original["trigger_message"]);
+    assert_eq!(row["step_events"][0], original["step_events"][0]);
+    assert_eq!(row["opaque"], original["opaque"]);
+    assert_eq!(row["step_events"].as_array().unwrap().len(), 2);
+    let message = &row["step_events"][1]["outcome_message"];
+    assert_eq!(
+        message["template"],
+        "Open {archived} then {privateArchived}"
+    );
+    assert_eq!(message["variables"]["archived"]["value"], channel::ARCHIVED);
+    assert_eq!(
+        message["variables"]["privateArchived"]["value"],
+        channel::PRIVATE_ARCHIVED
+    );
+}

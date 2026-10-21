@@ -331,7 +331,7 @@ pub(crate) fn resume(mut state: Signal<ShellState>, team: &str) {
     }
 }
 pub(crate) fn fixture_status(shell: &ShellState, team: &str) -> Value {
-    if !fixture_enabled() {
+    if !fixture_enabled() && !crate::profile_edit::sections::fixture::group_recovery::enabled() {
         return Value::Null;
     }
     let Ok(ctx) = Context::capture(shell, team) else {

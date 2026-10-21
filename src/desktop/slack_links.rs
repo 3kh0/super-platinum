@@ -15,7 +15,7 @@ use crate::state::{ChannelOpen, ChannelTab, MainView, Overlay, ShellState};
 
 mod guarded;
 mod parse;
-pub(crate) use guarded::{NavigationGuard, open_channel_guarded};
+pub(crate) use guarded::{NavigationGuard, ReadLifecycle, open_channel_guarded};
 mod user;
 pub(crate) mod user_check;
 pub(crate) mod user_fixture;

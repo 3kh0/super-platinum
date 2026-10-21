@@ -1,8 +1,10 @@
 async function workflowEntryBack(expected, channel) {
   const get=id=>document.getElementById(id), root=get('workflow-management');
   const state=root?.__workflowManagement, notice=get('workflow-entry-navigation-notice');
+  const dateForm=expected.activity ? get('workflow-activity-filters') : null;
+  const dateWitness=expected.activity ? workflowActivityDateWitness(expected.activity,dateForm,true) : null;
   const fields=Object.entries(expected.fields).map(([id,value])=>({id,value,node:get(id)}));
-  const same=()=>root?.isConnected&&get(root.id)===root&&state&&root.__workflowManagement===state
+  const same=()=>(!expected.activity || dateWitness?.current()&&root?.contains(dateForm))&&root?.isConnected&&get(root.id)===root&&state&&root.__workflowManagement===state
     &&root.dataset.managementVisit===String(expected.visit)
     &&root.dataset.managementDocument===String(expected.document)
     &&root.dataset.managementRevision===String(expected.revision)

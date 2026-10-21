@@ -17,6 +17,9 @@ READ=runpy.run_path(str(Path(__file__).with_name('check-slack-list-comments-nati
 FLAG='SUPER_PLATINUM_LIST_COMMENTS_COMPOSE_CHECK'
 PREFIX,WAITING,EDGE=('slack-list-comments-compose-'+s+': ' for s in ('check','waiting','stage'))
 FIXTURES=('slack-list','slack-list-narrow')
+RESTART_CASES=tuple('own-'+operation+'-restart-'+mode+'-'+phase
+    for operation,modes in (('edit',('unsent','unknown')),('delete',('pending','unknown')))
+    for mode in modes for phase in ('exercise','restore'))
 require=READ['require']
 ready_tuple=READ['ready_tuple']
 rectangle=READ['rectangle']
@@ -459,8 +462,61 @@ def validate_reactions(fixture,receipt,directory,*,dimensions=None,png=True):
 
 
 def case_contract(case):
+    if case in RESTART_CASES:
+        name='slack_list_comments_own_delete_restart.py' if case.startswith('own-delete-') else 'slack_list_comments_own_edit_restart.py'
+        module=runpy.run_path(str(Path(__file__).with_name(name)))
+        return module['STAGES'][case],module['validator'](case)
     require(case in ('compose','newer-draft','storage-recovery','reactions','reaction-refresh','deletions','incoming',
-                     'ack-socket-add','ack-socket-remove','ack-first','edits','edit-ack'), 'Unknown compose acceptance case')
+                     'ack-socket-add','ack-socket-remove','ack-first','edits','edit-ack',
+                     'reaction-actions','reaction-failures','reaction-tones','reaction-family','reaction-family-failures','reaction-selection','reaction-selection-failures','reaction-selection-custody','pill-additions','pill-additions-custody','channel-completion','channel-completion-custody','member-completion','member-completion-custody','group-completion','group-completion-custody','group-completion-restricted','file-completion','file-completion-custody','file-completion-off','file-navigation','file-navigation-custody','cold-files','cold-files-recovery','own-edit','own-edit-custody','own-edit-recovery','own-edit-storage','own-delete','own-delete-failure','own-delete-storage','own-delete-guards','own-delete-rate-limit'), 'Unknown compose acceptance case')
+    if case in ('own-delete-guards','own-delete-rate-limit'):
+        module=runpy.run_path(str(Path(__file__).with_name('slack_list_comments_own_delete_guards.py')))
+        return module['STAGES'][case],module['validator'](case)
+    if case == 'own-delete-storage':
+        module=runpy.run_path(str(Path(__file__).with_name('slack_list_comments_own_delete_storage.py')))
+        return module['STAGES'],module['validate']
+    if case in ('own-delete','own-delete-failure'):
+        module=runpy.run_path(str(Path(__file__).with_name('slack_list_comments_own_delete.py')))
+        return module['STAGES'][case],module['validator'](case)
+    if case == 'own-edit-storage':
+        module=runpy.run_path(str(Path(__file__).with_name('slack_list_comments_own_edit_storage.py')))
+        return module['STAGES'],module['validate']
+    if case == 'own-edit-recovery':
+        module=runpy.run_path(str(Path(__file__).with_name('slack_list_comments_own_edit_recovery.py')))
+        return module['STAGES'],module['validate']
+    if case in ('own-edit','own-edit-custody'):
+        module=runpy.run_path(str(Path(__file__).with_name('slack_list_comments_own_edit.py')))
+        return module['STAGES'][case],module['validator'](case)
+    if case in ('cold-files','cold-files-recovery'):
+        module=runpy.run_path(str(Path(__file__).with_name('slack_list_comments_cold_files.py')))
+        return module['STAGES'][case],module['validator'](case)
+    if case in ('file-navigation','file-navigation-custody'):
+        module=runpy.run_path(str(Path(__file__).with_name('slack_list_comments_file_navigation.py')))
+        return module['STAGES'][case],module['validator'](case)
+    if case in ('file-completion','file-completion-custody','file-completion-off'):
+        module=runpy.run_path(str(Path(__file__).with_name('slack_list_comments_file_completion.py')))
+        return module['STAGES'][case], module['validator'](case)
+    if case in ('group-completion','group-completion-custody','group-completion-restricted'):
+        module=runpy.run_path(str(Path(__file__).with_name('slack_list_comments_group_completion.py')))
+        return module['STAGES'][case], module['validator'](case)
+    if case in ('member-completion','member-completion-custody'):
+        module=runpy.run_path(str(Path(__file__).with_name('slack_list_comments_member_completion.py')))
+        return module['STAGES'][case], module['validator'](case)
+    if case in ('channel-completion','channel-completion-custody'):
+        module=runpy.run_path(str(Path(__file__).with_name('slack_list_comments_channel_completion.py')))
+        return module['STAGES'][case],module['validator'](case)
+    if case in ('pill-additions','pill-additions-custody'):
+        module=runpy.run_path(str(Path(__file__).with_name('slack_list_comments_pill_additions.py')))
+        return module['STAGES'][case],module['validator'](case)
+    if case in ('reaction-selection','reaction-selection-failures','reaction-selection-custody'):
+        module=runpy.run_path(str(Path(__file__).with_name('slack_list_comments_reaction_selection.py')))
+        return module['STAGES'][case],module['validator'](case)
+    if case in ('reaction-family','reaction-family-failures'):
+        module=runpy.run_path(str(Path(__file__).with_name('slack_list_comments_reaction_family.py')))
+        return module['STAGES'][case],module['validator'](case)
+    if case in ('reaction-actions','reaction-failures'):
+        module=runpy.run_path(str(Path(__file__).with_name('slack_list_comments_reaction_actions.py')))
+        return module['STAGES'][case],module['validator'](case)
     if case in ('edits','edit-ack'):
         module=runpy.run_path(str(Path(__file__).with_name('slack_list_comments_edits.py')))
         return module['STAGES'][case],module['validator'](case)
@@ -471,7 +527,7 @@ def case_contract(case):
     if case!='compose':
         name={'newer-draft':'slack_list_comments_newer_draft.py','storage-recovery':'slack_list_comments_storage_recovery.py',
               'reaction-refresh':'slack_list_comments_reaction_refresh.py','deletions':'slack_list_comments_deletions.py',
-              'incoming':'slack_list_comments_incoming.py'}[case]
+              'incoming':'slack_list_comments_incoming.py','reaction-tones':'slack_list_comments_reaction_tones.py'}[case]
         module=runpy.run_path(str(Path(__file__).with_name(name)))
         return module['STAGES'],module['validate']
     return STAGES,validate
@@ -484,12 +540,28 @@ def validate_log(native,fixture,directory,expected,dimensions,case='compose'):
     require(receipts[0].get('ok') is True,'Native compose failed: '+str(receipts[0].get('error')))
     H['validate_ready'](receipts[0].get('readiness'),expected)
     stages,validator=case_contract(case)
-    require(native.receipts(EDGE)==[dict(stage=s,edge=e) for s in stages for e in ('before','after')],'Capture lifecycle edges changed')
+    # This case captures a second original viewport of the same refreshed
+    # publication. It is not another logical state, but owns its own PNG edges.
+    captures=[]
+    for stage in stages:
+        captures.append(stage)
+        if case=='member-completion' and stage=='refreshed':
+            captures.append('refreshed-bottom')
+        if case.startswith('group-completion') and stage in ('local-held','refreshed','held','restricted-results'):
+            captures.append(stage+'-bottom')
+        if case.startswith('file-completion'):
+            if stage in ('refreshed','source-ready'):
+                captures.extend((stage+'-middle',stage+'-bottom'))
+            elif stage in ('local-held','held','off-results'):
+                captures.append(stage+'-bottom')
+    require(native.receipts(EDGE)==[dict(stage=s,edge=e) for s in captures for e in ('before','after')],'Capture lifecycle edges changed')
     return validator(fixture,receipts[0],directory,dimensions=dimensions)
 
-def run_fixture(fixture, binary, captures, case='compose'):
+def run_fixture(fixture, binary, captures, case='compose', *, restart_from=None):
     require(fixture in FIXTURES, 'Unknown List comments fixture')
     case_contract(case)
+    require((restart_from is not None) == (case in RESTART_CASES and case.endswith('-restore')),
+            'Only paired restart restore cases accept an original closed database')
     captures.mkdir(parents=True, exist_ok=True)
     nonce = secrets.token_hex(16)
     directory = captures / f'slack-list-comments-compose-{nonce}'
@@ -506,6 +578,10 @@ def run_fixture(fixture, binary, captures, case='compose'):
                             'SUPER_PLATINUM_LIST_COMMENT_JOURNAL':str(directory/'comments.sqlite')})
     process_api = handle = None
     try:
+        if restart_from is not None:
+            recovery=runpy.run_path(str(Path(__file__).with_name('slack_list_comments_own_edit_restart_storage.py')))
+            evidence['restartTransfer']=recovery['transfer'](restart_from,directory/'comments.sqlite',
+                fixture=fixture,case=case,binary=binary)
         with native:
             evidence['pid'] = native.process.pid
             if sys.platform == 'win32':
@@ -527,9 +603,9 @@ def run_fixture(fixture, binary, captures, case='compose'):
                     H['validate_ready'](waiting[0], expected)
                     pointer = H['normalize'](native, evidence, stack, process_api, handle)
                     storage = None
-                    if case == 'storage-recovery':
+                    if case in ('storage-recovery','file-navigation-custody','own-edit-storage','own-delete-storage'):
                         controller=runpy.run_path(str(Path(__file__).with_name('slack_list_comments_storage_lock.py')))
-                        storage=stack.enter_context(controller['StorageControl'](directory,expected))
+                        storage=stack.enter_context(controller['StorageControl'](directory,expected,case=case))
                         evidence['storage']=storage.evidence
                     H['publish_ready'](directory, expected)
                     evidence['readiness'] = expected
@@ -575,10 +651,16 @@ def run_fixture(fixture, binary, captures, case='compose'):
             evidence['exitIdentity'] = process_api.times(handle)
             H['validate_exit'](evidence['processCreationFiletime'], evidence['exitIdentity'])
         require(H['binary_sha'](binary) == digest, 'Binary changed during native run')
+        if case == 'own-delete-storage':
+            module=runpy.run_path(str(Path(__file__).with_name('slack_list_comments_own_delete_storage.py')))
+            module['validate_closed'](storage.closed_delete_snapshot(native)['snapshot'],evidence['native'])
+        if case == 'own-edit-storage':
+            module=runpy.run_path(str(Path(__file__).with_name('slack_list_comments_own_edit_storage.py')))
+            module['validate_closed'](storage.closed_edit_snapshot(native)['snapshot'],evidence['native'])
         evidence.update(ok=True, closedLogRevalidated=True)
     except BaseException as error:
         evidence['error'] = str(error)
-        evidence['terminalReceipts'] = native.receipts(PREFIX)
+        evidence['terminalReceipts'] = native.receipts(PREFIX) if native.log.is_file() else []
         raise
     finally:
         evidence['processExited'] = native.process is not None and native.process.poll() is not None
@@ -593,6 +675,7 @@ def run_fixture(fixture, binary, captures, case='compose'):
         path.write_text(json.dumps(evidence, indent=2) + '\n', encoding='utf-8')
         print(json.dumps(dict(receipt=str(path), **evidence)), flush=True)
     require(evidence['ok'], 'Final process identity audit failed')
+    return evidence
 
 
 
@@ -601,13 +684,15 @@ def main():
     parser.add_argument('--binary',type=Path,default=Path(os.environ.get('SUPER_PLATINUM_BINARY',DEFAULT_BINARY)))
     parser.add_argument('--captures',type=Path,default=ROOT/'tmp/list-comments-compose-native')
     parser.add_argument('--fixture',action='append',choices=FIXTURES)
+    parser.add_argument('--restart-from',type=Path,help='Exact closed exercise wrapper; only paired own-edit restart restore cases')
     parser.add_argument('--case',choices=('compose','newer-draft','storage-recovery','reactions','reaction-refresh','deletions','incoming',
-                                        'ack-socket-add','ack-socket-remove','ack-first','edits','edit-ack'),default='compose')
+                                        'ack-socket-add','ack-socket-remove','ack-first','edits','edit-ack',
+                                        'reaction-actions','reaction-failures','reaction-tones','reaction-family','reaction-family-failures','reaction-selection','reaction-selection-failures','reaction-selection-custody','pill-additions','pill-additions-custody','channel-completion','channel-completion-custody','member-completion','member-completion-custody','group-completion','group-completion-custody','group-completion-restricted','file-completion','file-completion-custody','file-completion-off','file-navigation','file-navigation-custody','cold-files','cold-files-recovery','own-edit','own-edit-custody','own-edit-recovery','own-edit-storage','own-delete','own-delete-failure','own-delete-storage','own-delete-guards','own-delete-rate-limit')+RESTART_CASES,default='compose')
     args=parser.parse_args()
     for fixture in args.fixture or FIXTURES:
         captures=args.captures.resolve()/fixture
         require(not captures.exists(),'Use a fresh capture directory')
-        run_fixture(fixture,args.binary.resolve(),captures,args.case)
+        run_fixture(fixture,args.binary.resolve(),captures,args.case,restart_from=args.restart_from)
 
 if __name__=='__main__':
     main()

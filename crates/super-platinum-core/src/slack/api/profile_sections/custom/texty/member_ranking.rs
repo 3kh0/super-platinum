@@ -10,6 +10,8 @@ use crate::composer_emoji::ranking::SimilarityCache;
 use serde_json::{Value, json};
 pub use shared::{Context, Error, Ranked};
 use std::cmp::Ordering;
+mod list;
+pub use list::{ListContext, rank_list_members, rank_list_mixed, rank_list_mixed_files};
 
 fn missing(label: &str) -> Error {
     Error::MissingObservation(format!("Profile member {label}"))
@@ -144,11 +146,46 @@ pub fn rank_mixed_files(
     collate: impl Fn(&str, &str) -> Result<Ordering, Error>,
     demote_passthrough_observed: bool,
 ) -> Result<Vec<Ranked>, Error> {
+    rank_inner(
+        query,
+        matched,
+        groups,
+        files,
+        context,
+        cache,
+        comparison,
+        collate,
+        demote_passthrough_observed,
+        None,
+    )
+}
+
+fn rank_inner(
+    query: &str,
+    matched: &[local::Scored<'_>],
+    groups: &[GroupScored<'_>],
+    files: &[super::file_matching::FileScored<'_>],
+    context: &Context<'_>,
+    cache: &mut SimilarityCache,
+    comparison: impl Fn(&Value) -> Result<String, Error>,
+    collate: impl Fn(&str, &str) -> Result<Ordering, Error>,
+    demote_passthrough_observed: bool,
+    list: Option<&ListContext<'_>>,
+) -> Result<Vec<Ranked>, Error> {
     observed(context, matched)?;
+    let options = match list {
+        Some(list) => list.options(demote_passthrough_observed)?,
+        None => shared::Options {
+            limit: 25,
+            source: "texty-autocomplete".into(),
+            demote_passthrough: demote_passthrough_observed,
+            ..Default::default()
+        },
+    };
     let mut rows = Vec::with_capacity(matched.len());
     for m in matched {
         let name = comparison(m.item)?;
-        let item = directory_selectors::item(
+        let mut item = directory_selectors::item(
             m.item,
             directory_selectors::Names {
                 comparison: &name,
@@ -158,6 +195,9 @@ pub fn rank_mixed_files(
             },
         )
         .ok_or(Error::InvalidInput)?;
+        if let Some(list) = list {
+            list.apply_membership(&mut item, m.id)?;
+        }
         let mut row = json!({"id":m.id,"item":item,"score":m.score});
         if let Some(details) = &m.score_details {
             row["scoreDetails"] = json!(details);
@@ -187,12 +227,7 @@ pub fn rank_mixed_files(
     let result = shared::rank(
         query,
         &json!({"members":rows,"userGroups":group_rows,"files":file_rows}),
-        &shared::Options {
-            limit: 25,
-            source: "texty-autocomplete".into(),
-            demote_passthrough: demote_passthrough_observed,
-            ..Default::default()
-        },
+        &options,
         context,
         cache,
         |a, b| {

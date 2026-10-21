@@ -1,3 +1,4 @@
+import {dateButton, dateWitnessSource} from './workflow_activity_date_fixture.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
@@ -35,18 +36,19 @@ function scene(filters = {}) {
       dispatchEvent: () => {throw Error('guard dispatched event');},
     });
   }
-  const fields = Object.fromEntries(['status', 'from', 'to', 'limit', 'user']
+  const fields = Object.fromEntries(['status', 'limit', 'user']
     .map(name => [name, control(expected.filters[name])]));
   const input = control(expected.search); input.dataset.generation = String(expected.generation);
-  const form = eventTarget({dataset: {revision: String(expected.filters.revision)},
-    contains: node => node === input,
+  const date=dateButton(expected.filters);
+  const form = eventTarget({isConnected:true, dataset: {revision: String(expected.filters.revision)},
+    contains: node => node === input || node === date,
     querySelector: selector => fields[selector.replace('#workflow-activity-', '')] ?? null});
   const root = eventTarget({isConnected: true, dataset: {managementVisit: String(expected.visit), managementDocument: String(expected.document)},
     __workflowManagement: {composing: false}, contains: node => node === form});
-  const dom = {root, form, input, modal: null};
+  const dom = {root, form, input, date, modal: null};
   const document = eventTarget({body: {}, documentElement: {},
     getElementById: id => ({'workflow-management': dom.root, 'workflow-activity-filters': dom.form,
-      'workflow-activity-user-search': dom.input})[id] ?? null,
+      'workflow-activity-user-search': dom.input,'workflow-activity-date-range':dom.date})[id] ?? null,
     querySelector: selector => {assert.equal(selector, '[role="dialog"][aria-modal="true"]'); return dom.modal;},
   });
   class MutationObserver {
@@ -58,8 +60,8 @@ function scene(filters = {}) {
     setTimeout: (callback, delay) => {const id = ++timerId; timers.set(id, {callback, delay}); return id;},
     clearTimeout: id => timers.delete(id),
   });
-  vm.runInContext(source, realm, {filename: sourceUrl.pathname});
-  return {expected, fields, input, form, root, dom, observers, timers,
+  vm.runInContext(dateWitnessSource+"\n"+source, realm, {filename: sourceUrl.pathname});
+  return {expected, fields, input, form, root, date, dom, observers, timers,
     committed: () => realm.workflowMemberCommittedSnapshot(expected),
     committedSelection: id => realm.workflowMemberCommittedSnapshot({...expected, filters: {...expected.filters, user: id}}),
     mutate: () => observers.filter(observer => observer.active).forEach(observer => observer.callback([])),
@@ -127,14 +129,14 @@ test('disabled or badInput search refuses even when value matches', () => {
   s.input.disabled = false; s.input.validity.badInput = true; assert.equal(s.snapshot(), false);
 });
 test('every raw filter drift blocks search without restoring controlled values', () => {
-  for (const [name, value] of Object.entries({status: 'failed', from: '2026-01-01', to: '2026-02-01', limit: '25', user: 'U00000001'})) {
+  for (const [name, value] of Object.entries({status: 'failed', limit: '25', user: 'U00000001'})) {
     const s = scene(); s.fields[name].setNative(value); assert.equal(s.snapshot(), false, name);
     assert.equal(s.fields[name].value, value);
     s.expected.filters[name] = value; assert.equal(s.snapshot(), true, name);
   }
 });
 test('missing disabled or badInput filter refuses every raw field', () => {
-  for (const name of ['status', 'from', 'to', 'limit', 'user']) {
+  for (const name of ['status', 'limit', 'user']) {
     const s = scene(); s.fields[name].disabled = true; assert.equal(s.snapshot(), false, name);
     s.fields[name].disabled = false; s.fields[name].validity.badInput = true; assert.equal(s.snapshot(), false, name);
     delete s.fields[name]; assert.equal(s.snapshot(), false, name);
@@ -152,7 +154,7 @@ test('Anyone empty selection uses exact override without manufacturing a member'
   assert.equal(s.expected.filters.user, 'U00000001');
 });
 test('selection override does not hide other filter drift or changed search', () => {
-  for (const name of ['status', 'from', 'to', 'limit']) {
+  for (const name of ['status', 'limit']) {
     const s = scene(); s.fields.user.setNative('U00000001'); s.fields[name].setNative('changed');
     assert.equal(s.selection('U00000001'), false, name);
   }
@@ -224,7 +226,7 @@ await asyncTest('raw search drift cancels immediately rather than waiting for bu
   assert.equal(await pending, false);
 });
 await asyncTest('every raw filter drift cancels pending commit on change without rewriting values', async () => {
-  for (const field of ['status', 'from', 'to', 'limit', 'user']) {
+  for (const field of ['status', 'limit', 'user']) {
     const s = scene(); lagging(s); const pending = s.committed();
     s.fields[field].setNative('uncommitted'); s.event('change');
     assert.equal(await pending, false, field); clean(s);
@@ -273,10 +275,14 @@ await asyncTest('selection override remains user-only while waiting for rendered
   assert.equal(await pending, true); clean(s); assert.equal(s.expected.filters.user, 'U00000001');
   const drift = scene(); lagging(drift); drift.fields.user.setNative('U00000002');
   const refused = drift.committedSelection('U00000002');
-  drift.fields.from.setNative('2026-01-01'); drift.event('input');
+  (drift.date.dataset.from = '2026-01-01'); drift.event('input');
   assert.equal(await refused, false); clean(drift);
 });
 
+for(const flag of ['calendarOpen','calendarDirty','calendarPending'])test('calendar '+flag+' blocks member snapshot and selection',()=>{const s=scene();s.date.dataset[flag]='true';assert.equal(s.snapshot(),false);assert.equal(s.selection(''),false);});
+await asyncTest('member generation wait cannot adopt replacement date trigger',async()=>{const s=scene();lagging(s);const pending=s.committed();s.dom.date=dateButton(s.expected.filters);s.form.contains=n=>n===s.input||n===s.dom.date;s.input.dataset.generation=String(s.expected.generation);s.mutate();assert.equal(await pending,false);clean(s);});
+await asyncTest('calendar epoch change retires member generation wait even after rollback',async()=>{const s=scene();lagging(s);const pending=s.committed();s.date.dataset.calendarEpoch='2';s.input.dataset.generation=String(s.expected.generation);s.mutate();assert.equal(await pending,false);clean(s);});
+test('member snapshot rejects both committed endpoint attribute drifts',()=>{for(const name of ['from','to']){const s=scene();s.date.dataset[name]='2026-01-01';assert.equal(s.snapshot(),false);}});
 assert.equal(fs.readFileSync(sourceUrl, 'utf8'), source, 'installed guard changed during test');
 console.log(JSON.stringify({status: 'pass', groups: names.length,
   helperSha256: crypto.createHash('sha256').update(source).digest('hex'),

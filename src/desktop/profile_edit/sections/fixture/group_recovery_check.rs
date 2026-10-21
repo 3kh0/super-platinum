@@ -90,7 +90,12 @@ pub(crate) fn start(state: Signal<ShellState>, desktop: DesktopContext) {
         eprintln!("profile-group-recovery-check: {result}");
     });
 }
+mod automatic;
+mod known_freshness;
+mod mixed_absent;
+mod mixed_files;
 mod native;
+mod rate;
 mod scenario;
 use native::*;
 use scenario::run;

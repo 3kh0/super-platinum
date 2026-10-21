@@ -84,6 +84,9 @@ fn report(
     consumer: &impl Fn(&ShellState) -> bool,
     error: &Error,
 ) {
+    if attempt.quiet {
+        return;
+    }
     let mut shell = state.write();
     if attempt.current(&shell, consumer) {
         shell.report_failure(error, "", || "Group names could not be refreshed.".into());
@@ -100,6 +103,7 @@ async fn discovery(
     if !current(state, attempt, consumer) {
         return Err(unavailable());
     }
+    rate::check(owner, rate::Endpoint::Directory)?;
     if let Some(endpoint) = slot
         .as_ref()
         .filter(|e| e.current(&owner.session, Instant::now()))
@@ -145,10 +149,17 @@ async fn directory_pages(
     let mut markers = BTreeSet::new();
     loop {
         let result = async {
+            rate::check(owner, rate::Endpoint::Directory)?;
+            if attempt.quiet && current(state, attempt, consumer) {
+                // Admission to this source fetch chunk, including its endpoint
+                // discovery. Local rate refusal above earns no freshness stamp.
+                attempt.progress.admitted(read.ids());
+            }
             let endpoint = discovery(state, attempt, consumer, shared).await?;
             if !current(state, attempt, consumer) {
                 return Err(unavailable());
             }
+            rate::check(owner, rate::Endpoint::Directory)?;
             let request =
                 endpoint.usergroup_info(&owner.client, &owner.session, Instant::now(), &read)?;
             let response = if crate::fixture::is_fixture() {
@@ -164,6 +175,9 @@ async fn directory_pages(
                     .await
                     .map(|raw| raw.into_parts())
             };
+            if let Err(error) = &response {
+                rate::receive(&state.peek(), owner, rate::Endpoint::Directory, error);
+            }
             if !current(state, attempt, consumer) {
                 return Err(unavailable());
             }
@@ -223,6 +237,10 @@ async fn direct(
         if !current(state, attempt, consumer) {
             return Err(unavailable());
         }
+        rate::check(owner, rate::Endpoint::Direct)?;
+        if attempt.quiet {
+            attempt.progress.admitted(read.ids());
+        }
         let request: PreparedRequest = read.request(&owner.client, &owner.session)?;
         let response = if crate::fixture::is_fixture() {
             fixture::request(state, owner, &request, "direct").await
@@ -232,6 +250,9 @@ async fn direct(
                 .execute_usergroup_fallback_current(request, || current(state, attempt, consumer))
                 .await
         };
+        if let Err(error) = &response {
+            rate::receive(&state.peek(), owner, rate::Endpoint::Direct, error);
+        }
         if !current(state, attempt, consumer) {
             return Err(unavailable());
         }

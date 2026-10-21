@@ -38,6 +38,9 @@ fn inputs(
     Ok((ctx.client, ctx.session))
 }
 pub(crate) fn send(mut state: Signal<ShellState>, binding: draft::Binding) {
+    if own_edit::blocks_departure(&state.peek(), binding.owner.serial) {
+        return;
+    }
     if !draft::presentation(&state.peek())
         .is_some_and(|p| p.binding.scope() == binding.scope() && p.can_send)
     {

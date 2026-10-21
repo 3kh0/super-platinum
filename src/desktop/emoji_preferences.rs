@@ -13,6 +13,8 @@ use super_platinum_core::{
 };
 
 mod boundary;
+mod read_owner;
+use read_owner::ReadOwner;
 #[cfg(test)]
 mod tests;
 mod writer;
@@ -69,7 +71,7 @@ impl Owner {
     }
 }
 struct Read {
-    owner: Arc<Owner>,
+    owner: Arc<ReadOwner>,
     attempted: Instant,
     not_before: Option<Instant>,
     loading: bool,
@@ -124,8 +126,8 @@ pub(crate) struct State {
     writers: HashMap<String, Writer>,
 }
 impl State {
-    fn retire_read(&mut self, owner: &Arc<Owner>) {
-        let team = &owner.context.session.team_id;
+    fn retire_read(&mut self, owner: &Arc<ReadOwner>) {
+        let team = owner.team();
         if self
             .reads
             .get(team)
@@ -152,6 +154,21 @@ pub(crate) fn ensure(state: Signal<ShellState>) {
     }
     ensure_with(Native, state);
 }
+/// Passive readiness for the named offline cold-read acceptance checker.
+pub(crate) fn fixture_read_retry_ready(shell: &ShellState) -> bool {
+    if !crate::slack_lists::comments::fixture::reaction_additions::enabled(shell) {
+        return false;
+    }
+    let Some(team) = shell.core.active_team.as_ref() else {
+        return false;
+    };
+    shell.emoji_preferences.reads.get(team).is_none_or(|r| {
+        let now = Instant::now();
+        !r.loading
+            && now.saturating_duration_since(r.attempted) >= Duration::from_secs(30)
+            && r.not_before.is_none_or(|at| now >= at)
+    })
+}
 fn ensure_with<B: Boundary>(boundary: B, mut state: Signal<ShellState>) {
     let (owner, revision) = {
         let mut shell = state.write();
@@ -165,7 +182,9 @@ fn ensure_with<B: Boundary>(boundary: B, mut state: Signal<ShellState>) {
             return;
         }
         let revision = workspace.emoji_preferences.revision();
-        if boundary.is_fixture() {
+        if boundary.is_fixture()
+            && !crate::slack_lists::comments::fixture::reaction_additions::enabled(&shell)
+        {
             shell
                 .core
                 .workspaces
@@ -175,7 +194,7 @@ fn ensure_with<B: Boundary>(boundary: B, mut state: Signal<ShellState>) {
                 .replace(&Default::default());
             return;
         }
-        let Some(owner) = Owner::capture(&shell).map(Arc::new) else {
+        let Some(owner) = ReadOwner::capture(&shell).map(Arc::new) else {
             return;
         };
         let now = boundary.now();
@@ -205,23 +224,23 @@ fn ensure_with<B: Boundary>(boundary: B, mut state: Signal<ShellState>) {
                 && shell
                     .emoji_preferences
                     .reads
-                    .get(&owner.context.session.team_id)
+                    .get(owner.team())
                     .is_some_and(|read| Arc::ptr_eq(&read.owner, &owner))
         };
         if !admitted {
             state.write().emoji_preferences.retire_read(&owner);
             return;
         }
-        let request = api::preferences_request(&owner.context.client, &owner.context.session);
+        let request = owner.request();
         let result = boundary
-            .execute(owner.clone(), request)
+            .execute_read(owner.clone(), state, request)
             .await
             .and_then(|v| api::parse_preferences(&v));
         if !owner.current(&state.peek()) {
             state.write().emoji_preferences.retire_read(&owner);
             return;
         }
-        let team = &owner.context.session.team_id;
+        let team = owner.team();
         let mut shell = state.write();
         // Full credentials can return to earlier values. Only this exact read
         // slot may complete; an old A response cannot replace a newer A/B/A read.
@@ -262,11 +281,11 @@ fn ensure_with<B: Boundary>(boundary: B, mut state: Signal<ShellState>) {
                     shell.emoji_preferences.reads.remove(team);
                 }
                 drop(shell);
-                boundary.persist(state, team);
+                owner.persist(&boundary, state);
             }
             Err(error) => {
                 drop(shell);
-                boundary.failure(state, error, "Could not load emoji preferences");
+                owner.failure(&boundary, state, error);
             }
         }
     }));

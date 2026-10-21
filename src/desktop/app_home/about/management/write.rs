@@ -289,6 +289,9 @@ fn finish(s: &mut ShellState, id: u64, notice: &str) {
 #[cfg(test)]
 mod tests;
 pub(super) fn observe(s: &mut ShellState, visit: u64) {
+    if delete::owns(s, visit) || unpublish::owns(s, visit) || permissions::owns(s, visit) {
+        return;
+    }
     let Some(d) = document(s, visit) else {
         return;
     };
@@ -322,7 +325,13 @@ pub(super) fn observe(s: &mut ShellState, visit: u64) {
 }
 pub(super) fn use_current(mut state: Signal<ShellState>, visit: u64) {
     let mut s = state.write();
-    if !admitted(&s, visit)
+    if permissions::owns(&s, visit)
+        || permissions::confirming(&s, visit)
+        || unpublish::owns(&s, visit)
+        || unpublish::confirming(&s, visit)
+        || delete::owns(&s, visit)
+        || delete::confirming(&s, visit)
+        || !admitted(&s, visit)
         || s.app_home
             .about
             .management
@@ -379,6 +388,15 @@ pub(super) fn expected(s: &ShellState, id: u64) -> Option<(u64, u64, u64, String
     ))
 }
 pub(super) fn outcomes(s: &ShellState, visit: u64) -> Vec<String> {
+    if permissions::owns(s, visit) {
+        return permissions::outcomes(s, visit);
+    }
+    if unpublish::owns(s, visit) {
+        return unpublish::outcomes(s, visit);
+    }
+    if delete::owns(s, visit) {
+        return delete::outcomes(s, visit);
+    }
     let Some(id) = document(s, visit).and_then(|d| d.pending) else {
         return vec![];
     };

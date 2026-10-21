@@ -1,12 +1,14 @@
-//! Canonical, single-paragraph authoring. Never derives writes from HTML export.
+//! Canonical paragraph and H1–H3 text authoring. Never derives writes from HTML export.
 //!
 //! RTML is the stored text representation; Automerge stores its escaped text and
 //! UTF-16 marks separately. Unsupported target markup must not be flattened.
 use super::{CanonicalTitle, CanvasCollabSnapshot, EditSession, Error, F, RawMessage, Section};
 use std::sync::Arc;
 
+mod content_attributes;
 pub(super) mod crdt;
 mod draft;
+pub(super) use content_attributes::heading_content_attributes;
 mod prepared;
 pub(super) mod retained;
 mod rich;
@@ -30,7 +32,7 @@ impl TextIntent {
             .ok_or(Error::Unsupported)?
     }
 
-    /// One permission/title pass and one ID index for the visible paragraphs.
+    /// One permission/title pass and one ID index for the visible text sections.
     pub fn capture_batch(
         snapshot: &CanvasCollabSnapshot,
         ids: &[&str],
@@ -66,6 +68,11 @@ impl TextIntent {
     }
     pub fn target_section(&self) -> &str {
         self.section.id()
+    }
+    /// Captured canonical heading level; `None` denotes an ordinary paragraph.
+    /// Text editing cannot change this level.
+    pub fn heading_level(&self) -> Option<u8> {
+        heading_level(&self.section)
     }
 
     pub fn prepare(
@@ -105,19 +112,25 @@ impl TextIntent {
             now,
         )?;
         let content = content(section, &desired)?;
-        // Captured top-level text write: CONTENT dirty, empty ancestors; no
-        // attributes, style or activity-stack field is added to the projection.
-        let update = RawMessage::from_fields(&[
+        // CONTENT dirty, empty ancestors. Only the retained heading content_id
+        // exception resends captured attributes; style/position remain absent.
+        let mut fields = vec![
             F::bytes(1, section.id().as_bytes())?,
             F::uint(2, section.sequence()?.ok_or(Error::Unsupported)?)?,
             F::uint(9, 0)?,
             F::message(12, &content)?,
             F::message(13, &RawMessage::decode(&[])?)?,
+        ];
+        if let Some(attributes) = heading_content_attributes(section)? {
+            fields.push(F::message(16, &attributes)?);
+        }
+        fields.extend([
             F::uint(19, 1)?,
             F::uint(20, local)?,
             F::bytes(33, format!("{}-{previous}", plan.session).as_bytes())?,
             F::message(38, &wire)?,
-        ])?;
+        ]);
+        let update = RawMessage::from_fields(&fields)?;
         let data = RawMessage::from_fields(&[
             F::message(1, &update)?,
             F::message(14, self.title.rich_text())?,
@@ -140,7 +153,7 @@ impl TextIntent {
 
 fn eligible(snapshot: &CanvasCollabSnapshot, section: &Section, now: u64) -> Result<(), Error> {
     if section.section_type()?.unwrap_or(0) != 0
-        || section.style()?.unwrap_or(0) != 0
+        || section.style()?.unwrap_or(0) > 3
         || section.deleted()? == Some(true)
         || section.read_only()? == Some(true)
         || section.document_id()? != Some(snapshot.document_id())
@@ -154,11 +167,20 @@ fn eligible(snapshot: &CanvasCollabSnapshot, section: &Section, now: u64) -> Res
     {
         return Err(Error::Unsupported);
     }
+    // Validate the conditional heading resend shape before capturing authority.
+    heading_content_attributes(section)?;
     let draft = canonical_draft(section)?;
     if let Some(wire) = section.crdt()? {
         crdt::validate(&wire, section, &draft, Some(now))?;
     }
     Ok(())
+}
+
+fn heading_level(section: &Section) -> Option<u8> {
+    match section.style().ok().flatten() {
+        Some(level @ 1..=3) => Some(level as u8),
+        _ => None,
+    }
 }
 
 pub(super) fn canonical_draft(section: &Section) -> Result<TextDraft, Error> {

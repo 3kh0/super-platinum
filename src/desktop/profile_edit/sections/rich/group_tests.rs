@@ -84,7 +84,8 @@ fn group_labels_use_actual_source_normalization_and_exact_empty_token_key() {
     ] {
         let (mut shell, visit, serial) = prepared(raw);
         let (opening, hits) = opening::tracked(&mut shell, visit, serial, "long", 1);
-        assert!(hits.is_empty());
+        assert_eq!(hits.len(), 1, "duplicate tokens coalesce one selector hit");
+        assert!(matches!(&hits[0], opening::Hit::Group { id, .. } if id == GROUP));
         assert!(finish(&mut shell, opening.unwrap()));
         let labels: Value =
             serde_json::from_str(&labels(&shell, visit, serial, "long", 1).unwrap()).unwrap();

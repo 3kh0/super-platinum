@@ -336,3 +336,42 @@ fn source_history_without_actual_assignment_observation_cannot_capture_read_or_s
     assert!(Read::capture(&shell, TEAM, GENERATION).is_err());
     assert!(snapshot(&shell, TEAM, GENERATION).is_err());
 }
+
+#[test]
+fn caller_interactions_are_retained_without_search_default_or_partial_publication() {
+    let mut shell = shell();
+    let witness = witness(&shell);
+    let incoming = vec![row(FIRST, "Allowed", 101), row(SECOND, "Restricted", 101)];
+    let original = json!({FIRST:true,SECOND:false});
+    let mut stage = Stage::capture_rows(&shell, &witness, &incoming, &original).unwrap();
+    drain(&mut stage, &witness);
+    assert!(shell.core.workspaces[TEAM].users.is_empty());
+    let ready = stage.install(&mut shell, &witness, &|_| true).unwrap();
+    assert_eq!(ready.rows()[0].interaction, Some(true));
+    assert_eq!(ready.rows()[1].interaction, Some(false));
+    assert_eq!(ready.rows()[1].source["opaque"], incoming[1]["opaque"]);
+    assert_eq!(
+        ready.rows()[1].source["profile"]["display_name"],
+        "Restricted"
+    );
+    assert_eq!(original, json!({FIRST:true,SECOND:false}));
+}
+#[test]
+fn caller_map_validation_and_retired_read_refuse_without_changing_source() {
+    let mut shell = shell();
+    let witness = witness(&shell);
+    let incoming = vec![row(FIRST, "Original", 101)];
+    let before = shell.core.workspaces[TEAM].directory_members.cached();
+    assert!(Stage::capture_rows(&shell, &witness, &incoming, &json!({FIRST:"true"})).is_err());
+    let mut stage =
+        Stage::capture_rows(&shell, &witness, &incoming, &json!({FIRST:false})).unwrap();
+    drain(&mut stage, &witness);
+    assert!(stage.install(&mut shell, &witness, &|_| false).is_err());
+    assert_eq!(
+        shell.core.workspaces[TEAM].directory_members.cached(),
+        before
+    );
+    assert!(shell.core.workspaces[TEAM].users.is_empty());
+    shell.core.account_epoch += 1;
+    assert!(Stage::capture_rows(&shell, &witness, &incoming, &json!({FIRST:false})).is_err());
+}

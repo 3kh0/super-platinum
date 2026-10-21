@@ -53,6 +53,9 @@ impl PreparedTextEdit {
     pub fn desired(&self) -> &TextDraft {
         &self.desired
     }
+    pub fn heading_level(&self) -> Option<u8> {
+        heading_level(&self.canonical)
+    }
     pub(crate) fn validate_snapshot(
         &self,
         fresh: &CanvasCollabSnapshot,
@@ -143,9 +146,17 @@ impl PreparedTextEdit {
         if section.raw().message(12)? != Some(expected) {
             return Err(Error::Unconfirmed);
         }
+        let baseline = self.canonical.merge_partial(section)?;
+        // CONTENT projection omits heading style and structural siblings. Check
+        // the merged canonical row, not defaults inferred from a partial ACK.
+        if self.heading_level().is_some()
+            && heading_stable(&self.canonical)? != heading_stable(&baseline)?
+        {
+            return Err(Error::Unconfirmed);
+        }
         Ok(AcceptedText {
             key: self.key.clone(),
-            baseline: self.canonical.merge_partial(section)?,
+            baseline,
             section: section.clone(),
             desired: self.desired.clone(),
             session: self.session.clone(),
@@ -175,6 +186,9 @@ impl AcceptedText {
     pub fn sequence(&self) -> u64 {
         self.sequence
     }
+    pub fn heading_level(&self) -> Option<u8> {
+        heading_level(&self.baseline)
+    }
     pub fn confirms_readback(&self, snapshot: &CanvasCollabSnapshot) -> Result<bool, Error> {
         let Some(section) = snapshot.section(&self.key.section) else {
             return Ok(false);
@@ -184,6 +198,13 @@ impl AcceptedText {
             || section
                 .sequence()?
                 .is_none_or(|seq| seq < self.section.sequence().ok().flatten().unwrap_or(u64::MAX))
+        {
+            return Ok(false);
+        }
+        // Even a later revision cannot confirm this text-only operation across
+        // a heading conversion or structural change. Paragraph policy is intact.
+        if self.heading_level().is_some()
+            && heading_stable(&self.baseline)? != heading_stable(section)?
         {
             return Ok(false);
         }
@@ -215,7 +236,7 @@ impl AcceptedText {
         // No current-server omission or later-revision normalization is claimed
         // for this new cohort. All existing positive-base policy stays unchanged.
         if section.sequence()? != self.section.sequence()?
-            || retained::association(section)? != retained::association(&self.baseline)?
+            || readback_association(section)? != readback_association(&self.baseline)?
         {
             return Ok(false);
         }
@@ -244,6 +265,16 @@ impl AcceptedText {
     }
 }
 
+// Preserve exact stable sibling bytes, including ContentText.language, while
+// permitting text and the already-reviewed write/receipt bookkeeping to change.
+fn heading_stable(section: &Section) -> Result<RawMessage, Error> {
+    canonical_draft(section)?;
+    let content = section.raw().message(12)?.ok_or(Error::Unconfirmed)?;
+    let text = content.message(1)?.ok_or(Error::Unconfirmed)?.remove(1)?;
+    let content = content.replace_fields(1, &[F::message(1, &text)?])?;
+    Ok(zero_stable(section)?.replace_fields(12, &[F::message(12, &content)?])?)
+}
+
 // Only reviewed write/receipt fields may differ in a base0 text ACK. Reorder
 // independent identity tags only; preserve all other relative raw-field bytes.
 fn zero_stable(section: &Section) -> Result<RawMessage, Error> {
@@ -255,8 +286,13 @@ fn zero_stable(section: &Section) -> Result<RawMessage, Error> {
         raw = raw.remove(tag)?;
     }
     let mut fields = raw.fields().iter().collect::<Vec<_>>();
+    // Mechanical partial merge appends present fields. Equal heading attrs
+    // may therefore move around untouched opaque siblings. Normalize only the
+    // independent outer tag16 position; nested bytes/order stay exact.
+    let heading = heading_level(section).is_some();
     fields.sort_by_key(|field| match field.tag() {
         1 | 6 | 7 => field.tag(),
+        16 if heading => 16,
         _ => 0,
     });
     let mut bytes = Vec::new();
@@ -274,4 +310,20 @@ fn processed_contains(wire: &RawMessage, head: &str) -> Result<bool, Error> {
         }
     }
     Ok(false)
+}
+
+// Keep the base0 exact-sequence/body/history association, allowing only the
+// outer attribute relocation caused by merging omitted versus explicit attrs.
+fn readback_association(section: &Section) -> Result<RawMessage, Error> {
+    let raw = retained::association(section)?;
+    if heading_level(section).is_none() {
+        return Ok(raw);
+    }
+    let mut fields = raw.fields().iter().collect::<Vec<_>>();
+    fields.sort_by_key(|field| field.tag() == 16);
+    let mut bytes = Vec::new();
+    for field in fields {
+        bytes.extend_from_slice(raw.encoded_field(field)?);
+    }
+    Ok(RawMessage::decode(&bytes)?)
 }

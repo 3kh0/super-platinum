@@ -51,9 +51,13 @@ impl Mode {
         match self {
             Self::Current => Snapshot::Current(current::capture(source)),
             Self::Packed => Snapshot::Packed(
-                packed::Packed::capture(
-                    source.values().map(|e| (e.name.as_str(), e.value.as_str())),
-                )
+                packed::Packed::capture_with_flags(source.values().map(|e| {
+                    (
+                        e.name.as_str(),
+                        e.value.as_str(),
+                        CustomRecord::nonexistent(e),
+                    )
+                }))
                 .expect("fallible pack failed; no ticket exists"),
             ),
         }
@@ -99,9 +103,14 @@ fn pipeline(source: &HashMap<String, Emoji>, mode: Mode) -> (Arc<Built>, Value) 
 }
 fn check(source: &HashMap<String, Emoji>) {
     let baseline = current::capture(source);
-    let packed =
-        packed::Packed::capture(source.values().map(|e| (e.name.as_str(), e.value.as_str())))
-            .unwrap();
+    let packed = packed::Packed::capture_with_flags(source.values().map(|e| {
+        (
+            e.name.as_str(),
+            e.value.as_str(),
+            CustomRecord::nonexistent(e),
+        )
+    }))
+    .unwrap();
     let decoded = packed.decode().unwrap();
     assert_eq!(baseline, decoded);
     let (a, pa) = build::build(baseline).unwrap();
@@ -218,6 +227,7 @@ mod experiment_tests {
                 .map(|(n, v)| CustomRecord {
                     name: (*n).into(),
                     value: (*v).into(),
+                    is_nonexistent: false,
                 })
                 .collect();
             let p = packed::Packed::capture(entries.into_iter()).unwrap();

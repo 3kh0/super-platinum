@@ -9,6 +9,7 @@ const MAX_RUNS: usize = 4096;
 pub struct TextStyle {
     pub bold: bool,
     pub italic: bool,
+    pub underline: bool,
     pub strike: bool,
     pub code: bool,
     pub link: Option<String>,
@@ -75,6 +76,7 @@ impl TextDraft {
                         let flag = match name {
                             "b" => Some(&mut style.bold),
                             "i" => Some(&mut style.italic),
+                            "u" => Some(&mut style.underline),
                             "del" => Some(&mut style.strike),
                             "code" => Some(&mut style.code),
                             "br" => None,
@@ -160,6 +162,7 @@ impl TextDraft {
             for (enabled, tag) in [
                 (run.style.bold, "b"),
                 (run.style.italic, "i"),
+                (run.style.underline, "u"),
                 (run.style.strike, "del"),
                 (run.style.code, "code"),
             ] {
@@ -197,6 +200,7 @@ impl TextDraft {
             for (enabled, name) in [
                 (run.style.bold, "b"),
                 (run.style.italic, "i"),
+                (run.style.underline, "u"),
                 (run.style.strike, "del"),
                 (run.style.code, "code"),
             ] {

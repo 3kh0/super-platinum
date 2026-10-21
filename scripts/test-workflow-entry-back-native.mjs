@@ -1,3 +1,4 @@
+import {dateButton, dateWitnessSource} from './workflow_activity_date_fixture.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
@@ -22,7 +23,7 @@ function scene(){
   const realm=vm.createContext({document:{getElementById:id=>ids.get(id),querySelector:()=>dom.modal},
     requestAnimationFrame:fn=>{const id=++serial;frames.set(id,fn);return id;},cancelAnimationFrame:id=>frames.delete(id),
     setTimeout:fn=>{const id=++serial;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id)});
-  vm.runInContext(source,realm,{filename:url.pathname});
+  vm.runInContext(dateWitnessSource+"\n"+source,realm,{filename:url.pathname});
   const sent=[],promise=new Promise(r=>release=r);
   const s={root,notice,expected,fields,dom,ids,node,sent,start(){task=realm.workflowEntryBack(expected,{send:v=>sent.push(v),recv:()=>promise});return task;},
     frame(){const list=[...frames.values()];frames.clear();list.forEach(fn=>fn());},
@@ -67,4 +68,9 @@ await test('management mount close releases original lease after a render opport
   s.root.__workflowManagement.lease.close();await flush();assert.equal(s.root.inert,true);
   s.frame();await s.finish();assert.equal(s.root.inert,false);assert.equal(s.root.__workflowManagement.lease,null);
 });
+function activityScene(){const s=scene();const filters={revision:'9',status:'',from:'',to:'',limit:'100',user:''};s.expected.activity={filters};const form=s.node('workflow-activity-filters');form.dataset={revision:'9'};form.contains=n=>n.parent===form;const date=dateButton(filters,s.node('workflow-activity-date-range'));date.parent=form;s.date=date;s.form=form;return s;}
+await test('Activity Back retains real date button while disabled without shadow fields',async()=>{const s=activityScene();s.date.disabled=true;s.start();s.frame();await flush();assert.deepEqual(s.sent,[true]);await s.finish();assert.equal(s.ids.has('workflow-activity-from'),false);});
+for(const flag of ['calendarOpen','calendarDirty','calendarPending'])await test('Activity Back refuses calendar '+flag,async()=>{const s=activityScene();s.date.dataset[flag]='true';s.start();s.frame();await flush();assert.deepEqual(s.sent,[false]);await s.finish();});
+await test('Activity Back refuses a date form moved outside original owner',async()=>{const s=activityScene();s.form.parent=null;s.start();s.frame();await flush();assert.deepEqual(s.sent,[false]);await s.finish();});
+for(const kind of ['replacement','epoch','from','to'])await test('Activity Back retains original calendar '+kind,async()=>{const s=activityScene();s.start();if(kind==='replacement')dateButton(s.expected.activity.filters,s.node(s.date.id)).parent=s.form;else if(kind==='epoch')s.date.dataset.calendarEpoch='2';else s.date.dataset[kind]='2026-01-01';s.frame();await flush();assert.deepEqual(s.sent,[false]);await s.finish();});
 console.log(JSON.stringify({passed:names.length,failed:0,source:url.pathname,sha256:crypto.createHash('sha256').update(source).digest('hex'),tests:names}));

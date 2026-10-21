@@ -14,8 +14,9 @@ fn expected(s: &ShellState, visit: u64) -> Option<Value> {
         .filter(|h| h.id == visit)?;
     let d = document(s, visit);
     let mut fields = serde_json::Map::new();
-    if let Some(a) = activity::navigation_fields(s, visit) {
-        for key in ["status", "from", "to", "limit", "user"] {
+    let activity = activity::navigation_fields(s, visit);
+    if let Some(a) = &activity {
+        for key in ["status", "limit", "user"] {
             fields.insert(
                 format!("workflow-activity-{key}"),
                 a["filters"][key].clone(),
@@ -30,7 +31,7 @@ fn expected(s: &ShellState, visit: u64) -> Option<Value> {
         );
     }
     Some(
-        json!({"visit":h.id,"document":d.map_or(0,|d|d.id),"revision":d.map_or(0,|d|d.revision),"fields":fields}),
+        json!({"visit":h.id,"document":d.map_or(0,|d|d.id),"revision":d.map_or(0,|d|d.revision),"fields":fields,"activity":activity}),
     )
 }
 pub(in crate::app_home::about::management) fn leave(mut state: Signal<ShellState>, visit: u64) {
@@ -38,7 +39,11 @@ pub(in crate::app_home::about::management) fn leave(mut state: Signal<ShellState
         return;
     };
     dioxus::core::spawn_forever(async move {
-        let script = include_str!("back.js");
+        let script = concat!(
+            include_str!("../activity/date_witness.js"),
+            "\n",
+            include_str!("back.js")
+        );
         let mut eval = dioxus::document::eval(&format!(
             "{script}\nawait workflowEntryBack({captured},dioxus);"
         ));

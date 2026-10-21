@@ -245,8 +245,16 @@ def body_probe(row,ts,text,bold,italic,wave,full=True):
     if full:rectangle(body.get('rect'),g['viewport'])
     pills=body.get('pills',[])
     require([p.get('name') for p in pills]==(['wave'] if wave else []),'Wrong native reaction pills')
+    # These pre-existing closed edit cases do not admit reaction dispatch.
+    # Production still renders the List-specific button, explicitly disabled.
+    disabled=True
+    require(row['proof'].get('reactionAvailable') is False,'Closed edit fixture admitted a reaction')
     for p in pills:
-        require(p.get('visible') is True and p.get('tag')=='SPAN','Reaction pill clipped or became interactive')
+        require(p.get('visible') is True and p.get('hit') is True and p.get('tag')=='BUTTON'
+                and p.get('type')=='button' and p.get('disabled') is disabled
+                and p.get('ariaDisabled')==str(disabled).lower() and p.get('pressed')=='false'
+                and p.get('own') is False and type(p.get('count')) is int and p['count']==wave,
+                'Reaction pill visibility or List action admission changed')
         rectangle(p.get('rect'),g['viewport'])
 
 

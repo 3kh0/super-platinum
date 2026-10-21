@@ -187,6 +187,22 @@ struct MediaSource {
 }
 
 impl MediaRegistry {
+    /// Read-only fixture audit: count sources without registering or loading them.
+    pub(crate) fn registered_source_count(&self, url: &str) -> usize {
+        self.sources
+            .read()
+            .expect("media sources lock")
+            .values()
+            .filter(|source| {
+                source.url == url
+                    || source
+                        .original
+                        .as_ref()
+                        .is_some_and(|(original, _)| original == url)
+            })
+            .count()
+    }
+
     /// The registry the app runs on: remembers avatars and emoji across restarts.
     pub fn with_persistence() -> Self {
         let store = match MediaStore::open_default() {
@@ -923,10 +939,21 @@ pub fn desktop_config(media: MediaRegistry) -> Config {
                 | "canvas-narrow"
                 | "canvas-checklist-narrow"
                 | "canvas-comments-narrow"
+                | "canvas-special-roots-narrow"
+                | "canvas-file-fallback-narrow"
+                | "canvas-canonical-file-roots-narrow"
+                | "canvas-canonical-file-custody-narrow"
+                | "canvas-canonical-native-canvas-narrow"
+                | "canvas-canonical-native-list-narrow"
+                | "canvas-root-attribution-narrow"
+                | "canvas-editor-recovery-narrow"
                 | "canvas-comment-resolve-narrow"
                 | "canvas-comment-reply-narrow"
                 | "canvas-comment-rich-reply-narrow"
                 | "canvas-comment-inline-narrow"
+                | "canvas-comment-underline-narrow"
+                | "canvas-comment-headings-narrow"
+                | "canvas-comment-headings-content-id-narrow"
                 | "canvas-comment-existing-inline-narrow"
                 | "canvas-comment-archived-inline-narrow"
                 | "canvas-comment-hidden-inline-narrow"
@@ -941,6 +968,9 @@ pub fn desktop_config(media: MediaRegistry) -> Config {
                 | "canvas-comment-callout-narrow"
                 | "canvas-comment-annotation-narrow"
                 | "canvas-text-narrow"
+                | "canvas-heading-narrow"
+                | "canvas-heading-content-id-narrow"
+                | "canvas-underline-narrow"
                 | "canvas-structure-narrow"
                 | "canvas-structure-mixed-narrow"
                 | "canvas-replacement-narrow"

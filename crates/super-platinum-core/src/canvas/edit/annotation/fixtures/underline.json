@@ -1,0 +1,502 @@
+{
+  "provenance": {
+    "path": "tmp/canvas-underline-annotations-20261019/oracle-results.json",
+    "sha256": "8acee34ecc9c6c49b0483203aeb1676244ff863e1c8fa84534ae7d5406d79e33",
+    "boundary": "Actual retained functions with detached synthetic DOM/event hosts and synthetic annotation IDs, not stock DOM or control/server creation."
+  },
+  "vectors": [
+    {
+      "kind": "externalSnippet",
+      "style": 0,
+      "canonical": "<u>\u4e2d\ud83e\udd8a&amp;</u>|<b><u>B</u></b>|<i><u>I</u></i>|<del><u>S</u></del>|<code><u>C</u></code>|<a href=\"https://example.test/?x=1&amp;y=2\"><u>L</u></a><br>end",
+      "html": "<u>\u4e2d\ud83e\udd8a&amp;</u>|<b><u>B</u></b>|<i><u>I</u></i>|<del><u>S</u></del>|<code><u>C</u></code>|<a href=\"https://example.test/?x=1&amp;y=2\"><u>L</u></a><br>end<br>",
+      "rich": {
+        "type": "rich_text_section",
+        "elements": [
+          {
+            "type": "text",
+            "text": "\u4e2d\ud83e\udd8a&",
+            "style": {
+              "underline": true
+            }
+          },
+          {
+            "type": "text",
+            "text": "|"
+          },
+          {
+            "type": "text",
+            "text": "B",
+            "style": {
+              "bold": true,
+              "underline": true
+            }
+          },
+          {
+            "type": "text",
+            "text": "|"
+          },
+          {
+            "type": "text",
+            "text": "I",
+            "style": {
+              "italic": true,
+              "underline": true
+            }
+          },
+          {
+            "type": "text",
+            "text": "|"
+          },
+          {
+            "type": "text",
+            "text": "S",
+            "style": {
+              "strike": true,
+              "underline": true
+            }
+          },
+          {
+            "type": "text",
+            "text": "|"
+          },
+          {
+            "type": "text",
+            "text": "C",
+            "style": {
+              "code": true,
+              "underline": true
+            }
+          },
+          {
+            "type": "text",
+            "text": "|"
+          },
+          {
+            "type": "link",
+            "text": "L",
+            "url": "https://example.test/?x=1&y=2",
+            "style": {
+              "underline": true
+            }
+          },
+          {
+            "type": "text",
+            "text": "\n"
+          },
+          {
+            "type": "text",
+            "text": "end"
+          },
+          {
+            "type": "text",
+            "text": "\n"
+          }
+        ]
+      },
+      "markdown": "\u4e2d\ud83e\udd8a&|*B*|_I_|~S~|`C`|<https://example.test/?x=1&y=2|L>\nend\n"
+    },
+    {
+      "kind": "externalSnippet",
+      "style": 1,
+      "canonical": "<u>\u4e2d\ud83e\udd8a&amp;</u>|<b><u>B</u></b>|<i><u>I</u></i>|<del><u>S</u></del>|<code><u>C</u></code>|<a href=\"https://example.test/?x=1&amp;y=2\"><u>L</u></a><br>end",
+      "html": "<h1><u>\u4e2d\ud83e\udd8a&amp;</u>|<b><u>B</u></b>|<i><u>I</u></i>|<del><u>S</u></del>|<code><u>C</u></code>|<a href=\"https://example.test/?x=1&amp;y=2\"><u>L</u></a><br>end</h1>",
+      "rich": {
+        "type": "rich_text_section",
+        "elements": [
+          {
+            "type": "text",
+            "text": "\u4e2d\ud83e\udd8a&",
+            "style": {
+              "underline": true
+            }
+          },
+          {
+            "type": "text",
+            "text": "|"
+          },
+          {
+            "type": "text",
+            "text": "B",
+            "style": {
+              "bold": true,
+              "underline": true
+            }
+          },
+          {
+            "type": "text",
+            "text": "|"
+          },
+          {
+            "type": "text",
+            "text": "I",
+            "style": {
+              "italic": true,
+              "underline": true
+            }
+          },
+          {
+            "type": "text",
+            "text": "|"
+          },
+          {
+            "type": "text",
+            "text": "S",
+            "style": {
+              "strike": true,
+              "underline": true
+            }
+          },
+          {
+            "type": "text",
+            "text": "|"
+          },
+          {
+            "type": "text",
+            "text": "C",
+            "style": {
+              "code": true,
+              "underline": true
+            }
+          },
+          {
+            "type": "text",
+            "text": "|"
+          },
+          {
+            "type": "link",
+            "text": "L",
+            "url": "https://example.test/?x=1&y=2",
+            "style": {
+              "underline": true
+            }
+          },
+          {
+            "type": "text",
+            "text": "\n"
+          },
+          {
+            "type": "text",
+            "text": "end"
+          }
+        ]
+      },
+      "markdown": "*\u4e2d\ud83e\udd8a&|*B*|_I_|~S~|`C`|<https://example.test/?x=1&y=2|L>\nend*\n\n"
+    },
+    {
+      "kind": "externalSnippet",
+      "style": 2,
+      "canonical": "<u>\u4e2d\ud83e\udd8a&amp;</u>|<b><u>B</u></b>|<i><u>I</u></i>|<del><u>S</u></del>|<code><u>C</u></code>|<a href=\"https://example.test/?x=1&amp;y=2\"><u>L</u></a><br>end",
+      "html": "<h2><u>\u4e2d\ud83e\udd8a&amp;</u>|<b><u>B</u></b>|<i><u>I</u></i>|<del><u>S</u></del>|<code><u>C</u></code>|<a href=\"https://example.test/?x=1&amp;y=2\"><u>L</u></a><br>end</h2>",
+      "rich": {
+        "type": "rich_text_section",
+        "elements": [
+          {
+            "type": "text",
+            "text": "\u4e2d\ud83e\udd8a&",
+            "style": {
+              "underline": true
+            }
+          },
+          {
+            "type": "text",
+            "text": "|"
+          },
+          {
+            "type": "text",
+            "text": "B",
+            "style": {
+              "bold": true,
+              "underline": true
+            }
+          },
+          {
+            "type": "text",
+            "text": "|"
+          },
+          {
+            "type": "text",
+            "text": "I",
+            "style": {
+              "italic": true,
+              "underline": true
+            }
+          },
+          {
+            "type": "text",
+            "text": "|"
+          },
+          {
+            "type": "text",
+            "text": "S",
+            "style": {
+              "strike": true,
+              "underline": true
+            }
+          },
+          {
+            "type": "text",
+            "text": "|"
+          },
+          {
+            "type": "text",
+            "text": "C",
+            "style": {
+              "code": true,
+              "underline": true
+            }
+          },
+          {
+            "type": "text",
+            "text": "|"
+          },
+          {
+            "type": "link",
+            "text": "L",
+            "url": "https://example.test/?x=1&y=2",
+            "style": {
+              "underline": true
+            }
+          },
+          {
+            "type": "text",
+            "text": "\n"
+          },
+          {
+            "type": "text",
+            "text": "end"
+          }
+        ]
+      },
+      "markdown": "*\u4e2d\ud83e\udd8a&|*B*|_I_|~S~|`C`|<https://example.test/?x=1&y=2|L>\nend*\n\n"
+    },
+    {
+      "kind": "externalSnippet",
+      "style": 3,
+      "canonical": "<u>\u4e2d\ud83e\udd8a&amp;</u>|<b><u>B</u></b>|<i><u>I</u></i>|<del><u>S</u></del>|<code><u>C</u></code>|<a href=\"https://example.test/?x=1&amp;y=2\"><u>L</u></a><br>end",
+      "html": "<h3><u>\u4e2d\ud83e\udd8a&amp;</u>|<b><u>B</u></b>|<i><u>I</u></i>|<del><u>S</u></del>|<code><u>C</u></code>|<a href=\"https://example.test/?x=1&amp;y=2\"><u>L</u></a><br>end</h3>",
+      "rich": {
+        "type": "rich_text_section",
+        "elements": [
+          {
+            "type": "text",
+            "text": "\u4e2d\ud83e\udd8a&",
+            "style": {
+              "underline": true
+            }
+          },
+          {
+            "type": "text",
+            "text": "|"
+          },
+          {
+            "type": "text",
+            "text": "B",
+            "style": {
+              "bold": true,
+              "underline": true
+            }
+          },
+          {
+            "type": "text",
+            "text": "|"
+          },
+          {
+            "type": "text",
+            "text": "I",
+            "style": {
+              "italic": true,
+              "underline": true
+            }
+          },
+          {
+            "type": "text",
+            "text": "|"
+          },
+          {
+            "type": "text",
+            "text": "S",
+            "style": {
+              "strike": true,
+              "underline": true
+            }
+          },
+          {
+            "type": "text",
+            "text": "|"
+          },
+          {
+            "type": "text",
+            "text": "C",
+            "style": {
+              "code": true,
+              "underline": true
+            }
+          },
+          {
+            "type": "text",
+            "text": "|"
+          },
+          {
+            "type": "link",
+            "text": "L",
+            "url": "https://example.test/?x=1&y=2",
+            "style": {
+              "underline": true
+            }
+          },
+          {
+            "type": "text",
+            "text": "\n"
+          },
+          {
+            "type": "text",
+            "text": "end"
+          }
+        ]
+      },
+      "markdown": "*\u4e2d\ud83e\udd8a&|*B*|_I_|~S~|`C`|<https://example.test/?x=1&y=2|L>\nend*\n\n"
+    },
+    {
+      "kind": "inlineSnippet",
+      "contextHtml": "<u><b>\u4e2d\ud83e\udd8a&amp;</b></u>",
+      "slackUserIds": [],
+      "snippetInnerHtml": "<annotation id=\"old\"><u><b>\u4e2d\ud83e\udd8a&amp;</b></u></annotation>"
+    },
+    {
+      "kind": "annotationMarks",
+      "seed": "<u>A<annotation id=\"temp:C:ABC0123456789abcdef012345678\">&amp;\ud83d\ude42</annotation><br>\u4e2d</u>",
+      "added": "<u>A<annotation id=\"temp:C:ABC0123456789abcdef012345678\">&amp;\ud83d\ude42</annotation><br><annotation id=\"temp:C:DEF0123456789abcdef012345678\">\u4e2d</annotation></u>",
+      "canonicalAnnotated": "<u>A<annotation id=\"temp:C:ABC0123456789abcdef012345678\">&amp;\ud83d\ude42</annotation><br><annotation id=\"temp:C:DEF0123456789abcdef012345678\">\u4e2d</annotation></u>",
+      "escapedText": "A&amp;\ud83d\ude42<br>\u4e2d",
+      "marks": [
+        {
+          "name": "u",
+          "value": true,
+          "start": 0,
+          "end": 13
+        },
+        {
+          "name": "annotation",
+          "value": "temp:C:ABC0123456789abcdef012345678",
+          "start": 1,
+          "end": 8
+        },
+        {
+          "name": "annotation",
+          "value": "temp:C:DEF0123456789abcdef012345678",
+          "start": 12,
+          "end": 13
+        }
+      ],
+      "afterUnderlineRemoval": "A<annotation id=\"temp:C:ABC0123456789abcdef012345678\">&amp;\ud83d\ude42</annotation><br><annotation id=\"temp:C:DEF0123456789abcdef012345678\">\u4e2d</annotation>",
+      "falseMarks": [
+        {
+          "name": "u",
+          "value": false,
+          "start": 0,
+          "end": 13
+        },
+        {
+          "name": "annotation",
+          "value": "temp:C:ABC0123456789abcdef012345678",
+          "start": 1,
+          "end": 8
+        },
+        {
+          "name": "annotation",
+          "value": "temp:C:DEF0123456789abcdef012345678",
+          "start": 12,
+          "end": 13
+        }
+      ]
+    },
+    {
+      "kind": "annotationRemoval",
+      "rtml": "<u>A&amp;\ud83d\ude42<br><annotation id=\"temp:C:DEF0123456789abcdef012345678\">\u4e2d</annotation></u>",
+      "marks": [
+        {
+          "name": "u",
+          "value": true,
+          "start": 0,
+          "end": 13
+        },
+        {
+          "name": "annotation",
+          "value": false,
+          "start": 1,
+          "end": 8
+        },
+        {
+          "name": "annotation",
+          "value": "temp:C:DEF0123456789abcdef012345678",
+          "start": 12,
+          "end": 13
+        }
+      ]
+    },
+    {
+      "kind": "typedSlackLink",
+      "html": "<u><a href=\"https://fixture.slack.com/team/U12345678\">member</a></u>",
+      "rich": {
+        "type": "rich_text_section",
+        "elements": [
+          {
+            "type": "user",
+            "user_id": "U12345678",
+            "style": {
+              "underline": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "kind": "typedSlackLink",
+      "html": "<a href=\"https://fixture.slack.com/team/U12345678\"><u>member</u></a>",
+      "rich": {
+        "type": "rich_text_section",
+        "elements": [
+          {
+            "type": "user",
+            "user_id": "U12345678"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "typedSlackLink",
+      "html": "<u><a href=\"https://fixture.slack.com/archives/C12345678\">member</a></u>",
+      "rich": {
+        "type": "rich_text_section",
+        "elements": [
+          {
+            "type": "channel",
+            "channel_id": "C12345678",
+            "style": {
+              "underline": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "kind": "typedSlackLink",
+      "html": "<a href=\"https://fixture.slack.com/archives/C12345678\"><u>member</u></a>",
+      "rich": {
+        "type": "rich_text_section",
+        "elements": [
+          {
+            "type": "channel",
+            "channel_id": "C12345678"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "canonicalNesting",
+      "input": "<b><i><del><code><u>X</u></code></del></i></b>",
+      "rtml": "<b><code><del><i><u>X</u></i></del></code></b>"
+    }
+  ]
+}

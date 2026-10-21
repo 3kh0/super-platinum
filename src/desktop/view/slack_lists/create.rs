@@ -17,7 +17,11 @@ pub(super) fn action(state: Signal<ShellState>, visit: u64, layout: u64) -> Elem
         {icon(Icon::Add,"icon")}"Add item"
     }}
 }
-pub(super) fn status(state: Signal<ShellState>, visit: u64) -> Element {
+pub(super) fn status(
+    state: Signal<ShellState>,
+    visit: u64,
+    read_only_reason: Option<&str>,
+) -> Element {
     // The retained delete receipt owns recovery guidance. Refreshing content
     // does not release that lock; keep Add's accessible help accurate and quiet.
     if crate::slack_lists::delete::presentation(&state.read())
@@ -27,6 +31,13 @@ pub(super) fn status(state: Signal<ShellState>, visit: u64) -> Element {
         return rsx! {p{id:"slack-list-create-help",class:"slack-list-create-help slack-list-create-help-hidden","{DELETE_PENDING_HELP}"}};
     }
     let view = crate::slack_lists::create::presentation(&state.read());
+    // The current parent renders this exact explanation. Keep Add's described
+    // help in the accessibility tree, without repeating the visible notice.
+    // A different creation-specific reason still needs its own visible help.
+    let help_visible = view
+        .reason
+        .as_deref()
+        .is_some_and(|reason| Some(reason) != read_only_reason);
     rsx! {
         {super::subitem::retained_status(state)}
         if let Some(operation)=view.operation {
@@ -41,7 +52,7 @@ pub(super) fn status(state: Signal<ShellState>, visit: u64) -> Element {
                 if view.can_open {button{id:"slack-list-create-open",r#type:"button",class:"slack-list-action",onclick:move |_|crate::slack_lists::create::open_result(state,visit),"Open item"}}
             }
         }
-        p{id:"slack-list-create-help",class:if view.reason.is_some(){"slack-list-create-help"}else{"slack-list-create-help slack-list-create-help-hidden"},
+        p{id:"slack-list-create-help",class:if help_visible{"slack-list-create-help"}else{"slack-list-create-help slack-list-create-help-hidden"},
             if let Some(reason)=view.reason.as_ref() {"{reason}"}else{"Adds a new item, then opens its fields."}
         }
     }

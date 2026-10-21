@@ -40,7 +40,7 @@ pub(super) async fn run(
     save(state, desktop, attempts + 1).await?;
     wait_dom(desktop,r#"(()=>{const options=[...document.querySelectorAll('#slack-list-record-detail [data-column-id="C_MULTI"] .slack-list-option')].map(e=>e.textContent);return {ok:JSON.stringify(options)===JSON.stringify(['Engineering'])};})()"#).await?;
     assert_record_opens(state, opens + 1)?;
-    let table = capture_detail(desktop, "detail-table").await?;
+    let (table, table_geometry) = capture_detail(desktop, "detail-table").await?;
     close(desktop).await?;
     wait_dom(desktop,r#"({ok:document.activeElement===window.__detailOrigin&&window.__detailOrigin.isConnected&&!window.__detailOrigin.closest('[hidden],[inert]')})"#).await?;
 
@@ -53,7 +53,7 @@ pub(super) async fn run(
     checked(desktop,r#"(()=>{const design=document.querySelector('#slack-list-cell-editor input[value="OPT_DESIGN"]'),engineering=document.querySelector('#slack-list-cell-editor input[value="OPT_ENGINEERING"]');if(design?.checked||!engineering?.checked)return {ok:false};engineering.click();design.click();return {ok:true};})()"#).await?;
     save(state, desktop, attempts + 2).await?;
     wait_dom(desktop,r#"({ok:document.querySelector('#slack-list-record-detail [data-column-id="C_MULTI"] .slack-list-option')?.textContent==='Design'&&document.querySelectorAll('#slack-list-record-detail [data-column-id="C_MULTI"] .slack-list-option').length===1})"#).await?;
-    let board = capture_detail(desktop, "detail-board").await?;
+    let (board, board_geometry) = capture_detail(desktop, "detail-board").await?;
     close(desktop).await?;
     wait_dom(desktop,r#"(()=>{const card=document.querySelector('.slack-list-lane[data-group-key="OPT_DESIGN"] .slack-list-card[data-row-id="R_LIST_002"]'),field=card?.querySelector('[data-column-id="C_NAME"]');return {ok:!!field&&card.dataset.instanceId!==window.__detailBoardOrigin.instance&&!window.__detailBoardOrigin.field.isConnected&&document.activeElement===field&&field.tabIndex===0&&!field.closest('[hidden],[inert]')};})()"#).await?;
 
@@ -101,7 +101,8 @@ pub(super) async fn run(
         "keyboard":true,"nestedEscape":true,"hiddenFieldWrites":true,"canonicalReturnFocus":true,
         "viewChangeCancelsDraft":true,"eventStaleGuard":true,"readbackPreservesDraft":true,
         "removedRecordUnavailable":true,"boundedLayout":true,"cleanup":true,
-        "captures":{"table":table,"board":board,"unavailable":unavailable}}),
+        "captures":{"table":table,"board":board,"unavailable":unavailable},
+        "captureGeometry":{"table":table_geometry,"board":board_geometry}}),
     )
 }
 
@@ -141,10 +142,22 @@ async fn choose(desktop: &dioxus::desktop::DesktopContext, id: &str) -> Result<(
 async fn capture_detail(
     desktop: &dioxus::desktop::DesktopContext,
     stage: &str,
-) -> Result<Option<String>, String> {
-    checked(desktop,r#"(()=>{document.querySelector('#slack-list-record-detail [data-column-id="C_MULTI"]').scrollIntoView({block:'center'});return {ok:true};})()"#).await?;
-    wait_dom(desktop,r#"(()=>{const field=document.querySelector('#slack-list-record-detail [data-column-id="C_MULTI"]'),scroll=document.querySelector('.slack-list-detail-scroll'),r=field.getBoundingClientRect(),s=scroll.getBoundingClientRect();return {ok:r.top>=s.top&&r.bottom<=s.bottom&&s.left>=0&&s.right<=innerWidth};})()"#).await?;
-    capture_stage(desktop, stage).await
+) -> Result<(Option<String>, Value), String> {
+    let prepare = include_str!("record_capture.js").replace("__COMMAND__", "'prepare'");
+    let measure = include_str!("record_capture.js").replace("__COMMAND__", "'measure'");
+    let header = checked(desktop, &prepare).await?;
+    let before = wait_dom(desktop, &measure).await?;
+    let path = capture_stage(desktop, stage).await?;
+    let after = checked(desktop, &measure).await?;
+    if before != after {
+        return Err(format!(
+            "{stage} record geometry changed during capture: before={before}; after={after}"
+        ));
+    }
+    Ok((
+        path,
+        json!({"header":header["header"],"before":before,"after":after}),
+    ))
 }
 
 /// Mount tracking can finish after the first DOM paint; wait for its observable request.

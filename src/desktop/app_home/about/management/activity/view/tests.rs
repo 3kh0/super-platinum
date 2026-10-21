@@ -94,14 +94,13 @@ fn actual_model_changes_still_update_date_search_and_select_properties() {
     let (mut dom, mut state, visit, _) = mount();
     dom.in_runtime(|| changed_model(&mut state.write(), visit));
     let edits = dom.render_immediate_to_vec();
-    for expected in [
-        "2026-06-01",
-        "2026-06-02",
-        "Native search model",
-        "ERROR",
-        "50",
-    ] {
+    for expected in ["Native search model", "ERROR", "50"] {
         assert!(value(&edits, expected), "Missing model value {expected}");
+    }
+    for (name, expected) in [("data-from", "2026-06-01"), ("data-to", "2026-06-02")] {
+        assert!(edits.edits.iter().any(|edit| matches!(edit,
+            Mutation::SetAttribute{name: actual,value:AttributeValue::Text(value),..}
+            if *actual==name && value==expected)));
     }
     assert_eq!(selected(&edits, true), 2);
     assert_eq!(selected(&edits, false), 2);
@@ -130,4 +129,47 @@ fn clearing_changed_model_updates_current_values_instead_of_only_defaults() {
             ..
         }
     )));
+}
+
+#[test]
+fn filter_visibility_explicitly_overrides_display_on_the_same_mounted_panel() {
+    let (mut dom, mut state, visit, initial) = mount();
+    let panel = initial
+        .edits
+        .iter()
+        .find_map(|edit| match edit {
+            Mutation::SetAttribute {
+                name: "style",
+                value: AttributeValue::Text(value),
+                id,
+                ..
+            } if value == "display:none" => Some(*id),
+            _ => None,
+        })
+        .expect("Original hidden Filter panel");
+    for (open, expected) in [
+        (true, "display:block"),
+        (false, "display:none"),
+        (true, "display:block"),
+    ] {
+        dom.in_runtime(|| {
+            document_mut(&mut state.write(), visit)
+                .unwrap()
+                .activity
+                .calendar
+                .filter_open = open
+        });
+        let edits = dom.render_immediate_to_vec();
+        assert!(edits.edits.iter().any(|edit| matches!(edit,
+            Mutation::SetAttribute{name:"style",value:AttributeValue::Text(value),id,..}
+            if *id==panel && value==expected)));
+        // A visibility toggle must neither remount genuine native controls nor
+        // rewrite their renderer-owned values/selected options.
+        assert!(
+            edits.edits.iter().all(|edit| matches!(edit,
+            Mutation::SetAttribute{name,..} if !matches!(*name,"value"|"selected"))),
+            "Visibility unexpectedly replaced controls or their buffers: {:?}",
+            edits.edits
+        );
+    }
 }

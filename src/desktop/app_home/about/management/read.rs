@@ -11,7 +11,12 @@ pub(super) struct Lease {
 }
 impl Lease {
     pub fn begin(s: &mut ShellState, visit: u64) -> Option<Self> {
-        if !admitted(s, visit) {
+        permissions::managers::departure::revoke(s, visit);
+        if !admitted(s, visit)
+            || delete::confirming(s, visit)
+            || unpublish::confirming(s, visit)
+            || permissions::confirming(s, visit)
+        {
             return None;
         }
         let credentials = serde_json::to_string(s.core.session.as_ref()?).ok()?;
@@ -49,7 +54,20 @@ impl Lease {
             return Err(unavailable());
         }
         let result = if self.synthetic {
-            fixture::response(&mut state.write(), &request)
+            if let Some(result) = fixture::managers::read(state, &request).await {
+                result
+            } else if let Some(result) = fixture::run_access::read(state, &request).await {
+                result
+            } else if let Some(result) = fixture::permissions::read(state, &request).await {
+                result
+            } else if let Some(result) = fixture::unpublish::read(state, &request).await {
+                result
+            } else {
+                match fixture::delete::read(state, &request).await {
+                    Some(result) => result,
+                    None => fixture::response(&mut state.write(), &request),
+                }
+            }
         } else if crate::fixture::is_fixture() {
             Err(unavailable())
         } else {
@@ -205,6 +223,14 @@ pub(super) fn resolve(mut state: Signal<ShellState>, visit: u64, app: String) {
     });
 }
 pub(super) fn editor(mut state: Signal<ShellState>, visit: u64, id: String) {
+    if permissions::owns(&state.peek(), visit) {
+        permissions::check(state, visit);
+        return;
+    }
+    if unpublish::owns(&state.peek(), visit) {
+        unpublish::check(state, visit);
+        return;
+    }
     let Some(lease) = Lease::begin(&mut state.write(), visit) else {
         return;
     };
@@ -248,7 +274,12 @@ fn adopt(s: &mut ShellState, lease: &Lease, editor: Editor) -> Result<(), Error>
     });
     let id = if let Some(index) = existing {
         let d = &mut book.documents[index];
-        if d.pending.is_some() || d.dirty() {
+        if delete::retained(&book.deletions, d.pending)
+            || unpublish::retained(&book.unpublishing, d.pending)
+            || permissions::retained(&book.permissions, d.pending)
+        {
+            // A read cannot resolve, replay, or erase a Delete receipt.
+        } else if d.pending.is_some() || d.dirty() {
             d.observed = Some(editor);
             d.notice = Some(
                 "Current workflow loaded for review. Your proposed changes are retained.".into(),

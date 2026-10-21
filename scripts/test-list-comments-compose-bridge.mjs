@@ -140,3 +140,39 @@ test('finish permits legitimate busy read-only editor while preserving original 
   assert.equal((await f.packet('release-result','sent')).finished,true);await f.done;
   assert.deepEqual(f.sent.find(x=>x.finalCapture).blocks,sealed.blocks);assert.equal(f.root.contentEditable,'false');
 });
+
+
+test('post-persistence validation keeps original seal through committed detachment',async()=>{
+  const f=fixture();const sealed=await f.seal();
+  f.command({kind:'validate',request:'ready',lease:'claim',sequence:sealed.sequence});
+  const result=await f.packet('release-result','ready');
+  assert.equal(result.ok,true);assert.equal(result.validated,true);assert.equal(result.finished,false);
+  assert.equal(f.wrapper.inert,true);assert.equal(f.sent.some(x=>x.finalCapture),false);
+  assert.deepEqual(f.state.blocks,sealed.blocks);
+  await f.close();assert.equal(f.sent.at(-1).detached,true);assert.deepEqual(f.sent.at(-1).blocks,sealed.blocks);
+});
+for(const changed of ['revision','blocks','composition','link','readonly','hidden','foreign-inert'])
+  test(`post-persistence ${changed} drift refuses validation and releases only original lease`,async()=>{
+    const f=fixture();const sealed=await f.seal();
+    if(changed==='revision')f.state.revision++;
+    if(changed==='blocks')f.state.blocks.push({type:'text',text:'newer native buffer'});
+    if(changed==='composition')f.state.composing=true;
+    if(changed==='link')f.wrapper.link.hidden=false;
+    if(changed==='readonly')f.root.contentEditable='false';
+    if(changed==='hidden'){const closest=f.root.closest;f.root.closest=s=>s==='[hidden]'?{}:closest(s);}
+    if(changed==='foreign-inert')f.wrapper.parentElement={closest:s=>s==='[inert]'?{}:null};
+    const original=plain(f.state);
+    f.command({kind:'validate',request:'refused',lease:'claim',sequence:sealed.sequence});
+    const result=await f.packet('release-result','refused');assert.equal(result.ok,false);assert.equal(result.validated,true);
+    assert.equal(f.wrapper.inert,true);assert.deepEqual(plain(f.state),original);
+    f.command({kind:'release',request:'release',lease:'claim',sequence:sealed.sequence});
+    assert.equal((await f.packet('release-result','release')).ok,true);assert.equal(f.wrapper.inert,false);
+    await f.close();assert.deepEqual(f.sent.at(-1).blocks,original.blocks);
+  });
+test('post-persistence same-ID replacement cannot validate or unlock successor',async()=>{
+  const f=fixture();const sealed=await f.seal();const successor={inert:true};
+  f.nodes.set(f.options.id,successor);f.root.isConnected=false;
+  f.command({kind:'validate',request:'stale',lease:'claim',sequence:sealed.sequence});
+  await f.done;assert.equal(f.sent.some(x=>x.request==='stale'&&x.ok===true),false);
+  assert.equal(successor.inert,true);assert.deepEqual(f.sent.at(-1).blocks,sealed.blocks);
+});

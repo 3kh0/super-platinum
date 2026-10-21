@@ -2,7 +2,7 @@
 //! original unopened description and its right to resume after publication.
 use super::*;
 pub(super) mod lease;
-use crate::directory_member_fetches::driver::Client;
+use crate::directory_member_fetches::{Context, driver::Client};
 use super_platinum_core::block_actions::{
     directory_endpoint::member_info::unknown::PlaceholderAsset,
     workflow_management::member_hydration::RendererReply,
@@ -18,6 +18,7 @@ pub(super) struct MissingOpening {
     before: Vec<Value>,
     ids: Vec<String>,
     groups: Vec<String>,
+    absent_groups: Vec<String>,
     files: Vec<String>,
 }
 impl MissingOpening {
@@ -61,6 +62,15 @@ impl MissingOpening {
                 }
             }
         }
+        let workspace = shell.core.workspaces.get(&draft.token.owner.team)?;
+        // rLUS absent admission is narrower than explicit Retry: a legacy,
+        // malformed or unavailable *present* row never becomes an auto fetch.
+        let absent_groups = groups.iter().filter(|id| {
+            !workspace.usergroups.contains_key(*id)
+                && super_platinum_core::block_actions::directory_endpoint::usergroup_info::Read::capture(
+                    vec![(*id).clone()],
+                ).is_ok()
+        }).cloned().collect();
         (!ids.is_empty() || !groups.is_empty() || !files.is_empty()).then(|| Self {
             token: draft.token.clone(),
             visit,
@@ -71,6 +81,7 @@ impl MissingOpening {
             before: before.clone(),
             ids,
             groups,
+            absent_groups,
             files,
         })
     }
@@ -85,10 +96,35 @@ impl MissingOpening {
                         == Some(&SectionValue::LongText(self.before.clone()))
             })
     }
+    pub(super) fn group_rate(
+        &self,
+        shell: &ShellState,
+    ) -> Option<crate::usergroups::recovery::RateStatus> {
+        if self.group_recovery_ids(shell).ok()?.is_empty() {
+            return None;
+        }
+        let status = crate::usergroups::recovery::rate_status(shell, &self.token.owner.team);
+        status.observed.then_some(status)
+    }
     pub(super) fn start(self, mut state: Signal<ShellState>, known: bool, automatic_members: bool) {
-        if !self.current(&state.peek()) {
+        if !self.current(&state.peek())
+            || self
+                .group_rate(&state.peek())
+                .is_some_and(|status| status.blocked)
+        {
             return;
         }
+        // Retain the original credentials/socket even when another kind of
+        // reference must finish first. GroupRead owns the subsequent source
+        // receipt; it must not recapture a successor opening context.
+        let automatic_groups = if !known && !self.absent_groups.is_empty() {
+            let Ok(owner) = Context::capture(&state.peek(), &self.token.owner.team) else {
+                return;
+            };
+            Some(owner)
+        } else {
+            None
+        };
         let client = if self.ids.is_empty() {
             None
         } else {
@@ -97,7 +133,12 @@ impl MissingOpening {
             };
             client
         };
-        if client.is_none() && !known && !automatic_members && self.files.is_empty() {
+        if client.is_none()
+            && !known
+            && !automatic_members
+            && self.files.is_empty()
+            && automatic_groups.is_none()
+        {
             return;
         }
         let (identity, mut cancellation) = {
@@ -109,16 +150,17 @@ impl MissingOpening {
             retire_recovery(d);
             let (lease, identity, receiver) = lease::Lease::new();
             d.rich_recovery = Some(lease);
-            d.rich_reading = known || automatic_members || !self.files.is_empty();
+            d.rich_reading =
+                known || automatic_members || !self.files.is_empty() || automatic_groups.is_some();
             (identity, receiver)
         };
-        // Cancellation ends only this consumer. Shared acquisition remains owned
-        // by its account runtime and may settle for another current subscriber.
+        // Cancellation drops this opening's group read. Shared member acquisition
+        // remains account-owned and may settle for another current subscriber.
         spawn(async move {
             let result = tokio::select! {
                 biased;
                 _=lease::cancelled(&mut cancellation)=>Err(unavailable()),
-                result=self.run(state,client,known,automatic_members)=>result,
+                result=self.run(state,client,known,automatic_members,automatic_groups)=>result,
             };
             self.resume(state, result.is_ok(), known, &identity);
         });
@@ -129,6 +171,7 @@ impl MissingOpening {
         client: Option<Client>,
         known: bool,
         automatic_members: bool,
+        automatic_groups: Option<Context>,
     ) -> Result<(), Error> {
         if !self.files.is_empty() {
             files::recover(state, &self.token, &self.files, known, |shell| {
@@ -166,18 +209,54 @@ impl MissingOpening {
                 )
                 .await?;
             }
-            let ids = self.group_recovery_ids(&state.peek())?;
-            if !ids.is_empty() {
-                crate::usergroups::recovery::recover(
-                    state,
-                    &self.token.owner.team,
-                    &ids,
-                    |shell| self.current(shell),
-                )
-                .await?;
+        }
+        let ids = if known {
+            self.group_recovery_ids(&state.peek())?
+        } else if let Some(owner) = &automatic_groups {
+            if !self.automatic_group_current(&state.peek(), owner) {
+                return Err(unavailable());
             }
+            self.absent_group_recovery_ids(&state.peek())?
+        } else {
+            Vec::new()
+        };
+        if !ids.is_empty() {
+            crate::usergroups::recovery::recover(state, &self.token.owner.team, &ids, |shell| {
+                self.current(shell)
+                    && automatic_groups
+                        .as_ref()
+                        .is_none_or(|owner| self.automatic_group_current(shell, owner))
+            })
+            .await?;
+        }
+        if automatic_groups
+            .as_ref()
+            .is_some_and(|owner| !self.automatic_group_current(&state.peek(), owner))
+        {
+            return Err(unavailable());
         }
         Ok(())
+    }
+    fn automatic_group_current(&self, shell: &ShellState, owner: &Context) -> bool {
+        self.current(shell) && owner.current(shell)
+    }
+    fn absent_group_recovery_ids(&self, shell: &ShellState) -> Result<Vec<String>, Error> {
+        if !self.current(shell) {
+            return Err(unavailable());
+        }
+        let workspace = shell
+            .core
+            .workspaces
+            .get(&self.token.owner.team)
+            .ok_or_else(unavailable)?;
+        // Source callback excludes IDs installed while the original request
+        // waited. Never expand to a group that was present at opening.
+        Ok(self
+            .absent_groups
+            .iter()
+            .filter(|id| !workspace.usergroups.contains_key(*id))
+            .cloned()
+            .collect())
     }
     fn group_recovery_ids(&self, shell: &ShellState) -> Result<Vec<String>, Error> {
         if !self.current(shell) {
@@ -288,378 +367,4 @@ impl MissingOpening {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use serde_json::json;
-    fn prepared() -> (ShellState, MissingOpening) {
-        let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
-        fixture::install_interaction(&mut shell);
-        let d = shell.profile_edit.sections.draft.as_ref().unwrap();
-        let (visit, serial) = (d.visit, d.serial);
-        let raw = vec![
-            json!({"type":"rich_text","elements":[{"type":"rich_text_section","elements":[
-                {"type":"text","text":"Keep my original description "},
-                {"type":"user","user_id":"UMISSING01","opaque":1},
-                {"type":"user","user_id":"UMISSING01","opaque":2}
-            ]}]}),
-        ];
-        assert!(change_shell(
-            &mut shell,
-            visit,
-            serial,
-            "long",
-            SectionValue::LongText(raw)
-        ));
-        assert!(opening::begin(&mut shell, visit, serial, "long", 7).is_err());
-        let captured = MissingOpening::capture(&shell, visit, serial, "long", 7).unwrap();
-        (shell, captured)
-    }
-    #[test]
-    fn duplicate_occurrences_share_read_without_changing_original_draft() {
-        let (shell, captured) = prepared();
-        assert_eq!(captured.ids, ["UMISSING01"]);
-        assert_eq!(collect(&captured.before).unwrap().len(), 2);
-        assert!(captured.current(&shell));
-    }
-    #[test]
-    fn superseding_opening_or_edit_revokes_auto_resume() {
-        let (mut shell, captured) = prepared();
-        let _ = opening::begin(&mut shell, captured.visit, captured.serial, "long", 8);
-        assert!(!captured.current(&shell));
-        let (mut shell, captured) = prepared();
-        assert!(change_shell(
-            &mut shell,
-            captured.visit,
-            captured.serial,
-            "long",
-            SectionValue::LongText(vec![])
-        ));
-        assert!(!captured.current(&shell));
-    }
-    #[test]
-    fn account_or_section_replacement_revokes_auto_resume() {
-        let (mut shell, captured) = prepared();
-        shell.core.account_epoch += 1;
-        assert!(!captured.current(&shell));
-        let (mut shell, captured) = prepared();
-        shell.profile_edit.sections.draft = None;
-        assert!(!captured.current(&shell));
-    }
-
-    #[test]
-    fn waiting_does_not_change_original_description_or_authorize_a_mounted_editor() {
-        let (mut shell, captured) = prepared();
-        let before = captured.before.clone();
-        shell
-            .profile_edit
-            .sections
-            .draft
-            .as_mut()
-            .unwrap()
-            .rich_reading = true;
-        assert!(captured.current(&shell));
-        assert!(
-            shell
-                .profile_edit
-                .sections
-                .draft
-                .as_ref()
-                .unwrap()
-                .form
-                .as_ref()
-                .unwrap()
-                .value("long")
-                == Some(&SectionValue::LongText(before.clone()))
-        );
-        // Even an editor for the same field/blocks owns its own native buffer.
-        // A completed read for the prior unopened attempt cannot replace it.
-        shell.profile_edit.sections.draft.as_mut().unwrap().rich = Some(Session {
-            id: captured.id.clone(),
-            key: captured.key,
-            before,
-            catalog: catalog::Catalog::default(),
-            labels: "{}".into(),
-            notice: None,
-            query: None,
-            preferences: None,
-        });
-        assert!(!captured.current(&shell));
-    }
-
-    #[test]
-    fn section_write_recovery_retires_automatic_opening_continuation() {
-        let (mut shell, captured) = prepared();
-        assert!(captured.current(&shell));
-        let _attempt =
-            crate::profile_edit::sections::begin(&mut shell, captured.visit, captured.serial)
-                .unwrap();
-        assert!(!captured.current(&shell));
-        assert!(
-            shell
-                .profile_edit
-                .sections
-                .draft
-                .as_ref()
-                .unwrap()
-                .form
-                .as_ref()
-                .unwrap()
-                .value("long")
-                == Some(&SectionValue::LongText(captured.before))
-        );
-    }
-
-    fn install_lease(shell: &mut ShellState) -> (Arc<()>, tokio::sync::watch::Receiver<bool>) {
-        let (lease, identity, receiver) = lease::Lease::new();
-        let d = shell.profile_edit.sections.draft.as_mut().unwrap();
-        d.rich_recovery = Some(lease);
-        d.rich_reading = true;
-        (identity, receiver)
-    }
-    #[tokio::test]
-    async fn explicit_retirement_wakes_even_if_a_pane_clone_retains_sender() {
-        let (mut shell, captured) = prepared();
-        let (identity, mut receiver) = install_lease(&mut shell);
-        let retained = shell.profile_edit.sections.draft.clone();
-        retire_recovery(shell.profile_edit.sections.draft.as_mut().unwrap());
-        tokio::time::timeout(
-            std::time::Duration::from_millis(100),
-            lease::cancelled(&mut receiver),
-        )
-        .await
-        .unwrap();
-        assert!(
-            !shell
-                .profile_edit
-                .sections
-                .draft
-                .as_ref()
-                .unwrap()
-                .rich_reading
-        );
-        assert!(!captured.cleanup(&mut shell, &identity));
-        drop(retained);
-    }
-    #[tokio::test]
-    async fn removed_pane_closes_consumer_without_any_member_response() {
-        let (mut shell, _) = prepared();
-        let (_, mut receiver) = install_lease(&mut shell);
-        shell.profile_edit.sections.draft = None;
-        tokio::time::timeout(
-            std::time::Duration::from_millis(100),
-            lease::cancelled(&mut receiver),
-        )
-        .await
-        .unwrap();
-    }
-    #[test]
-    fn old_completion_cannot_clear_new_lease_even_for_same_opening_number() {
-        let (mut shell, captured) = prepared();
-        let (old, _) = install_lease(&mut shell);
-        let (new, _) = install_lease(&mut shell);
-        assert!(!captured.cleanup(&mut shell, &old));
-        assert!(
-            shell
-                .profile_edit
-                .sections
-                .draft
-                .as_ref()
-                .unwrap()
-                .rich_reading
-        );
-        assert!(captured.cleanup(&mut shell, &new));
-    }
-    #[test]
-    fn own_cleanup_releases_reading_but_changed_blocks_never_resume() {
-        let (mut shell, captured) = prepared();
-        let (identity, _) = install_lease(&mut shell);
-        shell
-            .profile_edit
-            .sections
-            .draft
-            .as_mut()
-            .unwrap()
-            .form
-            .as_mut()
-            .unwrap()
-            .change("long", SectionValue::LongText(vec![]))
-            .unwrap();
-        assert!(!captured.current(&shell));
-        assert!(captured.cleanup(&mut shell, &identity));
-        assert!(
-            !shell
-                .profile_edit
-                .sections
-                .draft
-                .as_ref()
-                .unwrap()
-                .rich_reading
-        );
-        assert!(
-            shell
-                .profile_edit
-                .sections
-                .draft
-                .as_ref()
-                .unwrap()
-                .rich
-                .is_none()
-        );
-    }
-    #[tokio::test]
-    async fn actual_field_change_retires_waiter_without_pending_io() {
-        let (mut shell, captured) = prepared();
-        let (_, mut receiver) = install_lease(&mut shell);
-        assert!(change_shell(
-            &mut shell,
-            captured.visit,
-            captured.serial,
-            "long",
-            SectionValue::LongText(vec![])
-        ));
-        tokio::time::timeout(
-            std::time::Duration::from_millis(100),
-            lease::cancelled(&mut receiver),
-        )
-        .await
-        .unwrap();
-        assert!(!captured.current(&shell));
-        assert!(
-            !shell
-                .profile_edit
-                .sections
-                .draft
-                .as_ref()
-                .unwrap()
-                .rich_reading
-        );
-    }
-    #[tokio::test]
-    async fn actual_competing_write_retires_consumer_without_replaying_it() {
-        let (mut shell, captured) = prepared();
-        let (_, mut receiver) = install_lease(&mut shell);
-        let attempt =
-            crate::profile_edit::sections::begin(&mut shell, captured.visit, captured.serial)
-                .unwrap();
-        tokio::time::timeout(
-            std::time::Duration::from_millis(100),
-            lease::cancelled(&mut receiver),
-        )
-        .await
-        .unwrap();
-        assert!(!captured.current(&shell));
-        assert!(
-            !shell
-                .profile_edit
-                .sections
-                .draft
-                .as_ref()
-                .unwrap()
-                .rich_reading
-        );
-        assert_eq!(
-            shell.profile_edit.sections.entries[&attempt.token.owner]
-                .pending
-                .as_ref()
-                .unwrap()
-                .id,
-            attempt.id
-        );
-    }
-    #[test]
-    fn socket_generation_alone_does_not_retire_original_profile_draft() {
-        let (mut shell, captured) = prepared();
-        let (identity, _) = install_lease(&mut shell);
-        shell
-            .core
-            .workspaces
-            .get_mut(&captured.token.owner.team)
-            .unwrap()
-            .rt_generation += 1;
-        assert!(captured.current(&shell));
-        assert!(captured.cleanup(&mut shell, &identity));
-    }
-
-    fn groups() -> (ShellState, MissingOpening) {
-        let (mut shell, previous) = prepared();
-        let raw = vec![json!({"type":"rich_text","elements":[
-            {"type":"rich_text_section","elements":[
-                {"type":"usergroup","usergroup_id":"SABSENT01","opaque":1},
-                {"type":"usergroup","usergroup_id":"SABSENT01","opaque":2},
-                {"type":"usergroup","usergroup_id":"SLEGACY01"},
-                {"type":"usergroup","usergroup_id":"SREADY001"}
-            ]}
-        ]})];
-        assert!(change_shell(
-            &mut shell,
-            previous.visit,
-            previous.serial,
-            "long",
-            SectionValue::LongText(raw)
-        ));
-        assert!(opening::begin(&mut shell, previous.visit, previous.serial, "long", 8).is_err());
-        let captured =
-            MissingOpening::capture(&shell, previous.visit, previous.serial, "long", 8).unwrap();
-        let w = shell
-            .core
-            .workspaces
-            .get_mut(&captured.token.owner.team)
-            .unwrap();
-        w.usergroups.insert(
-            "SLEGACY01".into(),
-            serde_json::from_value(json!({"id":"SLEGACY01","handle":"cached"})).unwrap(),
-        );
-        w.usergroups.insert(
-            "SREADY001".into(),
-            super_platinum_core::slack::models::UserGroup::from_observed(
-                &json!({"id":"SREADY001","handle":""}),
-            )
-            .unwrap(),
-        );
-        (shell, captured)
-    }
-    #[test]
-    fn group_only_retry_selects_absent_and_legacy_but_keeps_observed_empty_label() {
-        let (shell, captured) = groups();
-        assert!(captured.ids.is_empty());
-        assert_eq!(captured.groups, ["SABSENT01", "SLEGACY01", "SREADY001"]);
-        assert_eq!(collect(&captured.before).unwrap().len(), 4);
-        assert_eq!(
-            captured.group_recovery_ids(&shell).unwrap(),
-            ["SABSENT01", "SLEGACY01"]
-        );
-    }
-    #[test]
-    fn newly_observed_group_no_longer_needs_retry_without_mutating_description() {
-        let (mut shell, captured) = groups();
-        let before = captured.before.clone();
-        shell
-            .core
-            .workspaces
-            .get_mut(&captured.token.owner.team)
-            .unwrap()
-            .usergroups
-            .insert(
-                "SLEGACY01".into(),
-                super_platinum_core::slack::models::UserGroup::from_observed(
-                    &json!({"id":"SLEGACY01","handle":"fresh"}),
-                )
-                .unwrap(),
-            );
-        assert_eq!(captured.group_recovery_ids(&shell).unwrap(), ["SABSENT01"]);
-        assert!(captured.current(&shell));
-        assert_eq!(captured.before, before);
-    }
-    #[test]
-    fn retired_group_description_cannot_select_another_read() {
-        let (mut shell, captured) = groups();
-        shell
-            .profile_edit
-            .sections
-            .draft
-            .as_mut()
-            .unwrap()
-            .rich_opening += 1;
-        assert!(captured.group_recovery_ids(&shell).is_err());
-    }
-}
+mod tests;

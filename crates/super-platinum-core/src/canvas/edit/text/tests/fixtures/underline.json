@@ -1,0 +1,752 @@
+{
+  "provenance": {
+    "path": "tmp\\canvas-underline-edit-20261019\\oracle-results.json",
+    "sha256": "d1cc2421659833879ddfff17a1085fd95608dc3083e32c3041d0291b56ba5143",
+    "boundary": "Selected actual retained RTML visitor, CRDT/WASM and projection methods; synthetic DOM/Section and ACK. No stock DOM/server or full reducer."
+  },
+  "inputs": [
+    {
+      "name": "underline escaped prefix + all supported inline combinations",
+      "rtml": "&amp;&lt;<br>\ud83d\ude42<u>\u4e2d\ud83e\udd8a</u>|<b><u>B</u></b>|<i><u>I</u></i>|<del><u>S</u></del>|<code><u>C</u></code>|<a href=\"https://example.test/?x=1&amp;y=2\"><u>L</u></a>",
+      "text": "&amp;&lt;<br>\ud83d\ude42\u4e2d\ud83e\udd8a|B|I|S|C|L",
+      "marks": [
+        {
+          "name": "u",
+          "value": true,
+          "start": 15,
+          "end": 18
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 19,
+          "end": 20
+        },
+        {
+          "name": "b",
+          "value": true,
+          "start": 19,
+          "end": 20
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 21,
+          "end": 22
+        },
+        {
+          "name": "i",
+          "value": true,
+          "start": 21,
+          "end": 22
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 23,
+          "end": 24
+        },
+        {
+          "name": "del",
+          "value": true,
+          "start": 23,
+          "end": 24
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 25,
+          "end": 26
+        },
+        {
+          "name": "code",
+          "value": true,
+          "start": 25,
+          "end": 26
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 27,
+          "end": 28
+        },
+        {
+          "name": "a",
+          "value": "{\"href\":\"https://example.test/?x=1&y=2\"}",
+          "start": 27,
+          "end": 28
+        }
+      ]
+    },
+    {
+      "name": "underline covers entity softbreak and astral Unicode",
+      "rtml": "<u>&amp;&lt;<br>\ud83d\ude42</u>",
+      "text": "&amp;&lt;<br>\ud83d\ude42",
+      "marks": [
+        {
+          "name": "u",
+          "value": true,
+          "start": 0,
+          "end": 15
+        }
+      ]
+    },
+    {
+      "name": "nested underline bold italic strike",
+      "rtml": "<u><b><i><del>\u4e2d\ud83e\udd8a</del></i></b></u>",
+      "text": "\u4e2d\ud83e\udd8a",
+      "marks": [
+        {
+          "name": "u",
+          "value": true,
+          "start": 0,
+          "end": 3
+        },
+        {
+          "name": "b",
+          "value": true,
+          "start": 0,
+          "end": 3
+        },
+        {
+          "name": "i",
+          "value": true,
+          "start": 0,
+          "end": 3
+        },
+        {
+          "name": "del",
+          "value": true,
+          "start": 0,
+          "end": 3
+        }
+      ]
+    }
+  ],
+  "vectors": [
+    {
+      "style": 0,
+      "base": 0,
+      "editedRtml": "Z&amp;&lt;<br>\ud83d\ude42<u>\u4e2d\ud83e\udd8a</u>|<b><u>B</u></b>|<i><u>I</u></i>|<del><u>S</u></del>|<code><u>C</u></code>|<a href=\"https://example.test/?x=1&y=2\"><u>L</u></a>",
+      "escapedText": "Z&amp;&lt;<br>\ud83d\ude42\u4e2d\ud83e\udd8a|B|I|S|C|L",
+      "marks": [
+        {
+          "name": "u",
+          "value": true,
+          "start": 16,
+          "end": 19
+        },
+        {
+          "name": "b",
+          "value": true,
+          "start": 20,
+          "end": 21
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 20,
+          "end": 21
+        },
+        {
+          "name": "i",
+          "value": true,
+          "start": 22,
+          "end": 23
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 22,
+          "end": 23
+        },
+        {
+          "name": "del",
+          "value": true,
+          "start": 24,
+          "end": 25
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 24,
+          "end": 25
+        },
+        {
+          "name": "code",
+          "value": true,
+          "start": 26,
+          "end": 27
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 26,
+          "end": 27
+        },
+        {
+          "name": "a",
+          "value": "{\"href\":\"https://example.test/?x=1&y=2\"}",
+          "start": 28,
+          "end": 29
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 28,
+          "end": 29
+        }
+      ],
+      "originalHeads": [
+        "a1ae773f9ad957c8209ef5d74ecd98681d88863222c42c63e8156bddb9e3462b"
+      ],
+      "wire": "CvQICiN0ZW1wOkM6eHl6MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3OBDoB0gAYqUBCqIBCp8BWiZhbXA7Jmx0Ozxicj7wn5mCPHU+5Lit8J+mijwvdT58PGI+PHU+QjwvdT48L2I+fDxpPjx1Pkk8L3U+PC9pPnw8ZGVsPjx1PlM8L3U+PC9kZWw+fDxjb2RlPjx1PkM8L3U+PC9jb2RlPnw8YSBocmVmPSJodHRwczovL2V4YW1wbGUudGVzdC8/eD0xJnk9MiI+PHU+TDwvdT48L2E+agCYAQGgAQGKAhBvcmFjbGUtc2Vzc2lvbi0xsgKDBwojdGVtcDpDOnh5ejAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2NzgQABjoByqMBIVvSoPelUlUAIEEAgoBI0VniavN7wEjCqvN7wEjRWeJq80BGOvHa+fdhXDDnRha1XAjPNhdM+sj3J3cmbqfpI4JfC0HAQQDBBMFIwhABEMEVgIOAQQCBBEGEzUVECEGIys0AkI0VjRXToABApQBDaUBLwMAfwEDAX9+fAMaFgF/gIC/1gYDAH8AAwF/AAIBBAcAAjIAAAIyAQAELwAAAQACAgB/BA0BfwACAX4AAQIAfwECAH8BAgB/AQIAfwECAH8BAgB/AQIAfwECAH8BAgB9AQBjfgdkZWxldGVkBHRleHQAMgIAfwExAHwDfjNQDQFdDXQBDHUWdnUWdnUWdnUWdnUWdnUWdnUWdnUWdnUWdnUWdlkCMn4BBA8BfwcCAX4HAQIHfwECB38BAgd/AQIHfwECB38BAgd/AQIHfwECB38BAgd/AQIHfwF+AQAOFnpGAjZGABYCAn8WAgB/FgICfxYCAH8WAgJ/FgIAfxYCAn8WAgB8FoYFAhYCAH82WiZhbXA7Jmx0Ozxicj7wn5mC5Lit8J+minxCfEl8U3xDfHsiaHJlZiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0Lz94PTEmeT0yIn1M77u/NAAUAQQCBAIEAgQCBAIBABF/AXUABH4BYgF1AAR+AWkBdQAEfgNkZWwBdQAEfgRjb2RlAXUABH4BYQF1AAQDMkBhMWFlNzczZjlhZDk1N2M4MjA5ZWY1ZDc0ZWNkOTg2ODFkODg4NjMyMjJjNDJjNjNlODE1NmJkZGI5ZTM0NjJiMkAxOGViYzc2YmU3ZGQ4NTcwYzM5ZDE4NWFkNTcwMjMzY2Q4NWQzM2ViMjNkYzlkZGM5OWJhOWZhNDhlMDk3YzJkMkBhMWFlNzczZjlhZDk1N2M4MjA5ZWY1ZDc0ZWNkOTg2ODFkODg4NjMyMjJjNDJjNjNlODE1NmJkZGI5ZTM0NjJiQkAzODQzZWM4OTZhNjkxMmE1ZTdmM2M5OTY1YjFlMmEwODNlNDVhYmIyYjQyNDliNWYxMzFjMzhmMjg2YzdkNGVlYkAxOGViYzc2YmU3ZGQ4NTcwYzM5ZDE4NWFkNTcwMjMzY2Q4NWQzM2ViMjNkYzlkZGM5OWJhOWZhNDhlMDk3YzJk"
+    },
+    {
+      "style": 0,
+      "base": 9000,
+      "editedRtml": "Z&amp;&lt;<br>\ud83d\ude42<u>\u4e2d\ud83e\udd8a</u>|<b><u>B</u></b>|<i><u>I</u></i>|<del><u>S</u></del>|<code><u>C</u></code>|<a href=\"https://example.test/?x=1&y=2\"><u>L</u></a>",
+      "escapedText": "Z&amp;&lt;<br>\ud83d\ude42\u4e2d\ud83e\udd8a|B|I|S|C|L",
+      "marks": [
+        {
+          "name": "u",
+          "value": true,
+          "start": 16,
+          "end": 19
+        },
+        {
+          "name": "b",
+          "value": true,
+          "start": 20,
+          "end": 21
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 20,
+          "end": 21
+        },
+        {
+          "name": "i",
+          "value": true,
+          "start": 22,
+          "end": 23
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 22,
+          "end": 23
+        },
+        {
+          "name": "del",
+          "value": true,
+          "start": 24,
+          "end": 25
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 24,
+          "end": 25
+        },
+        {
+          "name": "code",
+          "value": true,
+          "start": 26,
+          "end": 27
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 26,
+          "end": 27
+        },
+        {
+          "name": "a",
+          "value": "{\"href\":\"https://example.test/?x=1&y=2\"}",
+          "start": 28,
+          "end": 29
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 28,
+          "end": 29
+        }
+      ],
+      "originalHeads": [
+        "d6fbecc5f49d8ec44753b1d5eff70f15cf2807c95286ad7ceaa67d2fc399de0d"
+      ],
+      "wire": "CtoICiN0ZW1wOkM6eHl6MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3OBCoRkgAYqUBCqIBCp8BWiZhbXA7Jmx0Ozxicj7wn5mCPHU+5Lit8J+mijwvdT58PGI+PHU+QjwvdT48L2I+fDxpPjx1Pkk8L3U+PC9pPnw8ZGVsPjx1PlM8L3U+PC9kZWw+fDxjb2RlPjx1PkM8L3U+PC9jb2RlPnw8YSBocmVmPSJodHRwczovL2V4YW1wbGUudGVzdC8/eD0xJnk9MiI+PHU+TDwvdT48L2E+agCYAQGgAQGKAhBvcmFjbGUtc2Vzc2lvbi0xsgLpBgojdGVtcDpDOnh5ejAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2NzgQqEYYqEYq8QOFb0qDMoOvTgDmAwEKASNFZ4mrze8BIwHHROO946V3MU/XG30aMIlHmPCRmNTpMgywlEF+NH3pTgcBAgMCEwMjB0ADQwJWAg4BBAIEEQQTNRUQIQIjKzQCQjRWNFdOgAEClAENpQEvAgACAX4zAX6AgL/WBgB+AAF/AAIHAAIyAAACMgEABDAAAAICAH8CDQF/AAIBfgABAgB/AQIAfwECAH8BAgB/AQIAfwECAH8BAgB/AQIAfwECAH8BAgB+B2RlbGV0ZWQEdGV4dAAyNAB8HWQzTg0BXQ9yAQ5zGHZzGHZzGHZzGHZzGHZzGHZzGHZzGHZzGHZzGHZzAjJ+AQQPAX8HAgF+BwECB38BAgd/AQIHfwECB38BAgd/AQIHfwECB38BAgd/AQIHfwECB38BfgEADhZ6RgI2RgAWAgJ/FgIAfxYCAn8WAgB/FgICfxYCAH8WAgJ/FgIAfBaGBQIWAgB/NlomYW1wOyZsdDs8YnI+8J+ZguS4rfCfpop8QnxJfFN8Q3x7ImhyZWYiOiJodHRwczovL2V4YW1wbGUudGVzdC8/eD0xJnk9MiJ9TO+7vzQAFAEEAgQCBAIEAgQCAQARfwF1AAR+AWIBdQAEfgFpAXUABH4DZGVsAXUABH4EY29kZQF1AAR+AWEBdQAEATJAZDZmYmVjYzVmNDlkOGVjNDQ3NTNiMWQ1ZWZmNzBmMTVjZjI4MDdjOTUyODZhZDdjZWFhNjdkMmZjMzk5ZGUwZDJAYzc0NGUzYmRlM2E1NzczMTRmZDcxYjdkMWEzMDg5NDc5OGYwOTE5OGQ0ZTkzMjBjYjA5NDQxN2UzNDdkZTk0ZTJAZDZmYmVjYzVmNDlkOGVjNDQ3NTNiMWQ1ZWZmNzBmMTVjZjI4MDdjOTUyODZhZDdjZWFhNjdkMmZjMzk5ZGUwZEJAZDZmYmVjYzVmNDlkOGVjNDQ3NTNiMWQ1ZWZmNzBmMTVjZjI4MDdjOTUyODZhZDdjZWFhNjdkMmZjMzk5ZGUwZGJAYzc0NGUzYmRlM2E1NzczMTRmZDcxYjdkMWEzMDg5NDc5OGYwOTE5OGQ0ZTkzMjBjYjA5NDQxN2UzNDdkZTk0ZQ=="
+    },
+    {
+      "style": 1,
+      "base": 0,
+      "editedRtml": "Z&amp;&lt;<br>\ud83d\ude42<u>\u4e2d\ud83e\udd8a</u>|<b><u>B</u></b>|<i><u>I</u></i>|<del><u>S</u></del>|<code><u>C</u></code>|<a href=\"https://example.test/?x=1&y=2\"><u>L</u></a>",
+      "escapedText": "Z&amp;&lt;<br>\ud83d\ude42\u4e2d\ud83e\udd8a|B|I|S|C|L",
+      "marks": [
+        {
+          "name": "u",
+          "value": true,
+          "start": 16,
+          "end": 19
+        },
+        {
+          "name": "b",
+          "value": true,
+          "start": 20,
+          "end": 21
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 20,
+          "end": 21
+        },
+        {
+          "name": "i",
+          "value": true,
+          "start": 22,
+          "end": 23
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 22,
+          "end": 23
+        },
+        {
+          "name": "del",
+          "value": true,
+          "start": 24,
+          "end": 25
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 24,
+          "end": 25
+        },
+        {
+          "name": "code",
+          "value": true,
+          "start": 26,
+          "end": 27
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 26,
+          "end": 27
+        },
+        {
+          "name": "a",
+          "value": "{\"href\":\"https://example.test/?x=1&y=2\"}",
+          "start": 28,
+          "end": 29
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 28,
+          "end": 29
+        }
+      ],
+      "originalHeads": [
+        "a1ae773f9ad957c8209ef5d74ecd98681d88863222c42c63e8156bddb9e3462b"
+      ],
+      "wire": "CvQICiN0ZW1wOkM6eHl6MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3OBDoB0gAYqUBCqIBCp8BWiZhbXA7Jmx0Ozxicj7wn5mCPHU+5Lit8J+mijwvdT58PGI+PHU+QjwvdT48L2I+fDxpPjx1Pkk8L3U+PC9pPnw8ZGVsPjx1PlM8L3U+PC9kZWw+fDxjb2RlPjx1PkM8L3U+PC9jb2RlPnw8YSBocmVmPSJodHRwczovL2V4YW1wbGUudGVzdC8/eD0xJnk9MiI+PHU+TDwvdT48L2E+agCYAQGgAQGKAhBvcmFjbGUtc2Vzc2lvbi0xsgKDBwojdGVtcDpDOnh5ejAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2NzgQABjoByqMBIVvSoPelUlUAIEEAgoBI0VniavN7wEjCqvN7wEjRWeJq80BGOvHa+fdhXDDnRha1XAjPNhdM+sj3J3cmbqfpI4JfC0HAQQDBBMFIwhABEMEVgIOAQQCBBEGEzUVECEGIys0AkI0VjRXToABApQBDaUBLwMAfwEDAX9+fAMaFgF/gIC/1gYDAH8AAwF/AAIBBAcAAjIAAAIyAQAELwAAAQACAgB/BA0BfwACAX4AAQIAfwECAH8BAgB/AQIAfwECAH8BAgB/AQIAfwECAH8BAgB9AQBjfgdkZWxldGVkBHRleHQAMgIAfwExAHwDfjNQDQFdDXQBDHUWdnUWdnUWdnUWdnUWdnUWdnUWdnUWdnUWdnUWdlkCMn4BBA8BfwcCAX4HAQIHfwECB38BAgd/AQIHfwECB38BAgd/AQIHfwECB38BAgd/AQIHfwF+AQAOFnpGAjZGABYCAn8WAgB/FgICfxYCAH8WAgJ/FgIAfxYCAn8WAgB8FoYFAhYCAH82WiZhbXA7Jmx0Ozxicj7wn5mC5Lit8J+minxCfEl8U3xDfHsiaHJlZiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0Lz94PTEmeT0yIn1M77u/NAAUAQQCBAIEAgQCBAIBABF/AXUABH4BYgF1AAR+AWkBdQAEfgNkZWwBdQAEfgRjb2RlAXUABH4BYQF1AAQDMkBhMWFlNzczZjlhZDk1N2M4MjA5ZWY1ZDc0ZWNkOTg2ODFkODg4NjMyMjJjNDJjNjNlODE1NmJkZGI5ZTM0NjJiMkAxOGViYzc2YmU3ZGQ4NTcwYzM5ZDE4NWFkNTcwMjMzY2Q4NWQzM2ViMjNkYzlkZGM5OWJhOWZhNDhlMDk3YzJkMkBhMWFlNzczZjlhZDk1N2M4MjA5ZWY1ZDc0ZWNkOTg2ODFkODg4NjMyMjJjNDJjNjNlODE1NmJkZGI5ZTM0NjJiQkAzODQzZWM4OTZhNjkxMmE1ZTdmM2M5OTY1YjFlMmEwODNlNDVhYmIyYjQyNDliNWYxMzFjMzhmMjg2YzdkNGVlYkAxOGViYzc2YmU3ZGQ4NTcwYzM5ZDE4NWFkNTcwMjMzY2Q4NWQzM2ViMjNkYzlkZGM5OWJhOWZhNDhlMDk3YzJk"
+    },
+    {
+      "style": 1,
+      "base": 9000,
+      "editedRtml": "Z&amp;&lt;<br>\ud83d\ude42<u>\u4e2d\ud83e\udd8a</u>|<b><u>B</u></b>|<i><u>I</u></i>|<del><u>S</u></del>|<code><u>C</u></code>|<a href=\"https://example.test/?x=1&y=2\"><u>L</u></a>",
+      "escapedText": "Z&amp;&lt;<br>\ud83d\ude42\u4e2d\ud83e\udd8a|B|I|S|C|L",
+      "marks": [
+        {
+          "name": "u",
+          "value": true,
+          "start": 16,
+          "end": 19
+        },
+        {
+          "name": "b",
+          "value": true,
+          "start": 20,
+          "end": 21
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 20,
+          "end": 21
+        },
+        {
+          "name": "i",
+          "value": true,
+          "start": 22,
+          "end": 23
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 22,
+          "end": 23
+        },
+        {
+          "name": "del",
+          "value": true,
+          "start": 24,
+          "end": 25
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 24,
+          "end": 25
+        },
+        {
+          "name": "code",
+          "value": true,
+          "start": 26,
+          "end": 27
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 26,
+          "end": 27
+        },
+        {
+          "name": "a",
+          "value": "{\"href\":\"https://example.test/?x=1&y=2\"}",
+          "start": 28,
+          "end": 29
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 28,
+          "end": 29
+        }
+      ],
+      "originalHeads": [
+        "d6fbecc5f49d8ec44753b1d5eff70f15cf2807c95286ad7ceaa67d2fc399de0d"
+      ],
+      "wire": "CtoICiN0ZW1wOkM6eHl6MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3OBCoRkgAYqUBCqIBCp8BWiZhbXA7Jmx0Ozxicj7wn5mCPHU+5Lit8J+mijwvdT58PGI+PHU+QjwvdT48L2I+fDxpPjx1Pkk8L3U+PC9pPnw8ZGVsPjx1PlM8L3U+PC9kZWw+fDxjb2RlPjx1PkM8L3U+PC9jb2RlPnw8YSBocmVmPSJodHRwczovL2V4YW1wbGUudGVzdC8/eD0xJnk9MiI+PHU+TDwvdT48L2E+agCYAQGgAQGKAhBvcmFjbGUtc2Vzc2lvbi0xsgLpBgojdGVtcDpDOnh5ejAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2NzgQqEYYqEYq8QOFb0qDMoOvTgDmAwEKASNFZ4mrze8BIwHHROO946V3MU/XG30aMIlHmPCRmNTpMgywlEF+NH3pTgcBAgMCEwMjB0ADQwJWAg4BBAIEEQQTNRUQIQIjKzQCQjRWNFdOgAEClAENpQEvAgACAX4zAX6AgL/WBgB+AAF/AAIHAAIyAAACMgEABDAAAAICAH8CDQF/AAIBfgABAgB/AQIAfwECAH8BAgB/AQIAfwECAH8BAgB/AQIAfwECAH8BAgB+B2RlbGV0ZWQEdGV4dAAyNAB8HWQzTg0BXQ9yAQ5zGHZzGHZzGHZzGHZzGHZzGHZzGHZzGHZzGHZzGHZzAjJ+AQQPAX8HAgF+BwECB38BAgd/AQIHfwECB38BAgd/AQIHfwECB38BAgd/AQIHfwECB38BfgEADhZ6RgI2RgAWAgJ/FgIAfxYCAn8WAgB/FgICfxYCAH8WAgJ/FgIAfBaGBQIWAgB/NlomYW1wOyZsdDs8YnI+8J+ZguS4rfCfpop8QnxJfFN8Q3x7ImhyZWYiOiJodHRwczovL2V4YW1wbGUudGVzdC8/eD0xJnk9MiJ9TO+7vzQAFAEEAgQCBAIEAgQCAQARfwF1AAR+AWIBdQAEfgFpAXUABH4DZGVsAXUABH4EY29kZQF1AAR+AWEBdQAEATJAZDZmYmVjYzVmNDlkOGVjNDQ3NTNiMWQ1ZWZmNzBmMTVjZjI4MDdjOTUyODZhZDdjZWFhNjdkMmZjMzk5ZGUwZDJAYzc0NGUzYmRlM2E1NzczMTRmZDcxYjdkMWEzMDg5NDc5OGYwOTE5OGQ0ZTkzMjBjYjA5NDQxN2UzNDdkZTk0ZTJAZDZmYmVjYzVmNDlkOGVjNDQ3NTNiMWQ1ZWZmNzBmMTVjZjI4MDdjOTUyODZhZDdjZWFhNjdkMmZjMzk5ZGUwZEJAZDZmYmVjYzVmNDlkOGVjNDQ3NTNiMWQ1ZWZmNzBmMTVjZjI4MDdjOTUyODZhZDdjZWFhNjdkMmZjMzk5ZGUwZGJAYzc0NGUzYmRlM2E1NzczMTRmZDcxYjdkMWEzMDg5NDc5OGYwOTE5OGQ0ZTkzMjBjYjA5NDQxN2UzNDdkZTk0ZQ=="
+    },
+    {
+      "style": 2,
+      "base": 0,
+      "editedRtml": "Z&amp;&lt;<br>\ud83d\ude42<u>\u4e2d\ud83e\udd8a</u>|<b><u>B</u></b>|<i><u>I</u></i>|<del><u>S</u></del>|<code><u>C</u></code>|<a href=\"https://example.test/?x=1&y=2\"><u>L</u></a>",
+      "escapedText": "Z&amp;&lt;<br>\ud83d\ude42\u4e2d\ud83e\udd8a|B|I|S|C|L",
+      "marks": [
+        {
+          "name": "u",
+          "value": true,
+          "start": 16,
+          "end": 19
+        },
+        {
+          "name": "b",
+          "value": true,
+          "start": 20,
+          "end": 21
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 20,
+          "end": 21
+        },
+        {
+          "name": "i",
+          "value": true,
+          "start": 22,
+          "end": 23
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 22,
+          "end": 23
+        },
+        {
+          "name": "del",
+          "value": true,
+          "start": 24,
+          "end": 25
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 24,
+          "end": 25
+        },
+        {
+          "name": "code",
+          "value": true,
+          "start": 26,
+          "end": 27
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 26,
+          "end": 27
+        },
+        {
+          "name": "a",
+          "value": "{\"href\":\"https://example.test/?x=1&y=2\"}",
+          "start": 28,
+          "end": 29
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 28,
+          "end": 29
+        }
+      ],
+      "originalHeads": [
+        "a1ae773f9ad957c8209ef5d74ecd98681d88863222c42c63e8156bddb9e3462b"
+      ],
+      "wire": "CvQICiN0ZW1wOkM6eHl6MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3OBDoB0gAYqUBCqIBCp8BWiZhbXA7Jmx0Ozxicj7wn5mCPHU+5Lit8J+mijwvdT58PGI+PHU+QjwvdT48L2I+fDxpPjx1Pkk8L3U+PC9pPnw8ZGVsPjx1PlM8L3U+PC9kZWw+fDxjb2RlPjx1PkM8L3U+PC9jb2RlPnw8YSBocmVmPSJodHRwczovL2V4YW1wbGUudGVzdC8/eD0xJnk9MiI+PHU+TDwvdT48L2E+agCYAQGgAQGKAhBvcmFjbGUtc2Vzc2lvbi0xsgKDBwojdGVtcDpDOnh5ejAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2NzgQABjoByqMBIVvSoPelUlUAIEEAgoBI0VniavN7wEjCqvN7wEjRWeJq80BGOvHa+fdhXDDnRha1XAjPNhdM+sj3J3cmbqfpI4JfC0HAQQDBBMFIwhABEMEVgIOAQQCBBEGEzUVECEGIys0AkI0VjRXToABApQBDaUBLwMAfwEDAX9+fAMaFgF/gIC/1gYDAH8AAwF/AAIBBAcAAjIAAAIyAQAELwAAAQACAgB/BA0BfwACAX4AAQIAfwECAH8BAgB/AQIAfwECAH8BAgB/AQIAfwECAH8BAgB9AQBjfgdkZWxldGVkBHRleHQAMgIAfwExAHwDfjNQDQFdDXQBDHUWdnUWdnUWdnUWdnUWdnUWdnUWdnUWdnUWdnUWdlkCMn4BBA8BfwcCAX4HAQIHfwECB38BAgd/AQIHfwECB38BAgd/AQIHfwECB38BAgd/AQIHfwF+AQAOFnpGAjZGABYCAn8WAgB/FgICfxYCAH8WAgJ/FgIAfxYCAn8WAgB8FoYFAhYCAH82WiZhbXA7Jmx0Ozxicj7wn5mC5Lit8J+minxCfEl8U3xDfHsiaHJlZiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0Lz94PTEmeT0yIn1M77u/NAAUAQQCBAIEAgQCBAIBABF/AXUABH4BYgF1AAR+AWkBdQAEfgNkZWwBdQAEfgRjb2RlAXUABH4BYQF1AAQDMkBhMWFlNzczZjlhZDk1N2M4MjA5ZWY1ZDc0ZWNkOTg2ODFkODg4NjMyMjJjNDJjNjNlODE1NmJkZGI5ZTM0NjJiMkAxOGViYzc2YmU3ZGQ4NTcwYzM5ZDE4NWFkNTcwMjMzY2Q4NWQzM2ViMjNkYzlkZGM5OWJhOWZhNDhlMDk3YzJkMkBhMWFlNzczZjlhZDk1N2M4MjA5ZWY1ZDc0ZWNkOTg2ODFkODg4NjMyMjJjNDJjNjNlODE1NmJkZGI5ZTM0NjJiQkAzODQzZWM4OTZhNjkxMmE1ZTdmM2M5OTY1YjFlMmEwODNlNDVhYmIyYjQyNDliNWYxMzFjMzhmMjg2YzdkNGVlYkAxOGViYzc2YmU3ZGQ4NTcwYzM5ZDE4NWFkNTcwMjMzY2Q4NWQzM2ViMjNkYzlkZGM5OWJhOWZhNDhlMDk3YzJk"
+    },
+    {
+      "style": 2,
+      "base": 9000,
+      "editedRtml": "Z&amp;&lt;<br>\ud83d\ude42<u>\u4e2d\ud83e\udd8a</u>|<b><u>B</u></b>|<i><u>I</u></i>|<del><u>S</u></del>|<code><u>C</u></code>|<a href=\"https://example.test/?x=1&y=2\"><u>L</u></a>",
+      "escapedText": "Z&amp;&lt;<br>\ud83d\ude42\u4e2d\ud83e\udd8a|B|I|S|C|L",
+      "marks": [
+        {
+          "name": "u",
+          "value": true,
+          "start": 16,
+          "end": 19
+        },
+        {
+          "name": "b",
+          "value": true,
+          "start": 20,
+          "end": 21
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 20,
+          "end": 21
+        },
+        {
+          "name": "i",
+          "value": true,
+          "start": 22,
+          "end": 23
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 22,
+          "end": 23
+        },
+        {
+          "name": "del",
+          "value": true,
+          "start": 24,
+          "end": 25
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 24,
+          "end": 25
+        },
+        {
+          "name": "code",
+          "value": true,
+          "start": 26,
+          "end": 27
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 26,
+          "end": 27
+        },
+        {
+          "name": "a",
+          "value": "{\"href\":\"https://example.test/?x=1&y=2\"}",
+          "start": 28,
+          "end": 29
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 28,
+          "end": 29
+        }
+      ],
+      "originalHeads": [
+        "d6fbecc5f49d8ec44753b1d5eff70f15cf2807c95286ad7ceaa67d2fc399de0d"
+      ],
+      "wire": "CtoICiN0ZW1wOkM6eHl6MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3OBCoRkgAYqUBCqIBCp8BWiZhbXA7Jmx0Ozxicj7wn5mCPHU+5Lit8J+mijwvdT58PGI+PHU+QjwvdT48L2I+fDxpPjx1Pkk8L3U+PC9pPnw8ZGVsPjx1PlM8L3U+PC9kZWw+fDxjb2RlPjx1PkM8L3U+PC9jb2RlPnw8YSBocmVmPSJodHRwczovL2V4YW1wbGUudGVzdC8/eD0xJnk9MiI+PHU+TDwvdT48L2E+agCYAQGgAQGKAhBvcmFjbGUtc2Vzc2lvbi0xsgLpBgojdGVtcDpDOnh5ejAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2NzgQqEYYqEYq8QOFb0qDMoOvTgDmAwEKASNFZ4mrze8BIwHHROO946V3MU/XG30aMIlHmPCRmNTpMgywlEF+NH3pTgcBAgMCEwMjB0ADQwJWAg4BBAIEEQQTNRUQIQIjKzQCQjRWNFdOgAEClAENpQEvAgACAX4zAX6AgL/WBgB+AAF/AAIHAAIyAAACMgEABDAAAAICAH8CDQF/AAIBfgABAgB/AQIAfwECAH8BAgB/AQIAfwECAH8BAgB/AQIAfwECAH8BAgB+B2RlbGV0ZWQEdGV4dAAyNAB8HWQzTg0BXQ9yAQ5zGHZzGHZzGHZzGHZzGHZzGHZzGHZzGHZzGHZzGHZzAjJ+AQQPAX8HAgF+BwECB38BAgd/AQIHfwECB38BAgd/AQIHfwECB38BAgd/AQIHfwECB38BfgEADhZ6RgI2RgAWAgJ/FgIAfxYCAn8WAgB/FgICfxYCAH8WAgJ/FgIAfBaGBQIWAgB/NlomYW1wOyZsdDs8YnI+8J+ZguS4rfCfpop8QnxJfFN8Q3x7ImhyZWYiOiJodHRwczovL2V4YW1wbGUudGVzdC8/eD0xJnk9MiJ9TO+7vzQAFAEEAgQCBAIEAgQCAQARfwF1AAR+AWIBdQAEfgFpAXUABH4DZGVsAXUABH4EY29kZQF1AAR+AWEBdQAEATJAZDZmYmVjYzVmNDlkOGVjNDQ3NTNiMWQ1ZWZmNzBmMTVjZjI4MDdjOTUyODZhZDdjZWFhNjdkMmZjMzk5ZGUwZDJAYzc0NGUzYmRlM2E1NzczMTRmZDcxYjdkMWEzMDg5NDc5OGYwOTE5OGQ0ZTkzMjBjYjA5NDQxN2UzNDdkZTk0ZTJAZDZmYmVjYzVmNDlkOGVjNDQ3NTNiMWQ1ZWZmNzBmMTVjZjI4MDdjOTUyODZhZDdjZWFhNjdkMmZjMzk5ZGUwZEJAZDZmYmVjYzVmNDlkOGVjNDQ3NTNiMWQ1ZWZmNzBmMTVjZjI4MDdjOTUyODZhZDdjZWFhNjdkMmZjMzk5ZGUwZGJAYzc0NGUzYmRlM2E1NzczMTRmZDcxYjdkMWEzMDg5NDc5OGYwOTE5OGQ0ZTkzMjBjYjA5NDQxN2UzNDdkZTk0ZQ=="
+    },
+    {
+      "style": 3,
+      "base": 0,
+      "editedRtml": "Z&amp;&lt;<br>\ud83d\ude42<u>\u4e2d\ud83e\udd8a</u>|<b><u>B</u></b>|<i><u>I</u></i>|<del><u>S</u></del>|<code><u>C</u></code>|<a href=\"https://example.test/?x=1&y=2\"><u>L</u></a>",
+      "escapedText": "Z&amp;&lt;<br>\ud83d\ude42\u4e2d\ud83e\udd8a|B|I|S|C|L",
+      "marks": [
+        {
+          "name": "u",
+          "value": true,
+          "start": 16,
+          "end": 19
+        },
+        {
+          "name": "b",
+          "value": true,
+          "start": 20,
+          "end": 21
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 20,
+          "end": 21
+        },
+        {
+          "name": "i",
+          "value": true,
+          "start": 22,
+          "end": 23
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 22,
+          "end": 23
+        },
+        {
+          "name": "del",
+          "value": true,
+          "start": 24,
+          "end": 25
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 24,
+          "end": 25
+        },
+        {
+          "name": "code",
+          "value": true,
+          "start": 26,
+          "end": 27
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 26,
+          "end": 27
+        },
+        {
+          "name": "a",
+          "value": "{\"href\":\"https://example.test/?x=1&y=2\"}",
+          "start": 28,
+          "end": 29
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 28,
+          "end": 29
+        }
+      ],
+      "originalHeads": [
+        "a1ae773f9ad957c8209ef5d74ecd98681d88863222c42c63e8156bddb9e3462b"
+      ],
+      "wire": "CvQICiN0ZW1wOkM6eHl6MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3OBDoB0gAYqUBCqIBCp8BWiZhbXA7Jmx0Ozxicj7wn5mCPHU+5Lit8J+mijwvdT58PGI+PHU+QjwvdT48L2I+fDxpPjx1Pkk8L3U+PC9pPnw8ZGVsPjx1PlM8L3U+PC9kZWw+fDxjb2RlPjx1PkM8L3U+PC9jb2RlPnw8YSBocmVmPSJodHRwczovL2V4YW1wbGUudGVzdC8/eD0xJnk9MiI+PHU+TDwvdT48L2E+agCYAQGgAQGKAhBvcmFjbGUtc2Vzc2lvbi0xsgKDBwojdGVtcDpDOnh5ejAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2NzgQABjoByqMBIVvSoPelUlUAIEEAgoBI0VniavN7wEjCqvN7wEjRWeJq80BGOvHa+fdhXDDnRha1XAjPNhdM+sj3J3cmbqfpI4JfC0HAQQDBBMFIwhABEMEVgIOAQQCBBEGEzUVECEGIys0AkI0VjRXToABApQBDaUBLwMAfwEDAX9+fAMaFgF/gIC/1gYDAH8AAwF/AAIBBAcAAjIAAAIyAQAELwAAAQACAgB/BA0BfwACAX4AAQIAfwECAH8BAgB/AQIAfwECAH8BAgB/AQIAfwECAH8BAgB9AQBjfgdkZWxldGVkBHRleHQAMgIAfwExAHwDfjNQDQFdDXQBDHUWdnUWdnUWdnUWdnUWdnUWdnUWdnUWdnUWdnUWdlkCMn4BBA8BfwcCAX4HAQIHfwECB38BAgd/AQIHfwECB38BAgd/AQIHfwECB38BAgd/AQIHfwF+AQAOFnpGAjZGABYCAn8WAgB/FgICfxYCAH8WAgJ/FgIAfxYCAn8WAgB8FoYFAhYCAH82WiZhbXA7Jmx0Ozxicj7wn5mC5Lit8J+minxCfEl8U3xDfHsiaHJlZiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0Lz94PTEmeT0yIn1M77u/NAAUAQQCBAIEAgQCBAIBABF/AXUABH4BYgF1AAR+AWkBdQAEfgNkZWwBdQAEfgRjb2RlAXUABH4BYQF1AAQDMkBhMWFlNzczZjlhZDk1N2M4MjA5ZWY1ZDc0ZWNkOTg2ODFkODg4NjMyMjJjNDJjNjNlODE1NmJkZGI5ZTM0NjJiMkAxOGViYzc2YmU3ZGQ4NTcwYzM5ZDE4NWFkNTcwMjMzY2Q4NWQzM2ViMjNkYzlkZGM5OWJhOWZhNDhlMDk3YzJkMkBhMWFlNzczZjlhZDk1N2M4MjA5ZWY1ZDc0ZWNkOTg2ODFkODg4NjMyMjJjNDJjNjNlODE1NmJkZGI5ZTM0NjJiQkAzODQzZWM4OTZhNjkxMmE1ZTdmM2M5OTY1YjFlMmEwODNlNDVhYmIyYjQyNDliNWYxMzFjMzhmMjg2YzdkNGVlYkAxOGViYzc2YmU3ZGQ4NTcwYzM5ZDE4NWFkNTcwMjMzY2Q4NWQzM2ViMjNkYzlkZGM5OWJhOWZhNDhlMDk3YzJk"
+    },
+    {
+      "style": 3,
+      "base": 9000,
+      "editedRtml": "Z&amp;&lt;<br>\ud83d\ude42<u>\u4e2d\ud83e\udd8a</u>|<b><u>B</u></b>|<i><u>I</u></i>|<del><u>S</u></del>|<code><u>C</u></code>|<a href=\"https://example.test/?x=1&y=2\"><u>L</u></a>",
+      "escapedText": "Z&amp;&lt;<br>\ud83d\ude42\u4e2d\ud83e\udd8a|B|I|S|C|L",
+      "marks": [
+        {
+          "name": "u",
+          "value": true,
+          "start": 16,
+          "end": 19
+        },
+        {
+          "name": "b",
+          "value": true,
+          "start": 20,
+          "end": 21
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 20,
+          "end": 21
+        },
+        {
+          "name": "i",
+          "value": true,
+          "start": 22,
+          "end": 23
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 22,
+          "end": 23
+        },
+        {
+          "name": "del",
+          "value": true,
+          "start": 24,
+          "end": 25
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 24,
+          "end": 25
+        },
+        {
+          "name": "code",
+          "value": true,
+          "start": 26,
+          "end": 27
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 26,
+          "end": 27
+        },
+        {
+          "name": "a",
+          "value": "{\"href\":\"https://example.test/?x=1&y=2\"}",
+          "start": 28,
+          "end": 29
+        },
+        {
+          "name": "u",
+          "value": true,
+          "start": 28,
+          "end": 29
+        }
+      ],
+      "originalHeads": [
+        "d6fbecc5f49d8ec44753b1d5eff70f15cf2807c95286ad7ceaa67d2fc399de0d"
+      ],
+      "wire": "CtoICiN0ZW1wOkM6eHl6MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3OBCoRkgAYqUBCqIBCp8BWiZhbXA7Jmx0Ozxicj7wn5mCPHU+5Lit8J+mijwvdT58PGI+PHU+QjwvdT48L2I+fDxpPjx1Pkk8L3U+PC9pPnw8ZGVsPjx1PlM8L3U+PC9kZWw+fDxjb2RlPjx1PkM8L3U+PC9jb2RlPnw8YSBocmVmPSJodHRwczovL2V4YW1wbGUudGVzdC8/eD0xJnk9MiI+PHU+TDwvdT48L2E+agCYAQGgAQGKAhBvcmFjbGUtc2Vzc2lvbi0xsgLpBgojdGVtcDpDOnh5ejAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2NzgQqEYYqEYq8QOFb0qDMoOvTgDmAwEKASNFZ4mrze8BIwHHROO946V3MU/XG30aMIlHmPCRmNTpMgywlEF+NH3pTgcBAgMCEwMjB0ADQwJWAg4BBAIEEQQTNRUQIQIjKzQCQjRWNFdOgAEClAENpQEvAgACAX4zAX6AgL/WBgB+AAF/AAIHAAIyAAACMgEABDAAAAICAH8CDQF/AAIBfgABAgB/AQIAfwECAH8BAgB/AQIAfwECAH8BAgB/AQIAfwECAH8BAgB+B2RlbGV0ZWQEdGV4dAAyNAB8HWQzTg0BXQ9yAQ5zGHZzGHZzGHZzGHZzGHZzGHZzGHZzGHZzGHZzGHZzAjJ+AQQPAX8HAgF+BwECB38BAgd/AQIHfwECB38BAgd/AQIHfwECB38BAgd/AQIHfwECB38BfgEADhZ6RgI2RgAWAgJ/FgIAfxYCAn8WAgB/FgICfxYCAH8WAgJ/FgIAfBaGBQIWAgB/NlomYW1wOyZsdDs8YnI+8J+ZguS4rfCfpop8QnxJfFN8Q3x7ImhyZWYiOiJodHRwczovL2V4YW1wbGUudGVzdC8/eD0xJnk9MiJ9TO+7vzQAFAEEAgQCBAIEAgQCAQARfwF1AAR+AWIBdQAEfgFpAXUABH4DZGVsAXUABH4EY29kZQF1AAR+AWEBdQAEATJAZDZmYmVjYzVmNDlkOGVjNDQ3NTNiMWQ1ZWZmNzBmMTVjZjI4MDdjOTUyODZhZDdjZWFhNjdkMmZjMzk5ZGUwZDJAYzc0NGUzYmRlM2E1NzczMTRmZDcxYjdkMWEzMDg5NDc5OGYwOTE5OGQ0ZTkzMjBjYjA5NDQxN2UzNDdkZTk0ZTJAZDZmYmVjYzVmNDlkOGVjNDQ3NTNiMWQ1ZWZmNzBmMTVjZjI4MDdjOTUyODZhZDdjZWFhNjdkMmZjMzk5ZGUwZEJAZDZmYmVjYzVmNDlkOGVjNDQ3NTNiMWQ1ZWZmNzBmMTVjZjI4MDdjOTUyODZhZDdjZWFhNjdkMmZjMzk5ZGUwZGJAYzc0NGUzYmRlM2E1NzczMTRmZDcxYjdkMWEzMDg5NDc5OGYwOTE5OGQ0ZTkzMjBjYjA5NDQxN2UzNDdkZTk0ZQ=="
+    }
+  ]
+}

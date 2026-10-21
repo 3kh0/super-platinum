@@ -48,6 +48,7 @@ pub(crate) fn RichEditor(
     #[props(default = "{}".into())] labels: String,
     #[props(default)] disabled: bool,
     #[props(default = true)] allow_lists: bool,
+    #[props(default)] allow_underline: bool,
     #[props(default = true)] autofocus: bool,
     #[props(default)] expected_generation: Option<u64>,
 ) -> Element {
@@ -59,11 +60,11 @@ pub(crate) fn RichEditor(
         div { class: "rich-editor",
             onmounted: move |_| {
                 let id = serde_json::to_string(id).unwrap();
-                dioxus::document::eval(&format!("{EDITOR}\nwindow.superPlatinumRichEditor.mount({id},{blocks},{labels},{autofocus},{generation});"));
+                dioxus::document::eval(&format!("{EDITOR}\nwindow.superPlatinumRichEditor.mount({id},{blocks},{labels},{autofocus},{generation},{allow_underline});"));
             },
             label {id: "{label_id}", "{label}"}
             div {class: "format-toolbar", role: "toolbar", "aria-label": "Text formatting",
-                for (name, command, symbol) in [("Bold", "bold", Icon::FormatBold), ("Italic", "italic", Icon::FormatItalic), ("Strikethrough", "strikeThrough", Icon::FormatStrike), ("Bulleted list", "insertUnorderedList", Icon::FormatListBulleted), ("Numbered list", "insertOrderedList", Icon::FormatListNumbered)].into_iter().filter(|(_, command, _)| allow_lists || !matches!(*command, "insertUnorderedList" | "insertOrderedList")) {
+                for (name, command, symbol) in [("Bold", "bold", Icon::FormatBold), ("Italic", "italic", Icon::FormatItalic), ("Underline", "underline", Icon::FormatUnderlined), ("Strikethrough", "strikeThrough", Icon::FormatStrike), ("Bulleted list", "insertUnorderedList", Icon::FormatListBulleted), ("Numbered list", "insertOrderedList", Icon::FormatListNumbered)].into_iter().filter(|(_, command, _)| (allow_lists || !matches!(*command, "insertUnorderedList" | "insertOrderedList")) && (allow_underline || *command != "underline")) {
                     button {r#type: "button", class: "composer-icon-btn", title: name, "aria-label": name, disabled,
                         onmousedown: move |event| event.prevent_default(),
                         onclick: move |_| {

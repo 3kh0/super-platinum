@@ -86,6 +86,31 @@ fn accepts_id_only_event_shapes_and_rejects_conflicting_ids() {
 }
 
 #[test]
+fn confirmed_local_change_retires_only_its_file_without_a_remote_worker() {
+    let mut shell = shell();
+    let before = snapshot_revision(&shell);
+    invalidate(&mut shell, "T1", "F1");
+    assert!(shell.file_events.pending.is_empty());
+    assert!(changed_since(&shell, "T1", "F1", before));
+    assert!(!changed_since(&shell, "T1", "OTHER", before));
+    assert!(!changed_since(&shell, "OTHER", "F1", before));
+    assert!(!changed_since(
+        &shell,
+        "T1",
+        "F1",
+        snapshot_revision(&shell)
+    ));
+    shell.core.account_epoch += 1;
+    assert!(!changed_since(&shell, "T1", "F1", before));
+    shell.core.transport = None;
+    let disconnected = snapshot_revision(&shell);
+    invalidate(&mut shell, "T1", "F1");
+    assert!(changed_since(&shell, "T1", "F1", disconnected));
+    shell.core.transport = Some(Arc::new(Transport::new("fixture").unwrap()));
+    assert!(!changed_since(&shell, "T1", "F1", disconnected));
+}
+
+#[test]
 fn burst_reads_are_serialized_and_only_latest_result_applies() {
     let mut shell = shell();
     let first = prepare(&mut shell, "T1", 4, &event()).unwrap();

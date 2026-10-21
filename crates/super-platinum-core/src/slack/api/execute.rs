@@ -463,6 +463,60 @@ pub async fn fetch_conversation_info(
     Ok(page.channel)
 }
 
+/// Keep the original channel object for source-directory publication. Existing
+/// typed callers retain their original API and decoding behavior.
+pub async fn fetch_conversation_info_raw(
+    transport: &Transport,
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    channel_id: ChannelId,
+) -> Result<serde_json::Value, Error> {
+    let value = transport
+        .execute(conversations_info(client, workspace, channel_id.clone()))
+        .await?;
+    conversation_info_raw(value, &channel_id)
+}
+
+fn conversation_info_raw(
+    value: serde_json::Value,
+    requested: &str,
+) -> Result<serde_json::Value, Error> {
+    let raw = value
+        .get("channel")
+        .filter(|v| v.is_object() && v["id"].as_str() == Some(requested))
+        .ok_or_else(|| Error::Api("conversation_info_id_mismatch".into()))?;
+    if value["ok"] != true || requested.is_empty() {
+        return Err(Error::Api("conversation_info_response_invalid".into()));
+    }
+    Ok(raw.clone())
+}
+
+#[cfg(test)]
+mod conversation_info_raw_tests {
+    use super::*;
+    use serde_json::json;
+    #[test]
+    fn preserves_original_omission_and_opaque_fields() {
+        let raw = json!({"id":"C1","name":"raw","opaque":[null,false,0]});
+        assert_eq!(
+            conversation_info_raw(json!({"ok":true,"channel":raw}), "C1").unwrap(),
+            raw
+        );
+        assert!(raw.get("is_archived").is_none());
+    }
+    #[test]
+    fn refuses_wrong_missing_and_failed_original_envelopes() {
+        for response in [
+            json!({"ok":true,"channel":{"id":"C2"}}),
+            json!({"ok":false,"channel":{"id":"C1"}}),
+            json!({"channel":{"id":"C1"}}),
+            json!({"ok":true,"channel":false}),
+        ] {
+            assert!(conversation_info_raw(response, "C1").is_err());
+        }
+    }
+}
+
 pub async fn send_message(
     transport: &Transport,
     client: &SlackClient,

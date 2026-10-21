@@ -196,6 +196,26 @@ impl Editor {
                     .is_some_and(|current| payload(raw) == payload(current))
             })
     }
+    /// Desired copy access with every other acquired domain input unchanged.
+    /// This observation never changes a mutation receipt or proves delivery.
+    pub fn copy_permission_observation(&self, current: &Self, desired: &str) -> super::Observation {
+        if !matches!(desired, "everyone" | "collaborators")
+            || self.workflow_id() != current.workflow_id()
+        {
+            return super::Observation::Unavailable;
+        }
+        let mut expected = self.clone();
+        expected
+            .load
+            .responses
+            .get_mut(&ReadKind::CopyPermissions)
+            .expect("loaded copy permissions")["permission_type"] = json!(desired);
+        if expected.same_revision(current) {
+            super::Observation::Matches
+        } else {
+            super::Observation::Different
+        }
+    }
     pub fn workflow_id(&self) -> &str {
         &self.load.workflow
     }
@@ -255,3 +275,8 @@ impl Editor {
         unavailable(self.steps())
     }
 }
+
+#[cfg(test)]
+mod copy_tests;
+
+mod permissions_observation;

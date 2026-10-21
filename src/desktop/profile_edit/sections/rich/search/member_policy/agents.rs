@@ -5,7 +5,7 @@ use super_platinum_core::block_actions::app_eligibility::agents as facts;
 
 pub(super) async fn capture(
     state: Signal<ShellState>,
-    search: &Search,
+    search: &Search<impl Host>,
     witness: &Witness,
     users: &[&User],
     observed_profiles: &BTreeMap<String, Value>,

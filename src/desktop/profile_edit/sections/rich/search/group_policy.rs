@@ -1,7 +1,6 @@
 //! Profile group admission from the canonical self-member observation.
 //! OrdinaryClientV2's unified default is true; session auth flags are unrelated.
-use super::Search;
-use crate::profile_edit::sections::rich::query;
+use super::{Search, channel_host::Host};
 use crate::state::ShellState;
 use std::{collections::BTreeSet, sync::Arc};
 use super_platinum_core::{
@@ -16,13 +15,15 @@ fn unavailable() -> Error {
 }
 
 pub(super) struct Observation {
-    lease: query::Lease,
+    owner: Arc<dyn Fn(&ShellState) -> bool + Send + Sync>,
+    account: String,
+    team: String,
     context: Arc<crate::scheduled::Context>,
     source: Subset,
     policy: groups::Policy,
 }
 impl Observation {
-    pub(super) fn capture(shell: &ShellState, search: &Search) -> Result<Self, Error> {
+    pub(super) fn capture(shell: &ShellState, search: &Search<impl Host>) -> Result<Self, Error> {
         if !search.current(shell) {
             return Err(unavailable());
         }
@@ -41,31 +42,30 @@ impl Observation {
             &w.users,
         )?;
         let policy = selected(&source, &context.session.user_id)?;
+        let lease = search.lease.clone();
         Ok(Self {
-            lease: search.lease.clone(),
+            owner: Arc::new(move |shell| lease.current(shell)),
+            account: search.lease.account().to_owned(),
+            team: search.lease.team().to_owned(),
             context: context.clone(),
             source,
             policy,
         })
     }
-    pub(super) fn current(&self, shell: &ShellState, search: &Search) -> bool {
-        self.lease.current(shell)
+    pub(super) fn current(&self, shell: &ShellState, search: &Search<impl Host>) -> bool {
+        (self.owner)(shell)
             && search.current(shell)
             && Arc::ptr_eq(&self.context, &search.context)
-            && shell
-                .core
-                .workspaces
-                .get(self.lease.team())
-                .is_some_and(|w| {
-                    self.source.current_rows(
-                        &w.directory_members,
-                        self.lease.account(),
-                        &self.context.session,
-                        self.context.epoch,
-                        GENERATION,
-                        &w.users,
-                    )
-                })
+            && shell.core.workspaces.get(&self.team).is_some_and(|w| {
+                self.source.current_rows(
+                    &w.directory_members,
+                    &self.account,
+                    &self.context.session,
+                    self.context.epoch,
+                    GENERATION,
+                    &w.users,
+                )
+            })
     }
     pub(super) fn policy(&self) -> &groups::Policy {
         &self.policy

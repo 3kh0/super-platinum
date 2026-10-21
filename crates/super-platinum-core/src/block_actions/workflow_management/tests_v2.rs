@@ -239,3 +239,5 @@ fn invalid_next_stage_leaves_acknowledged_current_stage_and_raw_receipts_intact(
     assert_eq!(next.phase(), FollowUpPhase::Interactivity);
     assert!(!next.fully_succeeded());
 }
+
+mod publication_readback_tests;

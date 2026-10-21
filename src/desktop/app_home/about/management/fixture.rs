@@ -2,6 +2,11 @@
 use super::*;
 use super_platinum_core::slack::{PreparedRequest, client::RequestBody};
 pub(crate) mod check;
+pub(crate) mod delete;
+pub(crate) mod managers;
+pub(crate) mod permissions;
+pub(crate) mod run_access;
+pub(crate) mod unpublish;
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Mode {
     Success,
@@ -13,6 +18,11 @@ pub(crate) enum Mode {
 }
 #[derive(Clone)]
 pub(super) struct Model {
+    deletion: Option<delete::Model>,
+    publication: Option<unpublish::Model>,
+    permissions: Option<permissions::Model>,
+    run_access: Option<run_access::Model>,
+    managers: Option<managers::Model>,
     workflow: Value,
     trigger: Value,
     mode: Mode,
@@ -31,6 +41,13 @@ pub(super) fn enabled(s: &ShellState) -> bool {
             .is_some_and(|h| h.fixture)
 }
 pub(crate) fn install(s: &mut ShellState, managed: bool, uncertain: bool) {
+    let managed = managed || managers::requested() && managers::case() == "managers-no-trigger";
+    if managers::requested() && s.core.active_account.is_none() {
+        s.core.active_account = Some("synthetic-workflow-managers".into());
+    }
+    if run_access::requested() && s.core.active_account.is_none() {
+        s.core.active_account = Some("synthetic-workflow-run-access".into());
+    }
     let old = s.core.active_team.clone().unwrap();
     let mut workspace = s.core.workspaces[&old].clone();
     let mut user = workspace.users[&workspace.self_user_id].clone();
@@ -52,6 +69,11 @@ pub(crate) fn install(s: &mut ShellState, managed: bool, uncertain: bool) {
     h.profile=Some(Profile::decode(&app,json!({"ok":true,"app_profile":{"id":app,"team_id":owner.ctx.session.team_id,"is_installed":true,"is_workflow_app":true}})).unwrap());
     h.connection = None;
     s.app_home.about.management.fixture = Some(Model {
+        deletion: None,
+        publication: None,
+        permissions: None,
+        run_access: None,
+        managers: None,
         workflow: json!({"id":"WF_REVIEW","app_id":app,"title":"Review requests","description":"Collect the details before a team review.",
             "is_published":false,"is_empty":false,"date_updated":1,"collaborators":[owner.ctx.session.user_id],
             "steps":[{"id":"STEP_REVIEW","function":{"id":"FN_REVIEW","product_level_availability":{"is_available":true}},"inputs":{"message":{"value":"Review this"}}}],"retained_unknown":42}),
@@ -66,6 +88,11 @@ pub(crate) fn install(s: &mut ShellState, managed: bool, uncertain: bool) {
         writes: 0,
         network: 0,
     });
+    delete::install(s);
+    unpublish::install(s);
+    permissions::install(s);
+    run_access::install(s);
+    managers::install(s);
 }
 fn refused() -> Error {
     Error::Api("workflow_management_not_sent_fixture".into())

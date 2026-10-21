@@ -20,6 +20,8 @@ import time
 
 from native_fixture import DEFAULT_BINARY, ROOT, NativeFixture
 from native_check import expected_viewport
+from profile_group_absent_member import CASES as ABSENT_MEMBER_CASES
+from profile_group_known_freshness import CASES as KNOWN_FRESHNESS_CASES
 
 PREFIX = 'profile-group-recovery-check: '
 EDGE = 'profile-group-recovery-capture: '
@@ -28,9 +30,21 @@ FLAG = 'SUPER_PLATINUM_PROFILE_GROUP_RECOVERY_CHECK'
 H = runpy.run_path(str(Path(__file__).with_name('check-multi-external-select-native.py')))
 STAGES = {
     'legacy': ('initial','ordinary-open','held','malformed','offline','success','saved','reopened'),
-    'absent': ('initial','ordinary-open','held','partial','fallback-held','success','saved','reopened'),
-    'retirement': ('initial','ordinary-open','held','cancelled','source-refused','account-replaced'),
+    'absent': ('initial','held','partial','fallback-held','success','saved','reopened'),
+    'retirement': ('initial','held','cancelled','source-refused','account-replaced'),
+    'automatic': ('initial','held','success','edited','saved','reopened'),
+    'pending': ('initial','held','pending','success','edited','saved','reopened'),
+    'automatic-offline': ('initial','held','offline','success','edited','saved','reopened'),
+    'automatic-malformed': ('initial','held','malformed','success','edited','saved','reopened'),
+    'ready': ('initial','success','edited','saved','reopened'),
+    'mixed-member': ('initial','held','success','edited','saved','reopened'),
+    'mixed-file-group': ('initial','file-held','group-held','offline','retry-file-held','success','edited','saved','reopened'),
+    'rate-limit': ('initial','held','direct-held','limited','cancelled','reopened-limited',
+                   'expired','success','edited','saved','reopened'),
 }
+AUTOMATIC = ('automatic', 'pending', 'automatic-offline', 'automatic-malformed', 'ready', 'mixed-member', 'rate-limit', 'mixed-file-group')
+STAGES.update(ABSENT_MEMBER_CASES)
+STAGES.update(KNOWN_FRESHNESS_CASES)
 FIXTURES = ('profile-group-recovery', 'profile-group-recovery-narrow')
 
 def require(condition, message):
@@ -94,9 +108,17 @@ OTHER = 'SMISSING02'
 LABEL = '@@ Cafe\u0301 crew  '
 OTHER_LABEL = '@Review crew'
 DRAFT = 'Keep my unsaved description with '
+EDITED = 'Native edited \u4e2d\U0001f98a & description with '
+MEMBER = 'UMIXED001'
+MEMBER_LABEL = '@Known mixed member'
 LOADING = 'Loading mention names. Your description is unchanged.'
+MIXED_LOADING = 'Loading reference details. Your description is unchanged.'
+MIXED_GUIDANCE = ('Reference details are unavailable or changed while opening. Your description is unchanged. '
+                  'Retry to load document and mention details.')
 GUIDANCE = ('Mention names are unavailable or changed while opening. Your description is unchanged. '
             'Retry to load member, channel, and group details.')
+LIMITED = 'Slack asked us to wait before loading group names. Your description is unchanged.'
+RETRY_READY = 'You can retry loading group names now. Your description is unchanged.'
 ACCOUNT = '00000000-0000-4000-8000-000000000081'
 FOREIGN = '00000000-0000-4000-8000-000000000082'
 
@@ -105,11 +127,39 @@ def ids(case):
     return [GROUP] if case == 'legacy' else [GROUP, OTHER]
 
 
-def blocks(case):
+def blocks(case, edited=False):
+    if case in ABSENT_MEMBER_CASES:
+        from profile_group_absent_member import original_blocks
+        return original_blocks(EDITED if edited else DRAFT)
     tokens = [GROUP, GROUP] + ([] if case == 'legacy' else [OTHER])
-    return [dict(type='rich_text', elements=[dict(type='rich_text_section', elements=[
-        dict(type='text', text=DRAFT), *[dict(type='usergroup', usergroup_id=g,
+    value = [dict(type='rich_text', elements=[dict(type='rich_text_section', elements=[
+        dict(type='text', text=EDITED if edited else DRAFT), *[dict(type='usergroup', usergroup_id=g,
         fixture_occurrence=i + 1, tab_id='opaque-tab', opaque={'keep': True}) for i,g in enumerate(tokens)]])])]
+    if case in ('mixed-member','mixed-file-group'):
+        value[0]['elements'][0]['elements'].append(dict(type='user',user_id=MEMBER,fixture_occurrence=4,
+            tab_id='opaque-member-tab',opaque={'keep':True}))
+    if case=='mixed-file-group':
+        from profile_group_mixed_file import file_tokens
+        value[0]['elements'][0]['elements'].extend(file_tokens())
+    return value
+
+
+def member_raw():
+    return dict(id=MEMBER,team_id='TINIT0001',name='username-must-not-win',real_name='Real fallback',
+                profile=dict(display_name='Known mixed member',real_name='Profile fallback'),updated=101)
+
+
+def member_source():
+    # The actual BootRead drain runs member_hydration/profile.rs::effective/derive.
+    # Its canonical source is distinct from the original boot wire and typed User.
+    value=member_raw()
+    value['profile'].update(first_name='',last_name='',display_name_normalized='Known mixed member',
+                            real_name_normalized='Profile fallback')
+    value.update(_name_lc='username-must-not-win',_first_name_lc='',_last_name_lc='',
+                 _real_name_lc='profile fallback',_display_name_lc='known mixed member',
+                 _real_name_normalized_lc='profile fallback',
+                 _display_name_normalized_lc='known mixed member',_email_normalized_lc='')
+    return value
 
 
 def raw(group):
@@ -121,9 +171,10 @@ def layout(value, viewport, stage, case):
     require(isinstance(value,dict) and value.get('ok') is True and value.get('noOverflow') is True
             and value.get('viewport') == viewport, 'Missing successful measured layout')
     replaced = stage == 'account-replaced'
-    editor = stage in ('success','reopened')
-    waiting = stage in ('ordinary-open','held','malformed','offline','partial','fallback-held','source-refused')
-    loading = stage in ('held','fallback-held')
+    editor = stage in ('success','edited','reopened')
+    waiting = stage in ('ordinary-open','held','malformed','offline','pending','partial','fallback-held','source-refused',
+                        'direct-held','limited','reopened-limited','expired','file-held','group-held','retry-file-held')
+    loading = stage in ('held','fallback-held','direct-held','file-held','group-held','retry-file-held')
     require(value.get('dialog') is (not replaced), 'Wrong dialog owner')
     if not replaced: rectangle(value.get('dialogRect'),viewport)
     controls,notices,tokens = [value.get(k) for k in ('controls','notices','tokens')]
@@ -131,7 +182,9 @@ def layout(value, viewport, stage, case):
     for row in controls + notices + tokens:
         require(row.get('visible') is True, 'Hidden action, feedback or token')
         rectangle(row.get('rect'),viewport)
-    feedback = any(n.get('text') == (LOADING if loading else GUIDANCE) and n.get('visible') is True for n in notices)
+    notice = LOADING if loading else LIMITED if stage in ('limited','reopened-limited') else RETRY_READY if stage=='expired' else GUIDANCE
+    if case=='mixed-file-group': notice = MIXED_LOADING if loading else MIXED_GUIDANCE
+    feedback = any(n.get('text') == notice and n.get('visible') is True for n in notices)
     require(value.get('feedbackRequired') is waiting and value.get('feedbackVisible') is feedback
             and (not waiting or feedback), 'Missing exact readable Retry guidance')
     wanted = [] if replaced else ['Back','Save section'] + (
@@ -139,17 +192,23 @@ def layout(value, viewport, stage, case):
         ['Retry description','Cancel description edit'] if waiting else ['Edit description'])
     require(sorted(c.get('text') for c in controls) == sorted(wanted), 'Wrong action inventory')
     require(all(c.get('disabled') is ((c['text']=='Save section' and (editor or waiting or stage in ('initial','cancelled','saved')))
-                or (c['text']=='Retry description' and loading)) for c in controls), 'Wrong action disabled state')
+                or (c['text']=='Retry description' and (loading or stage in ('limited','reopened-limited')))) for c in controls), 'Wrong action disabled state')
     require(value.get('richEditable') is (True if editor else None), 'Wrong editor editability')
     if editor:
         labels = [LABEL,LABEL] + ([] if case=='legacy' else [OTHER_LABEL])
+        if case in ('mixed-member','mixed-file-group'): labels.append(MEMBER_LABEL)
+        if case=='mixed-file-group': labels.extend(['List & Plan']*2)
         require([t.get('text') for t in tokens] == labels and all(t.get('editable') is False for t in tokens),
                 'Wrong exact group labels or token count')
         for token in tokens:
             require(isinstance(token.get('fragments'),list) and token['fragments'], 'Missing inline fragments')
             for fragment in token['fragments']: rectangle(fragment,viewport)
+        if case=='mixed-file-group':
+            require([(t.get('fontWeight'),t.get('fontStyle')) for t in tokens[-2:]]
+                    == [('700','normal'),('400','italic')], 'Mixed file computed styles changed')
         captured=value.get('captured')
-        require(isinstance(captured,dict) and captured.get('snapshot',{}).get('blocks') == blocks(case),
+        require(isinstance(captured,dict) and captured.get('snapshot',{}).get('blocks')
+                == blocks(case, case in AUTOMATIC and stage in ('edited','reopened')),
                 'Original native draft or opaque duplicates changed')
         snapshot=captured['snapshot']
         require(snapshot.get('composing') is False and type(snapshot.get('revision')) is int
@@ -204,7 +263,39 @@ def request_reads(rows):
 def expected_reads(case):
     if case=='legacy': return [('directory',[GROUP]),('direct',[GROUP]),('directory',[GROUP]),('direct',[GROUP]),('directory',[GROUP])]
     if case=='absent': return [('directory',[GROUP,OTHER]),('directory',[OTHER]),('direct',[OTHER])]
+    if case=='ready': return []
+    if case in ('automatic','mixed-member'): return [('directory',[GROUP,OTHER])]
+    if case=='pending': return [('directory',[GROUP,OTHER])]*2
+    if case in ('automatic-offline','automatic-malformed','rate-limit','mixed-file-group'):
+        return [('directory',[GROUP,OTHER]),('direct',[GROUP,OTHER]),('directory',[GROUP,OTHER])]
     return [('directory',[GROUP,OTHER]),('directory',[GROUP,OTHER]),('directory',[OTHER])]
+
+
+def stage_counts(case):
+    counts={'initial':(0,0),'ordinary-open':(0,0),'held':(1,0),'malformed':(2,1),'offline':(4,2),
+        'partial':(1,1),'fallback-held':(3,1),'cancelled':(1,1),'source-refused':(2,2),'account-replaced':(3,3),
+        'success':(5,3) if case=='legacy' else (3,2),'saved':(5,3) if case=='legacy' else (3,2),
+        'reopened':(5,3) if case=='legacy' else (3,2)}
+    if case in AUTOMATIC:
+        final={'automatic':(1,1),'pending':(2,2),'automatic-offline':(3,2),
+               'automatic-malformed':(3,2),'ready':(0,0),'mixed-member':(1,1),'rate-limit':(3,2),'mixed-file-group':(3,2)}[case]
+        counts.update(pending=(1,1),offline=(2,1),malformed=(2,1))
+        counts.update({stage:final for stage in ('success','edited','saved','reopened')})
+        if case=='rate-limit':
+            counts.update({'direct-held':(2,0), **{s:(2,1) for s in ('limited','cancelled','reopened-limited','expired')}})
+    if case=='mixed-file-group': counts.update({'file-held':(0,0),'group-held':(1,0),'retry-file-held':(2,1)})
+    return counts
+
+
+def retirement_deliveries(rows):
+    reads=[r for r in rows if r['kind']!='discovery']
+    for i,row in enumerate(reads):
+        if row['released']:
+            # Original Cancel and install_loaded drop their owned receivers;
+            # the intervening source-change read really delivers before rejection.
+            require(row.get('receiverRetired') is (i in (0,2))
+                    and row.get('delivered') is (i==1),
+                    'Retired/source-change callback delivery ownership differs')
 
 
 def validate(fixture,receipt,captures,*,platform=sys.platform,png=True):
@@ -217,17 +308,27 @@ def validate(fixture,receipt,captures,*,platform=sys.platform,png=True):
     stages=receipt.get('stages')
     require(isinstance(stages,list) and [s.get('stage') for s in stages]==list(STAGES[case]),'Wrong stage order')
     require(isinstance(receipt.get('captures'),dict) and set(receipt['captures'])==set(STAGES[case]),'Incomplete captures')
+    if case in KNOWN_FRESHNESS_CASES:
+        from profile_group_known_freshness import validate_known
+        return validate_known(receipt, captures, viewport, require, rectangle, validate_png, png)
+    if case in ABSENT_MEMBER_CASES:
+        from profile_group_absent_member import validate_absent
+        return validate_absent(receipt, captures, viewport, require, rectangle, validate_png, png)
     require(request_reads(receipt.get('requests'))==expected_reads(case),'Wrong actual fallback/read sequence')
     require(all(r['released'] for r in receipt['requests']),'Unreleased final callback')
-    counts={'initial':(0,0),'ordinary-open':(0,0),'held':(1,0),'malformed':(2,1),'offline':(4,2),
-        'partial':(1,1),'fallback-held':(3,1),'cancelled':(1,1),'source-refused':(2,2),'account-replaced':(3,3),
-        'success':(5,3) if case=='legacy' else (3,2),'saved':(5,3) if case=='legacy' else (3,2),
-        'reopened':(5,3) if case=='legacy' else (3,2)}
+    if case=='retirement': retirement_deliveries(receipt['requests'])
+    counts=stage_counts(case)
     original=stages[0]['model']
+    if case=='rate-limit':
+        from profile_group_rate_limit import validate_rate
+        validate_rate(receipt, require)
+    if case=='mixed-file-group':
+        from profile_group_mixed_file import validate_mixed
+        validate_mixed(receipt, require)
     for row in stages:
         stage=row['stage'];model=row.get('model');geometry=row.get('geometry');proof=row.get('proof',{})
         require(isinstance(model,dict),'Missing model')
-        replaced=stage=='account-replaced';held=stage in ('held','fallback-held');saved=stage in ('saved','reopened')
+        replaced=stage=='account-replaced';held=stage in ('held','fallback-held','direct-held','group-held');saved=stage in ('saved','reopened')
         wanted_proofs={
             'initial':('originalDraft',),'ordinary-open':('noForcedRead',),'held':('explicitRetryRead','duplicateIdsCoalesced'),
             'malformed':('sourceRetained','draftRetained','actualFallback'),'offline':('sourceRetained','draftRetained','actualFallback'),
@@ -235,12 +336,53 @@ def validate(fixture,receipt,captures,*,platform=sys.platform,png=True):
             'success':('actualReadAndAdoption','originalDraft','membershipPreserved'),'saved':('actualProfileSaveReadback','rawDuplicatesPreserved'),
             'reopened':('noRedundantRead','originalDraft'),'cancelled':('lateResultDidNotOpen','draftRetained'),
             'source-refused':('actualGroupEvent','oldSourceResultRefused','draftRetained'),'account-replaced':('actualInstallLoaded',)}
+        if stage=='held' and case!='legacy':
+            wanted_proofs['held']=('automaticRead','duplicateIdsCoalesced')
+            require(proof.get('explicitRetryRead') in (None,False),'Initial absent read required explicit Retry')
+        if case in AUTOMATIC:
+            wanted_proofs['edited']=('actualNativeEdit',)
+            wanted_proofs['success']=(('readyWithoutRead',) if case=='ready' else ('actualReadAndAdoption',))+('originalDraft',)
+            if stage=='held':
+                require(proof.get('duplicateOpen') is True,'Repeated original open not exercised')
+            if stage in ('held','pending','offline','malformed'):
+                require(proof.get('noAutomaticLoop') is True and proof.get('quietObservationMs')==500,
+                        'Missing bounded no-auto-loop observation')
+                if stage=='pending':
+                    wanted_proofs['pending']=('pendingOnly','sourceRetained','draftRetained')
+        if case=='rate-limit':
+            wanted_proofs.update({
+                'direct-held':('independentFallback',),
+                'limited':('sourceRetained','draftRetained','noDispatch'),
+                'cancelled':('draftRetained','debtRetained'),
+                'reopened-limited':('draftRetained','debtRetained','duplicateOpen','noDispatch'),
+                'expired':('realExpiry','noAutomaticRequest'),
+                'success':('actualReadAndAdoption','originalDraft','explicitRetry'),
+            })
+        if case=='mixed-file-group':
+            wanted_proofs.update({'file-held':('automaticRead','duplicateOpen'),
+                'group-held':('automaticRead','fileReady','draftRetained'),
+                'retry-file-held':('explicitRetryRead','duplicateRetry','draftRetained')})
         require(all(proof.get(k) is True for k in wanted_proofs[stage]),'Missing executed stage proof')
 
         require(model.get('account')==(FOREIGN if replaced else ACCOUNT) and model.get('epoch')==(1 if replaced else 0),'Wrong stage owner')
+        if case in ('mixed-member','mixed-file-group'):
+            mixed=model.get('mixedMember',{})
+            require(mixed==original.get('mixedMember') and mixed.get('observation',{}).get('current') is True
+                    and mixed['observation'].get('source')==member_source(),
+                    'Mixed original canonical member source/currentness changed')
+            native=mixed['observation'].get('native',{})
+            require(native.get('id')==MEMBER and native.get('team_id')=='TINIT0001'
+                    and native.get('profile',{}).get('display_name')=='Known mixed member',
+                    'Mixed original typed member label changed')
+            require(all(mixed.get(key)==dict(started=0,finished=0,active=0)
+                        for key in ('absentDriver','knownDriver'))
+                    and mixed.get('automaticDriver')==dict(pending=[],subscribed=[],stale=[],worker=False,
+                        started=0,finished=0,http_finished=0,acknowledgments=0,failures=0),
+                    'Mixed known member unexpectedly acquired or scheduled')
         profile=model.get('profile',{})
         if not replaced:
-            require(profile.get('enabled') is True and profile.get('blocks')==blocks(case)
+            expected_blocks=blocks(case,case in AUTOMATIC and saved)
+            require(profile.get('enabled') is True and profile.get('blocks')==expected_blocks
                     and profile.get('dirty') is (not saved),'Draft custody changed')
             require(profile.get('reads')==int(saved) and isinstance(profile.get('attempts'),list)
                     and len(profile['attempts'])==int(saved),'Unexpected profile writes/readback')
@@ -252,13 +394,13 @@ def validate(fixture,receipt,captures,*,platform=sys.platform,png=True):
                 require(len(long)==1 and isinstance(long[0].get('long_text',{}).get('blocks'),str),'Missing long-text wire')
                 try: wire=json.loads(long[0]['long_text']['blocks'])
                 except (ValueError,TypeError) as error: raise RuntimeError('Invalid saved blocks wire') from error
-                require(wire==blocks(case),'Save wire changed opaque duplicate tokens')
+                require(wire==expected_blocks,'Save wire changed opaque duplicate tokens or actual edit')
 
         else:
             require(profile.get('enabled') is False and proof.get('actualInstallLoaded') is True,'Missing real account replacement')
             require(proof.get('before',{}).get('profile',{}).get('blocks')==blocks(case),'Replacement lost original draft evidence')
         groups=model.get('groups');require(isinstance(groups,dict) and set(groups)==set(ids(case)),'Wrong group inventory')
-        successful=stage in ('success','saved','reopened')
+        successful=stage in ('success','edited','saved','reopened') or case=='ready'
         for group in ids(case):
             value=groups[group];require(isinstance(value,dict),'Missing group observation')
             if successful or (case=='absent' and stage in ('partial','fallback-held') and group==GROUP):
@@ -277,11 +419,29 @@ def validate(fixture,receipt,captures,*,platform=sys.platform,png=True):
         if case=='legacy' and successful:
             require(groups[GROUP]['native'].get('users')==original['groups'][GROUP]['native']['users']
                     and groups[GROUP]['native'].get('members_loaded') is True,'Metadata recovery erased membership')
+        if stage=='edited':
+            edit=proof.get('nativeEdit',{})
+            before,after=edit.get('before',{}),edit.get('after',{})
+            require(edit.get('ok') is True and before.get('snapshot',{}).get('blocks')==blocks(case)
+                    and after.get('snapshot',{}).get('blocks')==blocks(case,True)
+                    and before.get('tokens')==after.get('tokens')==geometry['captured']['tokens'],
+                    'Actual native edit/opaque token proof missing')
+            a,b=before['snapshot'],after['snapshot']
+            require(a.get('generation')==b.get('generation')==geometry['captured']['snapshot']['generation']
+                    and type(a.get('revision')) is int and type(b.get('revision')) is int
+                    and b['revision']>a['revision'] and a.get('composing') is False and b.get('composing') is False,
+                    'Native edit did not advance original editor revision')
         read_count,finished=counts[stage]
         require(request_reads(model.get('requests'))==expected_reads(case)[:read_count],'Stage request order changed')
         require(model.get('driver')==dict(started=finished+held,finished=finished,active=int(held)),'Driver completion not observed')
         pending=model.get('pending');require(isinstance(pending,list) and len(pending)==int(held),'Wrong pending state')
         if pending: require(pending[0]==model['requests'][-1] and pending[0]['released'] is False,'Wrong held reply')
+        if case=='retirement':
+            retirement_deliveries(model['requests'])
+            if stage in ('cancelled','account-replaced'):
+                released=[r for r in model['requests'] if r['kind']!='discovery'][-1]
+                require(proof.get('retiredRelease')==dict(serial=released['serial'],
+                    receiverRetired=True,delivered=False),'Missing actual closed original receiver proof')
         layout(geometry,viewport,stage,case)
         path=Path(receipt['captures'][stage]);require(path.resolve()==(captures/f'{fixture}-{stage}.png').resolve(),'Capture escaped expected path')
         dimensions=geometry.get('pngDimensions')
@@ -308,10 +468,13 @@ def run_fixture(fixture, binary, captures, case):
         digest = hashlib.file_digest(source, 'sha256').hexdigest()
     evidence = dict(fixture=fixture, nonce=nonce, binary=str(binary), binarySha256=digest, ok=False,
                     case=case, readyDirectory=str(directory), limitations=['Placement and pointer checks are sampled observations, not atomic capture proof.'])
-    native = NativeFixture(fixture, captures / f'{fixture}.log', binary,
-                           {FLAG: '1', 'SUPER_PLATINUM_PROFILE_GROUP_RECOVERY_CASE': case, 'SUPER_PLATINUM_UI_CAPTURE_DIR': str(captures),
-                            'SUPER_PLATINUM_PROFILE_GROUP_RECOVERY_NONCE': nonce,
-                            'SUPER_PLATINUM_PROFILE_GROUP_RECOVERY_READY_DIR': str(directory)})
+    environment = {FLAG: '1', 'SUPER_PLATINUM_PROFILE_GROUP_RECOVERY_CASE': case,
+                   'SUPER_PLATINUM_UI_CAPTURE_DIR': str(captures),
+                   'SUPER_PLATINUM_PROFILE_GROUP_RECOVERY_NONCE': nonce,
+                   'SUPER_PLATINUM_PROFILE_GROUP_RECOVERY_READY_DIR': str(directory)}
+    if case in ABSENT_MEMBER_CASES:
+        environment['SUPER_PLATINUM_PROFILE_MEMBER_RECOVERY_CHECK'] = '1'
+    native = NativeFixture(fixture, captures / f'{fixture}.log', binary, environment)
     process_api = handle = None
     try:
         with native:

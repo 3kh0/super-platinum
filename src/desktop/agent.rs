@@ -109,6 +109,8 @@ pub async fn serve(
     crate::canvas::comments::check::start(state, desktop.clone());
     crate::file_actions::attachment::check::start(state, desktop.clone());
     crate::canvas::text::check::start(state, desktop.clone());
+    crate::canvas::text::heading_check::start(state, desktop.clone());
+    crate::canvas::text::underline_check::start(state, desktop.clone());
     crate::canvas::text::structure_check::start(state, desktop.clone());
     crate::canvas::text::continuation_check::start(state, desktop.clone());
     crate::canvas::text::structure_recovery_check::start(state, desktop.clone());

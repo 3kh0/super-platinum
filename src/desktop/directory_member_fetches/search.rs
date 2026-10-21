@@ -82,8 +82,21 @@ impl Read {
     }
     pub(crate) async fn publish(
         &self,
-        mut state: Signal<ShellState>,
+        state: Signal<ShellState>,
         pages: &Pages,
+        current: impl Fn(&ShellState) -> bool,
+    ) -> Result<Snapshot, Error> {
+        let rows = pages.rows()?;
+        let interactions = search_interactions(rows)?;
+        self.publish_rows(state, rows, &interactions, current).await
+    }
+    /// Original caller-supplied rows and interaction map, captured under this
+    /// same read before acquisition. No availability defaults or source reset.
+    pub(crate) async fn publish_rows(
+        &self,
+        mut state: Signal<ShellState>,
+        rows: &[Value],
+        interactions: &Value,
         current: impl Fn(&ShellState) -> bool,
     ) -> Result<Snapshot, Error> {
         let admitted = |shell: &ShellState| self.current(shell) && current(shell);
@@ -92,7 +105,7 @@ impl Read {
             if !admitted(&shell) {
                 return Err(unavailable());
             }
-            Stage::capture(&shell, &self.witness, pages.rows()?)?
+            Stage::capture_rows(&shell, &self.witness, rows, interactions)?
         };
         let ctx = &self.witness.context;
         let generation = &self.witness.generation;
@@ -207,7 +220,16 @@ struct Stage {
     native: HashMap<String, User>,
 }
 impl Stage {
+    #[cfg(test)]
     fn capture(shell: &ShellState, witness: &Witness, rows: &[Value]) -> Result<Self, Error> {
+        Self::capture_rows(shell, witness, rows, &search_interactions(rows)?)
+    }
+    fn capture_rows(
+        shell: &ShellState,
+        witness: &Witness,
+        rows: &[Value],
+        interactions: &Value,
+    ) -> Result<Self, Error> {
         if !witness.current(shell) {
             return Err(unavailable());
         }
@@ -218,22 +240,12 @@ impl Stage {
             .get(&ctx.session.team_id)
             .ok_or_else(unavailable)?;
         let mut store = w.directory_members.clone();
-        let mut interactions = Map::new();
-        for row in rows {
-            let id = row
-                .get("id")
-                .and_then(Value::as_str)
-                .ok_or_else(unavailable)?;
-            // Actual search availability map supplied to ScqY. Explicit raw
-            // is_stranger overrides this in the existing hydration plan.
-            interactions.insert(id.into(), Value::Bool(true));
-        }
         store.enqueue(
             &ctx.account,
             &ctx.session,
             Origin::Directory,
             rows.to_vec(),
-            Value::Object(interactions),
+            interactions.clone(),
         )?;
         Ok(Self {
             store,
@@ -268,4 +280,18 @@ impl Stage {
         w.users = self.native;
         Ok(ready)
     }
+}
+
+/// Actual users/search availability map supplied to ScqY. Explicit raw
+/// is_stranger still overrides this in the unchanged hydration plan.
+fn search_interactions(rows: &[Value]) -> Result<Value, Error> {
+    let mut interactions = Map::new();
+    for row in rows {
+        let id = row
+            .get("id")
+            .and_then(Value::as_str)
+            .ok_or_else(unavailable)?;
+        interactions.insert(id.into(), Value::Bool(true));
+    }
+    Ok(Value::Object(interactions))
 }

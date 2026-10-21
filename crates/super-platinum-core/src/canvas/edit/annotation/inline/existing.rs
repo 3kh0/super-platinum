@@ -38,7 +38,9 @@ pub(super) fn parse(section: &Section) -> Result<Existing, Error> {
         return Err(Error::Unsupported);
     }
     text.string(2)?;
-    from_rtml(text.string(1)?.unwrap_or(""))
+    let original = from_rtml(text.string(1)?.unwrap_or(""))?;
+    super::super::underline_shape(section, &original.draft)?;
+    Ok(original)
 }
 
 pub(super) fn from_rtml(source: &str) -> Result<Existing, Error> {
@@ -156,7 +158,7 @@ impl Walk {
                             escaped_start,
                             escaped_end: self.escaped,
                         });
-                    } else if matches!(name, "b" | "i" | "del" | "code" | "a" | "br") {
+                    } else if matches!(name, "b" | "i" | "u" | "del" | "code" | "a" | "br") {
                         self.stripped.push('<');
                         self.stripped.push_str(name);
                         if name == "a" {

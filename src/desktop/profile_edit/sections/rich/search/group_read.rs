@@ -1,4 +1,4 @@
-//! Complete ordered group search under the original Profile and source owner.
+//! Complete ordered group search under the original host and source owner.
 //! HTTP pages do not publish independently and cannot initialize legacy history.
 use super::*;
 use crate::{directory_member_fetches::Context, usergroups::source as intake};
@@ -70,7 +70,7 @@ impl Read {
     async fn publish(
         &self,
         mut state: Signal<ShellState>,
-        search: &Search,
+        search: &Search<impl Host>,
         names: &member_names::Observation,
         policy: &group_policy::Observation,
         pages: &groups::Pages,
@@ -87,7 +87,7 @@ impl Read {
         };
         // Our own FIFO reservation retires the HTTP observation's tail. From
         // this point Work's exact ticket/native preimage owns publication, while
-        // the original Profile/name owner still guards every renderer await.
+        // the original host/name owner still guards every renderer await.
         tokio::select! {
             biased;
             _ = search.lease.cancelled() => return Err(unavailable()),
@@ -102,7 +102,7 @@ impl Read {
 
 pub(super) async fn remote(
     mut state: Signal<ShellState>,
-    search: &Search,
+    search: &Search<impl Host>,
     names: &member_names::Observation,
     policy: &group_policy::Observation,
     raw_query: &str,
@@ -115,7 +115,7 @@ pub(super) async fn remote(
 }
 async fn read(
     state: Signal<ShellState>,
-    search: &Search,
+    search: &Search<impl Host>,
     names: &member_names::Observation,
     policy: &group_policy::Observation,
     raw_query: &str,
@@ -178,7 +178,7 @@ async fn read(
             tokio::select! {
                 biased;
                 _ = search.lease.cancelled() => Err(unavailable()),
-                result = fixture::completion::search(state, &request) => result,
+                result = search.lease.fixture_request(state, &request, true) => result,
             }
         } else {
             tokio::select! {

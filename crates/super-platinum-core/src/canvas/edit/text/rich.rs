@@ -38,10 +38,11 @@ impl TextDraft {
             keys(element, &["type", "text", "url", "style"])?;
             let mut style = TextStyle::default();
             if let Some(value) = element.get("style") {
-                keys(value, &["bold", "italic", "strike", "code"])?;
+                keys(value, &["bold", "italic", "underline", "strike", "code"])?;
                 for (key, target) in [
                     ("bold", &mut style.bold),
                     ("italic", &mut style.italic),
+                    ("underline", &mut style.underline),
                     ("strike", &mut style.strike),
                     ("code", &mut style.code),
                 ] {
@@ -81,6 +82,7 @@ impl TextDraft {
                 for (key, set) in [
                     ("bold", run.style.bold),
                     ("italic", run.style.italic),
+                    ("underline", run.style.underline),
                     ("strike", run.style.strike),
                     ("code", run.style.code),
                 ] {

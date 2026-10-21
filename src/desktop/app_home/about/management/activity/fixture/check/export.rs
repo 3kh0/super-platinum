@@ -1,4 +1,5 @@
 //! Closed export acceptance through real native controls and claimed request plans.
+mod composition;
 use super::super::super::export::fixture as endpoint;
 use super::*;
 const REFUSAL: &str =
@@ -62,7 +63,7 @@ async fn policy(
     enter(s, d).await
 }
 async fn dom(d: &DesktopContext) -> Result<Value, String> {
-    wait_dom(d,r#"(()=>{const e=document.getElementById('workflow-activity-export'),n=document.getElementById('workflow-activity-export-notice'),r=document.getElementById('workflow-activity-export-native-notice'),u=document.getElementById('workflow-activity-user');const box=e=>{const r=e.getBoundingClientRect();return{left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:r.width,height:r.height}};const measure=e=>{if(!e||!e.textContent.trim())return null;const b=box(e),s=getComputedStyle(e),h=document.elementFromPoint(b.left+b.width/2,b.top+b.height/2);let visible=b.width>0&&b.height>0&&b.left>=0&&b.top>=0&&b.right<=innerWidth+1&&b.bottom<=innerHeight+1&&s.visibility==='visible'&&s.display!=='none'&&(h===e||e.contains(h));for(let p=e.parentElement;p;p=p.parentElement){const q=box(p),t=getComputedStyle(p);if(/auto|scroll|hidden|clip/.test(t.overflowY)&&(b.top<q.top-1||b.bottom>q.bottom+1))visible=false;}return{text:e.textContent,visible,rect:b}};return{ok:true,button:e?{disabled:e.disabled,text:e.textContent}:null,notice:measure(n),nativeNotice:measure(r),user:u?.value??null,userLabel:u?.selectedOptions?.[0]?.textContent??null,from:document.getElementById('workflow-activity-from')?.value??null,to:document.getElementById('workflow-activity-to')?.value??null,status:document.getElementById('workflow-activity-status')?.value??null,limit:document.getElementById('workflow-activity-limit')?.value??null,refusals:document.getElementById('workflow-management')?.__workflowManagement?.exportRefusals??0}})()"#).await
+    wait_dom(d,r#"(()=>{const e=document.getElementById('workflow-activity-export'),n=document.getElementById('workflow-activity-export-notice'),r=document.getElementById('workflow-activity-export-native-notice'),u=document.getElementById('workflow-activity-user');const box=e=>{const r=e.getBoundingClientRect();return{left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:r.width,height:r.height}};const measure=e=>{if(!e||!e.textContent.trim())return null;const b=box(e),s=getComputedStyle(e),h=document.elementFromPoint(b.left+b.width/2,b.top+b.height/2);let visible=b.width>0&&b.height>0&&b.left>=0&&b.top>=0&&b.right<=innerWidth+1&&b.bottom<=innerHeight+1&&s.visibility==='visible'&&s.display!=='none'&&(h===e||e.contains(h));for(let p=e.parentElement;p;p=p.parentElement){const q=box(p),t=getComputedStyle(p);if(/auto|scroll|hidden|clip/.test(t.overflowY)&&(b.top<q.top-1||b.bottom>q.bottom+1))visible=false;}return{text:e.textContent,visible,rect:b}};return{ok:true,button:e?{disabled:e.disabled,text:e.textContent}:null,notice:measure(n),nativeNotice:measure(r),user:u?.value??null,userLabel:u?.selectedOptions?.[0]?.textContent??null,from:document.getElementById('workflow-activity-date-range')?.dataset.from??null,to:document.getElementById('workflow-activity-date-range')?.dataset.to??null,status:document.getElementById('workflow-activity-status')?.value??null,limit:document.getElementById('workflow-activity-limit')?.value??null,refusals:document.getElementById('workflow-management')?.__workflowManagement?.exportRefusals??0}})()"#).await
 }
 async fn stage(
     s: Signal<ShellState>,
@@ -122,16 +123,19 @@ async fn stage(
     .await
 }
 async fn refusal(s: Signal<ShellState>, d: &DesktopContext, ime: bool) -> Result<Value, String> {
+    native::reveal_filters(d).await?;
+    // Dismiss the real popup before installing a native-ahead buffer: its
+    // acknowledged render must not reset the controlled input during the probe.
+    native::reveal_control(d, "workflow-activity-export").await?;
+    if ime {
+        return composition::begin(s, d).await;
+    }
     let before = snapshot(&s.peek());
-    let probe=wait_dom(d,&format!(r#"(()=>{{const e=document.getElementById('workflow-activity-from'),r=document.getElementById('workflow-management');if(!e||!r?.__workflowManagement)return{{ok:false}};{}return{{ok:true,value:e.value,refusals:r.__workflowManagement.exportRefusals??0}}}})()"#,
-        if ime {"e.dispatchEvent(new CompositionEvent('compositionstart',{bubbles:true,data:'x'}));"}else{"Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(e,'2026-06-01');"})).await?;
+    let probe=wait_dom(d,&format!(r#"(()=>{{const e=document.getElementById('workflow-activity-user-search'),r=document.getElementById('workflow-management');if(!e||!r?.__workflowManagement)return{{ok:false}};{}return{{ok:true,value:e.value,refusals:r.__workflowManagement.exportRefusals??0}}}})()"#,
+        if ime {"e.dispatchEvent(new CompositionEvent('compositionstart',{bubbles:true,data:'x'}));"}else{"Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(e,'Uncommitted native search');"})).await?;
     click(d, "workflow-activity-export").await?;
-    let value = if ime {
-        before["activity"]["filters"]["from"].as_str().unwrap_or("")
-    } else {
-        "2026-06-01"
-    };
-    let after_dom=wait_dom(d,&format!(r#"(()=>{{const e=document.getElementById('workflow-activity-from'),r=document.getElementById('workflow-management'),n=document.getElementById('workflow-activity-export-native-notice');return{{ok:e?.value==={}&&n?.textContent==={}&&(r?.__workflowManagement?.exportRefusals??0)==={},value:e?.value,notice:n?.textContent,refusals:r?.__workflowManagement?.exportRefusals}}}})()"#,json!(value),json!(REFUSAL),probe["refusals"].as_u64().unwrap()+1)).await?;
+    let value = if ime { "" } else { "Uncommitted native search" };
+    let after_dom=wait_dom(d,&format!(r#"(()=>{{const e=document.getElementById('workflow-activity-user-search'),r=document.getElementById('workflow-management'),n=document.getElementById('workflow-activity-export-native-notice');return{{ok:e?.value==={}&&n?.textContent==={}&&(r?.__workflowManagement?.exportRefusals??0)==={},value:e?.value,notice:n?.textContent,refusals:r?.__workflowManagement?.exportRefusals}}}})()"#,json!(value),json!(REFUSAL),probe["refusals"].as_u64().unwrap()+1)).await?;
     let after = snapshot(&s.peek());
     if before != after {
         return Err(format!(
@@ -143,7 +147,7 @@ async fn refusal(s: Signal<ShellState>, d: &DesktopContext, ime: bool) -> Result
     )
 }
 async fn reset_refusal(d: &DesktopContext, ime: bool) -> Result<(), String> {
-    wait_dom(d,if ime {"(()=>{document.getElementById('workflow-activity-from').dispatchEvent(new CompositionEvent('compositionend',{bubbles:true,data:'x'}));return{ok:true}})()"} else {"(()=>{Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(document.getElementById('workflow-activity-from'),'2026-06-15');return{ok:true}})()"}).await?;
+    wait_dom(d,if ime {"(()=>{document.getElementById('workflow-activity-user-search').dispatchEvent(new CompositionEvent('compositionend',{bubbles:true,data:'x'}));return{ok:true}})()"} else {"(()=>{Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(document.getElementById('workflow-activity-user-search'),'');return{ok:true}})()"}).await?;
     Ok(())
 }
 async fn send(
@@ -241,10 +245,8 @@ pub(super) async fn run(
         policy(state, desktop, endpoint::Policy::On).await?;
     }
     input(desktop, "workflow-activity-status", "SUCCESS").await?;
-    input(desktop, "workflow-activity-from", "2026-06-15").await?;
-    input(desktop, "workflow-activity-to", "2026-06-16").await?;
     input(desktop, "workflow-activity-limit", "20").await?;
-    click(desktop, "workflow-activity-apply").await?;
+    date_range::select(state, desktop, "2026-06-15", "2026-06-16").await?;
     wait(state, "Filtered page", |v| {
         v["metadata"]["busy"] == false && v["activity"]["query"]["limit"] == 20
     })
@@ -288,7 +290,19 @@ pub(super) async fn run(
             &mut captures,
         )
         .await?;
-        reset_refusal(desktop, true).await?;
+        let restored = composition::finish(state, desktop).await?;
+        let exercise = &mut stages
+            .last_mut()
+            .ok_or("Missing export composition stage")?["proof"]["exercise"];
+        let mut expected_native = exercise["nativeBefore"].clone();
+        expected_native["composing"] = json!(false);
+        if restored["model"] != exercise["modelBefore"]
+            || restored["ledger"] != exercise["ledgerBefore"]
+            || restored["native"] != expected_native
+        {
+            return Err("Export composition restoration changed model or requests".into());
+        }
+        exercise["restored"] = restored;
         endpoint::policy(&state.peek(), endpoint::Policy::Off)?;
         click(desktop, "workflow-activity-export").await?;
         phase(state, "not-sent").await?;
@@ -436,7 +450,7 @@ pub(super) async fn run(
         )
         .await?;
         enter(state, desktop).await?;
-        input(desktop, "workflow-activity-from", "2026-06-14").await?;
+        date_range::select(state, desktop, "2026-06-14", "2026-06-16").await?;
         send(state, desktop, endpoint::Mode::Held, "sent").await?;
         stage(
             state,

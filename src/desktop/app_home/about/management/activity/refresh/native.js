@@ -4,7 +4,8 @@ async function workflowActivityRefresh(expected, channel) {
   const root = get('workflow-management'), activity = get('workflow-activity');
   const form = get('workflow-activity-filters'), detail = get('workflow-activity-detail');
   const input = get('workflow-activity-user-search'), state = root?.__workflowManagement;
-  const keys = ['status','from','to','limit','user'];
+  const dateWitness = workflowActivityDateWitness(expected, form);
+  const keys = ['status','limit','user'];
   const fields = keys.map(key => get('workflow-activity-' + key));
   const nodes = [root,activity,form,detail];
   const inert = nodes.map(node => node?.inert);
@@ -13,7 +14,7 @@ async function workflowActivityRefresh(expected, channel) {
   const watchers = new Set();
   const usable = node => node?.isConnected && !node.validity?.badInput;
   const enabled = node => !node.disabled && !node.matches(':disabled');
-  const identity = () => state && root.__workflowManagement === state
+  const identity = () => dateWitness?.current() && state && root.__workflowManagement === state
     && nodes.every(node => node?.isConnected && get(node.id) === node)
     && root.contains(activity) && activity.contains(form) && activity.contains(detail)
     && root.dataset.managementVisit === String(expected.visit)

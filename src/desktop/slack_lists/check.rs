@@ -23,6 +23,7 @@ mod date_views;
 pub(crate) mod delete;
 mod duplicate;
 mod editor;
+mod editor_hover;
 mod entity_edit;
 mod field_delete;
 mod field_visibility;
@@ -247,15 +248,21 @@ async fn run(
     super::fixture::set_read_only(&mut state.write());
     super::refresh(state);
     wait_dom(desktop,r#"({ok:document.querySelector('.slack-list-read-only')?.textContent.length>0&&[...document.querySelectorAll('.slack-list-grid input')].every(c=>c.disabled)})"#).await?;
+    guidance(desktop, "locked").await?;
+    let guidance_locked = capture_stage(desktop, "guidance-locked").await?;
     super::fixture::set_incomplete(&mut state.write());
     super::refresh(state);
     wait_dom(desktop,r#"({ok:document.querySelector('.slack-list-notices')?.textContent.includes('Only part of this list')&&document.querySelectorAll('.slack-list-grid tbody tr').length===50})"#).await?;
     super::fixture::set_error(&mut state.write());
     super::refresh(state);
     wait_dom(desktop,r#"({ok:document.querySelector('.slack-list-error')?.textContent.includes('Could not refresh')&&document.querySelector('[data-row-id="R_LIST_000"]')===window.__listRefreshRow&&window.__listCheckbox.disabled})"#).await?;
+    guidance(desktop, "stale").await?;
+    let guidance_stale = capture_stage(desktop, "guidance-stale").await?;
     super::fixture::restore(&mut state.write());
     super::refresh(state);
     wait_dom(desktop,r#"({ok:!document.querySelector('.slack-list-error')&&!document.querySelector('.slack-list-read-only')&&!document.querySelector('.slack-list-notices')?.textContent.includes('Only part of this list')&&!window.__listCheckbox.disabled&&!window.__listCheckbox.checked})"#).await?;
+    guidance(desktop, "restored").await?;
+    let guidance_restored = capture_stage(desktop, "guidance-restored").await?;
     assert_attempts(state, 2)?;
     if !super::fixture::prepared_valid(&state.peek()) {
         return Err(
@@ -294,7 +301,7 @@ async fn run(
     let creation_checks = creation::run(state, desktop).await?;
     let duplicate_checks = duplicate::run(state, desktop).await?;
     Ok(
-        json!({"ok":true,"boundedRows":true,"semanticGrid":true,"keyboardHelp":keyboard_help,"horizontal":horizontal,"keyboardMovement":true,"richCellPresentation":rich,"emptyPrimaryFallback":true,"cellControlsReturnFocus":true,"hierarchyExpansion":true,"hierarchyKeyboard":true,"collapseRecoversParentFocus":true,"expansionSurvivesRefresh":true,"localPaging":true,"pagingFocusRecovered":true,"reorderPreservedFocus":true,"deletedRowRecoveredFocus":true,"refreshPreservedRows":true,"falseZeroAndFallback":true,"keyboardCheckboxEdit":true,"duplicateLocked":true,"pendingRestoresCanonicalCheckbox":true,"uncertainReadbackWithoutReplay":true,"readOnlyIncompleteAndErrorRecovery":true,"cellEditors":editor_checks,"savedViews":saved_view_checks,"dateViews":date_view_checks,"boardViews":board_view_checks,"recordDetails":record_detail_checks,"dateEdits":date_edit_checks,"userEdits":user_edit_checks,"channelEdits":channel_edit_checks,"linkEdits":link_edit_checks,"creation":creation_checks,"duplication":duplicate_checks,"preparedWrites":super::fixture::attempt_count(&state.peek()),"captures":{"rich":rich_capture,"references":references_capture,"hierarchy":hierarchy_capture},"initial":initial,"layout":layout}),
+        json!({"ok":true,"boundedRows":true,"semanticGrid":true,"keyboardHelp":keyboard_help,"horizontal":horizontal,"keyboardMovement":true,"richCellPresentation":rich,"emptyPrimaryFallback":true,"cellControlsReturnFocus":true,"hierarchyExpansion":true,"hierarchyKeyboard":true,"collapseRecoversParentFocus":true,"expansionSurvivesRefresh":true,"localPaging":true,"pagingFocusRecovered":true,"reorderPreservedFocus":true,"deletedRowRecoveredFocus":true,"refreshPreservedRows":true,"falseZeroAndFallback":true,"keyboardCheckboxEdit":true,"duplicateLocked":true,"pendingRestoresCanonicalCheckbox":true,"uncertainReadbackWithoutReplay":true,"readOnlyIncompleteAndErrorRecovery":true,"guidanceCaptures":{"locked":guidance_locked,"stale":guidance_stale,"restored":guidance_restored},"cellEditors":editor_checks,"savedViews":saved_view_checks,"dateViews":date_view_checks,"boardViews":board_view_checks,"recordDetails":record_detail_checks,"dateEdits":date_edit_checks,"userEdits":user_edit_checks,"channelEdits":channel_edit_checks,"linkEdits":link_edit_checks,"creation":creation_checks,"duplication":duplicate_checks,"preparedWrites":super::fixture::attempt_count(&state.peek()),"captures":{"rich":rich_capture,"references":references_capture,"hierarchy":hierarchy_capture},"initial":initial,"layout":layout}),
     )
 }
 
@@ -430,14 +437,67 @@ async fn eval(desktop: &dioxus::desktop::DesktopContext, script: &str) -> Result
         value => Ok(value),
     }
 }
+async fn guidance(desktop: &dioxus::desktop::DesktopContext, phase: &str) -> Result<(), String> {
+    wait_dom(
+        desktop,
+        &READ_ONLY_GUIDANCE.replace("__PHASE__", &json!(phase).to_string()),
+    )
+    .await
+    .map(|_| ())
+}
+const READ_ONLY_GUIDANCE: &str = r#"(()=>{
+ const phase=__PHASE__,d=document.querySelector('.slack-list-dialog');
+ const add=d?.querySelector('#slack-list-add-item'),notice=d?.querySelector('.slack-list-read-only');
+ const visible=e=>{
+  if(!e)return false;
+  const r=e.getBoundingClientRect(),s=getComputedStyle(e);
+  return r.width>1&&r.height>1&&!e.hidden&&s.display!=='none'&&s.visibility!=='hidden'&&s.clipPath!=='inset(50%)';
+ };
+ const ids=(add?.getAttribute('aria-describedby')??'').trim().split(/\s+/).filter(Boolean);
+ const descriptions=ids.map(id=>{
+  const matches=[...document.querySelectorAll('[id]')].filter(e=>e.id===id);
+  const e=matches.length===1&&d?.contains(matches[0])?matches[0]:null;
+  return {id,matches:matches.length,text:e?.textContent??null,visible:visible(e)};
+ });
+ const reason='This List is locked.',stale='Refresh this list before adding an item.';
+ const visibleReasons=[...(d?.querySelectorAll('*')||[])].filter(e=>!e.children.length&&e.textContent===reason&&visible(e));
+ const accessible=ids.length>0&&new Set(ids).size===ids.length&&descriptions.every(e=>e.matches===1&&typeof e.text==='string'&&e.text.trim().length>0);
+ // Restoring this fixture clears its lock, but does not certify creation limits.
+ const title=phase==='stale'?stale:phase==='locked'?reason:"This List's item limit has not been verified.";
+ const policy=phase==='restored'
+  ?!notice&&visibleReasons.length===0&&add?.disabled===true
+   &&descriptions.some(e=>e.text===title&&e.visible)
+  :notice?.textContent===reason&&visibleReasons.length===1&&add?.disabled===true
+   &&descriptions.some(e=>e.text===title&&(phase!=='stale'||e.visible));
+ return {ok:!!add&&accessible&&add.title===title&&policy,phase,title:add?.title,
+  disabled:add?.disabled,visibleReasons:visibleReasons.map(e=>e.textContent),descriptions};
+})()"#;
 const LAYOUT: &str = r#"(()=>{
  const d=document.querySelector('.slack-list-dialog'),s=d.querySelector('.slack-list-scroll'),r=d.getBoundingClientRect();
- const refresh=d.querySelector('#slack-list-refresh').getBoundingClientRect(),close=d.querySelector('#slack-list-close').getBoundingClientRect();
- const headerNoOverlap=refresh.right<=close.left&&refresh.width>=50&&refresh.left>=r.left&&close.right<=r.right;
+ const header=d.querySelector(':scope > .slack-list-header'),refreshButton=header?.querySelector('#slack-list-refresh'),closeButton=header?.querySelector('#slack-list-close');
+ if(!header||!refreshButton||!closeButton)return {ok:false,error:'Original List header controls missing'};
+ const original={left:header.scrollLeft,top:header.scrollTop,focus:document.activeElement};
+ const separate=(a,b)=>Math.min(a.right,b.right)-Math.max(a.left,b.left)<=1||Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)<=1;
+ const initialRefresh=refreshButton.getBoundingClientRect(),initialClose=closeButton.getBoundingClientRect();
+ const headerNoOverlap=separate(initialRefresh,initialClose);
+ const probe=button=>{
+  button.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});
+  button.focus({preventScroll:true});
+  const rect=button.getBoundingClientRect(),h=header.getBoundingClientRect(),hit=document.elementFromPoint(rect.left+rect.width/2,rect.top+rect.height/2);
+  const contained=rect.left>=h.left+header.clientLeft-1&&rect.right<=h.left+header.clientLeft+header.clientWidth+1&&rect.top>=h.top+header.clientTop-1&&rect.bottom<=h.top+header.clientTop+header.clientHeight+1;
+  const bounded=[rect.x,rect.y,rect.width,rect.height].every(Number.isFinite)&&rect.width>0&&rect.height>=24&&rect.left>=r.left-1&&rect.right<=r.right+1&&rect.top>=0&&rect.bottom<=innerHeight+1;
+  const noOverlap=separate(refreshButton.getBoundingClientRect(),closeButton.getBoundingClientRect());
+  return {ok:contained&&bounded&&noOverlap&&document.activeElement===button&&!!hit&&(hit===button||button.contains(hit)),id:button.id,text:button.textContent.trim(),ariaLabel:button.getAttribute('aria-label'),otherRect:(button===refreshButton?closeButton:refreshButton).getBoundingClientRect().toJSON(),rect:rect.toJSON(),header:h.toJSON(),contained,bounded,noOverlap,hit:!!hit&&(hit===button||button.contains(hit)),focused:document.activeElement===button,scroll:[header.scrollLeft,header.scrollTop]};
+ };
+ let refreshReachable,closeReachable;
+ try{refreshReachable=probe(refreshButton);closeReachable=probe(closeButton);}
+ finally{header.scrollLeft=original.left;header.scrollTop=original.top;if(original.focus?.isConnected&&original.focus!==document.body)original.focus.focus({preventScroll:true});}
+ const headerRestored=Math.abs(header.scrollLeft-original.left)<=1&&Math.abs(header.scrollTop-original.top)<=1&&(original.focus===document.body||document.activeElement===original.focus);
+ const refresh=refreshButton.getBoundingClientRect(),close=closeButton.getBoundingClientRect();
  const vertical=s.scrollHeight>s.clientHeight;s.scrollTop=s.scrollHeight;const reachedBottom=s.scrollTop>0;
  const horizontal=s.scrollWidth>s.clientWidth;s.scrollLeft=s.scrollWidth;const reachedRight=!horizontal||s.scrollLeft>0;
  s.scrollTop=0;s.scrollLeft=0;
  const check=s.querySelector('input:not(:disabled)'),b=check.getBoundingClientRect(),hit=document.elementFromPoint(b.left+b.width/2,b.top+b.height/2);
  const bounded=r.left>=0&&r.right<=innerWidth+1&&r.top>=0&&r.bottom<=innerHeight+1;
- return {ok:bounded&&headerNoOverlap&&vertical&&reachedBottom&&reachedRight&&hit===check&&d.scrollWidth<=d.clientWidth+1,bounded,headerNoOverlap,header:{refresh:[refresh.left,refresh.right,refresh.width],close:[close.left,close.right]},vertical,horizontal,reachedBottom,reachedRight,viewport:[innerWidth,innerHeight],scroll:[s.clientWidth,s.scrollWidth,s.clientHeight,s.scrollHeight]};
+ return {ok:bounded&&headerNoOverlap&&refresh.width>=50&&refreshReachable.ok&&closeReachable.ok&&headerRestored&&vertical&&reachedBottom&&reachedRight&&hit===check&&d.scrollWidth<=d.clientWidth+1,bounded,headerNoOverlap,header:{refresh:[refresh.left,refresh.right,refresh.width],close:[close.left,close.right],refreshReachable,closeReachable,restored:headerRestored},vertical,horizontal,reachedBottom,reachedRight,viewport:[innerWidth,innerHeight],scroll:[s.clientWidth,s.scrollWidth,s.clientHeight,s.scrollHeight]};
 })()"#;

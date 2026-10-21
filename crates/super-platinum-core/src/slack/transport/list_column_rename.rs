@@ -40,9 +40,6 @@ impl Transport {
             )));
         }
         let http = self.single_attempt_client().map_err(NotRequested)?;
-        let RequestBody::Form(fields) = &request.body else {
-            unreachable!()
-        };
         let mut builder = http
             .post(&request.url)
             .timeout(API_TIMEOUT)
@@ -52,9 +49,14 @@ impl Transport {
                 builder = builder.header(name.as_str(), value.as_str());
             }
         }
+        let builder = builder.header("Cookie", self.cookie());
+        // Public wrappers still supply their exact private validators. The
+        // channel-scoped permission read is JSON; existing writes remain forms.
+        let builder = match &request.body {
+            RequestBody::Form(fields) => builder.form(fields),
+            RequestBody::Json(value) => builder.json(value),
+        };
         let request = builder
-            .header("Cookie", self.cookie())
-            .form(fields)
             .build()
             .map_err(|_| NotRequested(Error::Api("invalid_list_column_rename".into())))?;
         // No await separates this exact original-owner fence from dispatch.

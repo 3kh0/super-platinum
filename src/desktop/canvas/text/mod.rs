@@ -1,4 +1,4 @@
-//! Existing canonical paragraph drafts. HTML export supplies only an exact anchor.
+//! Existing canonical text drafts. HTML export supplies only an exact anchor.
 use super::{Reader, checklist};
 use crate::state::ShellState;
 use dioxus::prelude::*;
@@ -13,6 +13,9 @@ pub(crate) mod check;
 pub(crate) mod continuation_check;
 mod continuation_fixture;
 pub(super) mod fixture;
+mod heading;
+pub(crate) mod heading_check;
+pub(super) mod heading_fixture;
 mod mapping;
 pub(crate) mod replacement_check;
 pub(super) mod replacement_fixture;
@@ -26,6 +29,8 @@ pub(crate) mod structure_recovery_check;
 mod structure_save;
 #[cfg(test)]
 mod structure_tests;
+pub(crate) mod underline_check;
+pub(super) mod underline_fixture;
 use checklist::structure_ops::Action;
 #[cfg(test)]
 mod tests;
@@ -47,12 +52,16 @@ impl Kind {
     }
     fn label(&self) -> &'static str {
         match self {
+            Self::Text(intent) if intent.heading_level().is_some() => "Edit heading",
             Self::Text(_) => "Edit paragraph",
             Self::Replacement => "Delete paragraph and leave an empty paragraph",
             Self::Structure(Action::Before) => "Add paragraph before",
             Self::Structure(Action::After) => "Add paragraph after",
             Self::Structure(Action::Delete) => "Delete paragraph",
         }
+    }
+    fn heading(&self) -> bool {
+        matches!(self, Self::Text(intent) if intent.heading_level().is_some())
     }
 }
 
@@ -67,6 +76,15 @@ pub(super) struct Draft {
     reading: bool,
     pub(super) pending: Option<checklist::Attempt>,
     error: Option<&'static str>,
+}
+impl Draft {
+    pub(super) fn editing_label(&self) -> &'static str {
+        if self.kind.heading() {
+            "Editing heading"
+        } else {
+            "Editing paragraph"
+        }
+    }
 }
 
 pub(super) fn open(
@@ -227,12 +245,18 @@ pub(super) fn paragraph(
     epoch: u64,
     rename: Signal<Option<super::RenameDraft>>,
     fallback: Element,
+    heading: Option<u8>,
 ) -> Element {
     let r = reader.read();
     let current = checklist::presentation(&state.read());
     let item = section.and_then(|id| r.text.items.get(id));
     let Some(item) = item else {
-        return rsx! {p {{fallback}}};
+        return match heading {
+            Some(1) => rsx! {h1 {{fallback}}},
+            Some(2) => rsx! {h2 {{fallback}}},
+            Some(3) => rsx! {h3 {{fallback}}},
+            _ => rsx! {p {{fallback}}},
+        };
     };
     let section = section.unwrap().to_owned();
     let edit = draft.read();
@@ -255,15 +279,36 @@ pub(super) fn paragraph(
         .owner
         .map(|(v, r)| (v.to_string(), r.to_string()))
         .unwrap_or_default();
-    rsx! {div {class:"canvas-editable-paragraph","data-canvas-text-section":"{section}",
+    let label = if heading.is_some() {
+        "Edit heading"
+    } else {
+        "Edit paragraph"
+    };
+    let content = if let Some(seed) = &item.annotation {
+        annotation_text::render(seed, epoch, state)
+    } else if let Some(intent) = item.intent.as_ref().filter(|intent| {
+        heading.is_some() || intent.seed().runs.iter().any(|run| run.style.underline)
+    }) {
+        heading::render(intent.seed(), epoch, state)
+    } else {
+        rsx! {for node in &item.preview {{crate::view::rich::rich_node(node,epoch,state)}}}
+    };
+    let content_class = if item.annotation.is_some() {
+        "canvas-paragraph-content canvas-annotation-text"
+    } else {
+        "canvas-paragraph-content"
+    };
+    let rendered = match heading {
+        Some(1) => rsx! {h1 {class:content_class,{content}}},
+        Some(2) => rsx! {h2 {class:content_class,{content}}},
+        Some(3) => rsx! {h3 {class:content_class,{content}}},
+        _ => rsx! {div {class:content_class,{content}}},
+    };
+    rsx! {div {class:if heading.is_some(){"canvas-editable-paragraph canvas-editable-heading"}else{"canvas-editable-paragraph"},"data-canvas-text-section":"{section}",
         "data-canvas-text-visit":visit,"data-canvas-text-read":read,
-        div {class:if item.annotation.is_some(){"canvas-paragraph-content canvas-annotation-text"}else{"canvas-paragraph-content"},
-            if let Some(seed)=&item.annotation {
-                {annotation_text::render(seed,epoch,state)}
-            } else {for node in &item.preview {{crate::view::rich::rich_node(node,epoch,state)}}}
-        }
+        {rendered}
         div {class:"canvas-paragraph-actions",
-            if item.intent.is_some() {button {class:"canvas-text-open",r#type:"button",disabled,"aria-label":"Edit paragraph",onclick:move |_|{if rename.peek().is_none(){open(state,reader,draft,&target);}},"Edit"}}
+            if item.intent.is_some() {button {class:"canvas-text-open",r#type:"button",disabled,"aria-label":label,onclick:move |_|{if rename.peek().is_none(){open(state,reader,draft,&target);}},"Edit"}}
             if let Some(actions) = &item.structure {
                 if actions.insert_before {button {class:"canvas-text-open",r#type:"button",disabled,"data-structure-action":"before","aria-label":"Add paragraph before",onclick:move |_|{if rename.peek().is_none(){open_structure(state,reader,draft,&before,Action::Before);}},"Add before"}}
                 if actions.insert_after {button {class:"canvas-text-open",r#type:"button",disabled,"data-structure-action":"after","aria-label":"Add paragraph after",onclick:move |_|{if rename.peek().is_none(){open_structure(state,reader,draft,&after,Action::After);}},"Add after"}}

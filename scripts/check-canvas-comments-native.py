@@ -5,6 +5,7 @@ sys.dont_write_bytecode = True
 import math
 from urllib.parse import urlsplit
 import canvas_native
+import canvas_comment_root_bodies
 from canvas_native import CanvasCheck, main
 
 SPEC = CanvasCheck(
@@ -73,7 +74,18 @@ def validate(spec, fixture, receipt):
                 or controls[0].get("label") != "Back to canvas"
                 or controls[-1].get("label") != "Refresh comments"):
             raise RuntimeError("Incomplete or clipped comment controls")
+    canvas_comment_root_bodies.validate(receipt)
+
+
+_base_validate_closed = canvas_native.validate_closed
+
+
+def validate_closed(spec, fixture, log, stages, terminal):
+    _base_validate_closed(spec, fixture, log, stages, terminal)
+    if [stage.get("layout") for stage in stages] != terminal.get("layouts"):
+        raise RuntimeError("Captured comment body/geometry differs from terminal proof")
 
 if __name__ == "__main__":
     canvas_native.validate = validate
+    canvas_native.validate_closed = validate_closed
     main(SPEC, __doc__)

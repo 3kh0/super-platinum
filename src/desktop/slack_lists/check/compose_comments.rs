@@ -6,12 +6,24 @@ use crate::slack_lists::comments::fixture::{
 };
 use std::time::Duration;
 mod ack_socket;
+mod channel_completion;
 mod deletions;
 mod edits;
 mod edits_ack;
+mod file_completion;
+mod file_navigation;
+mod group_completion;
 mod harness;
 mod incoming;
+mod member_completion;
 mod newer_draft;
+mod own_delete;
+mod own_edit;
+mod reaction_actions;
+mod reaction_additions;
+mod reaction_family;
+mod reaction_selection;
+mod reaction_tones;
 mod reactions;
 mod refresh_reactions;
 mod storage_recovery;
@@ -45,8 +57,64 @@ pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::Desktop
         let checked = match case.as_deref() {
             None | Some("compose") => run(state, &desktop).await,
             Some("newer-draft") => newer_draft::run(state, &desktop).await,
+            Some(
+                case @ ("own-delete"
+                | "own-delete-failure"
+                | "own-delete-storage"
+                | "own-delete-guards"
+                | "own-delete-rate-limit"
+                | "own-delete-restart-pending-exercise"
+                | "own-delete-restart-pending-restore"
+                | "own-delete-restart-unknown-exercise"
+                | "own-delete-restart-unknown-restore"),
+            ) => own_delete::run(state, &desktop, case).await,
+            Some(
+                "own-edit"
+                | "own-edit-custody"
+                | "own-edit-recovery"
+                | "own-edit-storage"
+                | "own-edit-restart-unsent-exercise"
+                | "own-edit-restart-unsent-restore"
+                | "own-edit-restart-unknown-exercise"
+                | "own-edit-restart-unknown-restore",
+            ) => own_edit::run(state, &desktop).await,
             Some("storage-recovery") => storage_recovery::run(state, &desktop).await,
             Some("reactions") => reactions::run(state, &desktop).await,
+            Some(
+                case @ ("file-navigation"
+                | "file-navigation-custody"
+                | "cold-files"
+                | "cold-files-recovery"),
+            ) => file_navigation::run(state, &desktop, case).await,
+            Some(
+                case @ ("file-completion" | "file-completion-custody" | "file-completion-off"),
+            ) => file_completion::run(state, &desktop, case).await,
+            Some(
+                case @ ("group-completion"
+                | "group-completion-custody"
+                | "group-completion-restricted"),
+            ) => group_completion::run(state, &desktop, case).await,
+            Some(case @ ("member-completion" | "member-completion-custody")) => {
+                member_completion::run(state, &desktop, case).await
+            }
+            Some(case @ ("channel-completion" | "channel-completion-custody")) => {
+                channel_completion::run(state, &desktop, case).await
+            }
+            Some(case @ ("pill-additions" | "pill-additions-custody")) => {
+                reaction_additions::run(state, &desktop, case).await
+            }
+            Some("reaction-tones") => reaction_tones::run(state, &desktop).await,
+            Some(case @ ("reaction-family" | "reaction-family-failures")) => {
+                reaction_family::run(state, &desktop, case).await
+            }
+            Some(
+                case @ ("reaction-selection"
+                | "reaction-selection-failures"
+                | "reaction-selection-custody"),
+            ) => reaction_selection::run(state, &desktop, case).await,
+            Some(case @ ("reaction-actions" | "reaction-failures")) => {
+                reaction_actions::run(state, &desktop, case).await
+            }
             Some("reaction-refresh") => refresh_reactions::run(state, &desktop).await,
             Some("deletions") => deletions::run(state, &desktop).await,
             Some("incoming") => incoming::run(state, &desktop).await,

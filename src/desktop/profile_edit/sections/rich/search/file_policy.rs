@@ -1,6 +1,6 @@
-//! Captured Profile file gate. No render-path IO or default-on experiment.
-use super::{Search, ranking};
-use crate::{profile_edit::sections::rich::query, state::ShellState};
+//! Captured host-owned file gate. No render-path IO or default-on experiment.
+use super::{Search, channel_host::Host, ranking};
+use crate::state::ShellState;
 use std::sync::Arc;
 use super_platinum_core::slack::{Error, api::custom::texty::files};
 #[cfg(test)]
@@ -11,7 +11,7 @@ fn unavailable() -> Error {
 }
 
 pub(super) struct Observation {
-    lease: query::Lease,
+    owner: Arc<dyn Fn(&ShellState) -> bool + Send + Sync>,
     context: Arc<crate::scheduled::Context>,
     preferences: Arc<ranking::Preferences>,
     policy: files::Policy,
@@ -19,7 +19,7 @@ pub(super) struct Observation {
 impl Observation {
     pub(super) fn capture(
         shell: &ShellState,
-        search: &Search,
+        search: &Search<impl Host>,
         preferences: Arc<ranking::Preferences>,
     ) -> Result<Self, Error> {
         if !search.current(shell) {
@@ -34,13 +34,13 @@ impl Observation {
     }
     fn bound(
         shell: &ShellState,
-        lease: query::Lease,
+        lease: impl Host,
         context: Arc<crate::scheduled::Context>,
         preferences: Arc<ranking::Preferences>,
     ) -> Result<Self, Error> {
         let policy = files::Policy::capture(preferences.assignments())?;
         let value = Self {
-            lease,
+            owner: Arc::new(move |shell| lease.current(shell)),
             context,
             preferences,
             policy,
@@ -51,9 +51,9 @@ impl Observation {
             .ok_or_else(unavailable)
     }
     fn owner_current(&self, shell: &ShellState) -> bool {
-        self.lease.current(shell) && self.context.current(shell) && self.preferences.current(shell)
+        (self.owner)(shell) && self.context.current(shell) && self.preferences.current(shell)
     }
-    pub(super) fn current(&self, shell: &ShellState, search: &Search) -> bool {
+    pub(super) fn current(&self, shell: &ShellState, search: &Search<impl Host>) -> bool {
         self.owner_current(shell)
             && search.current(shell)
             && Arc::ptr_eq(&self.context, &search.context)

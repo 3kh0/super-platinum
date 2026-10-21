@@ -72,6 +72,7 @@ pub(crate) async fn install() -> bool {
     if crate::fixture::is_fixture()
         && !super::super::channel_fetches::conditional::fixture::enabled()
         && !crate::directory_member_fetches::automatic::fixture_enabled()
+        && !crate::profile_edit::sections::fixture::group_recovery::known_freshness::enabled()
     {
         return false;
     }

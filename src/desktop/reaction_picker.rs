@@ -120,6 +120,10 @@ pub(crate) fn EmojiPicker(
     mut state: Signal<ShellState>,
     title: String,
     #[props(default)] composer_visit: Option<u64>,
+    #[props(default)] require_preferences: bool,
+    #[props(default = "shell-overlay-dialog".to_owned())] dialog_id: String,
+    #[props(default = true)] choice_ready: bool,
+    #[props(default)] choice_status: Option<String>,
     onchoose: EventHandler<crate::emoji_catalog::Selection>,
     onclose: EventHandler,
 ) -> Element {
@@ -188,8 +192,9 @@ pub(crate) fn EmojiPicker(
     // During that frame gap, never bind old visible rows to the new identity.
     let displayed = crate::emoji_catalog::current(&snapshot)
         .filter(|loaded| Arc::ptr_eq(&catalog, &loaded.picker));
-    let choices_ready = displayed.is_some()
-        && (composer_visit.is_none()
+    let choices_ready = choice_ready
+        && displayed.is_some()
+        && ((!require_preferences && composer_visit.is_none())
             || snapshot
                 .core
                 .active_team
@@ -199,7 +204,7 @@ pub(crate) fn EmojiPicker(
     let keyboard_displayed = displayed.clone();
     rsx! {
         div { class: "scrim", onclick: move |_| onclose.call(()) }
-        section { id:"shell-overlay-dialog", class: "modal emoji-picker", role: "dialog", "aria-modal": "true", "aria-labelledby": "emoji-picker-title",
+        section { id:dialog_id, class: "modal emoji-picker", role: "dialog", "aria-modal": "true", "aria-labelledby": "emoji-picker-title",
             tabindex:"-1","data-keyboard-dialog":"true","data-dialog-kind":"other",
             "data-emoji-choice-ready":if choices_ready {"true"} else {"false"},
             "data-emoji-lifecycle-catalog":if crate::performance::emoji_lifecycle::enabled() || crate::performance::emoji_retirement::enabled() { displayed.as_ref().map(|c|c.token.clone()) } else {None},
@@ -273,7 +278,8 @@ pub(crate) fn EmojiPicker(
             }
             footer { class: "emoji-footer",
                 span { role: "status",
-                    if catalog_status.read().is_empty() { "{visible} of {matches.len()} emoji" }
+                    if let Some(status) = &choice_status { "{status}" }
+                    else if catalog_status.read().is_empty() { "{visible} of {matches.len()} emoji" }
                     else { "{catalog_status}" }
                 }
                 if visible < matches.len() {

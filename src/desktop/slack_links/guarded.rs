@@ -18,6 +18,40 @@ fn scoped_failure(shell: &mut ShellState, feedback: &FailureFeedback, message: &
 pub(crate) struct NavigationGuard {
     pub current: Rc<dyn Fn(&ShellState) -> bool>,
     pub lock: Rc<dyn Fn() -> Pin<Box<dyn Future<Output = Option<Release>>>>>,
+    pub read: Option<ReadLifecycle>,
+}
+
+/// Optional caller feedback, scoped to an actually admitted missing read.
+/// This does not reserve a native lease or grant request/navigation authority.
+#[derive(Clone)]
+pub(crate) struct ReadLifecycle {
+    pub started: Rc<dyn Fn() -> Pin<Box<dyn Future<Output = bool>>>>,
+    pub settled: Rc<dyn Fn()>,
+}
+
+struct PendingRead(Option<ReadLifecycle>);
+impl PendingRead {
+    async fn begin(lifecycle: Option<&ReadLifecycle>, current: impl Fn() -> bool) -> Option<Self> {
+        if !current() {
+            return None;
+        }
+        // Arm cleanup before awaiting: even a dropped acknowledgment future may
+        // already have painted its original pending notice.
+        let pending = Self(lifecycle.cloned());
+        if let Some(lifecycle) = &pending.0
+            && !(lifecycle.started)().await
+        {
+            return None;
+        }
+        current().then_some(pending)
+    }
+}
+impl Drop for PendingRead {
+    fn drop(&mut self) {
+        if let Some(lifecycle) = &self.0 {
+            (lifecycle.settled)();
+        }
+    }
 }
 
 struct NativeLease(Release);
@@ -177,16 +211,37 @@ pub(crate) async fn open_channel_guarded(
         crate::bootstrap::posting_ingress::capture(&state, transport, &attempt.visit.session)
             .for_channels([channel.as_str()])
     });
+    let source = if known {
+        None
+    } else {
+        crate::app_home::channel_fetches::search::direct::Read::capture(
+            state,
+            &team,
+            &channel,
+            &|s| attempt.current(s),
+        )
+        .ok()
+    };
+    let mut pending_read = None;
     let result = if known {
         None
     } else {
+        let Some(pending) = PendingRead::begin(attempt.guard.read.as_ref(), || {
+            let shell = state.peek();
+            attempt.current(&shell) && source.as_ref().is_none_or(|r| r.current(&shell))
+        })
+        .await
+        else {
+            return;
+        };
+        pending_read = Some(pending);
         // Known selection has no I/O and keeps this original lease. Only a
         // missing-channel read releases it; its final native acquisition waits
         // for that exact previous lease to close before checking fresh buffers.
         drop(initial.take());
         let read = async {
             if crate::fixture::is_fixture() {
-                crate::app_home::about::management::activity::fixture::channel::fetch(
+                crate::app_home::about::management::activity::fixture::channel::fetch_raw(
                     state,
                     &client,
                     &attempt.visit.session,
@@ -194,7 +249,7 @@ pub(crate) async fn open_channel_guarded(
                 )
                 .await
             } else if let Some(transport) = attempt.visit.transport.as_ref() {
-                api::fetch_conversation_info(
+                api::fetch_conversation_info_raw(
                     transport,
                     &client,
                     &attempt.visit.session,
@@ -205,7 +260,12 @@ pub(crate) async fn open_channel_guarded(
                 Err(Error::Offline("No current Slack transport".into()))
             }
         };
-        let Some(result) = while_current(read, || attempt.current(&state.peek())).await else {
+        let Some(result) = while_current(read, || {
+            let shell = state.peek();
+            attempt.current(&shell) && source.as_ref().is_none_or(|r| r.current(&shell))
+        })
+        .await
+        else {
             return;
         };
         Some(result)
@@ -213,37 +273,57 @@ pub(crate) async fn open_channel_guarded(
     if !attempt.current(&state.peek()) {
         return;
     }
-    let Some(commit) = commit_lease(initial, &attempt.guard).await else {
-        return;
-    };
-    if !attempt.current(&state.peek()) {
-        return;
-    }
+    let mut canonical = None;
+    let mut legacy = None;
+    let mut failure = None;
     if let Some(result) = result {
         match result {
-            Ok(info) if info.id == channel => {
+            Ok(raw) if raw["id"].as_str() == Some(channel.as_str()) => {
                 if !attempt.current(&state.peek()) {
                     return;
                 }
-                if let Some(ingress) = ingress {
-                    ingress.channels(&state, std::slice::from_ref(&info));
-                }
-                if !attempt.resolve(&mut state.write(), &channel, info, revision) {
-                    return;
+                if let Some(source) = source {
+                    // Publish the original row through the shared processor
+                    // before acquiring the final native lease. Never overwrite
+                    // its paired-native result with a typed wire projection.
+                    match source.publish(state, raw, |s| attempt.current(s)).await {
+                        Ok(published) => canonical = Some(published),
+                        Err(error) => failure = Some(error),
+                    }
+                } else {
+                    match serde_json::from_value::<Channel>(raw) {
+                        Ok(info) => legacy = Some(info),
+                        Err(_) => {
+                            failure = Some(Error::Api("conversation_info_response_invalid".into()));
+                        }
+                    }
                 }
             }
             Ok(_) => {
-                attempt.failed(
-                    &mut state.write(),
-                    &feedback,
-                    &Error::Api("conversation_info_id_mismatch".into()),
-                );
-                return;
+                failure = Some(Error::Api("conversation_info_id_mismatch".into()));
             }
-            Err(error) => {
-                attempt.failed(&mut state.write(), &feedback, &error);
-                return;
-            }
+            Err(error) => failure = Some(error),
+        }
+    }
+    let Some(commit) = commit_lease(initial, &attempt.guard).await else {
+        return;
+    };
+    {
+        let shell = state.peek();
+        if !attempt.current(&shell) || canonical.as_ref().is_some_and(|c| !c.current(&shell)) {
+            return;
+        }
+    }
+    if let Some(error) = failure {
+        attempt.failed(&mut state.write(), &feedback, &error);
+        return;
+    }
+    if let Some(info) = legacy {
+        if let Some(ingress) = ingress {
+            ingress.channels(&state, std::slice::from_ref(&info));
+        }
+        if !attempt.resolve(&mut state.write(), &channel, info, revision) {
+            return;
         }
     }
     let successor = {
@@ -255,6 +335,7 @@ pub(crate) async fn open_channel_guarded(
         successor
     };
     drop(commit);
+    drop(pending_read);
     if let Some(successor) = successor
         && successor.current(&state.peek())
     {

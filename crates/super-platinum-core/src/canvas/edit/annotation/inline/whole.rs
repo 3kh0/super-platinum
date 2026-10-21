@@ -197,7 +197,7 @@ impl Whole {
             return Err(Error::Unsupported);
         }
         let original = super::existing::parse(anchor)?;
-        super::record::payload_model(anchor, parent, self.model(&original)?, session)
+        super::record::payload_model(anchor, parent, self.model(&original)?, session, None)
     }
 
     pub(in crate::canvas::edit::annotation) fn check_parent(

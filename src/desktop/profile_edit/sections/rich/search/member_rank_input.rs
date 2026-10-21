@@ -21,7 +21,7 @@ pub(super) struct Input {
     pub(super) cache: autocomplete::Ranking,
     pub(super) now_ms: f64,
     pub(super) passthrough: bool,
-    lease: query::Lease,
+    owner: Arc<dyn Fn(&ShellState) -> bool + Send + Sync>,
     names: Arc<member_names::Observation>,
     source: Arc<Snapshot>,
     preferences: Arc<ranking::Preferences>,
@@ -39,8 +39,8 @@ impl Input {
             .ok_or_else(unavailable)
     }
 
-    fn base_current(&self, s: &ShellState, search: &Search) -> bool {
-        self.lease.current(s)
+    fn base_current(&self, s: &ShellState, search: &Search<impl Host>) -> bool {
+        (self.owner)(s)
             && search.current(s)
             && self.names.current(s, search)
             && self.source.current(s)
@@ -52,14 +52,18 @@ impl Input {
                 .as_ref()
                 .is_none_or(|files| files.current(s, search))
     }
-    pub(super) fn current(&self, s: &ShellState, search: &Search) -> bool {
+    pub(super) fn current(&self, s: &ShellState, search: &Search<impl Host>) -> bool {
         self.base_current(s, search)
             && revision(s, search.lease.team()) == Some(self.draft_revision)
             && native(s, search.lease.team(), &self.ids).is_ok_and(|v| v == self.native)
     }
     /// Only shared server-draft presence may refresh this same query. A local
     /// composer, source, name, navigation or non-draft native change retires it.
-    pub(super) fn refresh_drafts(&mut self, s: &ShellState, search: &Search) -> Result<(), Error> {
+    pub(super) fn refresh_drafts(
+        &mut self,
+        s: &ShellState,
+        search: &Search<impl Host>,
+    ) -> Result<(), Error> {
         if !self.base_current(s, search) {
             return Err(unavailable());
         }
@@ -78,7 +82,7 @@ impl Input {
 /// gantry.self. Missing map entries refuse; no Rust lowercase approximation.
 pub(super) async fn capture(
     state: Signal<ShellState>,
-    search: &Search,
+    search: &Search<impl Host>,
     names: Arc<member_names::Observation>,
     source: Arc<Snapshot>,
     preferences: Arc<ranking::Preferences>,
@@ -90,7 +94,7 @@ pub(super) async fn capture(
 
 pub(super) async fn capture_with_files(
     state: Signal<ShellState>,
-    search: &Search,
+    search: &Search<impl Host>,
     names: Arc<member_names::Observation>,
     source: Arc<Snapshot>,
     preferences: Arc<ranking::Preferences>,
@@ -204,7 +208,10 @@ pub(super) async fn capture_with_files(
             .as_secs_f64()
             * 1000.0,
         passthrough: preferences.passthrough(),
-        lease: search.lease.clone(),
+        owner: {
+            let lease = search.lease.clone();
+            Arc::new(move |shell| lease.current(shell))
+        },
         names,
         source,
         preferences,

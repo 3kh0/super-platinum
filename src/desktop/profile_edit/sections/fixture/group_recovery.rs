@@ -1,4 +1,5 @@
-//! Named closed transport for explicit group Retry. Replies are raw API bodies;
+//! Named closed transport for automatic absent groups and explicit Retry.
+//! Replies are raw API bodies;
 //! the production decoder and owner/source admission remain responsible for use.
 use super::*;
 use crate::directory_member_fetches::Context;
@@ -6,6 +7,10 @@ use serde_json::json;
 use std::sync::{Mutex, OnceLock};
 use super_platinum_core::slack::client::{PreparedRequest, RequestBody};
 use tokio::sync::oneshot;
+pub(crate) mod known_freshness;
+mod mixed;
+pub(crate) mod mixed_absent;
+pub(crate) use mixed::{MEMBER, MEMBER_LABEL};
 
 pub(crate) const FLAG: &str = "SUPER_PLATINUM_PROFILE_GROUP_RECOVERY_CHECK";
 pub(crate) const GROUP: &str = "SMISSING01";
@@ -13,6 +18,7 @@ pub(crate) const OTHER: &str = "SMISSING02";
 pub(crate) const LABEL: &str = "@@ Cafe\u{0301} crew  ";
 pub(crate) const OTHER_LABEL: &str = "@Review crew";
 pub(crate) const DRAFT: &str = "Keep my unsaved description with ";
+pub(crate) const EDITED: &str = "Native edited \u{4e2d}\u{1f98a} & description with ";
 type Reply = Result<Value, Error>;
 #[derive(Default)]
 struct Ledger {
@@ -57,6 +63,32 @@ pub(crate) fn blocks(text: &str) -> Vec<Value> {
             json!({"type":"usergroup","usergroup_id":id,"fixture_occurrence":occurrence+1,
             "tab_id":"opaque-tab","opaque":{"keep":true}}),
         );
+        if known_freshness::enabled() && occurrence < 2 {
+            elements.last_mut().unwrap()["style"] = if occurrence == 0 {
+                json!({"bold":true})
+            } else {
+                json!({"italic":true})
+            };
+        }
+    }
+    if matches!(case().as_str(), "mixed-member" | "mixed-file-group") {
+        elements.push(
+            json!({"type":"user","user_id":MEMBER,"fixture_occurrence":4,
+            "tab_id":"opaque-member-tab","opaque":{"keep":true}}),
+        );
+    }
+    if mixed_absent::enabled() {
+        elements.extend(mixed_absent::tokens());
+    }
+    if case() == "mixed-file-group" || mixed_absent::enabled() {
+        let file_blocks = super::files::blocks(text);
+        elements.extend(
+            file_blocks[0]["elements"][0]["elements"]
+                .as_array()
+                .unwrap()[1..]
+                .iter()
+                .cloned(),
+        );
     }
     vec![json!({"type":"rich_text","elements":[{"type":"rich_text_section","elements":elements}]})]
 }
@@ -77,12 +109,22 @@ pub(crate) async fn seed(mut state: Signal<ShellState>) -> Result<(), String> {
     if !enabled() {
         return Err("Closed group recovery fixture required".into());
     }
+    if known_freshness::enabled() {
+        return known_freshness::seed(state).await;
+    }
     let owner = Owner::capture(&state.peek()).ok_or("Missing group fixture owner")?;
     let user = json!({"id":owner.user,"name":"fixture-self","team_id":owner.team,"profile":{}});
-    let boot = json!({"ok":true,"team":{"id":owner.team,"name":"Group Retry"},"self":user,"users":[user],
+    let mut users = vec![user.clone()];
+    if matches!(case().as_str(), "mixed-member" | "mixed-file-group") {
+        users.push(mixed::raw(&owner.team));
+    }
+    let boot = json!({"ok":true,"team":{"id":owner.team,"name":"Group Retry"},"self":user,"users":users,
         "channels":[{"id":"CINIT0001","name":"warm-harbor","is_channel":true,"is_member":true}],"prefs":{}});
     let init = json!({"ok":true,"self":user,"team":{"id":owner.team,"name":"Group Retry"},
         "workspaces":[{"id":owner.team}],"onboarding":{"user_data":{"onboarding_complete":true}},"user_date_created":123});
+    if mixed_absent::enabled() {
+        mixed_absent::record_seed(&boot, &init)?;
+    }
     crate::app_home::channel_fetches::canonical::fixture_seed(state, boot, init).await?;
     if case() == "legacy" {
         // A legacy cache projection has membership but no actual label witness.
@@ -97,6 +139,10 @@ pub(crate) async fn seed(mut state: Signal<ShellState>) -> Result<(), String> {
             .ok_or("Missing group workspace")?
             .usergroups
             .insert(GROUP.into(), legacy);
+    } else if case() == "ready" {
+        for id in ids() {
+            event(&mut state.write(), raw(&id))?;
+        }
     }
     Ok(())
 }
@@ -160,6 +206,35 @@ pub(crate) fn pending() -> Vec<Value> {
         .collect()
 }
 pub(crate) fn release(serial: u64, response: Reply) -> Result<(), String> {
+    let observed = release_observed(serial, response)?;
+    if observed["delivered"] == true {
+        Ok(())
+    } else {
+        Err("Group receiver retired before reply".into())
+    }
+}
+pub(crate) fn receiver_retired(serial: u64) -> bool {
+    ledger()
+        .lock()
+        .unwrap()
+        .held
+        .iter()
+        .any(|(id, sender)| *id == serial && sender.is_closed())
+}
+/// Only the explicit cancellation/account-retirement acceptance path expects
+/// a closed receiver. Ordinary callbacks still require actual delivery.
+pub(crate) fn release_retired(serial: u64, response: Reply) -> Result<Value, String> {
+    if !receiver_retired(serial) {
+        return Err("Original group receiver is not retired".into());
+    }
+    let observed = release_observed(serial, response)?;
+    if observed["receiverRetired"] == true && observed["delivered"] == false {
+        Ok(observed)
+    } else {
+        Err("Retired group callback unexpectedly delivered".into())
+    }
+}
+pub(super) fn release_observed(serial: u64, response: Reply) -> Result<Value, String> {
     if !enabled() {
         return Err("Closed group callback required".into());
     }
@@ -176,16 +251,39 @@ pub(crate) fn release(serial: u64, response: Reply) -> Result<(), String> {
             .find(|r| r["serial"] == serial)
             .unwrap();
         row["released"] = json!(true);
+        if known_freshness::enabled() {
+            row["response"] = match &response {
+                Ok(raw) => json!({"raw":raw}),
+                Err(Error::Offline(_)) => json!({"error":"offline"}),
+                Err(Error::RateLimited { retry_after_secs }) => {
+                    json!({"error":"rate-limited","retryAfterSeconds":retry_after_secs})
+                }
+                Err(_) => json!({"error":"other"}),
+            };
+        }
         row["outcome"] = json!(if response.is_ok() {
             "response"
+        } else if matches!(&response, Err(Error::RateLimited { .. })) {
+            "rate-limited"
         } else {
             "offline"
         });
+        if let Err(Error::RateLimited { retry_after_secs }) = &response {
+            row["retryAfterSeconds"] = json!(retry_after_secs);
+        }
         book.held.remove(index).1
     };
-    sender
-        .send(response)
-        .map_err(|_| "Group receiver retired before reply".into())
+    let retired = sender.is_closed();
+    let delivered = sender.send(response).is_ok();
+    let mut book = ledger().lock().unwrap();
+    let row = book
+        .requests
+        .iter_mut()
+        .find(|row| row["serial"] == serial)
+        .unwrap();
+    row["receiverRetired"] = json!(retired);
+    row["delivered"] = json!(delivered);
+    Ok(json!({"serial":serial,"receiverRetired":retired,"delivered":delivered}))
 }
 pub(crate) fn raw(id: &str) -> Value {
     json!({"id":id,"team_id":"TINIT0001","handle":if id==GROUP{LABEL}else{"Review crew"},
@@ -232,9 +330,35 @@ pub(crate) fn snapshot(shell: &ShellState) -> Value {
             )
         })
         .collect();
-    json!({"profile":mentions::snapshot(shell),"account":shell.core.active_account,"epoch":shell.core.account_epoch,
+    let mut snapshot = json!({"profile":mentions::snapshot(shell),"account":shell.core.active_account,"epoch":shell.core.account_epoch,
         "groups":groups,"requests":requests(),"pending":pending(),
-        "driver":crate::usergroups::recovery::fixture_status(shell)})
+        "mixedMember":mixed::snapshot(shell),
+        "driver":crate::usergroups::recovery::fixture_status(shell)});
+    if case() == "mixed-file-group" || mixed_absent::enabled() {
+        snapshot["mixedFile"] = json!({
+            "source":super::files::status(),
+            "cache":super::super::rich::files::fixture_status(shell, super::files::ID),
+            "opening":shell.profile_edit.sections.draft.as_ref().map(|d|json!({
+                "visit":d.visit,"serial":d.serial,"key":d.rich_opening,
+                "reading":d.rich_reading,"mounted":d.rich.is_some()}))
+        });
+    }
+    if mixed_absent::enabled() {
+        snapshot["mixedAbsentMember"] = mixed_absent::snapshot(shell);
+    }
+    if case() == "rate-limit" {
+        snapshot["rate"] = shell
+            .core
+            .active_team
+            .as_deref()
+            .map_or(Value::Null, |team| {
+                crate::usergroups::recovery::rate_snapshot(shell, team)
+            });
+    }
+    if known_freshness::enabled() {
+        snapshot["knownFreshness"] = known_freshness::snapshot(shell);
+    }
+    snapshot
 }
 pub(crate) fn replace_account(mut state: Signal<ShellState>) -> Value {
     let (before, media, epoch) = {

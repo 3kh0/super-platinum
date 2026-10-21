@@ -6,6 +6,8 @@ use serde::Deserialize;
 use serde_json::Value;
 mod catalog;
 pub(crate) mod files;
+mod guidance;
+pub(crate) use guidance::reference_guidance;
 #[cfg(test)]
 mod group_tests;
 pub(crate) mod opening;
@@ -78,18 +80,12 @@ pub(crate) fn refresh_failed(
 pub(super) fn notice(session: &Session) -> Option<String> {
     session.notice.clone()
 }
-pub(crate) fn has_files(blocks: &[Value]) -> bool {
-    collect(blocks).is_ok_and(|tokens| {
-        tokens
-            .iter()
-            .any(|raw| matches!(raw["type"].as_str(), Some("file" | "canvas")))
-    })
-}
 pub(crate) fn open(state: Signal<ShellState>, visit: u64, serial: u64, id: &str, key: u64) -> bool {
     open_with_recovery(state, visit, serial, id, key, false)
 }
 /// Explicit Retry reads unavailable known members and group details.
-/// Ordinary opening schedules shared automatic member work without forcing it.
+/// Ordinary opening schedules member work and acquires truly absent groups
+/// before admitting the original description editor.
 pub(crate) fn retry(
     state: Signal<ShellState>,
     visit: u64,
@@ -107,6 +103,24 @@ pub(crate) fn recovering(shell: &ShellState, visit: u64, serial: u64) -> bool {
         .as_ref()
         .is_some_and(|d| current(shell, &d.token, visit, serial) && d.rich_reading)
 }
+pub(crate) fn group_rate(
+    shell: &ShellState,
+    visit: u64,
+    serial: u64,
+    id: &str,
+    key: u64,
+) -> Option<crate::usergroups::recovery::RateStatus> {
+    recovery::MissingOpening::capture(shell, visit, serial, id, key)?.group_rate(shell)
+}
+pub(super) fn poll_group_rate(shell: &ShellState) -> bool {
+    let Some(d) = shell.profile_edit.sections.draft.as_ref() else {
+        return false;
+    };
+    if d.rich.is_some() || !current(shell, &d.token, d.visit, d.serial) {
+        return false;
+    }
+    crate::usergroups::recovery::poll_rate(shell, &d.token.owner.team)
+}
 fn open_with_recovery(
     mut state: Signal<ShellState>,
     visit: u64,
@@ -115,7 +129,11 @@ fn open_with_recovery(
     key: u64,
     known: bool,
 ) -> bool {
-    if recovering(&state.peek(), visit, serial) {
+    if recovering(&state.peek(), visit, serial)
+        || (known
+            && group_rate(&state.peek(), visit, serial, id, key)
+                .is_some_and(|status| status.blocked))
+    {
         return false;
     }
     let (accepted, hits, recovery) = {

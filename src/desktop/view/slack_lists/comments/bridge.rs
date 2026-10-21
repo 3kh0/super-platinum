@@ -263,6 +263,31 @@ impl Lease {
     pub(crate) async fn finish(self) -> Result<(), Error> {
         self.end(true).await
     }
+    /// Recheck the original sealed node after persistence without finishing or
+    /// unlocking it. Failure leaves normal RAII release/recovery responsible.
+    pub(crate) async fn validate(&self) -> Result<(), Error> {
+        let result = request(
+            &self.mounted,
+            json!({"kind":"validate", "lease":self.request,
+            "sequence":self.sequence}),
+        )
+        .await?;
+        if result["kind"] != "release-result"
+            || result["validated"] != true
+            || result["ok"] != true
+            || result["finished"] != false
+        {
+            return Err(unavailable());
+        }
+        Ok(())
+    }
+    /// The caller already replaced the original view synchronously while this
+    /// lease was held. Keep its exact wrapper inert until the retained bridge
+    /// observes detachment and acknowledges its final snapshot. Unlike finish,
+    /// this cannot consume a still-visible editor before route validation.
+    pub(crate) fn departed(mut self) {
+        self.released = true;
+    }
 }
 impl Drop for Lease {
     fn drop(&mut self) {
@@ -313,6 +338,42 @@ pub(crate) async fn capture(state: Signal<ShellState>, binding: &Binding) -> Res
 mod tests {
     use super::*;
     #[test]
+    fn refused_route_releases_lease_but_committed_route_keeps_seal_until_detach() {
+        for committed in [false, true] {
+            let (sender, mut receiver) = mpsc::unbounded_channel();
+            let lease = Lease {
+                mounted: Mounted {
+                    mount: "original-mount".into(),
+                    scope: "original-scope".into(),
+                    generation: 7,
+                    sequence: Arc::new(AtomicU64::new(4)),
+                    failed: Arc::new(AtomicBool::new(false)),
+                    sender,
+                },
+                request: "original-request".into(),
+                sequence: 4,
+                blocks: vec![json!({"type":"rich_text","opaque":"retained"})],
+                released: false,
+            };
+            if committed {
+                lease.departed();
+            } else {
+                drop(lease);
+            }
+            if committed {
+                assert!(receiver.try_recv().is_err());
+            } else {
+                let command = receiver.try_recv().unwrap();
+                assert_eq!(
+                    command.payload,
+                    json!({"kind":"release","lease":"original-request","sequence":4})
+                );
+                assert!(command.reply.is_none());
+                assert!(receiver.try_recv().is_err());
+            }
+        }
+    }
+    #[test]
     fn finish_receipt_cannot_unblock_rotation_before_native_cleanup() {
         for success in [true, false] {
             let (sender, mut receiver) = oneshot::channel();
@@ -337,5 +398,19 @@ mod tests {
                 assert!(result.is_err());
             }
         }
+    }
+}
+
+/// Constructor for host-custody tests; never installs or asserts renderer state.
+#[cfg(test)]
+pub(crate) fn test_mounted(binding: &Binding, mount: &str) -> Mounted {
+    let (sender, _) = mpsc::unbounded_channel();
+    Mounted {
+        mount: mount.into(),
+        scope: binding.scope(),
+        generation: binding.generation(),
+        sequence: Arc::new(AtomicU64::new(0)),
+        failed: Arc::new(AtomicBool::new(false)),
+        sender,
     }
 }

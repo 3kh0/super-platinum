@@ -23,6 +23,23 @@ pub struct DirectoryEndpoint {
     expires: Instant,
 }
 impl DirectoryEndpoint {
+    /// Closed settings-preset factory; does not widen generic path admission.
+    pub fn workflow_settings(
+        &self,
+        client: &SlackClient,
+        owner: &WorkspaceSession,
+        now: Instant,
+        read: &crate::block_actions::workflow_management::settings_acquisition::Read,
+    ) -> Result<PreparedRequest, Error> {
+        use crate::block_actions::workflow_management::settings_acquisition::SearchKind;
+        if !self.current(owner, now)
+            || !read.current(owner)
+            || read.kind() == SearchKind::InternalTeams
+        {
+            return Err(invalid());
+        }
+        self.observed_request(client, owner, read.method(), read.body().clone())
+    }
     pub fn discovery(client: &SlackClient, w: &WorkspaceSession) -> Result<PreparedRequest, Error> {
         scope(w)?;
         Ok(client.rest_form(
@@ -89,6 +106,20 @@ impl DirectoryEndpoint {
             return Err(invalid());
         }
         self.observed_request(client, w, path, body)
+    }
+    /// Only the two retained List Texty membership read shapes. This does not
+    /// widen the generic directory request allowlist or establish UI ownership.
+    pub fn list_membership(
+        &self,
+        client: &SlackClient,
+        owner: &WorkspaceSession,
+        now: Instant,
+        read: &crate::slack::api::custom::texty::list_membership::Read,
+    ) -> Result<PreparedRequest, Error> {
+        if !self.current(owner, now) || !read.current(owner) {
+            return Err(invalid());
+        }
+        self.observed_request(client, owner, read.method(), read.body())
     }
     fn observed_request(
         &self,

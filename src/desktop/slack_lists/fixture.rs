@@ -5,6 +5,7 @@ use super_platinum_core::{
     config::WorkspaceSession,
     slack::{api, client::RequestBody},
 };
+pub(crate) mod activity_navigation;
 pub(crate) mod board_card_extended;
 pub(crate) mod board_card_order;
 pub(crate) mod board_choice_options;
@@ -15,6 +16,7 @@ pub(crate) mod board_lane_order;
 pub(crate) mod board_move;
 pub(crate) mod board_refinement;
 mod board_views;
+pub(crate) mod canvas_navigation;
 mod channel_edit;
 pub(crate) mod column_precision;
 pub(crate) mod column_rename;
@@ -67,6 +69,7 @@ pub(crate) use user_edit::{add_user_edits, restore_user_edits, user_edit_value};
 
 #[derive(Clone)]
 pub(crate) struct Fixture {
+    pub(in crate::slack_lists) completion: Option<comments::fixture::completion::Model>,
     personal_completion: bool,
     task_date: task_date::State,
     date_personal: Option<PersonalTaskLists>,
@@ -93,8 +96,8 @@ pub(crate) struct Fixture {
     experiments: api::ListExperiments,
 }
 pub(crate) fn enabled(shell: &ShellState) -> bool {
-    shell.core.transport.is_none()
-        && shell.core.session.is_none()
+    ((shell.core.transport.is_none() && shell.core.session.is_none())
+        || comments::fixture::completion::enabled(shell))
         && shell.slack_lists.fixture.is_some()
 }
 fn loaded(fixture: &Fixture) -> Loaded {
@@ -155,6 +158,7 @@ pub(crate) fn install(shell: &mut ShellState, name: &str) {
     super::comments::fixture::seed(&mut document, &mut records);
     let file: File = serde_json::from_value(document.clone()).expect("fixture file");
     shell.slack_lists.fixture = Some(Fixture {
+        completion: None,
         personal_completion: false,
         task_date: task_date::State::default(),
         date_personal: None,
@@ -180,6 +184,7 @@ pub(crate) fn install(shell: &mut ShellState, name: &str) {
         prepared_valid: true,
         experiments: api::ListExperiments::default(),
     });
+    comments::fixture::completion::install(shell);
     assert!(open_shell(shell, file));
     match name {
         "slack-list-readonly" => {
@@ -206,11 +211,14 @@ pub(crate) fn refresh(shell: &mut ShellState) {
         return;
     };
     let fixture = shell.slack_lists.fixture.as_ref().unwrap();
-    let mut result = if fixture.error {
-        Err(Error::Offline("fixture offline".into()))
-    } else {
-        Ok(loaded(fixture))
-    };
+    let mut result =
+        if let Some(result) = comments::fixture::file_navigation::list_read(shell, &attempt) {
+            result
+        } else if fixture.error {
+            Err(Error::Offline("fixture offline".into()))
+        } else {
+            Ok(loaded(fixture))
+        };
     if let Err(error) = text_field_create::checkbox::read_input(shell, &attempt, &mut result) {
         text_field_create::checkbox::fail(shell, error);
         return;
