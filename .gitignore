@@ -11,6 +11,27 @@
 # Debug symbols
 *.pdb
 
+# Python-generated caches and local environments (keep test source tracked)
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+.coverage
+.coverage.*
+htmlcov/
+
+# Installed JavaScript dependencies
+node_modules/
+
+# Local credentials and environment overrides
+.env
+.env.*
+!.env.example
+!.env.sample
+
 # IDE / editors
 .idea/
 .vscode/
@@ -21,4 +42,3 @@
 # OS
 .DS_Store
 Thumbs.db
-/vendor/chime/node_modules/
