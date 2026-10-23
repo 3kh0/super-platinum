@@ -8,10 +8,12 @@ use std::{
     sync::OnceLock,
 };
 
+mod message;
 #[cfg(test)]
 mod tests;
 mod urls;
 mod whole;
+pub(super) use message::detect as detect_message;
 
 struct Patterns {
     regex: HashMap<String, Regex>,

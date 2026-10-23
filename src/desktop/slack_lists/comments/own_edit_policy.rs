@@ -22,6 +22,9 @@ pub(super) struct Observation {
     proof: Value,
 }
 impl Observation {
+    pub(super) fn authority(&self) -> Authority {
+        self.authority.clone()
+    }
     pub(super) fn policy(&self) -> &OwnEditPolicy {
         &self.policy
     }

@@ -45,9 +45,23 @@ pub(super) fn content(
             comments
                 .owner
                 .as_ref()
-                .and_then(|owner| shell.core.workspaces.get(&owner.scope.team))
-                .map(|workspace| {
-                    super::super::projection::message_vm(workspace, message, &shell.media)
+                .filter(|owner| owner.current(&shell))
+                .and_then(|owner| {
+                    shell
+                        .core
+                        .workspaces
+                        .get(&owner.scope.team)
+                        .map(|workspace| (owner, workspace))
+                })
+                .map(|(owner, workspace)| {
+                    let standard =
+                        crate::app_home::channel_fetches::emoji_standard(&shell, &owner.scope.team);
+                    super::super::projection::message_vm_with_standard(
+                        workspace,
+                        message,
+                        &shell.media,
+                        standard.as_ref().map(|observed| observed.standard()),
+                    )
                 })
         };
         if let Some(fallback) = fallback {

@@ -1,0 +1,1034 @@
+{
+  "source": "tmp/canvas-middle-typing-20261023/reference/middle-typing-result.json",
+  "sha256": "d9a8a42788fbc4cbda77f5521f7008292ffc90cfef35ed2ff7bdb9ed21b11837",
+  "vectors": [
+    {
+      "parentMode": "bootstrap",
+      "corpus": "ascii",
+      "cadence": "correction",
+      "left": "Keep this",
+      "tail": "Second paragraph",
+      "full": "Keep thisSecond paragraph",
+      "visibleOffset": 9,
+      "serializedOffset": 9,
+      "states": [
+        "New",
+        "New draftx",
+        "New draft",
+        "New paragraph"
+      ],
+      "sourceSession": null,
+      "patchReports": {
+        "parent": [
+          [
+            {
+              "action": "del",
+              "path": [
+                "text",
+                9
+              ],
+              "length": 16
+            }
+          ]
+        ],
+        "child": [
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                0
+              ],
+              "value": "Second paragraph"
+            }
+          ],
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                0
+              ],
+              "value": "N"
+            },
+            {
+              "action": "del",
+              "path": [
+                "text",
+                1
+              ]
+            },
+            {
+              "action": "del",
+              "path": [
+                "text",
+                2
+              ],
+              "length": 7
+            },
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                2
+              ],
+              "value": "w"
+            },
+            {
+              "action": "del",
+              "path": [
+                "text",
+                3
+              ],
+              "length": 7
+            }
+          ],
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                3
+              ],
+              "value": " draftx"
+            }
+          ],
+          [
+            {
+              "action": "del",
+              "path": [
+                "text",
+                9
+              ]
+            }
+          ],
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                4
+              ],
+              "value": "parag"
+            },
+            {
+              "action": "del",
+              "path": [
+                "text",
+                9
+              ]
+            },
+            {
+              "action": "del",
+              "path": [
+                "text",
+                11
+              ],
+              "length": 2
+            },
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                11
+              ],
+              "value": "ph"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "parentMode": "bootstrap",
+      "corpus": "ascii",
+      "cadence": "erase",
+      "left": "Keep this",
+      "tail": "Second paragraph",
+      "full": "Keep thisSecond paragraph",
+      "visibleOffset": 9,
+      "serializedOffset": 9,
+      "states": [
+        "Second paragraphx",
+        ""
+      ],
+      "sourceSession": null,
+      "patchReports": {
+        "parent": [
+          [
+            {
+              "action": "del",
+              "path": [
+                "text",
+                9
+              ],
+              "length": 16
+            }
+          ]
+        ],
+        "child": [
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                0
+              ],
+              "value": "Second paragraph"
+            }
+          ],
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                16
+              ],
+              "value": "x"
+            }
+          ],
+          [
+            {
+              "action": "del",
+              "path": [
+                "text",
+                0
+              ],
+              "length": 17
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "parentMode": "bootstrap",
+      "corpus": "ascii",
+      "cadence": "restore-tail",
+      "left": "Keep this",
+      "tail": "Second paragraph",
+      "full": "Keep thisSecond paragraph",
+      "visibleOffset": 9,
+      "serializedOffset": 9,
+      "states": [
+        "Second paragraphx",
+        "Second paragraph"
+      ],
+      "sourceSession": null,
+      "patchReports": {
+        "parent": [
+          [
+            {
+              "action": "del",
+              "path": [
+                "text",
+                9
+              ],
+              "length": 16
+            }
+          ]
+        ],
+        "child": [
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                0
+              ],
+              "value": "Second paragraph"
+            }
+          ],
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                16
+              ],
+              "value": "x"
+            }
+          ],
+          [
+            {
+              "action": "del",
+              "path": [
+                "text",
+                16
+              ]
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "parentMode": "bootstrap",
+      "corpus": "unicode",
+      "cadence": "correction",
+      "left": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00",
+      "tail": "Second \u65e5\u672c\ud83d\ude00 &amp; paragraph",
+      "full": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00Second \u65e5\u672c\ud83d\ude00 &amp; paragraph",
+      "visibleOffset": 11,
+      "serializedOffset": 15,
+      "states": [
+        "New",
+        "New \u65e5\u672c\ud83d\ude00 draftx",
+        "New \u65e5\u672c\ud83d\ude00 draft",
+        "New \u65e5\u672c\ud83d\ude00 paragraph"
+      ],
+      "sourceSession": null,
+      "patchReports": {
+        "parent": [
+          [
+            {
+              "action": "del",
+              "path": [
+                "text",
+                15
+              ],
+              "length": 27
+            }
+          ]
+        ],
+        "child": [
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                0
+              ],
+              "value": "Second \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+            }
+          ],
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                0
+              ],
+              "value": "N"
+            },
+            {
+              "action": "del",
+              "path": [
+                "text",
+                1
+              ]
+            },
+            {
+              "action": "del",
+              "path": [
+                "text",
+                2
+              ],
+              "length": 22
+            },
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                2
+              ],
+              "value": "w"
+            },
+            {
+              "action": "del",
+              "path": [
+                "text",
+                3
+              ],
+              "length": 3
+            }
+          ],
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                3
+              ],
+              "value": " \u65e5\u672c\ud83d\ude00 draftx"
+            }
+          ],
+          [
+            {
+              "action": "del",
+              "path": [
+                "text",
+                14
+              ]
+            }
+          ],
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                9
+              ],
+              "value": "parag"
+            },
+            {
+              "action": "del",
+              "path": [
+                "text",
+                14
+              ]
+            },
+            {
+              "action": "del",
+              "path": [
+                "text",
+                16
+              ],
+              "length": 2
+            },
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                16
+              ],
+              "value": "ph"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "parentMode": "bootstrap",
+      "corpus": "unicode",
+      "cadence": "erase",
+      "left": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00",
+      "tail": "Second \u65e5\u672c\ud83d\ude00 &amp; paragraph",
+      "full": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00Second \u65e5\u672c\ud83d\ude00 &amp; paragraph",
+      "visibleOffset": 11,
+      "serializedOffset": 15,
+      "states": [
+        "Second \u65e5\u672c\ud83d\ude00 &amp; paragraphx",
+        ""
+      ],
+      "sourceSession": null,
+      "patchReports": {
+        "parent": [
+          [
+            {
+              "action": "del",
+              "path": [
+                "text",
+                15
+              ],
+              "length": 27
+            }
+          ]
+        ],
+        "child": [
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                0
+              ],
+              "value": "Second \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+            }
+          ],
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                27
+              ],
+              "value": "x"
+            }
+          ],
+          [
+            {
+              "action": "del",
+              "path": [
+                "text",
+                0
+              ],
+              "length": 28
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "parentMode": "bootstrap",
+      "corpus": "unicode",
+      "cadence": "restore-tail",
+      "left": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00",
+      "tail": "Second \u65e5\u672c\ud83d\ude00 &amp; paragraph",
+      "full": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00Second \u65e5\u672c\ud83d\ude00 &amp; paragraph",
+      "visibleOffset": 11,
+      "serializedOffset": 15,
+      "states": [
+        "Second \u65e5\u672c\ud83d\ude00 &amp; paragraphx",
+        "Second \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      "sourceSession": null,
+      "patchReports": {
+        "parent": [
+          [
+            {
+              "action": "del",
+              "path": [
+                "text",
+                15
+              ],
+              "length": 27
+            }
+          ]
+        ],
+        "child": [
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                0
+              ],
+              "value": "Second \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+            }
+          ],
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                27
+              ],
+              "value": "x"
+            }
+          ],
+          [
+            {
+              "action": "del",
+              "path": [
+                "text",
+                27
+              ]
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "parentMode": "retained",
+      "corpus": "ascii",
+      "cadence": "correction",
+      "left": "Keep this",
+      "tail": "Second paragraph",
+      "full": "Keep thisSecond paragraph",
+      "visibleOffset": 9,
+      "serializedOffset": 9,
+      "states": [
+        "New",
+        "New draftx",
+        "New draft",
+        "New paragraph"
+      ],
+      "sourceSession": "CglwYXJhZ3JhcGgQ6AcY6AcqvAKFb0qDN2dbcACxAgEKq83vASNFAAAAAAGkX+92meteUbbMPXYZdCnXMdhbG89uR86CKDqsKoxCaAcBAgMCEwwjCEAEQwRWAg4BBAIEEQQTIRUQIQIjITQCQgVWB1cmgAESgQECgwEKCwALAXUZAwIBAwIBAwECBX+AgL/WBgoAfwAKAX8ACQELBwACJAAAAiQBAAMjAAACfgACCAF/EAIBf24GAX8AAwF9EwFsAgF/FwMBf2YCAX4HZGVsZXRlZAR0ZXh0ACQmAH4ZaAkBfxACAX4DbAUBfhVsAgF/EwIBfWwBFwQBf2YCAQIkfgEEJAF+AQAjFn82S2VlcCB0aGlzU2Vjb09yaWdpbmRhbCBwYXJ0YWdyYXBoaWzvu78PAAUBAgACAQQAfwEGAAIBfwAKAH0dAQIEAX8FAgEKMkBhNDVmZWY3Njk5ZWI1ZTUxYjZjYzNkNzYxOTc0MjlkNzMxZDg1YjFiY2Y2ZTQ3Y2U4MjI4M2FhYzJhOGM0MjY4QkAxNWVlYzcyNTA1YWE0YjkxNGRjZTEwZmY3NmE2OWM3NjQzZDIzZGM2YTNjMDk3NGYyNzIxZTQ5NGMyOTZjNzNhWkUKQGE0NWZlZjc2OTllYjVlNTFiNmNjM2Q3NjE5NzQyOWQ3MzFkODViMWJjZjZlNDdjZTgyMjgzYWFjMmE4YzQyNjgQ6Ac=",
+      "patchReports": {
+        "parent": [
+          [
+            {
+              "action": "del",
+              "path": [
+                "text",
+                9
+              ],
+              "length": 16
+            }
+          ]
+        ],
+        "child": [
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                0
+              ],
+              "value": "Second paragraph"
+            }
+          ],
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                0
+              ],
+              "value": "N"
+            },
+            {
+              "action": "del",
+              "path": [
+                "text",
+                1
+              ]
+            },
+            {
+              "action": "del",
+              "path": [
+                "text",
+                2
+              ],
+              "length": 7
+            },
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                2
+              ],
+              "value": "w"
+            },
+            {
+              "action": "del",
+              "path": [
+                "text",
+                3
+              ],
+              "length": 7
+            }
+          ],
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                3
+              ],
+              "value": " draftx"
+            }
+          ],
+          [
+            {
+              "action": "del",
+              "path": [
+                "text",
+                9
+              ]
+            }
+          ],
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                4
+              ],
+              "value": "parag"
+            },
+            {
+              "action": "del",
+              "path": [
+                "text",
+                9
+              ]
+            },
+            {
+              "action": "del",
+              "path": [
+                "text",
+                11
+              ],
+              "length": 2
+            },
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                11
+              ],
+              "value": "ph"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "parentMode": "retained",
+      "corpus": "ascii",
+      "cadence": "erase",
+      "left": "Keep this",
+      "tail": "Second paragraph",
+      "full": "Keep thisSecond paragraph",
+      "visibleOffset": 9,
+      "serializedOffset": 9,
+      "states": [
+        "Second paragraphx",
+        ""
+      ],
+      "sourceSession": "CglwYXJhZ3JhcGgQ6AcY6AcqvAKFb0qDN2dbcACxAgEKq83vASNFAAAAAAGkX+92meteUbbMPXYZdCnXMdhbG89uR86CKDqsKoxCaAcBAgMCEwwjCEAEQwRWAg4BBAIEEQQTIRUQIQIjITQCQgVWB1cmgAESgQECgwEKCwALAXUZAwIBAwIBAwECBX+AgL/WBgoAfwAKAX8ACQELBwACJAAAAiQBAAMjAAACfgACCAF/EAIBf24GAX8AAwF9EwFsAgF/FwMBf2YCAX4HZGVsZXRlZAR0ZXh0ACQmAH4ZaAkBfxACAX4DbAUBfhVsAgF/EwIBfWwBFwQBf2YCAQIkfgEEJAF+AQAjFn82S2VlcCB0aGlzU2Vjb09yaWdpbmRhbCBwYXJ0YWdyYXBoaWzvu78PAAUBAgACAQQAfwEGAAIBfwAKAH0dAQIEAX8FAgEKMkBhNDVmZWY3Njk5ZWI1ZTUxYjZjYzNkNzYxOTc0MjlkNzMxZDg1YjFiY2Y2ZTQ3Y2U4MjI4M2FhYzJhOGM0MjY4QkAxNWVlYzcyNTA1YWE0YjkxNGRjZTEwZmY3NmE2OWM3NjQzZDIzZGM2YTNjMDk3NGYyNzIxZTQ5NGMyOTZjNzNhWkUKQGE0NWZlZjc2OTllYjVlNTFiNmNjM2Q3NjE5NzQyOWQ3MzFkODViMWJjZjZlNDdjZTgyMjgzYWFjMmE4YzQyNjgQ6Ac=",
+      "patchReports": {
+        "parent": [
+          [
+            {
+              "action": "del",
+              "path": [
+                "text",
+                9
+              ],
+              "length": 16
+            }
+          ]
+        ],
+        "child": [
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                0
+              ],
+              "value": "Second paragraph"
+            }
+          ],
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                16
+              ],
+              "value": "x"
+            }
+          ],
+          [
+            {
+              "action": "del",
+              "path": [
+                "text",
+                0
+              ],
+              "length": 17
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "parentMode": "retained",
+      "corpus": "ascii",
+      "cadence": "restore-tail",
+      "left": "Keep this",
+      "tail": "Second paragraph",
+      "full": "Keep thisSecond paragraph",
+      "visibleOffset": 9,
+      "serializedOffset": 9,
+      "states": [
+        "Second paragraphx",
+        "Second paragraph"
+      ],
+      "sourceSession": "CglwYXJhZ3JhcGgQ6AcY6AcqvAKFb0qDN2dbcACxAgEKq83vASNFAAAAAAGkX+92meteUbbMPXYZdCnXMdhbG89uR86CKDqsKoxCaAcBAgMCEwwjCEAEQwRWAg4BBAIEEQQTIRUQIQIjITQCQgVWB1cmgAESgQECgwEKCwALAXUZAwIBAwIBAwECBX+AgL/WBgoAfwAKAX8ACQELBwACJAAAAiQBAAMjAAACfgACCAF/EAIBf24GAX8AAwF9EwFsAgF/FwMBf2YCAX4HZGVsZXRlZAR0ZXh0ACQmAH4ZaAkBfxACAX4DbAUBfhVsAgF/EwIBfWwBFwQBf2YCAQIkfgEEJAF+AQAjFn82S2VlcCB0aGlzU2Vjb09yaWdpbmRhbCBwYXJ0YWdyYXBoaWzvu78PAAUBAgACAQQAfwEGAAIBfwAKAH0dAQIEAX8FAgEKMkBhNDVmZWY3Njk5ZWI1ZTUxYjZjYzNkNzYxOTc0MjlkNzMxZDg1YjFiY2Y2ZTQ3Y2U4MjI4M2FhYzJhOGM0MjY4QkAxNWVlYzcyNTA1YWE0YjkxNGRjZTEwZmY3NmE2OWM3NjQzZDIzZGM2YTNjMDk3NGYyNzIxZTQ5NGMyOTZjNzNhWkUKQGE0NWZlZjc2OTllYjVlNTFiNmNjM2Q3NjE5NzQyOWQ3MzFkODViMWJjZjZlNDdjZTgyMjgzYWFjMmE4YzQyNjgQ6Ac=",
+      "patchReports": {
+        "parent": [
+          [
+            {
+              "action": "del",
+              "path": [
+                "text",
+                9
+              ],
+              "length": 16
+            }
+          ]
+        ],
+        "child": [
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                0
+              ],
+              "value": "Second paragraph"
+            }
+          ],
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                16
+              ],
+              "value": "x"
+            }
+          ],
+          [
+            {
+              "action": "del",
+              "path": [
+                "text",
+                16
+              ]
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "parentMode": "retained",
+      "corpus": "unicode",
+      "cadence": "correction",
+      "left": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00",
+      "tail": "Second \u65e5\u672c\ud83d\ude00 &amp; paragraph",
+      "full": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00Second \u65e5\u672c\ud83d\ude00 &amp; paragraph",
+      "visibleOffset": 11,
+      "serializedOffset": 15,
+      "states": [
+        "New",
+        "New \u65e5\u672c\ud83d\ude00 draftx",
+        "New \u65e5\u672c\ud83d\ude00 draft",
+        "New \u65e5\u672c\ud83d\ude00 paragraph"
+      ],
+      "sourceSession": "CglwYXJhZ3JhcGgQ6AcY6Acq7wKFb0qDZW+shwDkAgEKq83vASNFAAAAAAGqEQRi/28QhF5zPyR3xydT819YbP0QpUODMdFI8abuHAcBAgMCEwsjCEAEQwRWAg4BBAIEEQQTJxUQIQIjIzQCQgVWF1dDgAESgQECgwEJCgAKAXseBAUHAwMBfgIHf4CAv9YGCQB/AAkBfwAIAQoHAAIyAAACMgEAAzEAAAJ+AAINAX8QAgF/bgYBfxMFAXtoARkBZgIBfwACAX8dBQF/XgIBfgdkZWxldGVkBHRleHQAMjQAfh5jDgF/EAMBf24FAX8TBgF+aBkCAXpmARtmAR0GAX9eAgECMn4BBDIBfgEAAxZ/JgcWAjZ/RgwWAjZ/RhQWfzZDYWbDqSAmYW1wOyDml6XmnKzwn5iAU2Vjb09yaWdpbmQg5pel5pys8J+YgCAmYW1wO2wgcHRhcmFncmFwaGls77u/FAAFAQwAfwECAH8BCAACAX8ACQB/IwQBfgsCAgEJMkBhYTExMDQ2MmZmNmYxMDg0NWU3MzNmMjQ3N2M3Mjc1M2YzNWY1ODZjZmQxMGE1NDM4MzMxZDE0OGYxYTZlZTFjQkAwNGM0NzRkZDI3NGNkZGY4NGRhMmM3Mjc1NjAwM2M0NWIzYTQ0OWY1MWQ0YTNhOGMzZTIxYzk1NWJiMjkyNTA0WkUKQGFhMTEwNDYyZmY2ZjEwODQ1ZTczM2YyNDc3YzcyNzUzZjM1ZjU4NmNmZDEwYTU0MzgzMzFkMTQ4ZjFhNmVlMWMQ6Ac=",
+      "patchReports": {
+        "parent": [
+          [
+            {
+              "action": "del",
+              "path": [
+                "text",
+                15
+              ],
+              "length": 27
+            }
+          ]
+        ],
+        "child": [
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                0
+              ],
+              "value": "Second \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+            }
+          ],
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                0
+              ],
+              "value": "N"
+            },
+            {
+              "action": "del",
+              "path": [
+                "text",
+                1
+              ]
+            },
+            {
+              "action": "del",
+              "path": [
+                "text",
+                2
+              ],
+              "length": 22
+            },
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                2
+              ],
+              "value": "w"
+            },
+            {
+              "action": "del",
+              "path": [
+                "text",
+                3
+              ],
+              "length": 3
+            }
+          ],
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                3
+              ],
+              "value": " \u65e5\u672c\ud83d\ude00 draftx"
+            }
+          ],
+          [
+            {
+              "action": "del",
+              "path": [
+                "text",
+                14
+              ]
+            }
+          ],
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                9
+              ],
+              "value": "parag"
+            },
+            {
+              "action": "del",
+              "path": [
+                "text",
+                14
+              ]
+            },
+            {
+              "action": "del",
+              "path": [
+                "text",
+                16
+              ],
+              "length": 2
+            },
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                16
+              ],
+              "value": "ph"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "parentMode": "retained",
+      "corpus": "unicode",
+      "cadence": "erase",
+      "left": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00",
+      "tail": "Second \u65e5\u672c\ud83d\ude00 &amp; paragraph",
+      "full": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00Second \u65e5\u672c\ud83d\ude00 &amp; paragraph",
+      "visibleOffset": 11,
+      "serializedOffset": 15,
+      "states": [
+        "Second \u65e5\u672c\ud83d\ude00 &amp; paragraphx",
+        ""
+      ],
+      "sourceSession": "CglwYXJhZ3JhcGgQ6AcY6Acq7wKFb0qDZW+shwDkAgEKq83vASNFAAAAAAGqEQRi/28QhF5zPyR3xydT819YbP0QpUODMdFI8abuHAcBAgMCEwsjCEAEQwRWAg4BBAIEEQQTJxUQIQIjIzQCQgVWF1dDgAESgQECgwEJCgAKAXseBAUHAwMBfgIHf4CAv9YGCQB/AAkBfwAIAQoHAAIyAAACMgEAAzEAAAJ+AAINAX8QAgF/bgYBfxMFAXtoARkBZgIBfwACAX8dBQF/XgIBfgdkZWxldGVkBHRleHQAMjQAfh5jDgF/EAMBf24FAX8TBgF+aBkCAXpmARtmAR0GAX9eAgECMn4BBDIBfgEAAxZ/JgcWAjZ/RgwWAjZ/RhQWfzZDYWbDqSAmYW1wOyDml6XmnKzwn5iAU2Vjb09yaWdpbmQg5pel5pys8J+YgCAmYW1wO2wgcHRhcmFncmFwaGls77u/FAAFAQwAfwECAH8BCAACAX8ACQB/IwQBfgsCAgEJMkBhYTExMDQ2MmZmNmYxMDg0NWU3MzNmMjQ3N2M3Mjc1M2YzNWY1ODZjZmQxMGE1NDM4MzMxZDE0OGYxYTZlZTFjQkAwNGM0NzRkZDI3NGNkZGY4NGRhMmM3Mjc1NjAwM2M0NWIzYTQ0OWY1MWQ0YTNhOGMzZTIxYzk1NWJiMjkyNTA0WkUKQGFhMTEwNDYyZmY2ZjEwODQ1ZTczM2YyNDc3YzcyNzUzZjM1ZjU4NmNmZDEwYTU0MzgzMzFkMTQ4ZjFhNmVlMWMQ6Ac=",
+      "patchReports": {
+        "parent": [
+          [
+            {
+              "action": "del",
+              "path": [
+                "text",
+                15
+              ],
+              "length": 27
+            }
+          ]
+        ],
+        "child": [
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                0
+              ],
+              "value": "Second \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+            }
+          ],
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                27
+              ],
+              "value": "x"
+            }
+          ],
+          [
+            {
+              "action": "del",
+              "path": [
+                "text",
+                0
+              ],
+              "length": 28
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "parentMode": "retained",
+      "corpus": "unicode",
+      "cadence": "restore-tail",
+      "left": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00",
+      "tail": "Second \u65e5\u672c\ud83d\ude00 &amp; paragraph",
+      "full": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00Second \u65e5\u672c\ud83d\ude00 &amp; paragraph",
+      "visibleOffset": 11,
+      "serializedOffset": 15,
+      "states": [
+        "Second \u65e5\u672c\ud83d\ude00 &amp; paragraphx",
+        "Second \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      "sourceSession": "CglwYXJhZ3JhcGgQ6AcY6Acq7wKFb0qDZW+shwDkAgEKq83vASNFAAAAAAGqEQRi/28QhF5zPyR3xydT819YbP0QpUODMdFI8abuHAcBAgMCEwsjCEAEQwRWAg4BBAIEEQQTJxUQIQIjIzQCQgVWF1dDgAESgQECgwEJCgAKAXseBAUHAwMBfgIHf4CAv9YGCQB/AAkBfwAIAQoHAAIyAAACMgEAAzEAAAJ+AAINAX8QAgF/bgYBfxMFAXtoARkBZgIBfwACAX8dBQF/XgIBfgdkZWxldGVkBHRleHQAMjQAfh5jDgF/EAMBf24FAX8TBgF+aBkCAXpmARtmAR0GAX9eAgECMn4BBDIBfgEAAxZ/JgcWAjZ/RgwWAjZ/RhQWfzZDYWbDqSAmYW1wOyDml6XmnKzwn5iAU2Vjb09yaWdpbmQg5pel5pys8J+YgCAmYW1wO2wgcHRhcmFncmFwaGls77u/FAAFAQwAfwECAH8BCAACAX8ACQB/IwQBfgsCAgEJMkBhYTExMDQ2MmZmNmYxMDg0NWU3MzNmMjQ3N2M3Mjc1M2YzNWY1ODZjZmQxMGE1NDM4MzMxZDE0OGYxYTZlZTFjQkAwNGM0NzRkZDI3NGNkZGY4NGRhMmM3Mjc1NjAwM2M0NWIzYTQ0OWY1MWQ0YTNhOGMzZTIxYzk1NWJiMjkyNTA0WkUKQGFhMTEwNDYyZmY2ZjEwODQ1ZTczM2YyNDc3YzcyNzUzZjM1ZjU4NmNmZDEwYTU0MzgzMzFkMTQ4ZjFhNmVlMWMQ6Ac=",
+      "patchReports": {
+        "parent": [
+          [
+            {
+              "action": "del",
+              "path": [
+                "text",
+                15
+              ],
+              "length": 27
+            }
+          ]
+        ],
+        "child": [
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                0
+              ],
+              "value": "Second \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+            }
+          ],
+          [
+            {
+              "action": "splice",
+              "path": [
+                "text",
+                27
+              ],
+              "value": "x"
+            }
+          ],
+          [
+            {
+              "action": "del",
+              "path": [
+                "text",
+                27
+              ]
+            }
+          ]
+        ]
+      }
+    }
+  ]
+}

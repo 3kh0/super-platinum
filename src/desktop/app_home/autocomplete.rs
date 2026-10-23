@@ -1,6 +1,8 @@
 //! Read-only access to the shared account autocomplete observations. Consumers
 //! supply their own query lease; this facade grants no Home action authority.
 use super::*;
+pub(crate) mod observations;
+pub(crate) mod startup;
 use serde_json::Value;
 use super_platinum_core::{
     block_actions::home::workflow::directory_observations::Offline,
@@ -22,6 +24,13 @@ impl Ranking {
         current: impl Fn(&ShellState) -> bool,
     ) -> Result<Self, Error> {
         workflows::ranking_cache::capture_for(state, context, current).map(Self)
+    }
+    pub(crate) fn capture_without_reads(
+        state: Signal<ShellState>,
+        context: Arc<Context>,
+        current: impl Fn(&ShellState) -> bool,
+    ) -> Result<Self, Error> {
+        workflows::ranking_cache::capture_for_without_reads(state, context, current).map(Self)
     }
     pub(crate) fn current(&self, shell: &ShellState) -> bool {
         self.0.current(shell)

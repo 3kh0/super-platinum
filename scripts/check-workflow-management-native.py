@@ -27,6 +27,9 @@ from workflow_management_first_publish import STAGES as FIRST_PUBLISH_STAGES, va
 from workflow_management_confirmation_add import STAGES as CONFIRMATION_ADD_STAGES, validate as validate_confirmation_add
 from workflow_management_channel_workflows import STAGES as CHANNEL_WORKFLOWS_STAGES, validate as validate_channel_workflows
 from workflow_management_channel_workflow_details import STAGES as CHANNEL_WORKFLOW_DETAILS_STAGES, validate as validate_channel_workflow_details
+import workflow_management_thread_keyboard as thread_keyboard
+from workflow_management_feature import validate as validate_feature
+from workflow_management_share import validate as validate_share, STAGES as SHARE_STAGES, CASES as SHARE_CASES
 FIRST_PUBLISH_STAGES = {**FIRST_PUBLISH_STAGES, **CONFIRMATION_ADD_STAGES, **CHANNEL_WORKFLOWS_STAGES, **CHANNEL_WORKFLOW_DETAILS_STAGES}
 from workflow_management_permissions import STAGES as PERMISSIONS_STAGES, validate as validate_permissions
 from workflow_management_run_access import STAGES as RUN_ACCESS_STAGES, validate as validate_run_access
@@ -60,6 +63,17 @@ def require(condition, message):
         raise RuntimeError(message)
 
 
+def pointer_options(share_search_case, share_multiple_case=None):
+    from workflow_management_share_multiple import CASES as MULTIPLE_CASES
+    if share_multiple_case is not None:
+        require(share_multiple_case in MULTIPLE_CASES, 'Unknown multiple caption scope')
+        return {'caption_timeout_ms': 2000}
+    from workflow_management_share_search import RANKING_CASES, EMPTY_CASES, STARTUP_CASES
+    return ({'caption_timeout_ms': 2000}
+            if share_search_case in tuple('ranking:' + case for case in RANKING_CASES)+tuple('empty:' + case for case in EMPTY_CASES)+tuple('startup:' + case for case in STARTUP_CASES)+('person-success','channel-success')
+            else {})
+
+
 def ready_tuple(fixture, nonce, pid):
     require(fixture in FIXTURES and isinstance(nonce, str) and re.fullmatch('[0-9a-f]{32}', nonce),
             'Invalid readiness fixture or nonce')
@@ -78,7 +92,7 @@ def validate_owned(receipt, expected, dimensions=None):
                 'Native capture dimensions changed after placement')
 
 
-def validate_closed(native, expected, captures, admitted, dimensions=None, *, platform=sys.platform, png=True, delete_case=None, unpublish_case=None, permissions_case=None, run_access_case=None, managers_case=None, publish_case=None, first_publish_case=None, thread_custody=False):
+def validate_closed(native, expected, captures, admitted, dimensions=None, *, platform=sys.platform, png=True, delete_case=None, unpublish_case=None, permissions_case=None, run_access_case=None, managers_case=None, publish_case=None, first_publish_case=None, thread_custody=False, feature_case=None, share_case=None, share_drafts=False, share_cancel=False, share_resend_case=None, share_posting_case=None, share_dm_case=None, share_person_case=None, share_search_case=None, share_multiple_case=None):
     waiting = H['closed_receipts'](native.log, WAITING)
     require(len(waiting) == 1, 'Missing or duplicate closed readiness request')
     validate_ready(waiting[0], expected)
@@ -92,7 +106,10 @@ def validate_closed(native, expected, captures, admitted, dimensions=None, *, pl
         require(len(choosers) == chooser_count(first_publish_case), 'Original file chooser request inventory changed')
         for serial, request in enumerate(choosers,1):
             chooser_request(request,first_publish_case,expected['fixture'],expected['pid'],serial)
-    receipt = validate_log(native, expected['fixture'], captures, platform, png, delete_case=delete_case, unpublish_case=unpublish_case, permissions_case=permissions_case, run_access_case=run_access_case, managers_case=managers_case, publish_case=publish_case, first_publish_case=first_publish_case, thread_custody=thread_custody)
+    receipt = validate_log(native, expected['fixture'], captures, platform, png, delete_case=delete_case, unpublish_case=unpublish_case, permissions_case=permissions_case, run_access_case=run_access_case, managers_case=managers_case, publish_case=publish_case, first_publish_case=first_publish_case, thread_custody=thread_custody, feature_case=feature_case, share_case=share_case, share_drafts=share_drafts, share_cancel=share_cancel, share_resend_case=share_resend_case, share_posting_case=share_posting_case, share_dm_case=share_dm_case, share_person_case=share_person_case, share_search_case=share_search_case, share_multiple_case=share_multiple_case)
+    keyboard_requests = H['closed_receipts'](native.log, thread_keyboard.PREFIX)
+    require(keyboard_requests == native.receipts(thread_keyboard.PREFIX), 'Closed keyboard request changed')
+    thread_keyboard.validate_requests(keyboard_requests, expected, receipt, thread_custody, share_drafts=share_drafts)
     require(receipt == admitted, 'Closed log changed after terminal receipt')
     validate_owned(receipt, expected, dimensions)
     return receipt
@@ -116,12 +133,47 @@ def validate_png(path, dimensions):
     require(list(struct.unpack('>II', header[16:24])) == dimensions, 'PNG dimensions differ from native capture')
 
 
-def validate(fixture, receipt, captures, *, platform=sys.platform, png=True, delete_case=None, unpublish_case=None, permissions_case=None, run_access_case=None, managers_case=None, publish_case=None, first_publish_case=None, thread_custody=False):
+def validate(fixture, receipt, captures, *, platform=sys.platform, png=True, delete_case=None, unpublish_case=None, permissions_case=None, run_access_case=None, managers_case=None, publish_case=None, first_publish_case=None, thread_custody=False, feature_case=None, share_case=None, share_drafts=False, share_cancel=False, share_resend_case=None, share_posting_case=None, share_dm_case=None, share_person_case=None, share_search_case=None, share_multiple_case=None):
+    from workflow_management_share_posting import mode
+    mode(share_posting_case, share_case, share_drafts, share_cancel, share_resend_case)
+    from workflow_management_share_multiple import mode as multiple_mode
+    multiple_mode(share_multiple_case,share_case,share_drafts,share_cancel,share_resend_case,share_posting_case,share_dm_case,share_person_case,share_search_case)
+    from workflow_management_share_search import mode as search_mode
+    search_mode(share_search_case,share_case,share_drafts,share_cancel,share_resend_case,share_posting_case,share_dm_case,share_person_case)
+    from workflow_management_share_person import mode as person_mode
+    person_mode(share_person_case,share_case,share_drafts,share_cancel,share_resend_case,share_posting_case,share_dm_case)
+    from workflow_management_share_dm import mode as dm_mode
+    dm_mode(share_dm_case, share_case, share_drafts, share_cancel, share_resend_case, share_posting_case)
     require(fixture in FIXTURES, 'Unknown workflow fixture')
     require(receipt.get('threadCustody', False) is thread_custody, 'Requested thread custody mode differs from native receipt')
+    require(receipt.get('featureCase') == feature_case, 'Requested Feature mode differs from native receipt')
+    require(receipt.get('shareCase') == share_case, 'Requested Share mode differs from native receipt')
+    from workflow_management_share_dm import identity as dm_identity
+    dm_identity(receipt, share_dm_case)
+    from workflow_management_share_person import identity as person_identity
+    person_identity(receipt,share_person_case)
+    from workflow_management_share_multiple import identity as multiple_identity
+    multiple_identity(receipt,share_multiple_case)
+    require(receipt.get('shareDraftCustody', False) is share_drafts, 'Requested Share draft mode differs from native receipt')
+    require(receipt.get('shareCancelCheck', False) is share_cancel, 'Requested local Share Cancel mode differs from native receipt')
+    require(not share_cancel or share_drafts and share_case in ('rejected','lost-response'), 'Local Share Cancel requires failed Share and draft custody')
+    require(share_resend_case is None or share_resend_case in ('success','rejected','held','suppressed') and share_drafts and not share_cancel and share_case == ('rejected' if share_resend_case == 'suppressed' else 'lost-response'), 'Resend requires exact initial failure, draft custody and no Cancel mode')
+    require(share_cancel or receipt.get('shareCancel') is None, 'Unexpected local Share Cancel evidence')
+    from workflow_management_share_posting import identity
+    identity(receipt, share_posting_case)
+    require(receipt.get('shareResendCheck', False) is (share_resend_case is not None) and receipt.get('shareResendCase') == share_resend_case, 'Requested Share Resend mode differs from receipt')
+    require(share_resend_case is not None or receipt.get('shareResend') is None, 'Unexpected Share Resend evidence')
+    require(not share_drafts or share_case is not None, 'Share drafts require Share mode')
+    require(not (share_case is not None and feature_case is not None), 'Conflicting Feature and Share modes')
+    if share_case is not None:
+        require(first_publish_case == 'first-add-success' and not thread_custody, 'Share requires isolated first-add-success')
+        return validate_share(fixture, first_publish_case, receipt, captures, expected_viewport(fixture, platform), rectangle, validate_png, png=png, share_case=share_case, share_drafts=share_drafts, share_cancel=share_cancel, share_resend_case=share_resend_case, share_posting_case=share_posting_case, share_dm_case=share_dm_case, share_person_case=share_person_case, share_search_case=share_search_case, share_multiple_case=share_multiple_case)
     require(not thread_custody or first_publish_case in ('first-details-success', 'first-details-errors', 'first-details-close-held'), 'Thread custody requires an admitted details case')
     require(sum(x is not None for x in (delete_case, unpublish_case, permissions_case, run_access_case, managers_case, publish_case, first_publish_case)) <= 1, 'Conflicting workflow operation cases')
     require(first_publish_case is not None or receipt.get('firstPublishCase') is None, 'Unrequested first-Publish receipt')
+    require(feature_case is None or first_publish_case == "first-add-success", "Feature requires first-add-success")
+    if feature_case is not None:
+        return validate_feature(fixture, first_publish_case, receipt, captures, expected_viewport(fixture, platform), rectangle, validate_png, png=png, feature_case=feature_case)
     if first_publish_case is not None:
         require(first_publish_case in FIRST_PUBLISH_STAGES and fixture in ('workflow-editor','workflow-editor-narrow'), 'Invalid first-Publish fixture')
         require(all(receipt.get(k) is None for k in ('publishCase','managersCase','runAccessCase','permissionsCase','deleteCase','unpublishCase')), 'Foreign first-Publish operation receipt')
@@ -278,25 +330,47 @@ def validate(fixture, receipt, captures, *, platform=sys.platform, png=True, del
         require(receipt.get('replacement') is None, 'Unexpected account replacement')
 
 
-def validate_log(native, fixture, captures, platform=sys.platform, png=True, *, delete_case=None, unpublish_case=None, permissions_case=None, run_access_case=None, managers_case=None, publish_case=None, first_publish_case=None, thread_custody=False):
+def validate_log(native, fixture, captures, platform=sys.platform, png=True, *, delete_case=None, unpublish_case=None, permissions_case=None, run_access_case=None, managers_case=None, publish_case=None, first_publish_case=None, thread_custody=False, feature_case=None, share_case=None, share_drafts=False, share_cancel=False, share_resend_case=None, share_posting_case=None, share_dm_case=None, share_person_case=None, share_search_case=None, share_multiple_case=None):
     receipts = native.receipts(PREFIX)
     require(len(receipts) == 1, 'Missing or duplicate terminal receipt')
     receipt = receipts[0]
+    require(receipt.get('ok') is True, 'Native workflow check failed: ' + str(receipt.get('error', 'missing success')))
     require(receipt.get('threadCustody', False) is thread_custody, 'Requested thread custody mode differs from native receipt')
-    validate(fixture, receipt, captures, platform=platform, png=png, delete_case=delete_case, unpublish_case=unpublish_case, permissions_case=permissions_case, run_access_case=run_access_case, managers_case=managers_case, publish_case=publish_case, first_publish_case=first_publish_case, thread_custody=thread_custody)
-    stages = (FIRST_PUBLISH_STAGES[first_publish_case] if first_publish_case is not None else
+    validate(fixture, receipt, captures, platform=platform, png=png, delete_case=delete_case, unpublish_case=unpublish_case, permissions_case=permissions_case, run_access_case=run_access_case, managers_case=managers_case, publish_case=publish_case, first_publish_case=first_publish_case, thread_custody=thread_custody, feature_case=feature_case, share_case=share_case, share_drafts=share_drafts, share_cancel=share_cancel, share_resend_case=share_resend_case, share_posting_case=share_posting_case, share_dm_case=share_dm_case, share_person_case=share_person_case, share_search_case=share_search_case, share_multiple_case=share_multiple_case)
+    from workflow_management_share_dm import STAGES as DM_STAGES
+    from workflow_management_share_person import STAGES as PERSON_STAGES
+    from workflow_management_share_search import STAGES as SEARCH_STAGES
+    from workflow_management_share_multiple import STAGES as MULTIPLE_STAGES
+    stages = (MULTIPLE_STAGES[share_multiple_case] if share_multiple_case is not None else SEARCH_STAGES[share_search_case] if share_search_case is not None else PERSON_STAGES[share_person_case] if share_person_case is not None else DM_STAGES[share_dm_case] if share_dm_case is not None else SHARE_STAGES[share_case] if share_case is not None else FIRST_PUBLISH_STAGES[first_publish_case] if first_publish_case is not None else
               PUBLISH_STAGES[publish_case] if publish_case is not None else
               MANAGERS_STAGES[managers_case] if managers_case is not None else
               RUN_ACCESS_STAGES[run_access_case] if run_access_case is not None else
               PERMISSIONS_STAGES[permissions_case] if permissions_case is not None else
               UNPUBLISH_STAGES[unpublish_case] if unpublish_case is not None else
               DELETE_STAGES[delete_case] if delete_case is not None else STAGES[receipt['scenario']])
+    if share_drafts:
+        retry_stages = () if share_resend_case is None else ('resend-suppressed',) if share_resend_case == 'suppressed' else ('resend-pending','resend-settled')
+        from workflow_management_share_posting import STAGES as POSTING_STAGES
+        retry_stages += () if share_posting_case is None else POSTING_STAGES[share_posting_case]
+        stages = ('draft-setup',) + tuple(stages) + (('share-cancelled',) if share_cancel else ()) + retry_stages + ('draft-returned',)
     expected = [dict(stage=stage, edge=edge) for stage in stages for edge in ('before', 'after')]
     require(native.receipts(EDGE) == expected, 'Wrong native capture order')
     return receipt
 
 
-def run_fixture(fixture, binary, captures, delete_case=None, unpublish_case=None, permissions_case=None, run_access_case=None, managers_case=None, publish_case=None, first_publish_case=None, thread_custody=False):
+def run_fixture(fixture, binary, captures, delete_case=None, unpublish_case=None, permissions_case=None, run_access_case=None, managers_case=None, publish_case=None, first_publish_case=None, thread_custody=False, feature_case=None, share_case=None, share_drafts=False, share_cancel=False, share_resend_case=None, share_posting_case=None, share_dm_case=None, share_person_case=None, share_search_case=None, share_multiple_case=None):
+    require(not share_cancel or share_drafts and share_case in ('rejected','lost-response'), 'Local Share Cancel requires failed Share and draft custody')
+    require(share_resend_case is None or share_resend_case in ('success','rejected','held','suppressed') and share_drafts and not share_cancel and share_case == ('rejected' if share_resend_case == 'suppressed' else 'lost-response'), 'Resend requires exact initial failure, draft custody and no Cancel mode')
+    from workflow_management_share_posting import mode
+    mode(share_posting_case, share_case, share_drafts, share_cancel, share_resend_case)
+    from workflow_management_share_multiple import mode as multiple_mode
+    multiple_mode(share_multiple_case,share_case,share_drafts,share_cancel,share_resend_case,share_posting_case,share_dm_case,share_person_case,share_search_case)
+    from workflow_management_share_search import mode as search_mode
+    search_mode(share_search_case,share_case,share_drafts,share_cancel,share_resend_case,share_posting_case,share_dm_case,share_person_case)
+    from workflow_management_share_person import mode as person_mode
+    person_mode(share_person_case,share_case,share_drafts,share_cancel,share_resend_case,share_posting_case,share_dm_case)
+    from workflow_management_share_dm import mode as dm_mode
+    dm_mode(share_dm_case, share_case, share_drafts, share_cancel, share_resend_case, share_posting_case)
     require(fixture in FIXTURES, 'Unknown workflow fixture')
     require(delete_case is None or delete_case in DELETE_STAGES
             and fixture in ('workflow-editor', 'workflow-editor-narrow'), 'Invalid Delete run')
@@ -327,6 +401,64 @@ def run_fixture(fixture, binary, captures, delete_case=None, unpublish_case=None
     if thread_custody:
         checks['SUPER_PLATINUM_WORKFLOW_DETAILS_THREAD_CHECK'] = '1'
         evidence['threadCustody'] = True
+    require(share_case is None or (first_publish_case == 'first-add-success' and feature_case is None and not thread_custody), 'Share requires isolated first-add-success')
+    if share_case is not None:
+        require(share_case in SHARE_CASES, 'Unknown Share case')
+        checks['SUPER_PLATINUM_WORKFLOW_SHARE_CHECK'] = '1'
+        checks['SUPER_PLATINUM_WORKFLOW_SHARE_CASE'] = share_case
+        evidence['shareCase'] = share_case
+    require(not share_drafts or share_case is not None, 'Share drafts require an explicit Share case')
+    if share_drafts:
+        checks['SUPER_PLATINUM_WORKFLOW_SHARE_DRAFT_CHECK'] = '1'
+        evidence['shareDraftCustody'] = True
+    if share_search_case is not None:
+        checks['SUPER_PLATINUM_WORKFLOW_SHARE_SEARCH_CHECK']='1'
+        checks['SUPER_PLATINUM_WORKFLOW_SHARE_SEARCH_CASE']='startup' if share_search_case.startswith('startup:') else 'empty' if share_search_case.startswith('empty:') else 'ranking' if share_search_case.startswith('ranking:') else share_search_case
+        if share_search_case.startswith('startup:'):
+            checks['SUPER_PLATINUM_WORKFLOW_SHARE_STARTUP_CASE']=share_search_case.split(':',1)[1]
+            evidence['shareStartupCase']=share_search_case.split(':',1)[1]
+        if share_search_case.startswith('empty:'):
+            checks['SUPER_PLATINUM_WORKFLOW_SHARE_EMPTY_CASE']=share_search_case.split(':',1)[1]
+            evidence['shareEmptyCase']=share_search_case.split(':',1)[1]
+        if share_search_case.startswith('ranking:'):
+            checks['SUPER_PLATINUM_WORKFLOW_SHARE_RANKING_CASE']=share_search_case.split(':',1)[1]
+            evidence['shareRankingCase']=share_search_case.split(':',1)[1]
+        evidence['shareSearchCheck']=True
+        evidence['shareSearchCase']=checks['SUPER_PLATINUM_WORKFLOW_SHARE_SEARCH_CASE']
+    if share_multiple_case is not None:
+        checks['SUPER_PLATINUM_WORKFLOW_SHARE_MULTIPLE_CHECK']='1'
+        checks['SUPER_PLATINUM_WORKFLOW_SHARE_MULTIPLE_CASE']=share_multiple_case
+        evidence['shareMultipleCheck']=True
+        evidence['shareMultipleCase']=share_multiple_case
+    if share_person_case is not None:
+        checks['SUPER_PLATINUM_WORKFLOW_SHARE_PERSON_CHECK'] = '1'
+        checks['SUPER_PLATINUM_WORKFLOW_SHARE_PERSON_CASE'] = share_person_case
+        evidence['sharePersonCheck'] = True
+        evidence['sharePersonCase'] = share_person_case
+    if share_dm_case is not None:
+        checks['SUPER_PLATINUM_WORKFLOW_SHARE_DM_CHECK'] = '1'
+        checks['SUPER_PLATINUM_WORKFLOW_SHARE_DM_CASE'] = share_dm_case
+        evidence['shareDmCheck'] = True
+        evidence['shareDmCase'] = share_dm_case
+    if share_posting_case is not None:
+        checks['SUPER_PLATINUM_WORKFLOW_SHARE_POSTING_CHECK'] = '1'
+        checks['SUPER_PLATINUM_WORKFLOW_SHARE_POSTING_CASE'] = share_posting_case
+        evidence['sharePostingCheck'] = True
+        evidence['sharePostingCase'] = share_posting_case
+    if share_resend_case is not None:
+        checks['SUPER_PLATINUM_WORKFLOW_SHARE_RESEND_CHECK'] = '1'
+        checks['SUPER_PLATINUM_WORKFLOW_SHARE_RESEND_CASE'] = share_resend_case
+        evidence['shareResendCheck'] = True
+        evidence['shareResendCase'] = share_resend_case
+    if share_cancel:
+        checks['SUPER_PLATINUM_WORKFLOW_SHARE_CANCEL_CHECK'] = '1'
+        evidence['shareCancelCheck'] = True
+    require(feature_case is None or first_publish_case == 'first-add-success', 'Feature requires first-add-success')
+    if feature_case is not None:
+        require(feature_case in ('success','denied','rejected','readback-missing','readback-failure','held'), 'Unknown Feature case')
+        checks['SUPER_PLATINUM_WORKFLOW_FEATURE_CHECK'] = '1'
+        checks['SUPER_PLATINUM_WORKFLOW_FEATURE_CASE'] = feature_case
+        evidence['featureCase'] = feature_case
     if first_publish_case is not None:
         checks['SUPER_PLATINUM_WORKFLOW_FIRST_PUBLISH_CASE'] = first_publish_case
         evidence['firstPublishCase'] = first_publish_case
@@ -349,7 +481,7 @@ def run_fixture(fixture, binary, captures, delete_case=None, unpublish_case=None
         checks['SUPER_PLATINUM_WORKFLOW_MANAGERS_CASE'] = managers_case
         evidence['managersCase'] = managers_case
     native = NativeFixture(fixture, captures / f'{fixture}.log', binary, checks)
-    process_api = handle = None
+    process_api = handle = keyboard = None
     try:
         with native:
             evidence['pid'] = native.process.pid
@@ -370,12 +502,32 @@ def run_fixture(fixture, binary, captures, delete_case=None, unpublish_case=None
                     require(len(waiting) == 1 and not native.receipts(EDGE) and not native.receipts(PREFIX),
                             'Duplicate readiness or interaction before placement')
                     validate_ready(waiting[0], expected)
-                    pointer = H['normalize'](native, evidence, stack, process_api, handle)
+                    # Large ranking evidence retains original source rows. Only
+                    # these explicit cases get a longer single caption response;
+                    # every identity, pointer and caption guard still applies.
+                    pointer = H['normalize'](native, evidence, stack, process_api, handle,
+                                             **pointer_options(share_search_case,share_multiple_case))
                     H['publish_ready'](directory, expected)
                     evidence['readiness'] = expected
                     deadline, sampled, count = time.monotonic() + 150, 0., 0
                     while True:
                         native.require_running()
+                        keyboard_requests = native.receipts(thread_keyboard.PREFIX)
+                        thread_keyboard.admit_requests(keyboard_requests, expected, thread_custody, share_drafts=share_drafts)
+                        if keyboard_requests:
+                            require(sys.platform == 'win32', 'Trusted thread keyboard path requires Windows')
+                            if keyboard is None:
+                                from windows_keyboard import KeyboardSession
+                                keyboard = stack.enter_context(KeyboardSession())
+                                keyboard.bind(native.process.pid)
+                                evidence['threadKeyboardRequests'] = []
+                            sent = evidence['threadKeyboardRequests']
+                            require(keyboard_requests[:len(sent)] == sent and len(sent) <= len(keyboard_requests) <= len(sent)+1,
+                                    'Original keyboard request changed or overlapped')
+                            if len(keyboard_requests) > len(sent):
+                                sent.append(keyboard_requests[-1])
+                                keyboard.send('enter')
+                            keyboard.check('thread-running')
                         choosers = native.receipts('workflow-first-publish-chooser: ')
                         require(len(choosers)<=chooser_count(first_publish_case), 'Repeated or unrequested file chooser request')
                         completed=evidence.setdefault('fileChoosers',[]) if avatar_case(first_publish_case) else []
@@ -398,7 +550,8 @@ def run_fixture(fixture, binary, captures, delete_case=None, unpublish_case=None
                             if avatar_case(first_publish_case):
                                 require(len(evidence.get('fileChoosers',[]))==chooser_count(first_publish_case) and all(v.get('dialogClosed') is True for v in evidence['fileChoosers']),
                                         'Original owned file chooser did not complete')
-                            evidence['native'] = validate_log(native, fixture, captures, delete_case=delete_case, unpublish_case=unpublish_case, permissions_case=permissions_case, run_access_case=run_access_case, managers_case=managers_case, publish_case=publish_case, first_publish_case=first_publish_case, thread_custody=thread_custody)
+                            evidence['native'] = validate_log(native, fixture, captures, delete_case=delete_case, unpublish_case=unpublish_case, permissions_case=permissions_case, run_access_case=run_access_case, managers_case=managers_case, publish_case=publish_case, first_publish_case=first_publish_case, thread_custody=thread_custody, feature_case=feature_case, share_case=share_case, share_drafts=share_drafts, share_cancel=share_cancel, share_resend_case=share_resend_case, share_posting_case=share_posting_case, share_dm_case=share_dm_case, share_person_case=share_person_case, share_search_case=share_search_case, share_multiple_case=share_multiple_case)
+                            thread_keyboard.validate_requests(keyboard_requests, expected, evidence['native'], thread_custody, share_drafts=share_drafts)
                             validate_owned(evidence['native'], expected, evidence.get('expectedPngDimensions'))
                             if pointer:
                                 pointer.check('terminal', require_clear=True)
@@ -418,8 +571,10 @@ def run_fixture(fixture, binary, captures, delete_case=None, unpublish_case=None
         require(native.process.poll() is not None and not native.cleanup_errors, 'Fixture process or cleanup did not finish cleanly')
         if sys.platform == 'win32':
             H['validate_pointer_cleanup'](evidence.get('pointer', {}))
+        if keyboard is not None:
+            thread_keyboard.completed(keyboard.data,evidence.get('threadKeyboardRequests'),share_drafts=share_drafts)
         validate_closed(native, expected, captures, evidence['native'], evidence.get('expectedPngDimensions'),
-                        delete_case=delete_case, unpublish_case=unpublish_case, permissions_case=permissions_case, run_access_case=run_access_case, managers_case=managers_case, publish_case=publish_case, first_publish_case=first_publish_case, thread_custody=thread_custody)
+                        delete_case=delete_case, unpublish_case=unpublish_case, permissions_case=permissions_case, run_access_case=run_access_case, managers_case=managers_case, publish_case=publish_case, first_publish_case=first_publish_case, thread_custody=thread_custody, feature_case=feature_case, share_case=share_case, share_drafts=share_drafts, share_cancel=share_cancel, share_resend_case=share_resend_case, share_posting_case=share_posting_case, share_dm_case=share_dm_case, share_person_case=share_person_case, share_search_case=share_search_case, share_multiple_case=share_multiple_case)
         if handle:
             evidence['exitIdentity'] = process_api.times(handle)
             H['validate_exit'](evidence['processCreationFiletime'], evidence['exitIdentity'])
@@ -429,6 +584,8 @@ def run_fixture(fixture, binary, captures, delete_case=None, unpublish_case=None
         evidence['error'] = str(error)
         raise
     finally:
+        if keyboard is not None:
+            evidence['threadKeyboard'] = keyboard.data
         evidence['processExited'] = native.process is not None and native.process.poll() is not None
         evidence['cleanupErrors'] = native.cleanup_errors
         if handle:
@@ -449,6 +606,20 @@ def main():
     parser.add_argument('--captures', type=Path, default=ROOT / 'tmp/workflow-management-native')
     parser.add_argument('--fixture', action='append', choices=FIXTURES)
     parser.add_argument('--thread-custody', action='store_true', help='Verify an open thread and unsent draft across workflow details using closed fixture messages')
+    parser.add_argument('--share-case', choices=SHARE_CASES)
+    parser.add_argument('--share-drafts', action='store_true')
+    parser.add_argument('--share-ranking-case',choices=('cold-mixed','cached-write','prefixes','stale-cancel','read-failure'))
+    parser.add_argument('--share-startup-case',choices=('success','failure','missing','prefs-retired','socket-retired'))
+    parser.add_argument('--share-empty-case',choices=('initial','clear','prefixes','cold-failure','cold-missing','cold-offline','warm-offline'))
+    parser.add_argument('--share-search-case', choices=('person-success','channel-success','prefixes','rapid-query','held-cancel','rejected','offline'))
+    parser.add_argument('--share-person-case', choices=('success','rejected','missing','mismatched-peer','held-cancel','posting-failure'))
+    from workflow_management_share_multiple import CASES as MULTIPLE_CASES
+    parser.add_argument('--share-multiple-case', choices=MULTIPLE_CASES)
+    parser.add_argument('--share-dm-case', choices=('success','deleted','mismatched-peer','held-cancel','rejected'))
+    parser.add_argument('--share-posting-case', choices=('success','read-failure','held-newer','retry-restricted','missing-policy'))
+    parser.add_argument('--share-resend-case', choices=('success','rejected','held','suppressed'))
+    parser.add_argument('--share-cancel', action='store_true', help='Cancel only the original failed local Share row while retaining unrelated drafts')
+    parser.add_argument('--feature-case', choices=('success','denied','rejected','readback-missing','readback-failure','held'))
     cases = parser.add_mutually_exclusive_group()
     cases.add_argument('--delete-case', choices=tuple(DELETE_STAGES))
     cases.add_argument('--unpublish-case', choices=tuple(UNPUBLISH_STAGES))
@@ -458,6 +629,15 @@ def main():
     cases.add_argument('--run-access-case', choices=tuple(RUN_ACCESS_STAGES))
     cases.add_argument('--managers-case', choices=tuple(MANAGERS_STAGES))
     args = parser.parse_args()
+    if args.share_startup_case is not None:
+        require(args.share_search_case is None and args.share_ranking_case is None and args.share_empty_case is None,'Startup and other search modes are exclusive')
+        args.share_search_case='startup:'+args.share_startup_case
+    if args.share_empty_case is not None:
+        require(args.share_search_case is None and args.share_ranking_case is None,'Empty and other search modes are exclusive')
+        args.share_search_case='empty:'+args.share_empty_case
+    if args.share_ranking_case is not None:
+        require(args.share_search_case is None,'Ranking and original search modes are exclusive')
+        args.share_search_case='ranking:'+args.share_ranking_case
     captures = args.captures.resolve()
     fixtures = args.fixture or (('workflow-editor', 'workflow-editor-narrow') if args.delete_case or args.unpublish_case or args.permissions_case or args.run_access_case or args.managers_case or args.publish_case or args.first_publish_case else FIXTURES)
     require(not args.delete_case or all(f in ('workflow-editor', 'workflow-editor-narrow') for f in fixtures),
@@ -474,7 +654,7 @@ def main():
             'Managers requires the existing editor fixture')
     for fixture in fixtures:
         require(not (captures / f'{fixture}.log').exists(), 'Use a fresh capture directory')
-        run_fixture(fixture, args.binary.resolve(), captures, args.delete_case, args.unpublish_case, args.permissions_case, args.run_access_case, args.managers_case, args.publish_case, args.first_publish_case, args.thread_custody)
+        run_fixture(fixture, args.binary.resolve(), captures, args.delete_case, args.unpublish_case, args.permissions_case, args.run_access_case, args.managers_case, args.publish_case, args.first_publish_case, args.thread_custody, args.feature_case, args.share_case, args.share_drafts, args.share_cancel, args.share_resend_case, args.share_posting_case, args.share_dm_case, args.share_person_case, args.share_search_case, args.share_multiple_case)
 
 
 if __name__ == '__main__':

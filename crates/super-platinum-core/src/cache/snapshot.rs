@@ -28,6 +28,7 @@ impl WorkspaceSnapshot {
         });
         workspace.locale = source.locale.clone();
         workspace.team_plan = source.team_plan.clone();
+        workspace.cfm_payload.plan_info_cache = source.cfm_payload.plan_info_cache.clone();
         workspace.posting_metadata = source.posting_metadata.external_cache_snapshot();
         workspace.draft_presence = source.draft_presence.clone();
         workspace.deleted_files = source.deleted_files.clone();

@@ -152,6 +152,10 @@ pub(super) fn render(
             let cold = demand.as_ref().map(|demand| demand.presentation(&shell));
             (token, demand, cold)
         };
+        let label = token
+            .as_ref()
+            .map(|t| t.label().to_owned())
+            .unwrap_or(label);
         let disabled = token.is_none();
         let view = inline_state(!disabled, cold);
         let loading = view.state == "loading";

@@ -8,6 +8,7 @@ use super_platinum_core::{
     composer_emoji::history::History,
 };
 mod drafts;
+pub(crate) mod save;
 pub(super) use drafts::schedule as schedule_drafts;
 #[cfg(test)]
 mod tests;
@@ -292,7 +293,7 @@ pub(super) async fn capture_with_preferences<L: Host>(
     Ok(value)
 }
 
-fn history(raw: &Value) -> Result<History, Error> {
+pub(super) fn history(raw: &Value) -> Result<History, Error> {
     name_policy::UserPrefs::decode(raw).map_err(|_| unavailable())?;
     match raw["prefs"].get("frecency") {
         Some(value) => History::from_pref(value).map_err(|_| unavailable()),
@@ -310,7 +311,7 @@ fn assignment<'a>(raw: &'a Value, key: &str) -> Result<Option<&'a str>, Error> {
         .map(|v| v["group"].as_str().ok_or_else(unavailable))
         .transpose()
 }
-fn experiments(raw: &Value) -> Result<(Value, bool, bool), Error> {
+pub(super) fn experiments(raw: &Value) -> Result<(Value, bool, bool), Error> {
     let mut values = serde_json::Map::new();
     for key in [
         "autocomplete_affinity_score",

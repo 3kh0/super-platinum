@@ -99,6 +99,14 @@ pub struct Settings {
     default: Option<String>,
 }
 impl Settings {
+    /// The only profile outside the completed accessible list that can grant
+    /// the source default-agent exception. Disabled defaults cannot grant it.
+    pub fn enabled_default_app(&self) -> Option<&str> {
+        self.default
+            .as_deref()
+            .filter(|app| !self.disabled.contains(*app))
+    }
+
     /// Actual o1P2 chooses locked organization preferences for an enterprise,
     /// otherwise the current team's preferences. Default agent always comes
     /// from that current team's preference (QwsR.wL), not org/unlocked prefs.

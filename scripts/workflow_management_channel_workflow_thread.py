@@ -95,12 +95,21 @@ def action_proof(action,kind,viewport,label=None,node=None):
     box=action.get('rect',{});point=action.get('hitPoint',{})
     for k in ('left','right','top','bottom','width','height'):
         require(type(box.get(k)) in (int,float),'Missing original activation rectangle')
+    if kind=='trusted-keyboard':
+        require(label=='Workflows' and action.get('key')=='Enter' and point is None and box['width']>0 and box['height']>0,'Wrong keyboard activation')
+        require(exact(action.get('keydown'),dict(trusted=True,key='Enter',code='Enter',repeat=False,targetNodeId=action['nodeId'],focused=True,connected=True,enabled=True)),'Original trusted keydown absent')
+        require(exact(action.get('click'),dict(trusted=True,targetNodeId=action['nodeId'],detail=0,connected=True,enabled=True)),'Original trusted keyboard click absent')
+        return
     x,y=point.get('x'),point.get('y')
     require(type(x) in (int,float) and type(y) in (int,float) and box['width']>0 and box['height']>0 and 0<=x<viewport[0] and 0<=y<viewport[1] and box['left']<=x<=box['right'] and box['top']<=y<=box['bottom'],'Original control had no in-viewport hitpoint')
 
 def validate(receipt,viewport,rectangle):
     rows=receipt['stages'];browse=rows[0];setup=browse['proof']['exercise'].get('threadSetup')
     require(isinstance(setup,dict),'Native Reply/input setup absent')
+    from workflow_management_channel_workflow_details import exposure_proof
+    private=browse['proof']['exercise']['private']['activation']
+    require(exposure_proof(dict(private,connected=True,visible=True),viewport) is not None,'Original private row was covered')
+    require(exact(private['exposure']['occluder'],browse['proof']['native']['detailsThread']['pane']['rect']),'Private activation omitted the actual thread occluder')
     require(set(setup)=={'before','messagesActivation','messages','replyActivation','opened','inputActivation','drafted','tabActivation','after'},'Original thread setup inventory changed')
     before,messages,opened,drafted,after=(setup[k] for k in ('before','messages','opened','drafted','after'))
     for obs in (before,messages):
@@ -120,7 +129,11 @@ def validate(receipt,viewport,rectangle):
     action_proof(setup['inputActivation'],'dom-input',viewport,node=opened['native']['detailsThread']['composer']['nodeId'])
     field=drafted['native']['detailsThread']['composer']
     require(all(exact(setup['inputActivation'].get(k),field[k]) for k in ('nodeId','value','selectionStart','selectionEnd','selectionDirection')),'Native input differs from actual typed field')
-    action_proof(setup['tabActivation'],'dom-click',viewport,'Workflows',after['native']['workflows']['tab']['nodeId'])
+    tab_kind=setup['tabActivation'].get('kind')
+    require(tab_kind in ('dom-click','trusted-keyboard'),'Unknown original tab activation')
+    if tab_kind=='trusted-keyboard':
+        require(receipt.get('fixture')=='workflow-editor-narrow','Keyboard fallback outside narrow fixture')
+    action_proof(setup['tabActivation'],tab_kind,viewport,'Workflows',after['native']['workflows']['tab']['nodeId'])
     # Keep the original request pair and require exactly the second pair that
     # belongs to reentry; same account/socket and two actual tab transitions.
     first=before['server']['channelWorkflows'];last=after['server']['channelWorkflows']

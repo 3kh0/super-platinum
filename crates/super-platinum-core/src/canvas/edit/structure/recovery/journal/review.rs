@@ -6,6 +6,13 @@ use crate::canvas::edit::text::TextDraft;
 use crate::slack::api::CanvasCollabSnapshot;
 use serde::Serialize;
 
+mod start_typing;
+pub use start_typing::StartTypingReview;
+mod split;
+pub use split::SplitReview;
+mod end;
+pub use end::{EndReview, EndReviewAppend};
+
 const MAX_REVIEWED: i64 = 32;
 const MAX_REVIEWED_BYTES: usize = 64 * 1024 * 1024;
 
@@ -20,6 +27,9 @@ pub struct LocalReview {
     receipt: Receipt,
     inventory: Inventory,
     observed: String,
+    split: Option<SplitReview>,
+    end: Option<EndReview>,
+    start_typing: Option<StartTypingReview>,
 }
 impl LocalReview {
     pub fn operation_id(&self) -> &str {
@@ -28,8 +38,46 @@ impl LocalReview {
     pub fn is_replacement(&self) -> bool {
         self.receipt.checkpoint.is_replacement()
     }
+    pub fn is_split(&self) -> bool {
+        self.split.is_some()
+    }
+    pub fn split(&self) -> Option<&SplitReview> {
+        self.split.as_ref()
+    }
+    pub fn is_start_typing(&self) -> bool {
+        self.start_typing.is_some()
+    }
+    pub fn start_typing(&self) -> Option<&StartTypingReview> {
+        self.start_typing.as_ref()
+    }
+    pub fn is_end(&self) -> bool {
+        self.end.is_some()
+    }
+    pub fn end(&self) -> Option<&EndReview> {
+        self.end.as_ref()
+    }
+    /// Complete bound canonical inventory in position order, including deleted
+    /// or unsupported-content rows. Rendering it cannot establish remote success.
+    pub fn observed_sections(&self) -> impl Iterator<Item = &crate::canvas::wire::Section> {
+        self.inventory
+            .ordered
+            .iter()
+            .map(|id| &self.inventory.sections[id])
+    }
     pub fn is_delete(&self) -> bool {
         self.receipt.checkpoint.is_delete()
+    }
+    /// Placement of the retained insertion request, not proof of its outcome.
+    /// Text from observed_sections belongs to the current comparison, not the
+    /// captured original anchor. Other operation kinds have no insertion anchor.
+    pub fn insertion_anchor(&self) -> Option<(&str, crate::canvas::edit::structure::Side)> {
+        use crate::canvas::edit::structure::{Side, recovery::Action};
+        match &self.receipt.checkpoint.action {
+            Action::Insert { anchor, before, .. } => {
+                Some((anchor, if *before { Side::Before } else { Side::After }))
+            }
+            _ => None,
+        }
     }
     pub fn draft_text(&self) -> String {
         // Checkpoint validation already admitted this exact encoded-text grammar.
@@ -50,6 +98,10 @@ struct Observed {
     // No controller initializer, auth/session/Transport or credentials persisted.
     thread_sequence: u64,
     document_sequence: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    thread_raw: Option<Vec<u8>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    document_raw: Option<Vec<u8>>,
     sections: Vec<Vec<u8>>,
 }
 
@@ -80,7 +132,13 @@ impl Journal {
         if read(&self.conn, receipt.checkpoint.scope())?.as_ref() != Some(receipt) {
             return Err(invalid());
         }
-        let inventory = if receipt.checkpoint.is_replacement() {
+        // Pair review may observe zero, one or both members, including
+        // tombstones. None of those observations confirms the request outcome.
+        let inventory = if receipt.checkpoint.is_replacement()
+            || receipt.checkpoint.is_split()
+            || receipt.checkpoint.is_end()
+            || receipt.checkpoint.is_start_typing()
+        {
             Inventory::capture_for_local_review(snapshot)
         } else {
             Inventory::capture(snapshot)
@@ -109,6 +167,10 @@ impl Journal {
                 .map_err(|_| invalid())?
                 .filter(|v| *v > 0)
                 .ok_or_else(invalid)?,
+            thread_raw: (c.is_split() || c.is_end() || c.is_start_typing())
+                .then(|| snapshot.thread.raw().to_vec()),
+            document_raw: (c.is_split() || c.is_end() || c.is_start_typing())
+                .then(|| snapshot.document.raw().to_vec()),
             sections: inventory
                 .sections
                 .values()
@@ -123,6 +185,9 @@ impl Journal {
             receipt: receipt.clone(),
             inventory,
             observed,
+            split: SplitReview::capture(&receipt.checkpoint)?,
+            end: EndReview::capture(&receipt.checkpoint)?,
+            start_typing: StartTypingReview::capture(&receipt.checkpoint)?,
         })
     }
 

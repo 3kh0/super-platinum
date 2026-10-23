@@ -97,7 +97,8 @@ pub(crate) struct Fixture {
 }
 pub(crate) fn enabled(shell: &ShellState) -> bool {
     ((shell.core.transport.is_none() && shell.core.session.is_none())
-        || comments::fixture::completion::enabled(shell))
+        || comments::fixture::completion::enabled(shell)
+        || comments::fixture::emoji_combined::context_enabled(shell))
         && shell.slack_lists.fixture.is_some()
 }
 fn loaded(fixture: &Fixture) -> Loaded {
@@ -185,6 +186,7 @@ pub(crate) fn install(shell: &mut ShellState, name: &str) {
         experiments: api::ListExperiments::default(),
     });
     comments::fixture::completion::install(shell);
+    comments::fixture::emoji_combined::install(shell);
     assert!(open_shell(shell, file));
     match name {
         "slack-list-readonly" => {

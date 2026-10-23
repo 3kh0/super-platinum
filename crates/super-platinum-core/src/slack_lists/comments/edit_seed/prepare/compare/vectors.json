@@ -1,0 +1,4569 @@
+{
+  "results": [
+    {
+      "left": [],
+      "right": [],
+      "equal": true
+    },
+    {
+      "left": [],
+      "right": [
+        {
+          "insert": "\n"
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "hello"
+        }
+      ],
+      "right": [
+        {
+          "insert": "hello\n"
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "hello\n"
+        }
+      ],
+      "right": [
+        {
+          "insert": "hello\n\n"
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "b"
+        }
+      ],
+      "right": [
+        {
+          "insert": "ab"
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "😀"
+        }
+      ],
+      "right": [
+        {
+          "insert": "😀\n"
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "a",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "a",
+          "attributes": {
+            "bold": 1
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "a",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "a",
+          "attributes": {
+            "bold": "1"
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "a",
+          "attributes": {
+            "bold": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "a"
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": []
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": {}
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": [
+              1
+            ]
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": {
+              "0": "1"
+            }
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": {
+              "prototype": {}
+            }
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": {
+              "prototype": {}
+            }
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "a\n",
+          "attributes": {
+            "slackmention": false
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "a\n",
+          "attributes": {
+            "slackmention": false
+          }
+        },
+        {
+          "insert": "\n"
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "a\n",
+          "attributes": {
+            "slackmention": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "a\n",
+          "attributes": {
+            "slackmention": null
+          }
+        },
+        {
+          "insert": "\n"
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "a\n",
+          "attributes": {
+            "slackmention": true
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "a\n",
+          "attributes": {
+            "slackmention": true
+          }
+        },
+        {
+          "insert": "\n"
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "a\n",
+          "attributes": {
+            "slackmention": {}
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "a\n",
+          "attributes": {
+            "slackmention": {}
+          }
+        },
+        {
+          "insert": "\n"
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "a\n",
+          "attributes": {
+            "slackslug": false
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "a\n",
+          "attributes": {
+            "slackslug": false
+          }
+        },
+        {
+          "insert": "\n"
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "a\n",
+          "attributes": {
+            "slackslug": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "a\n",
+          "attributes": {
+            "slackslug": null
+          }
+        },
+        {
+          "insert": "\n"
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "a\n",
+          "attributes": {
+            "slackslug": true
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "a\n",
+          "attributes": {
+            "slackslug": true
+          }
+        },
+        {
+          "insert": "\n"
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "a\n",
+          "attributes": {
+            "slackslug": {}
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "a\n",
+          "attributes": {
+            "slackslug": {}
+          }
+        },
+        {
+          "insert": "\n"
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "a\n",
+          "attributes": {
+            "slacksearchfilter": false
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "a\n",
+          "attributes": {
+            "slacksearchfilter": false
+          }
+        },
+        {
+          "insert": "\n"
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "a\n",
+          "attributes": {
+            "slacksearchfilter": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "a\n",
+          "attributes": {
+            "slacksearchfilter": null
+          }
+        },
+        {
+          "insert": "\n"
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "a\n",
+          "attributes": {
+            "slacksearchfilter": true
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "a\n",
+          "attributes": {
+            "slacksearchfilter": true
+          }
+        },
+        {
+          "insert": "\n"
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "a\n",
+          "attributes": {
+            "slacksearchfilter": {}
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "a\n",
+          "attributes": {
+            "slacksearchfilter": {}
+          }
+        },
+        {
+          "insert": "\n"
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": null
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": false
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": true
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 1
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": ""
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "1"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "false"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": []
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              0
+            ]
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              1
+            ]
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {}
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {
+              "0": 1
+            }
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": false
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": null
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": false
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": false
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": false
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": true
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": false
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": false
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 1
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": false
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": ""
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": false
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0"
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": false
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "1"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": false
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "false"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": false
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": []
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": false
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              0
+            ]
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": false
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              1
+            ]
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": false
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {}
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": false
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {
+              "0": 1
+            }
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": true
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": null
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": true
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": false
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": true
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": true
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": true
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": true
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 1
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": true
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": ""
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": true
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": true
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "1"
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": true
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "false"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": true
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": []
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": true
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              0
+            ]
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": true
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              1
+            ]
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": true
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {}
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": true
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {
+              "0": 1
+            }
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": null
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": false
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": true
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 1
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": ""
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0"
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "1"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "false"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": []
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              0
+            ]
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              1
+            ]
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {}
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {
+              "0": 1
+            }
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 1
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": null
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 1
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": false
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 1
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": true
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 1
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 1
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 1
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 1
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": ""
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 1
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 1
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "1"
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 1
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "false"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 1
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": []
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 1
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              0
+            ]
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 1
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              1
+            ]
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 1
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {}
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 1
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {
+              "0": 1
+            }
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": ""
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": null
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": ""
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": false
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": ""
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": true
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": ""
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": ""
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 1
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": ""
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": ""
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": ""
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": ""
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "1"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": ""
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "false"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": ""
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": []
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": ""
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              0
+            ]
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": ""
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              1
+            ]
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": ""
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {}
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": ""
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {
+              "0": 1
+            }
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": null
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": false
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": true
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 1
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": ""
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0"
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "1"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "false"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": []
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              0
+            ]
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              1
+            ]
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {}
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {
+              "0": 1
+            }
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "1"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": null
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "1"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": false
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "1"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": true
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "1"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "1"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 1
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "1"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": ""
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "1"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "1"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "1"
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "1"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "false"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "1"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": []
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "1"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              0
+            ]
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "1"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              1
+            ]
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "1"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {}
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "1"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {
+              "0": 1
+            }
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "false"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": null
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "false"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": false
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "false"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": true
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "false"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "false"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 1
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "false"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": ""
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "false"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "false"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "1"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "false"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "false"
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "false"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": []
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "false"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              0
+            ]
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "false"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              1
+            ]
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "false"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {}
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "false"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {
+              "0": 1
+            }
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": []
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": null
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": []
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": false
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": []
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": true
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": []
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": []
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 1
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": []
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": ""
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": []
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": []
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "1"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": []
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "false"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": []
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": []
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": []
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              0
+            ]
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": []
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              1
+            ]
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": []
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {}
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": []
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {
+              "0": 1
+            }
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              0
+            ]
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": null
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              0
+            ]
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": false
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              0
+            ]
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": true
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              0
+            ]
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              0
+            ]
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 1
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              0
+            ]
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": ""
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              0
+            ]
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              0
+            ]
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "1"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              0
+            ]
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "false"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              0
+            ]
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": []
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              0
+            ]
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              0
+            ]
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              0
+            ]
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              1
+            ]
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              0
+            ]
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {}
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              0
+            ]
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {
+              "0": 1
+            }
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              1
+            ]
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": null
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              1
+            ]
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": false
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              1
+            ]
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": true
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              1
+            ]
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              1
+            ]
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 1
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              1
+            ]
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": ""
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              1
+            ]
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              1
+            ]
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "1"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              1
+            ]
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "false"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              1
+            ]
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": []
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              1
+            ]
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              0
+            ]
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              1
+            ]
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              1
+            ]
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              1
+            ]
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {}
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              1
+            ]
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {
+              "0": 1
+            }
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {}
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": null
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {}
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": false
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {}
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": true
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {}
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {}
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 1
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {}
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": ""
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {}
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {}
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "1"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {}
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "false"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {}
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": []
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {}
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              0
+            ]
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {}
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              1
+            ]
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {}
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {}
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {}
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {
+              "0": 1
+            }
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {
+              "0": 1
+            }
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": null
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {
+              "0": 1
+            }
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": false
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {
+              "0": 1
+            }
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": true
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {
+              "0": 1
+            }
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {
+              "0": 1
+            }
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 1
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {
+              "0": 1
+            }
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": ""
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {
+              "0": 1
+            }
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {
+              "0": 1
+            }
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "1"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {
+              "0": 1
+            }
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "false"
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {
+              "0": 1
+            }
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": []
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {
+              "0": 1
+            }
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              0
+            ]
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {
+              "0": 1
+            }
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": [
+              1
+            ]
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {
+              "0": 1
+            }
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {}
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {
+              "0": 1
+            }
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": {
+              "0": 1
+            }
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": " 0 "
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "﻿0 "
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0x10"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 16
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0b10"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 2
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0o10"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 8
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "+1.0"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 1
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "1e2"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 100
+          }
+        }
+      ],
+      "equal": true
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "inf"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "NaN"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "equal": false
+    },
+    {
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": "0x"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "test": 0
+          }
+        }
+      ],
+      "equal": false
+    }
+  ],
+  "referenceDependentIndices": [
+    11
+  ],
+  "sameOpsIdentity": true,
+  "modules": [
+    "/aOC",
+    "1seS",
+    "2Nju",
+    "45zb",
+    "4x3H",
+    "AGzE",
+    "DmXP",
+    "FpZJ",
+    "GvjG",
+    "H1PU",
+    "PrET",
+    "UVaH",
+    "VF6F",
+    "VeU+",
+    "Yk1I",
+    "bZFu",
+    "cHzv",
+    "eyOE",
+    "f66B",
+    "iL+W",
+    "iRqW",
+    "m9eX",
+    "mM05",
+    "oNNP",
+    "sdnA"
+  ]
+}

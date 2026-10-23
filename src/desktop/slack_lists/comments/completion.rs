@@ -395,5 +395,7 @@ pub(crate) fn snapshot(shell: &ShellState) -> Value {
         "current":q.lease.current(shell),"started":q.started,"consumed":q.consumed,
         "batchCurrent":q.batch.as_ref().is_some_and(|batch| batch.current(shell)),
         "settledBatch":matches!(&q.batch, Some(Batch::Member(batch)) if batch.settled && batch.current(shell)),
+        "titleUsers":match &q.batch {Some(Batch::Member(b))=>b.title_users_proof(shell),_=>Value::Null},
+        "canvasFallback":match &q.batch {Some(Batch::Member(b))=>b.canvas_fallback_proof(shell),_=>Value::Null},
         "friendly":q.policy.as_ref().and_then(|p|p.friendly_channels().ok())})
 }

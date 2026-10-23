@@ -1,0 +1,3444 @@
+{
+  "results": [
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": true
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": true
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": true,
+            "link": 17
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": true,
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": true,
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": true,
+            "link": "https://previous.example/"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": true,
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": true,
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": true,
+            "code-block": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": true,
+            "code-block": true
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": true,
+            "code-block": true
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": 1
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": 1
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": 1
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": 1,
+            "link": 17
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": 1,
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": 1,
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": 1,
+            "link": "https://previous.example/"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": 1,
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": 1,
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": 1,
+            "code-block": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": 1,
+            "code-block": true
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": 1,
+            "code-block": true
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": "token"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": "token"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": "token"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": "token",
+            "link": 17
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": "token",
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": "token",
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": "token",
+            "link": "https://previous.example/"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": "token",
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": "token",
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": "token",
+            "code-block": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": "token",
+            "code-block": true
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": "token",
+            "code-block": true
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": {}
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": {}
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": {}
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": {},
+            "link": 17
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": {},
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": {},
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": {},
+            "link": "https://previous.example/"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": {},
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": {},
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": {},
+            "code-block": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": {},
+            "code-block": true
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": {},
+            "code-block": true
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": []
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": []
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": []
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": [],
+            "link": 17
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": [],
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": [],
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": [],
+            "link": "https://previous.example/"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": [],
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": [],
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": [],
+            "code-block": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": [],
+            "code-block": true
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": [],
+            "code-block": true
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": false
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": false,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": false,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": false,
+            "link": 17
+          }
+        }
+      ],
+      "firstError": "TypeError",
+      "final": [
+        {
+          "attributes": {
+            "slackmention": false,
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": false,
+            "link": "https://previous.example/"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": false,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": false,
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": false,
+            "code-block": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": false,
+            "code-block": true,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": false,
+            "code-block": true,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": 0
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": 0,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": 0,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": 0,
+            "link": 17
+          }
+        }
+      ],
+      "firstError": "TypeError",
+      "final": [
+        {
+          "attributes": {
+            "slackmention": 0,
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": 0,
+            "link": "https://previous.example/"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": 0,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": 0,
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": 0,
+            "code-block": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": 0,
+            "code-block": true,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": 0,
+            "code-block": true,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": ""
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": "",
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": "",
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": "",
+            "link": 17
+          }
+        }
+      ],
+      "firstError": "TypeError",
+      "final": [
+        {
+          "attributes": {
+            "slackmention": "",
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": "",
+            "link": "https://previous.example/"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": "",
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": "",
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": "",
+            "code-block": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": "",
+            "code-block": true,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": "",
+            "code-block": true,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": null
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": null,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": null,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": null,
+            "link": 17
+          }
+        }
+      ],
+      "firstError": "TypeError",
+      "final": [
+        {
+          "attributes": {
+            "slackmention": null,
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": null,
+            "link": "https://previous.example/"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": null,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": null,
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackmention": null,
+            "code-block": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": null,
+            "code-block": true,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": null,
+            "code-block": true,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": true
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": true
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": true,
+            "link": 17
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": true,
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": true,
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": true,
+            "link": "https://previous.example/"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": true,
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": true,
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": true,
+            "code-block": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": true,
+            "code-block": true
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": true,
+            "code-block": true
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": 1
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": 1
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": 1
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": 1,
+            "link": 17
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": 1,
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": 1,
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": 1,
+            "link": "https://previous.example/"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": 1,
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": 1,
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": 1,
+            "code-block": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": 1,
+            "code-block": true
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": 1,
+            "code-block": true
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": "token"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": "token"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": "token"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": "token",
+            "link": 17
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": "token",
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": "token",
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": "token",
+            "link": "https://previous.example/"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": "token",
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": "token",
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": "token",
+            "code-block": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": "token",
+            "code-block": true
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": "token",
+            "code-block": true
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": {}
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": {}
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": {}
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": {},
+            "link": 17
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": {},
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": {},
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": {},
+            "link": "https://previous.example/"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": {},
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": {},
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": {},
+            "code-block": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": {},
+            "code-block": true
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": {},
+            "code-block": true
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": []
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": []
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": []
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": [],
+            "link": 17
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": [],
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": [],
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": [],
+            "link": "https://previous.example/"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": [],
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": [],
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": [],
+            "code-block": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": [],
+            "code-block": true
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": [],
+            "code-block": true
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": false
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": false,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": false,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": false,
+            "link": 17
+          }
+        }
+      ],
+      "firstError": "TypeError",
+      "final": [
+        {
+          "attributes": {
+            "slackslug": false,
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": false,
+            "link": "https://previous.example/"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": false,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": false,
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": false,
+            "code-block": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": false,
+            "code-block": true,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": false,
+            "code-block": true,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": 0
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": 0,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": 0,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": 0,
+            "link": 17
+          }
+        }
+      ],
+      "firstError": "TypeError",
+      "final": [
+        {
+          "attributes": {
+            "slackslug": 0,
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": 0,
+            "link": "https://previous.example/"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": 0,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": 0,
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": 0,
+            "code-block": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": 0,
+            "code-block": true,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": 0,
+            "code-block": true,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": ""
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": "",
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": "",
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": "",
+            "link": 17
+          }
+        }
+      ],
+      "firstError": "TypeError",
+      "final": [
+        {
+          "attributes": {
+            "slackslug": "",
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": "",
+            "link": "https://previous.example/"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": "",
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": "",
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": "",
+            "code-block": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": "",
+            "code-block": true,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": "",
+            "code-block": true,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": null
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": null,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": null,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": null,
+            "link": 17
+          }
+        }
+      ],
+      "firstError": "TypeError",
+      "final": [
+        {
+          "attributes": {
+            "slackslug": null,
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": null,
+            "link": "https://previous.example/"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": null,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": null,
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": null,
+            "code-block": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackslug": null,
+            "code-block": true,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackslug": null,
+            "code-block": true,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": true
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": true
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": true,
+            "link": 17
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": true,
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": true,
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": true,
+            "link": "https://previous.example/"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": true,
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": true,
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": true,
+            "code-block": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": true,
+            "code-block": true
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": true,
+            "code-block": true
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": 1
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": 1
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": 1
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": 1,
+            "link": 17
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": 1,
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": 1,
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": 1,
+            "link": "https://previous.example/"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": 1,
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": 1,
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": 1,
+            "code-block": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": 1,
+            "code-block": true
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": 1,
+            "code-block": true
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": "token"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": "token"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": "token"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": "token",
+            "link": 17
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": "token",
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": "token",
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": "token",
+            "link": "https://previous.example/"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": "token",
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": "token",
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": "token",
+            "code-block": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": "token",
+            "code-block": true
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": "token",
+            "code-block": true
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": {}
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": {}
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": {}
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": {},
+            "link": 17
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": {},
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": {},
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": {},
+            "link": "https://previous.example/"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": {},
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": {},
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": {},
+            "code-block": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": {},
+            "code-block": true
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": {},
+            "code-block": true
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": []
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": []
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": []
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": [],
+            "link": 17
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": [],
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": [],
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": [],
+            "link": "https://previous.example/"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": [],
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": [],
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": [],
+            "code-block": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": [],
+            "code-block": true
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": [],
+            "code-block": true
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": false
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": false,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": false,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": false,
+            "link": 17
+          }
+        }
+      ],
+      "firstError": "TypeError",
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": false,
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": false,
+            "link": "https://previous.example/"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": false,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": false,
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": false,
+            "code-block": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": false,
+            "code-block": true,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": false,
+            "code-block": true,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": 0
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": 0,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": 0,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": 0,
+            "link": 17
+          }
+        }
+      ],
+      "firstError": "TypeError",
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": 0,
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": 0,
+            "link": "https://previous.example/"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": 0,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": 0,
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": 0,
+            "code-block": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": 0,
+            "code-block": true,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": 0,
+            "code-block": true,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": ""
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": "",
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": "",
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": "",
+            "link": 17
+          }
+        }
+      ],
+      "firstError": "TypeError",
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": "",
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": "",
+            "link": "https://previous.example/"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": "",
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": "",
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": "",
+            "code-block": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": "",
+            "code-block": true,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": "",
+            "code-block": true,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": null
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": null,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": null,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": null,
+            "link": 17
+          }
+        }
+      ],
+      "firstError": "TypeError",
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": null,
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": null,
+            "link": "https://previous.example/"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": null,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": null,
+            "link": "https://previous.example/"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slacksearchfilter": null,
+            "code-block": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slacksearchfilter": null,
+            "code-block": true,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slacksearchfilter": null,
+            "code-block": true,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "www.example.com",
+          "attributes": {
+            "slackmention": {
+              "id": "U1",
+              "label": "www.example.com"
+            }
+          }
+        },
+        {
+          "insert": " https://example.com"
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "slackmention": {
+              "id": "U1",
+              "label": "www.example.com"
+            }
+          },
+          "insert": "www.example.com"
+        },
+        {
+          "insert": " "
+        },
+        {
+          "attributes": {
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "slackmention": {
+              "id": "U1",
+              "label": "www.example.com"
+            }
+          },
+          "insert": "www.example.com"
+        },
+        {
+          "insert": " "
+        },
+        {
+          "attributes": {
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": {
+              "url": "https://old.example",
+              "label": "https://example.com"
+            }
+          }
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": {
+              "url": "https://old.example",
+              "label": "https://example.com"
+            }
+          }
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ],
+      "final": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "slackslug": {
+              "url": "https://old.example",
+              "label": "https://example.com"
+            }
+          }
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "unknown": {
+              "opaque": 1
+            }
+          },
+          "attributes": {
+            "link": 17
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "link": 17
+          },
+          "insert": {
+            "unknown": {
+              "opaque": 1
+            }
+          }
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "link": 17
+          },
+          "insert": {
+            "unknown": {
+              "opaque": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "unlink": true,
+            "link": 17
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "unlink": true,
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "unlink": true,
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "unlink": 1,
+            "link": 17
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "unlink": 1,
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "unlink": 1,
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "unlink": {},
+            "link": 17
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "unlink": {},
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "unlink": {},
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "unlink": [],
+            "link": 17
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "unlink": [],
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "unlink": [],
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "unlink": false,
+            "link": 17
+          }
+        }
+      ],
+      "firstError": "TypeError",
+      "final": [
+        {
+          "attributes": {
+            "unlink": false,
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "unlink": 0,
+            "link": 17
+          }
+        }
+      ],
+      "firstError": "TypeError",
+      "final": [
+        {
+          "attributes": {
+            "unlink": 0,
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "unlink": "",
+            "link": 17
+          }
+        }
+      ],
+      "firstError": "TypeError",
+      "final": [
+        {
+          "attributes": {
+            "unlink": "",
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "unlink": null,
+            "link": 17
+          }
+        }
+      ],
+      "firstError": "TypeError",
+      "final": [
+        {
+          "attributes": {
+            "unlink": null,
+            "link": 17
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    }
+  ],
+  "modules": [
+    "+EB+",
+    "/aOC",
+    "09IQ",
+    "0gHG",
+    "1seS",
+    "2Nju",
+    "3MHn",
+    "3qOO",
+    "45zb",
+    "4x3H",
+    "9n32",
+    "A8gZ",
+    "AWJv",
+    "CnpR",
+    "CwFm",
+    "DmXP",
+    "EACB",
+    "FheB",
+    "FpZJ",
+    "GvjG",
+    "H1PU",
+    "HsCr",
+    "Hu4T",
+    "M5WD",
+    "MiTi",
+    "NS8g",
+    "NaDL",
+    "OajW",
+    "P/Dz",
+    "PI3W",
+    "PSzk",
+    "PZPS",
+    "PrET",
+    "Q+fg",
+    "Q+om",
+    "R+z5",
+    "RqNB",
+    "UVaH",
+    "UbfT",
+    "VF6F",
+    "VPjS",
+    "VeU+",
+    "WzJ+",
+    "XCmt",
+    "Yeb6",
+    "ZOnG",
+    "bZFu",
+    "blJ7",
+    "bseP",
+    "cHzv",
+    "dVMb",
+    "dndK",
+    "e0ER",
+    "ey+u",
+    "eyOE",
+    "f66B",
+    "froO",
+    "gYMY",
+    "hSFS",
+    "hVv4",
+    "iL+W",
+    "iRqW",
+    "ivgy",
+    "izwF",
+    "jgxy",
+    "l4EU",
+    "l8g0",
+    "m9eX",
+    "mM05",
+    "nIb6",
+    "nZYd",
+    "nbro",
+    "nv/P",
+    "oNNP",
+    "owfo",
+    "oyjU",
+    "qBuu",
+    "rC7M",
+    "s+wE",
+    "sdnA",
+    "splE",
+    "uAuK",
+    "v+tG",
+    "vAcU",
+    "vmJG",
+    "vp1n",
+    "vtsO",
+    "xt89"
+  ]
+}

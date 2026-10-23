@@ -16,6 +16,10 @@ pub(super) fn panel(state: Signal<ShellState>, visit: u64, id: u64) -> Element {
         })
         .unwrap_or_default();
     let notice = v.and_then(|v| v.notice.clone());
+    let feature_visible = v.is_some_and(|v| v.feature.visible());
+    let feature_checked = v.is_some_and(|v| v.feature.checked);
+    let feature_loading = v.is_some_and(|v| v.feature.loading);
+    let feature_notice = v.and_then(|v| v.feature.notice.clone());
     let ready = selected.is_empty()
         || v.and_then(|v| v.choice.as_ref())
             .is_some_and(|c| c.current(&s));
@@ -29,6 +33,17 @@ pub(super) fn panel(state: Signal<ShellState>, visit: u64, id: u64) -> Element {
         option{value:"","No channel"}
         for (channel,label) in rows {option{value:channel,"{label}"}}
        }
+       if feature_visible {
+        label{r#for:"workflow-confirmation-feature",
+         input{id:"workflow-confirmation-feature",r#type:"checkbox",checked:feature_checked,
+          disabled:loading||pending||feature_loading,"aria-describedby":"workflow-confirmation-feature-help",
+          onmounted:move |_|bind_visible(state,visit,id),
+          onchange:move |e|feature::toggle(state,visit,id,e.checked())}
+         "Feature this workflow in channel"
+        }
+        p{id:"workflow-confirmation-feature-help","This adds it as a button to the message composer."}
+       }
+       if let Some(notice)=feature_notice {p{role:"status","{notice}"}}
        if loading {p{role:"status","Loading channel choices\u{2026}"}}
        if let Some(notice)=notice {p{role:"status","{notice}"}}
        button{id:"workflow-confirmation-retry",r#type:"button",disabled:loading||pending,onclick:move |_|refresh(state,visit,id),"Refresh channel choices"}

@@ -3,6 +3,8 @@ use super_platinum_core::{
     slack::{api, client::PreparedRequest},
     slack_lists::comments::{ReplyQuery, Tombstones},
 };
+mod replies;
+pub(super) use replies::reply_page;
 
 pub(super) struct Loaded {
     pub page: Page,
@@ -117,7 +119,6 @@ pub(super) async fn acquire(
         },
         Tombstones::Include,
     )?;
-    let raw = request(state, owner, serial, prepared, true).await?;
-    let page = Page::parse(&target, raw).map_err(|e| Error::Api(e.to_string()))?;
+    let page = reply_page(state, owner, serial, prepared, &target).await?;
     Ok(Loaded { page, projection })
 }

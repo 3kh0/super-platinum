@@ -223,9 +223,11 @@ def validate_pointer_cleanup(pointer):
 
 def closed_receipts(path, prefix):
     results = []
-    for line in path.read_text(encoding="utf-8", errors="strict").splitlines(keepends=True):
+    # Preserve legal Unicode line separators inside JSON string values.
+    lines = path.read_text(encoding="utf-8", errors="strict").split("\n")
+    for index, line in enumerate(lines):
         if prefix in line:
-            if not line.endswith("\n"):
+            if index == len(lines) - 1:
                 raise RuntimeError("Incomplete final log receipt")
             results.append(json.loads(line.split(prefix, 1)[1]))
     return results
@@ -242,7 +244,7 @@ def validate_closed_log(path, expected, directory, admitted, expected_dimensions
                            receipts[0], closed_receipts(path, STAGE), expected_dimensions=expected_dimensions)
 
 
-def normalize(native, evidence, stack, process_api, handle):
+def normalize(native, evidence, stack, process_api, handle, *, expected_profile_hover=None):
     if sys.platform != "win32":
         evidence["normalization"] = {"enabled": False, "reason": "Windows helpers do not apply"}
         return None
@@ -264,7 +266,7 @@ def normalize(native, evidence, stack, process_api, handle):
     stack.callback(pointer.close)  # Runs while the owned process/window still exists.
     evidence["pointer"] = pointer.data
     pointer.park()
-    pointer.settle(native, visual["fingerprint"])
+    pointer.settle(native, visual["fingerprint"], expected_profile_hover=expected_profile_hover)
     pointer.check("before_ready", require_clear=True)
     evidence["expectedPngDimensions"] = evidence["placement"]["after"]["window_rect_physical"][2:]
     return pointer

@@ -81,6 +81,35 @@ impl Choice {
     pub(super) fn current(&self, s: &ShellState) -> bool {
         self.flags(s).is_some()
     }
+    pub(super) fn feature_plan(
+        &self,
+        s: &ShellState,
+        trigger: &Value,
+        previews: &super_platinum_core::channel_workflows::Previews,
+        manage: super_platinum_core::channel_workflows::feature_permission::Permission,
+    ) -> Result<super_platinum_core::channel_workflows::feature::Add, Error> {
+        let posting = self.flags(s).ok_or_else(unavailable)?;
+        let metadata = self
+            .authority
+            .metadata(&s.core)
+            .map_err(|_| unavailable())?;
+        let ctx = metadata
+            .context(self.authority.configuration(), self.raw.value())
+            .map_err(|_| unavailable())?;
+        super_platinum_core::channel_workflows::feature::Add::new(
+            trigger,
+            self.raw(),
+            previews,
+            super_platinum_core::channel_workflows::feature::Facts {
+                team_id: ctx.team_id,
+                top_level_team_id: ctx.top_level_team_id,
+                self_member: ctx.member,
+                posting,
+                can_post: self.current(s),
+                manage,
+            },
+        )
+    }
     pub(super) fn scope(&self, s: &ShellState) -> Option<(String, String)> {
         if !self.current(s) {
             return None;

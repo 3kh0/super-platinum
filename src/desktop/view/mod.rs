@@ -366,6 +366,7 @@ pub fn shell() -> Element {
                             id: "message-timeline",
                             class: "timeline",
                             "data-timeline-scope":snapshot.timeline_scope(),
+                            "data-channel-projection-generation":snapshot.channel_projection_generation.to_string(),
                             "data-window-start":timeline_start,
                             "data-window-end":timeline_end,
                             "data-scroll-pending":snapshot.core.pending_scroll_to.is_some().to_string(),

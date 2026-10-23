@@ -9,10 +9,12 @@ use super_platinum_core::{
     state::directory_members::ReceiptMembers,
 };
 
+#[derive(Clone)]
 pub(super) struct Transformations {
     pub(super) flags: Flags,
     pub(super) archive: bool,
     pub(super) temp_mute: bool,
+    pub(super) emoji: Option<Arc<emoji::Prepared>>,
 }
 impl Transformations {
     pub(super) fn decode(raw: &Value) -> Result<Self, Error> {
@@ -26,6 +28,7 @@ impl Transformations {
             flags: Flags::decode(raw)?,
             archive: assignment("public_channel_retain_membership_on_archive")?,
             temp_mute: assignment("temp_mute")?,
+            emoji: None,
         })
     }
 }

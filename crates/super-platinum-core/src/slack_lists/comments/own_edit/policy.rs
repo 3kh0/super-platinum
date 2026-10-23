@@ -58,6 +58,20 @@ impl OwnEditPolicy {
         ts: &str,
         now_ms: u64,
     ) -> Result<(), ListError> {
+        self.admit_mode(workspace, user, target, ts, now_ms, super::EditMode::Rich)
+    }
+    pub fn mode(&self) -> super::EditMode {
+        super::EditMode::from_observed(self.plain, self.portable)
+    }
+    pub(super) fn admit_mode(
+        &self,
+        workspace: &str,
+        user: &str,
+        target: &Target,
+        ts: &str,
+        now_ms: u64,
+        mode: super::EditMode,
+    ) -> Result<(), ListError> {
         target.validate()?;
         // JszJ: any -1 wins, otherwise the largest actual relevant window.
         let minutes = if self.windows.contains(&-1) {
@@ -73,8 +87,8 @@ impl OwnEditPolicy {
         if self.workspace != workspace
             || self.user != user
             || self.channel["id"].as_str() != Some(target.channel_id())
-            || self.plain
-            || self.portable
+            || mode == super::EditMode::Portable
+            || self.mode() != mode
             || self.archive_view
             || !self.can_thread
             || ["is_frozen", "is_archived", "is_non_threadable", "is_locked"]

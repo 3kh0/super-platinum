@@ -103,6 +103,7 @@ impl MediaRegistry {
                     mime: mime.into(),
                     authenticated: true,
                     deferred: true,
+                    demand_on_display: false,
                     slot: None,
                     snapshot: Some(Arc::downgrade(&bytes)),
                 },

@@ -84,6 +84,9 @@ pub async fn refresh(mut state: Signal<ShellState>) {
             }
         }
 
+        // Accepted boot may already have a current socket on a warm refresh.
+        // Cold boot is deferred by the scheduler until Connected is accepted.
+        crate::app_home::autocomplete::startup::schedule(state, &team);
         crate::app_home::channel_fetches::request_initialization(&mut state.write(), &team, warm);
         if let Some(owner) = &counts_owner {
             owner.refresh_badge_rules(state);

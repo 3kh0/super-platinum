@@ -1,5 +1,5 @@
 use super::*;
-use chrono::{FixedOffset, LocalResult, NaiveDate, NaiveDateTime, Utc};
+use chrono::Utc;
 use serde_json::json;
 
 fn channel() -> Value {
@@ -238,49 +238,7 @@ fn special_channels_remain_outside_ordinary_label_policy() {
     }
 }
 
-#[derive(Clone)]
-struct Eastern2026;
-fn wall(value: &str) -> NaiveDateTime {
-    NaiveDateTime::parse_from_str(value, "%Y-%m-%d %H:%M:%S%.f").unwrap()
-}
-fn offset(hours: i32) -> FixedOffset {
-    FixedOffset::east_opt(hours * 3600).unwrap()
-}
-impl TimeZone for Eastern2026 {
-    type Offset = FixedOffset;
-    fn from_offset(_: &Self::Offset) -> Self {
-        Self
-    }
-    fn offset_from_local_date(&self, value: &NaiveDate) -> LocalResult<Self::Offset> {
-        self.offset_from_local_datetime(&value.and_hms_opt(12, 0, 0).unwrap())
-    }
-    fn offset_from_local_datetime(&self, value: &NaiveDateTime) -> LocalResult<Self::Offset> {
-        if *value >= wall("2026-03-08 02:00:00") && *value < wall("2026-03-08 03:00:00") {
-            LocalResult::None
-        } else if *value >= wall("2026-11-01 01:00:00") && *value < wall("2026-11-01 02:00:00") {
-            // Intentionally return later offset first; policy must choose by instant.
-            LocalResult::Ambiguous(offset(-5), offset(-4))
-        } else {
-            LocalResult::Single(
-                if *value >= wall("2026-03-08 03:00:00") && *value < wall("2026-11-01 01:00:00") {
-                    offset(-4)
-                } else {
-                    offset(-5)
-                },
-            )
-        }
-    }
-    fn offset_from_utc_date(&self, value: &NaiveDate) -> Self::Offset {
-        self.offset_from_utc_datetime(&value.and_hms_opt(12, 0, 0).unwrap())
-    }
-    fn offset_from_utc_datetime(&self, value: &NaiveDateTime) -> Self::Offset {
-        if *value >= wall("2026-03-08 07:00:00") && *value < wall("2026-11-01 06:00:00") {
-            offset(-4)
-        } else {
-            offset(-5)
-        }
-    }
-}
+use super::test_clock::{Eastern2026, wall};
 fn local_ms(value: &str) -> i64 {
     Eastern2026
         .from_local_datetime(&wall(value))

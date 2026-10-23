@@ -1,14 +1,17 @@
 //! Bounded, occurrence-owned metadata reads for the visible List transcript.
 //! A title read grants neither navigation nor draft/editor authority.
 use super::*;
-use crate::profile_edit::sections::rich::search::{FileTarget, file_source::FileInfoRead};
+use crate::profile_edit::sections::rich::search::{
+    FileTarget,
+    file_source::{FileInfoRead, FileObservation},
+};
 use file_navigation::Source;
 use serde_json::json;
 use super_platinum_core::slack::{
     PreparedRequest,
     api::custom::{RichTextContext, texty::file_title_source::OrderedFileInfo},
 };
-mod run;
+pub(super) mod run;
 #[cfg(test)]
 mod tests;
 
@@ -28,6 +31,7 @@ struct Attempt {
     phase: Phase,
     retry_at: i64,
     notice: Option<&'static str>,
+    titles: Option<Arc<title_users::Observed>>,
 }
 #[derive(Clone, Copy, PartialEq)]
 enum Phase {
@@ -101,7 +105,7 @@ impl Demand {
         enabled(shell) && self.source.current(shell)
     }
     fn ready(&self, shell: &ShellState) -> bool {
-        self.current(shell) && FileTarget::capture(shell, &self.team, &self.raw).is_ok()
+        self.current(shell) && target(shell, &self.source, &self.team, &self.raw).is_ok()
     }
     fn same(&self, other: &Self) -> bool {
         self.id == other.id && self.team == other.team && self.source.same_source(&other.source)
@@ -113,7 +117,7 @@ impl Demand {
             .file_acquisition
             .attempts
             .iter()
-            .find(|a| a.demand.id == self.id && a.demand.current(shell))
+            .find(|a| a.demand.same(self) && a.demand.current(shell))
     }
     pub(crate) fn presentation(&self, shell: &ShellState) -> Presentation {
         if self.ready(shell) {
@@ -200,37 +204,56 @@ fn pending(shell: &ShellState, generation: u64) -> Vec<Demand> {
         return Vec::new();
     };
     let state = &shell.slack_lists.comments.file_acquisition;
-    let remaining = MAX_FILES.saturating_sub(
+    let mut remaining = MAX_FILES.saturating_sub(
         state
             .attempts
             .iter()
             .filter(|a| a.demand.current(shell))
             .count(),
     );
-    if remaining == 0 {
-        return Vec::new();
-    }
     let mut work = Vec::new();
     for row in entry.rows.iter() {
         let Some(source) = Source::capture(shell, generation, row) else {
             continue;
         };
         for demand in source.cold_demands(shell) {
-            if !demand.ready(shell)
-                && !work.iter().any(|d: &Demand| d.id == demand.id)
-                && !state
-                    .attempts
-                    .iter()
-                    .any(|a| a.demand.id == demand.id && a.demand.current(shell))
-            {
+            if work.iter().any(|d: &Demand| d.same(&demand)) {
+                continue;
+            }
+            let existing = state
+                .attempts
+                .iter()
+                .find(|a| a.demand.same(&demand) && a.demand.current(shell));
+            let admitted = match existing {
+                Some(a) => reprojectable(shell, a),
+                None if remaining > 0 && !demand.ready(shell) => {
+                    remaining -= 1;
+                    true
+                }
+                None => false,
+            };
+            if admitted {
                 work.push(demand);
-                if work.len() >= remaining {
+                if work.len() >= MAX_FILES {
                     return work;
                 }
             }
         }
     }
     work
+}
+/// A fresh same-file publication may repair a previously successful title.
+/// This is not an automatic retry of a failed read, nor a policy/Quip retry.
+fn reprojectable(shell: &ShellState, attempt: &Attempt) -> bool {
+    attempt.phase == Phase::Ready
+        && attempt.demand.current(shell)
+        && attempt.retry_at <= now()
+        && cooldown(shell) <= now()
+        && attempt
+            .titles
+            .as_ref()
+            .is_some_and(|titles| !titles.files.metadata_current(shell))
+        && FileObservation::capture(shell, &attempt.demand.team, &attempt.demand.id).is_ok()
 }
 fn queue(shell: &mut ShellState, generation: u64, work: Vec<Demand>) {
     if !controller::callback_current(shell, generation) {
@@ -242,7 +265,10 @@ fn queue(shell: &mut ShellState, generation: u64, work: Vec<Demand>) {
         .file_acquisition
         .attempts
         .iter()
-        .filter(|a| a.demand.current(shell))
+        .filter(|a| {
+            a.demand.current(shell)
+                && !(work.iter().any(|d| a.demand.same(d)) && reprojectable(shell, a))
+        })
         .cloned()
         .collect();
     let retry_at = cooldown(shell);
@@ -254,7 +280,7 @@ fn queue(shell: &mut ShellState, generation: u64, work: Vec<Demand>) {
         if state.attempts.len() >= MAX_FILES {
             break;
         }
-        if !state.attempts.iter().any(|a| a.demand.id == demand.id) {
+        if !state.attempts.iter().any(|a| a.demand.same(&demand)) {
             state.attempts.push(Attempt {
                 demand,
                 serial: next_id(),
@@ -265,6 +291,7 @@ fn queue(shell: &mut ShellState, generation: u64, work: Vec<Demand>) {
                 },
                 retry_at,
                 notice: None,
+                titles: None,
             });
         }
     }
@@ -291,7 +318,7 @@ pub(crate) fn retry(mut state: Signal<ShellState>, demand: Demand) {
             .comments
             .file_acquisition
             .attempts
-            .retain(|a| a.demand.id != demand.id);
+            .retain(|a| !a.demand.same(&demand));
         queue(&mut shell, generation, vec![demand]);
     }
     start(state);
@@ -358,7 +385,7 @@ fn attempt_current(shell: &ShellState, attempt: &Attempt, worker: &Arc<()>) -> b
             .iter()
             .any(|a| a.serial == attempt.serial && a.demand.same(&attempt.demand))
 }
-fn request(context: &crate::scheduled::Context, id: &str) -> PreparedRequest {
+pub(super) fn request(context: &crate::scheduled::Context, id: &str) -> PreparedRequest {
     context.client.rest_form(
         &context.session,
         "files.info",
@@ -393,6 +420,31 @@ pub(crate) fn snapshot(shell: &ShellState) -> Value {
         let p=a.demand.presentation(shell);
         json!({"id":a.demand.id,"serial":a.serial,"phase":a.phase.name(),"state":p.state,
             "current":a.demand.current(shell),"ordinal":a.demand.ordinal,"retryAt":a.retry_at,
-            "retryable":p.retryable,"notice":p.notice})
+            "retryable":p.retryable,"notice":p.notice,"titleUsers":a.titles.as_ref().map(|t|t.snapshot(shell))})
     }).collect::<Vec<_>>()})
+}
+
+/// An occurrence still owns the click; this only supplies current title facts.
+pub(super) fn target(
+    shell: &ShellState,
+    source: &Source,
+    team: &str,
+    raw: &Value,
+) -> Result<FileTarget, Error> {
+    let display = shell
+        .slack_lists
+        .comments
+        .file_acquisition
+        .attempts
+        .iter()
+        .find(|a| {
+            a.demand.team == team
+                && a.demand.id == raw["file_id"].as_str().unwrap_or_default()
+                && a.demand.source.same_source(source)
+                && a.demand.current(shell)
+        })
+        .and_then(|a| a.titles.as_ref())
+        .filter(|o| o.current(shell))
+        .map(|o| o.files.clone());
+    FileTarget::capture_with_titles(shell, team, raw, display)
 }

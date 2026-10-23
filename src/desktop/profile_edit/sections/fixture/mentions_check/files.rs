@@ -83,18 +83,32 @@ async fn shot(
 ) -> Result<(), String> {
     let observed = cache::fixture_status(&state.peek(), source::ID);
     if source::block_mode() && stage != "cold-loading" {
-        let expected = source::title_blocks(matches!(stage, "renamed-mounted" | "confirmed"));
+        let empty = super::super::empty_canvas::existing();
+        let expected = source::title_blocks(
+            matches!(stage, "renamed-mounted" | "confirmed")
+                || (empty && matches!(stage, "retried" | "held" | "cancelled")),
+        );
         if observed["source"]["title_blocks"] != expected
             || observed["effective"]["title_blocks"] != expected
             || observed["quipTitle"]
-                != json!({"current":true,"value":"nullish","fileId":source::ID})
+                != if expected.as_array().is_some_and(|rows| !rows.is_empty()) {
+                    json!({"current":true,"value":"nullish","fileId":source::ID})
+                } else {
+                    Value::Null
+                }
         {
             return Err(format!(
                 "Missing original block title or actual runtime absence observation: {observed}"
             ));
         }
     }
-    let proof = json!({"source":source::status(),"cache":observed,"exercise":extra});
+    let mut proof = json!({"source":source::status(),"cache":observed,"exercise":extra});
+    if super::super::empty_canvas::existing() {
+        proof["emptyCanvas"] = super::super::empty_canvas::snapshot();
+    }
+    if super::super::link_title::named() {
+        proof["linkTitle"] = super::super::link_title::snapshot();
+    }
     capture(state, desktop, name, stage, proof, stages, captures).await
 }
 async fn run(
@@ -186,10 +200,25 @@ async fn run(
         &mut captures,
     )
     .await?;
-    source::mode(source::Mode::Normal);
+    let empty = super::super::empty_canvas::existing();
+    source::mode(if empty {
+        source::Mode::Renamed
+    } else {
+        source::Mode::Normal
+    });
     click(desktop, "Retry description", false).await?;
     requests(3, 3, false).await?;
-    editor_label(desktop, "Saved with ", true, source::mounted_label()).await?;
+    editor_label(
+        desktop,
+        "Saved with ",
+        true,
+        if empty {
+            source::renamed_label()
+        } else {
+            source::mounted_label()
+        },
+    )
+    .await?;
     shot(
         state,
         desktop,
@@ -278,9 +307,14 @@ async fn run(
         &mut captures,
     )
     .await?;
-    Ok(
-        json!({"ok":true,"fixture":name,"readiness":ready,"mentionKind":source::kind(),"titleBlocks":source::block_mode(),"stages":stages,
+    let mut result = json!({"ok":true,"fixture":name,"readiness":ready,"mentionKind":source::kind(),"titleBlocks":source::block_mode(),"stages":stages,
         "captures":captures,"viewport":stages[0]["geometry"]["viewport"],"captureChecksPassed":true,
-        "visualReview":"Original PNG inspection required separately"}),
-    )
+        "visualReview":"Original PNG inspection required separately"});
+    if super::super::empty_canvas::existing() {
+        result["emptyCanvas"] = super::super::empty_canvas::snapshot();
+    }
+    if super::super::link_title::named() {
+        result["linkTitle"] = super::super::link_title::snapshot();
+    }
+    Ok(result)
 }

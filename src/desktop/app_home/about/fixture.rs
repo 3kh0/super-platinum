@@ -108,11 +108,17 @@ pub(crate) fn install_modal(s: &mut ShellState) {
 pub(super) fn read_enabled(s: &ShellState) -> bool {
     management::activity::fixture::channel::enabled(s)
         || crate::channel_workflows::fixture::enabled(s)
+        || management::fixture::first_publish::confirmation::share::drafts::enabled(s)
 }
 pub(super) fn read_response(
     s: &ShellState,
     request: &super_platinum_core::slack::PreparedRequest,
 ) -> Result<serde_json::Value, Error> {
+    if management::fixture::first_publish::confirmation::share::drafts::enabled(s) {
+        return management::fixture::first_publish::confirmation::share::drafts::about_response(
+            s, request,
+        );
+    }
     if crate::channel_workflows::fixture::enabled(s) {
         return crate::channel_workflows::fixture::about_response(s, request);
     }

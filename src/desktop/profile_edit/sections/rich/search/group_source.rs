@@ -12,7 +12,7 @@ fn unavailable() -> Error {
     Error::Api("profile_group_source_unavailable".into())
 }
 
-pub(in crate::profile_edit::sections::rich) struct Snapshot {
+pub(crate) struct Snapshot {
     owner: Arc<Context>,
     source: source_core::Snapshot,
     rows: Vec<groups::Snapshot>,
@@ -20,10 +20,7 @@ pub(in crate::profile_edit::sections::rich) struct Snapshot {
 impl Snapshot {
     /// Captures only the currently accepted local collection, not an assertion
     /// that every group on the server has been acquired.
-    pub(in crate::profile_edit::sections::rich) fn capture(
-        shell: &ShellState,
-        team: &str,
-    ) -> Result<Self, Error> {
+    pub(crate) fn capture(shell: &ShellState, team: &str) -> Result<Self, Error> {
         Self::under(shell, Arc::new(Context::capture(shell, team)?))
     }
     /// Publication uses its original owner; it cannot borrow a successor socket.
@@ -51,13 +48,13 @@ impl Snapshot {
             rows,
         })
     }
-    pub(in crate::profile_edit::sections::rich) fn rows(&self) -> &[groups::Snapshot] {
+    pub(crate) fn rows(&self) -> &[groups::Snapshot] {
         &self.rows
     }
     pub(in crate::profile_edit::sections::rich) fn membership(&self) -> Option<&[String]> {
         self.source.membership()
     }
-    pub(in crate::profile_edit::sections::rich) fn current(&self, shell: &ShellState) -> bool {
+    pub(crate) fn current(&self, shell: &ShellState) -> bool {
         let owner = &self.owner;
         owner.current(shell)
             && shell

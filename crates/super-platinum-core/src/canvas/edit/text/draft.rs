@@ -38,7 +38,16 @@ impl TextDraft {
         if source.len() > MAX_TEXT_BYTES || source.contains('\0') {
             return Err(Error::Unsupported);
         }
-        let parsed = Html::parse_fragment(source);
+        // RTML is decoded content, not an encoded file. html5ever otherwise
+        // consumes one initial literal FEFF as a BOM, silently losing text.
+        let escaped_leading;
+        let input = if let Some(rest) = source.strip_prefix('\u{feff}') {
+            escaped_leading = format!("&#65279;{rest}");
+            escaped_leading.as_str()
+        } else {
+            source
+        };
+        let parsed = Html::parse_fragment(input);
         // HTML repair can discard unknown source bytes before tree traversal.
         if !parsed.errors.is_empty() {
             return Err(Error::Unsupported);

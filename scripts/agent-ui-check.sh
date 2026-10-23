@@ -10,6 +10,43 @@ cd "$ROOT"
 export SUPER_PLATINUM_UI_CAPTURE_DIR="${SUPER_PLATINUM_UI_CAPTURE_DIR:-tmp/agent-ui}"
 mkdir -p "$SUPER_PLATINUM_UI_CAPTURE_DIR"
 
+# Formatted static Canvas title paragraph edits: check-canvas-formatted-title-edit-native.py
+# --fixture canvas-text or canvas-text-narrow (exact new flag; old text check unchanged).
+# Plain own-comment native interactions use the existing slack-list/slack-list-narrow
+# fixtures through scripts/check-list-own-edit-plain-native.py: own-edit-plain,
+# own-edit-plain-storage, own-edit-plain-emoji, own-edit-plain-custom and
+# own-edit-plain-custom-retired, own-edit-plain-noop, own-edit-plain-noop-storage,
+# own-edit-plain-emoticon and own-edit-plain-emoticon-off.
+# Smart-symbol interactions use check-list-own-edit-smart-symbols-native.py:
+# own-edit-plain-smart-symbols, own-edit-plain-smart-symbols-off,
+# own-edit-plain-smart-symbols-disabled (same normal/narrow fixtures).
+# Go-link policy: check-list-own-edit-go-links-native.py, own-edit-plain-go-links
+# Visual emoji mode: check-list-own-edit-emoji-display-native.py,
+# own-edit-plain-emoji-display / own-edit-plain-emoji-display-recovery (normal/narrow).
+# Member/group local plain Save/recovery: scripts/check-list-plain-member-save-native.py
+# --case own-edit-plain-member --captures <fresh-directory> (normal/narrow).
+# Channel-only plain Save/recovery: scripts/check-list-plain-channel-save-native.py
+# --case own-edit-plain-channel --captures <fresh-directory> (normal/narrow).
+  # Explicit shared emoji source: check-rich-emoji-display-source-native.py,
+  # rich-emoji-display-source (normal/narrow; pending/ready/URL replacement).
+  # Combined Unicode/source: check-rich-emoji-combined-native.py,
+  # rich-emoji-combined (normal/narrow; unobserved/pending/ready/replacement).
+# (same normal/narrow fixtures; actual assignment, literal plain text, Save/readback).
+# The owned runner supplies the
+# exact offline case flag.
+# Canonical channel/thread selected emoji uses check-channel-thread-emoji-native.py
+# with channel-thread-emoji / channel-thread-emoji-narrow. Its owned runner supplies
+# SUPER_PLATINUM_CHANNEL_THREAD_EMOJI_CHECK and capture acknowledgements for
+# unobserved/assigned-pending/assigned-ready/socket-retired/fresh-assigned-ready.
+# Canvas comment selected emoji uses check-canvas-comment-emoji-native.py with
+# canvas-comment-emoji / canvas-comment-emoji-narrow. Its owned runner supplies
+# SUPER_PLATINUM_CANVAS_COMMENT_EMOJI_CHECK, private reply storage and capture ACKs.
+# Profile Canvas link titles use check-profile-link-title-native.py with
+# profile-sections-mentions / profile-sections-mentions-narrow. The owned runner
+# supplies SUPER_PLATINUM_PROFILE_LINK_TITLE_CHECK plus original files/blocks flags
+# and runs the ten-stage cold/read/rename/Save/Retry/Cancel/length lifecycle.
+# These guarded interaction fixtures are run through that checker, not this
+# static screenshot loop.
 MANIFEST="Cargo.toml"
 BINARY="${SUPER_PLATINUM_BINARY:-target/debug/super-platinum}"
 FIXTURES=(
@@ -64,7 +101,7 @@ FIXTURES=(
   new-dm-directory new-dm-directory-loading new-dm-directory-error new-dm-directory-empty new-dm-directory-error-narrow
   local-drafts local-drafts-loading local-drafts-error local-drafts-error-narrow
   new-dm new-dm-selected new-dm-pending new-dm-error new-dm-narrow
-  profile-hover-card profile-pane profile-dm-opening profile-vip-pending profile-pane-rich-fields
+  profile-hover-card profile-hover-card-narrow profile-pane profile-pane-narrow profile-pane-min-width-narrow profile-dm-opening profile-vip-pending profile-pane-rich-fields
   profile-loading profile-loading-narrow
   profile-pane-min-width dm-header-compact
   channel-thread-profile-headers channel-huddle huddle-connected huddle-invite
@@ -465,3 +502,11 @@ done
 
 echo "agent-ui-check: real desktop captures written to $SUPER_PLATINUM_UI_CAPTURE_DIR"
 ls -la "$SUPER_PLATINUM_UI_CAPTURE_DIR"
+
+# Plain member Agentforce access: check-list-plain-member-agents-native.py --case own-edit-plain-member-agents
+
+# Plain group Save: check-list-plain-group-save-native.py --case own-edit-plain-group (normal/narrow).
+
+# Mixed same-label Save: check-list-plain-mixed-save-native.py --case own-edit-plain-mixed-{tie,group} (normal/narrow).
+
+# Native Enter split: check-canvas-split-native.py --scenario success|stale|partial --fixture canvas-structure[-narrow] --binary <built-binary>.

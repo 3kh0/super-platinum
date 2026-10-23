@@ -12,7 +12,10 @@ use super_platinum_core::slack::{
         texty::{file_title_source, file_titles},
     },
 };
+mod display;
+pub(crate) use display::FileTitles;
 mod draft;
+pub(super) mod users;
 pub(crate) use draft::draft_file_labels;
 mod target;
 pub(crate) use target::FileTarget;
@@ -29,6 +32,7 @@ pub(in crate::profile_edit::sections::rich) struct Choice {
     names: Arc<member_names::Observation>,
     source: Arc<file_source::Snapshot>,
     projection: Projection,
+    users: Option<Arc<users::Users>>,
 }
 
 pub(super) fn capture(
@@ -37,6 +41,16 @@ pub(super) fn capture(
     names: Arc<member_names::Observation>,
     source: Arc<file_source::Snapshot>,
     id: &str,
+) -> Result<Choice, Error> {
+    capture_with_users(shell, search, names, source, id, None)
+}
+pub(super) fn capture_with_users(
+    shell: &ShellState,
+    search: &Search<impl Host>,
+    names: Arc<member_names::Observation>,
+    source: Arc<file_source::Snapshot>,
+    id: &str,
+    users: Option<Arc<users::Users>>,
 ) -> Result<Choice, Error> {
     if !search.current(shell) || !names.current(shell, search) || !source.current(shell) {
         return Err(unavailable());
@@ -51,13 +65,16 @@ pub(super) fn capture(
     if title.source() != candidate.source() {
         return Err(unavailable());
     }
-    let projection = Projection::capture(
+    let users = users::for_title(shell, title.effective(), users.as_deref())?;
+    let projection = Projection::capture_with_context(
         shell,
         search.lease.team(),
         &search.context.session.user_id,
         &names.gantry,
         title,
         id,
+        users.as_deref().map(|u| (u, &names.policy)),
+        search.lease.canvas_title_locale(),
     )?;
     let choice = Choice {
         owner: {
@@ -68,6 +85,7 @@ pub(super) fn capture(
         names,
         source,
         projection,
+        users,
     };
     choice
         .current(shell, search)
@@ -87,6 +105,28 @@ impl Choice {
             && self.names.current(shell, search)
             && self.source.current(shell)
             && self.projection.current_quip(shell)
+            && self.users.as_ref().is_none_or(|u| u.current(shell))
+    }
+    pub(in crate::profile_edit::sections::rich) fn title_users_proof(
+        &self,
+        shell: &ShellState,
+    ) -> Option<Value> {
+        self.users.as_ref().map(|users| {
+            let mut proof = users.snapshot(shell);
+            proof["policy"] = self.names.title_policy_proof(shell);
+            proof
+        })
+    }
+    pub(in crate::profile_edit::sections::rich) fn canvas_fallback_proof(
+        &self,
+        shell: &ShellState,
+        search: &Search<impl Host>,
+    ) -> Option<Value> {
+        self.projection.canvas_locale.map(|locale| {
+            let mut proof = locale.proof(self.current(shell, search));
+            proof["quipTitle"] = self.projection.quip_proof(shell);
+            proof
+        })
     }
     pub(in crate::profile_edit::sections::rich) fn value(&self) -> &Value {
         &self.projection.value
@@ -97,6 +137,7 @@ impl Choice {
 }
 
 struct Projection {
+    canvas_locale: Option<super::super::title_locale::CanvasTitle>,
     // Retain the actual title row, not just a typed/rendered label.
     _title: file_title_source::Observation,
     quip: Option<quip_titles::Observation>,
@@ -112,8 +153,38 @@ impl Projection {
         title: file_title_source::Observation,
         id: &str,
     ) -> Result<Self, Error> {
+        Self::capture_with_users(shell, team, user, gantry, title, id, None)
+    }
+    fn capture_with_users(
+        shell: &ShellState,
+        team: &str,
+        user: &str,
+        gantry: &Value,
+        title: file_title_source::Observation,
+        id: &str,
+        users: Option<(
+            &users::Users,
+            &super_platinum_core::block_actions::name_policy::Snapshot,
+        )>,
+    ) -> Result<Self, Error> {
+        Self::capture_with_context(shell, team, user, gantry, title, id, users, None)
+    }
+    fn capture_with_context(
+        shell: &ShellState,
+        team: &str,
+        user: &str,
+        gantry: &Value,
+        title: file_title_source::Observation,
+        id: &str,
+        users: Option<(
+            &users::Users,
+            &super_platinum_core::block_actions::name_policy::Snapshot,
+        )>,
+        canvas_locale: Option<super::super::title_locale::CanvasTitle>,
+    ) -> Result<Self, Error> {
         observed_team(gantry, team)?;
-        let canonical = CanonicalTitle::capture(shell, &title, id)?;
+        let canonical =
+            CanonicalTitle::capture_with_context(shell, &title, id, users, canvas_locale)?;
         let CanonicalTitle { kind, quip, label } = canonical;
         let effective = title.effective();
         let href = match effective.get("permalink") {
@@ -132,11 +203,28 @@ impl Projection {
         let mut context = RichTextContext::new_ordered(team, user)?;
         context.file(&value, label.clone())?;
         Ok(Self {
+            canvas_locale: canvas_locale.filter(|_| kind == file_titles::Kind::Canvas),
             _title: title,
             quip,
             value,
             label,
         })
+    }
+    fn quip_proof(&self, shell: &ShellState) -> Value {
+        let Some(quip) = &self.quip else {
+            return Value::Null;
+        };
+        let mut proof = json!({"fileId":self._title.effective()["id"],
+            "current":quip.current(shell)});
+        match quip.value() {
+            file_titles::QuipTitle::Nullish => proof["value"] = json!("nullish"),
+            file_titles::QuipTitle::Text(text) => {
+                proof["value"] = json!("text");
+                proof["text"] = json!(text);
+            }
+            file_titles::QuipTitle::Unavailable => proof["value"] = json!("unavailable"),
+        }
+        proof
     }
     fn current_quip(&self, shell: &ShellState) -> bool {
         self.quip.as_ref().is_none_or(|q| q.current(shell))
@@ -145,6 +233,7 @@ impl Projection {
 
 /// Shared title projection only. Capturing a new private choice still requires
 /// the observed gantry team above; displaying an existing token grants no choice.
+#[derive(Clone)]
 struct CanonicalTitle {
     kind: file_titles::Kind,
     quip: Option<quip_titles::Observation>,
@@ -156,12 +245,44 @@ impl CanonicalTitle {
         title: &file_title_source::Observation,
         id: &str,
     ) -> Result<Self, Error> {
+        Self::capture_with_users(shell, title, id, None)
+    }
+    fn capture_with_users(
+        shell: &ShellState,
+        title: &file_title_source::Observation,
+        id: &str,
+        users: Option<(
+            &users::Users,
+            &super_platinum_core::block_actions::name_policy::Snapshot,
+        )>,
+    ) -> Result<Self, Error> {
+        Self::capture_with_context(shell, title, id, users, None)
+    }
+    fn capture_with_context(
+        shell: &ShellState,
+        title: &file_title_source::Observation,
+        id: &str,
+        users: Option<(
+            &users::Users,
+            &super_platinum_core::block_actions::name_policy::Snapshot,
+        )>,
+        canvas_locale: Option<super::super::title_locale::CanvasTitle>,
+    ) -> Result<Self, Error> {
         let effective = title.effective();
         if effective["id"].as_str() != Some(id) || id.is_empty() {
             return Err(unavailable());
         }
         let kind = kind(effective)?;
-        let quip = if kind == file_titles::Kind::Canvas
+        let ids = if kind == file_titles::Kind::Canvas {
+            file_titles::user_ids(effective).map_err(|_| unavailable())?
+        } else {
+            Default::default()
+        };
+        if !ids.is_empty() && users.is_none_or(|(u, _)| !u.current(shell)) {
+            return Err(unavailable());
+        }
+        let quip = if ids.is_empty()
+            && kind == file_titles::Kind::Canvas
             && effective["title_blocks"]
                 .as_array()
                 .is_some_and(|blocks| !blocks.is_empty())
@@ -170,12 +291,18 @@ impl CanonicalTitle {
         } else {
             None
         };
-        let label = file_titles::label_with_quip(
+        let label = file_titles::label_with_context(
             kind,
             file_titles::Status::Normal,
             effective,
             quip.as_ref()
                 .map_or(file_titles::QuipTitle::Unavailable, |q| q.value()),
+            canvas_locale.map(|locale| locale.value()),
+            |id| {
+                users
+                    .ok_or(file_titles::Unavailable::InvalidMetadata)
+                    .and_then(|(users, policy)| users.label(id, policy))
+            },
         )
         .map_err(|_| unavailable())?;
         Ok(Self { kind, quip, label })

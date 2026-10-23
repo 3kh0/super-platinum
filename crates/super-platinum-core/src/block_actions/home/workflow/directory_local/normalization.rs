@@ -23,6 +23,11 @@ fn deburr(s: &str) -> String {
     }
     out
 }
+/// J3F alone, for 8KmV.Pc's subsequent renderer-owned ordinary lowercase.
+/// Unlike hNDQ this neither trims nor collapses whitespace nor changes case.
+pub fn normalize_name_source(text: &str) -> String {
+    deburr(text)
+}
 /// Input is exactly renderer `raw.trim().toLocaleLowerCase()`. The original raw
 /// string must still be retained separately for hHTo's case-sensitive D-ID path.
 /// This performs only the remaining J3F/ transform and JS /\s+/g collapse.

@@ -78,11 +78,21 @@ pub(super) fn rows_with_live(
             deleted(page, ts) || live_deleted.is_some_and(|entry| entry.deleted.contains(ts))
         })
     });
+    let standard = crate::app_home::channel_fetches::emoji_standard(shell, &owner.scope.team)
+        .filter(|observation| observation.current(shell));
     Some(Arc::new(
         projection
             .visible(&messages, page.target().root_ts().unwrap_or(""))
             .into_iter()
-            .map(|m| crate::message_vm::message_vm_with_pending(workspace, m, &shell.media, false))
+            .map(|m| {
+                crate::message_vm::message_vm_with_standard(
+                    workspace,
+                    m,
+                    &shell.media,
+                    false,
+                    standard.as_ref().map(|observation| observation.standard()),
+                )
+            })
             .collect(),
     ))
 }

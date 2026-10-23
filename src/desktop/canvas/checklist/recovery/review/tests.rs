@@ -215,3 +215,92 @@ fn held_review_open_cannot_adopt_another_file_or_replacement_visit() {
     shell.core.active_account = Some("00000000-0000-4000-8000-000000000996".into());
     assert!(original.after_read(&shell, &held).is_none());
 }
+
+fn restored_split() -> (ShellState, Store) {
+    use super_platinum_core::canvas::edit::structure::{SplitIntent, SplitWitness};
+    let (mut shell, _previous_store) = restored();
+    let snapshot = crate::canvas::text::split_recovery_fixture::snapshot();
+    let read = begin_read(&mut shell).unwrap();
+    assert!(finish_read(&mut shell, &read, Ok(snapshot.clone())));
+    let intent = SplitIntent::capture(&snapshot, "paragraph", 100).unwrap();
+    let witness = SplitWitness::new(
+        intent.seed(),
+        9,
+        &TextDraft::from_rtml("Keep this").unwrap(),
+        &TextDraft::from_rtml("Second paragraph").unwrap(),
+    )
+    .unwrap();
+    let checkpoint = intent
+        .prepare(&snapshot, &witness, 100)
+        .unwrap()
+        .checkpoint()
+        .unwrap();
+    let store = store();
+    let owner = shell.canvas_checklist.recovery.owner.clone().unwrap();
+    let mut journal = Journal::open(&store.0, &owner.account).unwrap();
+    let Begin::Started(receipt) = journal.begin(checkpoint).unwrap() else {
+        panic!("fresh split")
+    };
+    shell.canvas_checklist.recovery.receipt = Some(receipt);
+    (shell, store)
+}
+
+#[test]
+fn split_review_keeps_entire_pair_through_stale_read_account_change_and_failed_storage() {
+    let (mut shell, store) = restored_split();
+    let request = Request::capture(&shell).expect("restored split review available");
+    let journal = Journal::open(&store.0, &request.owner.account).unwrap();
+    let review = journal
+        .local_review(&request.receipt, &request.snapshot)
+        .unwrap();
+    let pair = review.split().unwrap();
+    assert_eq!(pair.original_text(), "Keep thisSecond paragraph");
+    assert_eq!(
+        (pair.parent_text(), pair.child_text()),
+        ("Keep this", "Second paragraph")
+    );
+    assert_eq!(review.observed_sections().count(), 3);
+    shell.canvas_checklist.view.as_mut().unwrap().snapshot =
+        Some(Arc::new((*request.snapshot).clone()));
+    assert!(begin_local_removal(&mut shell, &request).is_none());
+    shell.canvas_checklist.view.as_mut().unwrap().snapshot = Some(request.snapshot.clone());
+    let original_account = shell.core.active_account.clone();
+    shell.core.active_account = Some("00000000-0000-4000-8000-000000000996".into());
+    assert!(begin_local_removal(&mut shell, &request).is_none());
+    shell.core.active_account = original_account;
+    let pending = begin_local_removal(&mut shell, &request).unwrap();
+    assert!(finish_local_removal(&mut shell, &pending, false));
+    assert!(shell.canvas_checklist.recovery.error);
+    assert!(shell.canvas_checklist.recovery.receipt.as_ref() == Some(&request.receipt));
+    assert!(journal.get(&request.owner.scope).unwrap().as_ref() == Some(&request.receipt));
+    assert!(!journal.has_local_review(&request.receipt).unwrap());
+    assert!(shell.canvas_checklist.operations.is_empty());
+}
+
+#[test]
+fn split_local_archive_unlocks_only_after_exact_pair_commit_and_requires_refresh() {
+    let (mut shell, store) = restored_split();
+    let request = Request::capture(&shell).unwrap();
+    let mut journal = Journal::open(&store.0, &request.owner.account).unwrap();
+    let review = journal
+        .local_review(&request.receipt, &request.snapshot)
+        .unwrap();
+    let pending = begin_local_removal(&mut shell, &request).unwrap();
+    assert!(shell.canvas_checklist.recovery.receipt.is_some());
+    assert!(
+        journal
+            .remove_local_lock(
+                &review,
+                &request.snapshot,
+                LocalDecision::RemoveEditLockOutcomeUnknown,
+                123
+            )
+            .unwrap()
+    );
+    assert!(journal.has_local_review(&request.receipt).unwrap());
+    assert!(journal.get(&request.owner.scope).unwrap().is_none());
+    assert!(finish_local_removal(&mut shell, &pending, true));
+    assert!(shell.canvas_checklist.recovery.receipt.is_none());
+    assert!(shell.canvas_checklist.view.as_ref().unwrap().stale);
+    assert!(shell.canvas_checklist.operations.is_empty());
+}

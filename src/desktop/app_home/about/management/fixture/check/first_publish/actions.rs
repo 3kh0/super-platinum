@@ -4,8 +4,13 @@ pub(super) async fn open(
     state: Signal<ShellState>,
     desktop: &DesktopContext,
     visit: u64,
-) -> Result<(), String> {
-    click(desktop, "workflow-management-finish-up").await?;
+) -> Result<Value, String> {
+    let activation = if confirmation::share::drafts::requested() {
+        confirmation::share::drafts::open_finish(desktop).await?
+    } else {
+        click(desktop, "workflow-management-finish-up").await?;
+        Value::Null
+    };
     until(state, visit, "original Finish Up controls", |p, _| {
         p["confirmation"]["current"] == true
             && p["confirmation"]["local"]["valid"] == true
@@ -13,7 +18,7 @@ pub(super) async fn open(
     })
     .await?;
     native(desktop, "modal").await?;
-    Ok(())
+    Ok(activation)
 }
 pub(super) async fn details(
     state: Signal<ShellState>,

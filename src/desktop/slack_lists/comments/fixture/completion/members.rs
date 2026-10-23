@@ -12,6 +12,9 @@ pub(crate) const DELETED_BOT: &str = "ULISTMEM4";
 pub(crate) const LABEL: &str = "Alex Harbor";
 
 pub(crate) fn named() -> bool {
+    if super::title_users::named() || super::empty_canvas::named() {
+        return true;
+    }
     matches!(
         std::env::var("SUPER_PLATINUM_LIST_COMMENTS_COMPOSE_CASE").as_deref(),
         Ok("member-completion"

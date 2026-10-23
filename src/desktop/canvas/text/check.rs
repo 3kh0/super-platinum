@@ -1,8 +1,13 @@
 //! Disconnected native proof of draft preservation and one-attempt text saves.
+mod formatted_title;
 use crate::state::ShellState;
 use dioxus::prelude::*;
 use serde_json::{Value, json};
 pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::DesktopContext) {
+    if super::fixture::formatted_title::requested() {
+        formatted_title::start(state, desktop);
+        return;
+    }
     if std::env::var("SUPER_PLATINUM_CANVAS_TEXT_CHECK").as_deref() != Ok("1")
         || !super::fixture::requested()
     {

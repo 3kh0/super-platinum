@@ -1,0 +1,2263 @@
+{
+  "results": [
+    {
+      "input": [],
+      "channel": false,
+      "candidates": [],
+      "lookups": []
+    },
+    {
+      "input": [],
+      "channel": true,
+      "candidates": [],
+      "lookups": []
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex"
+        }
+      ],
+      "channel": false,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex"
+        }
+      ],
+      "channel": true,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex @Alex #general"
+        }
+      ],
+      "channel": false,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex @Alex #general\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        },
+        {
+          "type": "member",
+          "text": "@Alex @Alex #general\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 6,
+          "globalIndex": 6
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex @Alex #general"
+        }
+      ],
+      "channel": true,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex @Alex #general\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        },
+        {
+          "type": "member",
+          "text": "@Alex @Alex #general\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 6,
+          "globalIndex": 6
+        },
+        {
+          "type": "channel",
+          "text": "@Alex @Alex #general\n",
+          "matchLength": 8,
+          "label": "#general",
+          "labelWithoutPrefix": "general",
+          "localIndex": 12,
+          "globalIndex": 12
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        },
+        {
+          "kind": "channel",
+          "query": "general"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "before @Alex, after"
+        }
+      ],
+      "channel": false,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "before @Alex, after\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 7,
+          "globalIndex": 7
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "before @Alex, after"
+        }
+      ],
+      "channel": true,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "before @Alex, after\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 7,
+          "globalIndex": 7
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "(@Alex) [#general]"
+        }
+      ],
+      "channel": false,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "(@Alex) [#general]\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 1,
+          "globalIndex": 1
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "(@Alex) [#general]"
+        }
+      ],
+      "channel": true,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "(@Alex) [#general]\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 1,
+          "globalIndex": 1
+        },
+        {
+          "type": "channel",
+          "text": "(@Alex) [#general]\n",
+          "matchLength": 8,
+          "label": "#general",
+          "labelWithoutPrefix": "general",
+          "localIndex": 9,
+          "globalIndex": 9
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        },
+        {
+          "kind": "channel",
+          "query": "general"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "＠Alex ＃general"
+        }
+      ],
+      "channel": false,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "＠Alex ＃general\n",
+          "matchLength": 5,
+          "label": "＠Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "＠Alex ＃general"
+        }
+      ],
+      "channel": true,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "＠Alex ＃general\n",
+          "matchLength": 5,
+          "label": "＠Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        },
+        {
+          "type": "channel",
+          "text": "＠Alex ＃general\n",
+          "matchLength": 8,
+          "label": "＃general",
+          "labelWithoutPrefix": "general",
+          "localIndex": 6,
+          "globalIndex": 6
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        },
+        {
+          "kind": "channel",
+          "query": "general"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex.smith #general.team"
+        }
+      ],
+      "channel": false,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex.smith #general.team\n",
+          "matchLength": 11,
+          "label": "@Alex.smith",
+          "labelWithoutPrefix": "Alex.smith",
+          "localIndex": 0,
+          "globalIndex": 0
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex.smith"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex.smith #general.team"
+        }
+      ],
+      "channel": true,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex.smith #general.team\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        },
+        {
+          "type": "channel",
+          "text": "@Alex.smith #general.team\n",
+          "matchLength": 8,
+          "label": "#general",
+          "labelWithoutPrefix": "general",
+          "localIndex": 12,
+          "globalIndex": 12
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        },
+        {
+          "kind": "channel",
+          "query": "general"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@a_b #general_team"
+        }
+      ],
+      "channel": false,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@a_b #general_team\n",
+          "matchLength": 2,
+          "label": "@a",
+          "labelWithoutPrefix": "a",
+          "localIndex": 0,
+          "globalIndex": 0
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "a"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@a_b #general_team"
+        }
+      ],
+      "channel": true,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@a_b #general_team\n",
+          "matchLength": 4,
+          "label": "@a_b",
+          "labelWithoutPrefix": "a_b",
+          "localIndex": 0,
+          "globalIndex": 0
+        },
+        {
+          "type": "channel",
+          "text": "@a_b #general_team\n",
+          "matchLength": 13,
+          "label": "#general_team",
+          "labelWithoutPrefix": "general_team",
+          "localIndex": 5,
+          "globalIndex": 5
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "a_b"
+        },
+        {
+          "kind": "channel",
+          "query": "general_team"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex’s @Alex‘s @Alex…"
+        }
+      ],
+      "channel": false,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex’s @Alex‘s @Alex…\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        },
+        {
+          "type": "member",
+          "text": "@Alex’s @Alex‘s @Alex…\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 8,
+          "globalIndex": 8
+        },
+        {
+          "type": "member",
+          "text": "@Alex’s @Alex‘s @Alex…\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 16,
+          "globalIndex": 16
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex’s @Alex‘s @Alex…"
+        }
+      ],
+      "channel": true,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex’s @Alex‘s @Alex…\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        },
+        {
+          "type": "member",
+          "text": "@Alex’s @Alex‘s @Alex…\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 8,
+          "globalIndex": 8
+        },
+        {
+          "type": "member",
+          "text": "@Alex’s @Alex‘s @Alex…\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 16,
+          "globalIndex": 16
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "hello\n@Alex\n#general"
+        }
+      ],
+      "channel": false,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 6
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "hello\n@Alex\n#general"
+        }
+      ],
+      "channel": true,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 6
+        },
+        {
+          "type": "channel",
+          "text": "#general\n",
+          "matchLength": 8,
+          "label": "#general",
+          "labelWithoutPrefix": "general",
+          "localIndex": 0,
+          "globalIndex": 12
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        },
+        {
+          "kind": "channel",
+          "query": "general"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "😀 @Alex"
+        }
+      ],
+      "channel": false,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "😀 @Alex\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 3,
+          "globalIndex": 3
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "😀 @Alex"
+        }
+      ],
+      "channel": true,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "😀 @Alex\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 3,
+          "globalIndex": 3
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@😀"
+        }
+      ],
+      "channel": false,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@😀\n",
+          "matchLength": 3,
+          "label": "@😀",
+          "labelWithoutPrefix": "😀",
+          "localIndex": 0,
+          "globalIndex": 0
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "😀"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@😀"
+        }
+      ],
+      "channel": true,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@😀\n",
+          "matchLength": 3,
+          "label": "@😀",
+          "labelWithoutPrefix": "😀",
+          "localIndex": 0,
+          "globalIndex": 0
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "😀"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex#general"
+        }
+      ],
+      "channel": false,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex#general\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex#general"
+        }
+      ],
+      "channel": true,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex#general\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "a@Alex @ #"
+        }
+      ],
+      "channel": false,
+      "candidates": [],
+      "lookups": []
+    },
+    {
+      "input": [
+        {
+          "insert": "a@Alex @ #"
+        }
+      ],
+      "channel": true,
+      "candidates": [],
+      "lookups": []
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex\r\n#general"
+        }
+      ],
+      "channel": false,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex\r\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex\r\n#general"
+        }
+      ],
+      "channel": true,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex\r\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        },
+        {
+          "type": "channel",
+          "text": "#general\n",
+          "matchLength": 8,
+          "label": "#general",
+          "labelWithoutPrefix": "general",
+          "localIndex": 0,
+          "globalIndex": 7
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        },
+        {
+          "kind": "channel",
+          "query": "general"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": " @Alex #general"
+        }
+      ],
+      "channel": false,
+      "candidates": [
+        {
+          "type": "member",
+          "text": " @Alex #general\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 1,
+          "globalIndex": 1
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": " @Alex #general"
+        }
+      ],
+      "channel": true,
+      "candidates": [
+        {
+          "type": "member",
+          "text": " @Alex #general\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 1,
+          "globalIndex": 1
+        },
+        {
+          "type": "channel",
+          "text": " @Alex #general\n",
+          "matchLength": 8,
+          "label": "#general",
+          "labelWithoutPrefix": "general",
+          "localIndex": 7,
+          "globalIndex": 7
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        },
+        {
+          "kind": "channel",
+          "query": "general"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile: @Alex"
+        }
+      ],
+      "channel": false,
+      "candidates": [
+        {
+          "type": "member",
+          "text": ":smile: @Alex\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 8,
+          "globalIndex": 8
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile: @Alex"
+        }
+      ],
+      "channel": true,
+      "candidates": [
+        {
+          "type": "member",
+          "text": ":smile: @Alex\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 8,
+          "globalIndex": 8
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Al"
+        },
+        {
+          "insert": "ex"
+        }
+      ],
+      "channel": false,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Al"
+        },
+        {
+          "insert": "ex"
+        }
+      ],
+      "channel": true,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Al",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": "ex"
+        }
+      ],
+      "channel": false,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Al",
+          "matchLength": 3,
+          "label": "@Al",
+          "labelWithoutPrefix": "Al",
+          "localIndex": 0,
+          "globalIndex": 0
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Al"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Al",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": "ex"
+        }
+      ],
+      "channel": true,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Al",
+          "matchLength": 3,
+          "label": "@Al",
+          "labelWithoutPrefix": "Al",
+          "localIndex": 0,
+          "globalIndex": 0
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Al"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "opaque": {
+              "id": "x"
+            }
+          }
+        },
+        {
+          "insert": "@Alex"
+        }
+      ],
+      "channel": false,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 1
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "opaque": {
+              "id": "x"
+            }
+          }
+        },
+        {
+          "insert": "@Alex"
+        }
+      ],
+      "channel": true,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 1
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "channel": false,
+      "candidates": [],
+      "lookups": []
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "channel": true,
+      "candidates": [],
+      "lookups": []
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "code": false
+          }
+        }
+      ],
+      "channel": false,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex #general",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "code": false
+          }
+        }
+      ],
+      "channel": true,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex #general",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        },
+        {
+          "type": "channel",
+          "text": "@Alex #general",
+          "matchLength": 8,
+          "label": "#general",
+          "labelWithoutPrefix": "general",
+          "localIndex": 6,
+          "globalIndex": 6
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        },
+        {
+          "kind": "channel",
+          "query": "general"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "code": {}
+          }
+        }
+      ],
+      "channel": false,
+      "candidates": [],
+      "lookups": []
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "code": {}
+          }
+        }
+      ],
+      "channel": true,
+      "candidates": [],
+      "lookups": []
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "code": null
+          }
+        }
+      ],
+      "channel": false,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex #general",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "code": null
+          }
+        }
+      ],
+      "channel": true,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex #general",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        },
+        {
+          "type": "channel",
+          "text": "@Alex #general",
+          "matchLength": 8,
+          "label": "#general",
+          "labelWithoutPrefix": "general",
+          "localIndex": 6,
+          "globalIndex": 6
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        },
+        {
+          "kind": "channel",
+          "query": "general"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "link": true
+          }
+        }
+      ],
+      "channel": false,
+      "candidates": [],
+      "lookups": []
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "link": true
+          }
+        }
+      ],
+      "channel": true,
+      "candidates": [],
+      "lookups": []
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "link": false
+          }
+        }
+      ],
+      "channel": false,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex #general",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "link": false
+          }
+        }
+      ],
+      "channel": true,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex #general",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        },
+        {
+          "type": "channel",
+          "text": "@Alex #general",
+          "matchLength": 8,
+          "label": "#general",
+          "labelWithoutPrefix": "general",
+          "localIndex": 6,
+          "globalIndex": 6
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        },
+        {
+          "kind": "channel",
+          "query": "general"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "link": {}
+          }
+        }
+      ],
+      "channel": false,
+      "candidates": [],
+      "lookups": []
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "link": {}
+          }
+        }
+      ],
+      "channel": true,
+      "candidates": [],
+      "lookups": []
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "link": null
+          }
+        }
+      ],
+      "channel": false,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex #general",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "link": null
+          }
+        }
+      ],
+      "channel": true,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex #general",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        },
+        {
+          "type": "channel",
+          "text": "@Alex #general",
+          "matchLength": 8,
+          "label": "#general",
+          "labelWithoutPrefix": "general",
+          "localIndex": 6,
+          "globalIndex": 6
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        },
+        {
+          "kind": "channel",
+          "query": "general"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "slackmention": true
+          }
+        }
+      ],
+      "channel": false,
+      "candidates": [],
+      "lookups": []
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "slackmention": true
+          }
+        }
+      ],
+      "channel": true,
+      "candidates": [],
+      "lookups": []
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "slackmention": false
+          }
+        }
+      ],
+      "channel": false,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex #general",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "slackmention": false
+          }
+        }
+      ],
+      "channel": true,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex #general",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        },
+        {
+          "type": "channel",
+          "text": "@Alex #general",
+          "matchLength": 8,
+          "label": "#general",
+          "labelWithoutPrefix": "general",
+          "localIndex": 6,
+          "globalIndex": 6
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        },
+        {
+          "kind": "channel",
+          "query": "general"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "slackmention": {}
+          }
+        }
+      ],
+      "channel": false,
+      "candidates": [],
+      "lookups": []
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "slackmention": {}
+          }
+        }
+      ],
+      "channel": true,
+      "candidates": [],
+      "lookups": []
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "slackmention": null
+          }
+        }
+      ],
+      "channel": false,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex #general",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "slackmention": null
+          }
+        }
+      ],
+      "channel": true,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex #general",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        },
+        {
+          "type": "channel",
+          "text": "@Alex #general",
+          "matchLength": 8,
+          "label": "#general",
+          "labelWithoutPrefix": "general",
+          "localIndex": 6,
+          "globalIndex": 6
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        },
+        {
+          "kind": "channel",
+          "query": "general"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "slackslug": true
+          }
+        }
+      ],
+      "channel": false,
+      "candidates": [],
+      "lookups": []
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "slackslug": true
+          }
+        }
+      ],
+      "channel": true,
+      "candidates": [],
+      "lookups": []
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "slackslug": false
+          }
+        }
+      ],
+      "channel": false,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex #general",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "slackslug": false
+          }
+        }
+      ],
+      "channel": true,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex #general",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        },
+        {
+          "type": "channel",
+          "text": "@Alex #general",
+          "matchLength": 8,
+          "label": "#general",
+          "labelWithoutPrefix": "general",
+          "localIndex": 6,
+          "globalIndex": 6
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        },
+        {
+          "kind": "channel",
+          "query": "general"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "slackslug": {}
+          }
+        }
+      ],
+      "channel": false,
+      "candidates": [],
+      "lookups": []
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "slackslug": {}
+          }
+        }
+      ],
+      "channel": true,
+      "candidates": [],
+      "lookups": []
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "slackslug": null
+          }
+        }
+      ],
+      "channel": false,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex #general",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "slackslug": null
+          }
+        }
+      ],
+      "channel": true,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex #general",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        },
+        {
+          "type": "channel",
+          "text": "@Alex #general",
+          "matchLength": 8,
+          "label": "#general",
+          "labelWithoutPrefix": "general",
+          "localIndex": 6,
+          "globalIndex": 6
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        },
+        {
+          "kind": "channel",
+          "query": "general"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "slacksearchfilter": true
+          }
+        }
+      ],
+      "channel": false,
+      "candidates": [],
+      "lookups": []
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "slacksearchfilter": true
+          }
+        }
+      ],
+      "channel": true,
+      "candidates": [],
+      "lookups": []
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "slacksearchfilter": false
+          }
+        }
+      ],
+      "channel": false,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex #general",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "slacksearchfilter": false
+          }
+        }
+      ],
+      "channel": true,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex #general",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        },
+        {
+          "type": "channel",
+          "text": "@Alex #general",
+          "matchLength": 8,
+          "label": "#general",
+          "labelWithoutPrefix": "general",
+          "localIndex": 6,
+          "globalIndex": 6
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        },
+        {
+          "kind": "channel",
+          "query": "general"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "slacksearchfilter": {}
+          }
+        }
+      ],
+      "channel": false,
+      "candidates": [],
+      "lookups": []
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "slacksearchfilter": {}
+          }
+        }
+      ],
+      "channel": true,
+      "candidates": [],
+      "lookups": []
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "slacksearchfilter": null
+          }
+        }
+      ],
+      "channel": false,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex #general",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general",
+          "attributes": {
+            "slacksearchfilter": null
+          }
+        }
+      ],
+      "channel": true,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex #general",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        },
+        {
+          "type": "channel",
+          "text": "@Alex #general",
+          "matchLength": 8,
+          "label": "#general",
+          "labelWithoutPrefix": "general",
+          "localIndex": 6,
+          "globalIndex": 6
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        },
+        {
+          "kind": "channel",
+          "query": "general"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ],
+      "channel": false,
+      "candidates": [],
+      "lookups": []
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex #general"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ],
+      "channel": true,
+      "candidates": [],
+      "lookups": []
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex\n",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": "#general"
+        }
+      ],
+      "channel": false,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex\n",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": "#general"
+        }
+      ],
+      "channel": true,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex\n",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        },
+        {
+          "type": "channel",
+          "text": "#general\n",
+          "matchLength": 8,
+          "label": "#general",
+          "labelWithoutPrefix": "general",
+          "localIndex": 0,
+          "globalIndex": 6
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        },
+        {
+          "kind": "channel",
+          "query": "general"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": false
+          }
+        }
+      ],
+      "channel": false,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": false
+          }
+        }
+      ],
+      "channel": true,
+      "candidates": [
+        {
+          "type": "member",
+          "text": "@Alex",
+          "matchLength": 5,
+          "label": "@Alex",
+          "labelWithoutPrefix": "Alex",
+          "localIndex": 0,
+          "globalIndex": 0
+        }
+      ],
+      "lookups": [
+        {
+          "kind": "member",
+          "query": "Alex"
+        }
+      ]
+    }
+  ],
+  "modules": [
+    "+ris",
+    "4x3H",
+    "67Az",
+    "UbfT",
+    "bZFu",
+    "cHzv",
+    "e0ER",
+    "gYMY",
+    "gcvA",
+    "iL+W",
+    "iRqW",
+    "mM05",
+    "owfo",
+    "pH4l",
+    "sdnA",
+    "vmJG"
+  ]
+}

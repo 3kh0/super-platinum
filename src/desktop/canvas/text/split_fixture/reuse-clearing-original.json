@@ -1,0 +1,155 @@
+{
+  "status": "PINNED_SIX_ORIGINAL_SOURCE_SESSIONS",
+  "seeds": [
+    {
+      "cohort": "positive",
+      "shape": "ascii-space",
+      "rtml": "   ",
+      "id": "empty-final",
+      "canonicalSequence": 1000,
+      "position": "aag (independent host metadata)",
+      "baseSequence": 1000,
+      "lastSavedSequence": 1000,
+      "historyChanges": 1,
+      "baseHead": "abe702c79ccf2be8a2bfd3c02c1bbad8b83362ee65973d8311df53545a0c49e0",
+      "processedHeads": [
+        "abe702c79ccf2be8a2bfd3c02c1bbad8b83362ee65973d8311df53545a0c49e0"
+      ],
+      "sequenceHeads": [],
+      "path": "child-positive-ascii-space-38.bin",
+      "sha256": "cfe5ad924b7aeb6fec160a9ae2d4f9dc15f822b3c07929dff4af1cf04d5dc7e6",
+      "sessionBase64": "CgtlbXB0eS1maW5hbBDoBxjoByqwAYVvSoOTgy1aAKUBAQoBI0VniavN7wEjAavnAseczyvoor/TwCwbuti4M2LuZZc9gxHfU1RaDEngBgECAwITAiMGQAJWAgwBBAIEEQQTBxUQIQIjBTQCQgVWB1cGgAECfwB/AX8Gf4CAv9YGfwB/BwACBAAAAgQBAAMDAAACfgACAgF+B2RlbGV0ZWQEdGV4dAAEBgB+BnsEAQIEfgEEBAF+AQADFn82ICAg77u/BgAAMkBhYmU3MDJjNzljY2YyYmU4YTJiZmQzYzAyYzFiYmFkOGI4MzM2MmVlNjU5NzNkODMxMWRmNTM1NDVhMGM0OWUwQkBhYmU3MDJjNzljY2YyYmU4YTJiZmQzYzAyYzFiYmFkOGI4MzM2MmVlNjU5NzNkODMxMWRmNTM1NDVhMGM0OWUw",
+      "historySha256": "5ed16760964a0ed610f30391661f628efed57a4505136baa7c1d70d89a6b082c",
+      "sourceResult": "nonliteral-projection-result.json",
+      "vectorOrdinal": 0
+    },
+    {
+      "cohort": "positive",
+      "shape": "nbsp",
+      "rtml": "\u00a0",
+      "id": "empty-final",
+      "canonicalSequence": 1000,
+      "position": "aag (independent host metadata)",
+      "baseSequence": 1000,
+      "lastSavedSequence": 1000,
+      "historyChanges": 1,
+      "baseHead": "f94860c22c0023ce1a8047c3dac1fb8faa957d3a14d3829f2f63964c92a1cfa3",
+      "processedHeads": [
+        "f94860c22c0023ce1a8047c3dac1fb8faa957d3a14d3829f2f63964c92a1cfa3"
+      ],
+      "sequenceHeads": [],
+      "path": "child-positive-nbsp-38.bin",
+      "sha256": "42db77300c4fef8affc41add27a74bdecac44afc67006a28d3473f43ef15d157",
+      "sessionBase64": "CgtlbXB0eS1maW5hbBDoBxjoByqrAYVvSoMa78t5AKABAQoBI0VniavN7wEjAflIYMIsACPOGoBHw9rB+4+qlX06FNOCny9jlkySoc+jBgECAwITAiMGQAJWAgwBBAIEEQQTBRUQIQIjBTQCQgVWBVcFgAECfwB/AX8Ef4CAv9YGfwB/BwACAgAAAgIBAAN/AAACfgACfgdkZWxldGVkBHRleHQAAgQAfgR9AgECAn4BBAIBfAEAJjbCoO+7vwQAADJAZjk0ODYwYzIyYzAwMjNjZTFhODA0N2MzZGFjMWZiOGZhYTk1N2QzYTE0ZDM4MjlmMmY2Mzk2NGM5MmExY2ZhM0JAZjk0ODYwYzIyYzAwMjNjZTFhODA0N2MzZGFjMWZiOGZhYTk1N2QzYTE0ZDM4MjlmMmY2Mzk2NGM5MmExY2ZhMw==",
+      "historySha256": "37d83eb89469c1e054d2616475d81494f239c64005b2cf6f4cf9ac438e2fc444",
+      "sourceResult": "nonliteral-projection-result.json",
+      "vectorOrdinal": 2
+    },
+    {
+      "cohort": "positive",
+      "shape": "br",
+      "rtml": "<br>",
+      "id": "empty-final",
+      "canonicalSequence": 1000,
+      "position": "aag (independent host metadata)",
+      "baseSequence": 1000,
+      "lastSavedSequence": 1000,
+      "historyChanges": 1,
+      "baseHead": "0852430368421d115d4d3dcc6dea904adc1296360078ad8811fef8acaaf2692f",
+      "processedHeads": [
+        "0852430368421d115d4d3dcc6dea904adc1296360078ad8811fef8acaaf2692f"
+      ],
+      "sequenceHeads": [],
+      "path": "child-positive-br-38.bin",
+      "sha256": "8f3dfcc6a2aec26f656e9b1f1b35ad2be85f1d23736534c20243e0ede82102c1",
+      "sessionBase64": "CgtlbXB0eS1maW5hbBDoBxjoByqxAYVvSoMcGYjIAKYBAQoBI0VniavN7wEjAQhSQwNoQh0RXU09zG3qkErcEpY2AHitiBH++Kyq8mkvBgECAwITAiMGQAJWAgwBBAIEEQQTBxUQIQIjBTQCQgVWB1cHgAECfwB/AX8Hf4CAv9YGfwB/BwACBQAAAgUBAAMEAAACfgACAwF+B2RlbGV0ZWQEdGV4dAAFBwB+B3oFAQIFfgEEBQF+AQAEFn82PGJyPu+7vwcAADJAMDg1MjQzMDM2ODQyMWQxMTVkNGQzZGNjNmRlYTkwNGFkYzEyOTYzNjAwNzhhZDg4MTFmZWY4YWNhYWYyNjkyZkJAMDg1MjQzMDM2ODQyMWQxMTVkNGQzZGNjNmRlYTkwNGFkYzEyOTYzNjAwNzhhZDg4MTFmZWY4YWNhYWYyNjkyZg==",
+      "historySha256": "941571761bf763349bc0bb68d07df68b0e370404f1183e47c1a3162b785a43e7",
+      "sourceResult": "nonliteral-projection-result.json",
+      "vectorOrdinal": 4
+    },
+    {
+      "cohort": "zero",
+      "shape": "ascii-space",
+      "rtml": "   ",
+      "id": "empty-final",
+      "canonicalSequence": 1000,
+      "position": "aag (independent host metadata)",
+      "baseSequence": 0,
+      "lastSavedSequence": 1000,
+      "historyChanges": 2,
+      "baseHead": "3843ec896a6912a5e7f3c9965b1e2a083e45abb2b4249b5f131c38f286c7d4ee",
+      "processedHeads": [
+        "4c530c5f93e46df2d79a32a06e40f116c66226f96527729377d1b713ff88bff8"
+      ],
+      "sequenceHeads": [
+        {
+          "head": "4c530c5f93e46df2d79a32a06e40f116c66226f96527729377d1b713ff88bff8",
+          "sequence": 1000
+        }
+      ],
+      "path": "child-zero-ascii-space-38.bin",
+      "sha256": "cf1b04319785a4704cb17d1b3adcfb42bf4a596af1ac14a48697a48fcc65d8bd",
+      "sessionBase64": "CgtlbXB0eS1maW5hbBAAGOgHKrsBhW9Kg8dLL3cAsAEBCgEjRWeJq83vASMBTFMMX5PkbfLXmjKgbkDxFsZiJvllJ3KTd9G3E/+Iv/gHAQIDAhMCIwdAA0MCVgIMAQQCBBEGEwcVECECIwg0AkIFVgdXBoABAgIAAgECA36AgL/WBgB+AAF/AAIHAAIEAAACBAEAAwIAAAEAAnwABAF7fgdkZWxldGVkBHRleHQABAYAfQN+AwIBf3wCBH4BBAQBfgEAAxZ/NiAgIO+7vwYAATJANGM1MzBjNWY5M2U0NmRmMmQ3OWEzMmEwNmU0MGYxMTZjNjYyMjZmOTY1Mjc3MjkzNzdkMWI3MTNmZjg4YmZmOEJAMzg0M2VjODk2YTY5MTJhNWU3ZjNjOTk2NWIxZTJhMDgzZTQ1YWJiMmI0MjQ5YjVmMTMxYzM4ZjI4NmM3ZDRlZVpFCkA0YzUzMGM1ZjkzZTQ2ZGYyZDc5YTMyYTA2ZTQwZjExNmM2NjIyNmY5NjUyNzcyOTM3N2QxYjcxM2ZmODhiZmY4EOgH",
+      "historySha256": "3ba19cc662ddb13cc582e6aaa8fc33584b4e4ee42db7c6fd1333d2f6d7aaf8f2",
+      "sourceResult": "nonliteral-zero-result.json",
+      "vectorOrdinal": 0
+    },
+    {
+      "cohort": "zero",
+      "shape": "nbsp",
+      "rtml": "\u00a0",
+      "id": "empty-final",
+      "canonicalSequence": 1000,
+      "position": "aag (independent host metadata)",
+      "baseSequence": 0,
+      "lastSavedSequence": 1000,
+      "historyChanges": 2,
+      "baseHead": "3843ec896a6912a5e7f3c9965b1e2a083e45abb2b4249b5f131c38f286c7d4ee",
+      "processedHeads": [
+        "601f6761b572c365d3bcd465c2140e171acd661c8b5850a252c262b7fa822aff"
+      ],
+      "sequenceHeads": [
+        {
+          "head": "601f6761b572c365d3bcd465c2140e171acd661c8b5850a252c262b7fa822aff",
+          "sequence": 1000
+        }
+      ],
+      "path": "child-zero-nbsp-38.bin",
+      "sha256": "61c6d21c17bdedb155c07ce990dcabfbd4d9ba5cb08c1087b1da55d9b5c4bb62",
+      "sessionBase64": "CgtlbXB0eS1maW5hbBAAGOgHKqsBhW9Kg+IPaL8AoAEBCgEjRWeJq83vASMBYB9nYbVyw2XTvNRlwhQOFxrNZhyLWFCiUsJit/qCKv8HAQIDAhMDIwdAA0MCVgILAQQCBBMEFRAhAiMFNAJCBVYFVwWAAQICAAIBfgMBfoCAv9YGAH4AAX8AAgcAAgIAAAICAQACAgB+B2RlbGV0ZWQEdGV4dAACBAB8A34DfgICfgEEAgF8AQAmNsKg77u/BAABMkA2MDFmNjc2MWI1NzJjMzY1ZDNiY2Q0NjVjMjE0MGUxNzFhY2Q2NjFjOGI1ODUwYTI1MmMyNjJiN2ZhODIyYWZmQkAzODQzZWM4OTZhNjkxMmE1ZTdmM2M5OTY1YjFlMmEwODNlNDVhYmIyYjQyNDliNWYxMzFjMzhmMjg2YzdkNGVlWkUKQDYwMWY2NzYxYjU3MmMzNjVkM2JjZDQ2NWMyMTQwZTE3MWFjZDY2MWM4YjU4NTBhMjUyYzI2MmI3ZmE4MjJhZmYQ6Ac=",
+      "historySha256": "9bdac38144dd143ac4aa46a0516595a87201f2dcc139d51bc2ca8d4db16f225f",
+      "sourceResult": "nonliteral-zero-result.json",
+      "vectorOrdinal": 2
+    },
+    {
+      "cohort": "zero",
+      "shape": "br",
+      "rtml": "<br>",
+      "id": "empty-final",
+      "canonicalSequence": 1000,
+      "position": "aag (independent host metadata)",
+      "baseSequence": 0,
+      "lastSavedSequence": 1000,
+      "historyChanges": 2,
+      "baseHead": "3843ec896a6912a5e7f3c9965b1e2a083e45abb2b4249b5f131c38f286c7d4ee",
+      "processedHeads": [
+        "e22c4523a5e165eba9505ec50a092417af793529dbb671260cc62cfaccf18edf"
+      ],
+      "sequenceHeads": [
+        {
+          "head": "e22c4523a5e165eba9505ec50a092417af793529dbb671260cc62cfaccf18edf",
+          "sequence": 1000
+        }
+      ],
+      "path": "child-zero-br-38.bin",
+      "sha256": "9fc1612ce833d240625d61c2ea15e33831c01137852b6e7c9bd8f727edbed810",
+      "sessionBase64": "CgtlbXB0eS1maW5hbBAAGOgHKr8BhW9Kg0GsJGIAtAEBCgEjRWeJq83vASMB4ixFI6XhZeupUF7FCgkkF695NSnbtnEmDMYs+szxjt8HAQIDAhMDIwdAA0MCVgIMAQQCBBEGEwkVECECIwg0AkIFVgdXB4ABAgIAAgF+AwR+gIC/1gYAfgABfwACBwACBQAAAgUBAAMDAAABAAJ+AAQCAX96fgdkZWxldGVkBHRleHQABQcAfQN+AwMBf3sCBX4BBAUBfgEABBZ/Njxicj7vu78HAAEyQGUyMmM0NTIzYTVlMTY1ZWJhOTUwNWVjNTBhMDkyNDE3YWY3OTM1MjlkYmI2NzEyNjBjYzYyY2ZhY2NmMThlZGZCQDM4NDNlYzg5NmE2OTEyYTVlN2YzYzk5NjViMWUyYTA4M2U0NWFiYjJiNDI0OWI1ZjEzMWMzOGYyODZjN2Q0ZWVaRQpAZTIyYzQ1MjNhNWUxNjVlYmE5NTA1ZWM1MGEwOTI0MTdhZjc5MzUyOWRiYjY3MTI2MGNjNjJjZmFjY2YxOGVkZhDoBw==",
+      "historySha256": "bae9e9462c4dd070d706b1b3a6cccbb30b17b5e6133a3cbd5472dfc768a66eea",
+      "sourceResult": "nonliteral-zero-result.json",
+      "vectorOrdinal": 4
+    }
+  ],
+  "provenance": "Positive histories initialized original clean source; zero histories original empty bootstrap then exact original CONTENT listener updates to source RTML, followed by synthetic acknowledged canonical hydration (sectionID,lastSaved,processed,sequenceHeads). No base flipping.",
+  "fixtureBinding": "Original source id empty-final. Fixture may explicitly bind Session.section_id and canonical section identity to approved modern ID together, recording this independent fixture-only rebinding. Expiry4 is independent lease metadata and absent original source Session.toPb.",
+  "limits": "No actual server acknowledgement observed. Controlled canonical ACK does not prove incoming server behavior."
+}

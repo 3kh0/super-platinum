@@ -5,7 +5,10 @@ use serde_json::{Value, json};
 use std::sync::{Mutex, OnceLock};
 mod attribution;
 mod destination;
+mod emoji;
+pub(in crate::canvas) use emoji::snapshot as emoji_snapshot;
 pub(super) mod late_capture;
+pub(in crate::canvas) mod replacement;
 pub(in crate::canvas) use attribution::snapshot as attribution_snapshot;
 pub(in crate::canvas) use destination::DestinationWitness;
 pub(in crate::canvas) const ACCOUNT: &str = "147b5480-9f1a-4443-89da-836472cbb209";
@@ -97,6 +100,9 @@ fn eligible(shell: &ShellState) -> bool {
         && shell.canvas.as_ref().is_some_and(|c| c.id == "Ffixture")
 }
 pub(super) fn path(shell: &ShellState) -> Option<PathBuf> {
+    if super::super::emoji_fixture::requested() {
+        return super::super::emoji_fixture::reply_path(shell);
+    }
     if super::super::annotation::fixture::requested() {
         return super::super::annotation::fixture::path(shell);
     }
@@ -178,6 +184,11 @@ pub(super) async fn execute(
     binding: &Binding,
     intent: ReplyIntent,
 ) -> Result<ReplyAccepted, CanvasEditFailure> {
+    if super::super::emoji_fixture::requested() {
+        return Err(CanvasEditFailure::NotSent(Error::Offline(
+            "Emoji rendering fixture admits no comment writes".into(),
+        )));
+    }
     if super::super::fixture::attribution::requested() {
         return Err(CanvasEditFailure::NotSent(Error::Offline(
             "Attribution fixture admits no comment writes".into(),

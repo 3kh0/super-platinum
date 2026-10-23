@@ -1,0 +1,434 @@
+{
+  "scope": "Empty original source cohorts. retained-zero uses real generated empty base0 history, controlled canonical id binding and acknowledgement metadata; no live ACK.",
+  "seeds": [
+    {
+      "mode": "bootstrap",
+      "id": "paragraph",
+      "sequence": 1000,
+      "rtml": "",
+      "canonicalSession": null,
+      "initialized": {
+        "history": [
+          {
+            "ops": [
+              {
+                "action": "makeText",
+                "obj": "_root",
+                "key": "text",
+                "pred": []
+              },
+              {
+                "action": "set",
+                "obj": "1@0123456789ab00000000",
+                "elemId": "_head",
+                "insert": true,
+                "value": "﻿",
+                "pred": []
+              },
+              {
+                "action": "set",
+                "obj": "_root",
+                "key": "deleted",
+                "value": false,
+                "pred": []
+              }
+            ],
+            "actor": "0123456789ab00000000",
+            "hash": "a9afaa201b35d16c0f9a8b014581237742033ce5607fb6a149ab3815c6b685b3",
+            "seq": 1,
+            "startOp": 1,
+            "time": 1792000000,
+            "message": null,
+            "deps": [],
+            "text": "﻿"
+          }
+        ],
+        "session": "CglwYXJhZ3JhcGgQ6AcY6AcqnwGFb0qD0Oy/YgCUAQEKASNFZ4mrAAAAAAGpr6ogGzXRbA+aiwFFgSN3QgM85WB/tqFJqzgVxraFswYBAgMCEwIjBkACVgILAQQCBBMEFRAhAiMENAJCBFYEVwOAAQJ/AH8BfwN/gIC/1gZ/AH8HAAJ/AAACfwEAAn8AfgdkZWxldGVkBHRleHQAAQMAfQN+AQIBfQEEAX0BADbvu78DAAAyQGE5YWZhYTIwMWIzNWQxNmMwZjlhOGIwMTQ1ODEyMzc3NDIwMzNjZTU2MDdmYjZhMTQ5YWIzODE1YzZiNjg1YjNCQGE5YWZhYTIwMWIzNWQxNmMwZjlhOGIwMTQ1ODEyMzc3NDIwMzNjZTU2MDdmYjZhMTQ5YWIzODE1YzZiNjg1YjM=",
+        "queue": 0,
+        "heads": [
+          "a9afaa201b35d16c0f9a8b014581237742033ce5607fb6a149ab3815c6b685b3"
+        ],
+        "processed": [
+          "a9afaa201b35d16c0f9a8b014581237742033ce5607fb6a149ab3815c6b685b3"
+        ],
+        "saveHeads": []
+      }
+    },
+    {
+      "mode": "retained-positive",
+      "id": "paragraph",
+      "sequence": 1000,
+      "rtml": "",
+      "canonicalSession": "CglwYXJhZ3JhcGgQ6AcY6Acq1AGFb0qDnKNqaQDJAQEKq83vASNFAAAAAAGuLNuEi57FM2WCvTQ+F+ud/c3WTrzYEbPrZtubjxVBgwcBAgMCEwMjB0ADQwJWAg4BBAIEEQQTBxUQIQIjBTQCQgVWB1cTgAEGgQECgwEEAgACAX4TEH6AgL/WBgB+AAF/AAIHAAIRAAACEQEAAxAAAAJ+AAIPAX4HZGVsZXRlZAR0ZXh0ABETAH4TbhEBAhF+AQQRAX4BABAWfzZQcmV2aW91c2x5IHR5cGVk77u/AgAQAX8AEAB/FA8BATJAYWUyY2RiODQ4YjllYzUzMzY1ODJiZDM0M2UxN2ViOWRmZGNkZDY0ZWJjZDgxMWIzZWI2NmRiOWI4ZjE1NDE4M0JANTgxZWY1NGY0OTYzZGE3Y2FmYjNmNzZjMzgyZmY2YWU2ZjAyYzA3OTAyNGRmYWRjOWYwOGUwMjkxMjYxMDRlOVpFCkBhZTJjZGI4NDhiOWVjNTMzNjU4MmJkMzQzZTE3ZWI5ZGZkY2RkNjRlYmNkODExYjNlYjY2ZGI5YjhmMTU0MTgzEOgH",
+      "initialized": {
+        "history": [
+          {
+            "ops": [
+              {
+                "action": "makeText",
+                "obj": "_root",
+                "key": "text",
+                "pred": []
+              },
+              {
+                "action": "set",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "_head",
+                "insert": true,
+                "value": "P",
+                "pred": []
+              },
+              {
+                "action": "set",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "2@abcdef01234500000000",
+                "insert": true,
+                "value": "r",
+                "pred": []
+              },
+              {
+                "action": "set",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "3@abcdef01234500000000",
+                "insert": true,
+                "value": "e",
+                "pred": []
+              },
+              {
+                "action": "set",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "4@abcdef01234500000000",
+                "insert": true,
+                "value": "v",
+                "pred": []
+              },
+              {
+                "action": "set",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "5@abcdef01234500000000",
+                "insert": true,
+                "value": "i",
+                "pred": []
+              },
+              {
+                "action": "set",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "6@abcdef01234500000000",
+                "insert": true,
+                "value": "o",
+                "pred": []
+              },
+              {
+                "action": "set",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "7@abcdef01234500000000",
+                "insert": true,
+                "value": "u",
+                "pred": []
+              },
+              {
+                "action": "set",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "8@abcdef01234500000000",
+                "insert": true,
+                "value": "s",
+                "pred": []
+              },
+              {
+                "action": "set",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "9@abcdef01234500000000",
+                "insert": true,
+                "value": "l",
+                "pred": []
+              },
+              {
+                "action": "set",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "10@abcdef01234500000000",
+                "insert": true,
+                "value": "y",
+                "pred": []
+              },
+              {
+                "action": "set",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "11@abcdef01234500000000",
+                "insert": true,
+                "value": " ",
+                "pred": []
+              },
+              {
+                "action": "set",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "12@abcdef01234500000000",
+                "insert": true,
+                "value": "t",
+                "pred": []
+              },
+              {
+                "action": "set",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "13@abcdef01234500000000",
+                "insert": true,
+                "value": "y",
+                "pred": []
+              },
+              {
+                "action": "set",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "14@abcdef01234500000000",
+                "insert": true,
+                "value": "p",
+                "pred": []
+              },
+              {
+                "action": "set",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "15@abcdef01234500000000",
+                "insert": true,
+                "value": "e",
+                "pred": []
+              },
+              {
+                "action": "set",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "16@abcdef01234500000000",
+                "insert": true,
+                "value": "d",
+                "pred": []
+              },
+              {
+                "action": "set",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "17@abcdef01234500000000",
+                "insert": true,
+                "value": "﻿",
+                "pred": []
+              },
+              {
+                "action": "set",
+                "obj": "_root",
+                "key": "deleted",
+                "value": false,
+                "pred": []
+              }
+            ],
+            "actor": "abcdef01234500000000",
+            "hash": "581ef54f4963da7cafb3f76c382ff6ae6f02c079024dfadc9f08e029126104e9",
+            "seq": 1,
+            "startOp": 1,
+            "time": 1792000000,
+            "message": null,
+            "deps": [],
+            "text": "Previously typed﻿"
+          },
+          {
+            "ops": [
+              {
+                "action": "del",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "2@abcdef01234500000000",
+                "pred": [
+                  "2@abcdef01234500000000"
+                ]
+              },
+              {
+                "action": "del",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "3@abcdef01234500000000",
+                "pred": [
+                  "3@abcdef01234500000000"
+                ]
+              },
+              {
+                "action": "del",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "4@abcdef01234500000000",
+                "pred": [
+                  "4@abcdef01234500000000"
+                ]
+              },
+              {
+                "action": "del",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "5@abcdef01234500000000",
+                "pred": [
+                  "5@abcdef01234500000000"
+                ]
+              },
+              {
+                "action": "del",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "6@abcdef01234500000000",
+                "pred": [
+                  "6@abcdef01234500000000"
+                ]
+              },
+              {
+                "action": "del",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "7@abcdef01234500000000",
+                "pred": [
+                  "7@abcdef01234500000000"
+                ]
+              },
+              {
+                "action": "del",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "8@abcdef01234500000000",
+                "pred": [
+                  "8@abcdef01234500000000"
+                ]
+              },
+              {
+                "action": "del",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "9@abcdef01234500000000",
+                "pred": [
+                  "9@abcdef01234500000000"
+                ]
+              },
+              {
+                "action": "del",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "10@abcdef01234500000000",
+                "pred": [
+                  "10@abcdef01234500000000"
+                ]
+              },
+              {
+                "action": "del",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "11@abcdef01234500000000",
+                "pred": [
+                  "11@abcdef01234500000000"
+                ]
+              },
+              {
+                "action": "del",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "12@abcdef01234500000000",
+                "pred": [
+                  "12@abcdef01234500000000"
+                ]
+              },
+              {
+                "action": "del",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "13@abcdef01234500000000",
+                "pred": [
+                  "13@abcdef01234500000000"
+                ]
+              },
+              {
+                "action": "del",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "14@abcdef01234500000000",
+                "pred": [
+                  "14@abcdef01234500000000"
+                ]
+              },
+              {
+                "action": "del",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "15@abcdef01234500000000",
+                "pred": [
+                  "15@abcdef01234500000000"
+                ]
+              },
+              {
+                "action": "del",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "16@abcdef01234500000000",
+                "pred": [
+                  "16@abcdef01234500000000"
+                ]
+              },
+              {
+                "action": "del",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "17@abcdef01234500000000",
+                "pred": [
+                  "17@abcdef01234500000000"
+                ]
+              }
+            ],
+            "actor": "abcdef01234500000000",
+            "hash": "ae2cdb848b9ec5336582bd343e17eb9dfdcdd64ebcd811b3eb66db9b8f154183",
+            "seq": 2,
+            "startOp": 20,
+            "time": 1792000000,
+            "message": null,
+            "deps": [
+              "581ef54f4963da7cafb3f76c382ff6ae6f02c079024dfadc9f08e029126104e9"
+            ],
+            "text": "﻿"
+          }
+        ],
+        "session": "CglwYXJhZ3JhcGgQ6AcY6Acq1AGFb0qDnKNqaQDJAQEKq83vASNFAAAAAAGuLNuEi57FM2WCvTQ+F+ud/c3WTrzYEbPrZtubjxVBgwcBAgMCEwMjB0ADQwJWAg4BBAIEEQQTBxUQIQIjBTQCQgVWB1cTgAEGgQECgwEEAgACAX4TEH6AgL/WBgB+AAF/AAIHAAIRAAACEQEAAxAAAAJ+AAIPAX4HZGVsZXRlZAR0ZXh0ABETAH4TbhEBAhF+AQQRAX4BABAWfzZQcmV2aW91c2x5IHR5cGVk77u/AgAQAX8AEAB/FA8BATJAYWUyY2RiODQ4YjllYzUzMzY1ODJiZDM0M2UxN2ViOWRmZGNkZDY0ZWJjZDgxMWIzZWI2NmRiOWI4ZjE1NDE4M0JANTgxZWY1NGY0OTYzZGE3Y2FmYjNmNzZjMzgyZmY2YWU2ZjAyYzA3OTAyNGRmYWRjOWYwOGUwMjkxMjYxMDRlOVpFCkBhZTJjZGI4NDhiOWVjNTMzNjU4MmJkMzQzZTE3ZWI5ZGZkY2RkNjRlYmNkODExYjNlYjY2ZGI5YjhmMTU0MTgzEOgH",
+        "queue": 0,
+        "heads": [
+          "ae2cdb848b9ec5336582bd343e17eb9dfdcdd64ebcd811b3eb66db9b8f154183"
+        ],
+        "processed": [
+          "ae2cdb848b9ec5336582bd343e17eb9dfdcdd64ebcd811b3eb66db9b8f154183"
+        ],
+        "saveHeads": []
+      }
+    },
+    {
+      "mode": "retained-zero",
+      "id": "paragraph",
+      "sequence": 1000,
+      "rtml": "",
+      "canonicalSession": "CglwYXJhZ3JhcGgQABjoByqfAYVvSoPAbKuGAJQBAQqrze8BI0UAAAAAAZN+J6kYoZPsIv/npVU696+UHJlkSZxSRUhF9RjR8td8BgECAwITAiMGQAJWAgsBBAIEEwQVECECIwQ0AkIEVgRXA4ABAn8AfwF/A3+AgL/WBn8AfwcAAn8AAAJ/AQACfwB+B2RlbGV0ZWQEdGV4dAABAwB9A34BAgF9AQQBfQEANu+7vwMAADJAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y0JAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y1pFCkA5MzdlMjdhOTE4YTE5M2VjMjJmZmU3YTU1NTNhZjdhZjk0MWM5OTY0NDk5YzUyNDU0ODQ1ZjUxOGQxZjJkNzdjEOgH",
+      "initialized": {
+        "history": [
+          {
+            "ops": [
+              {
+                "action": "makeText",
+                "obj": "_root",
+                "key": "text",
+                "pred": []
+              },
+              {
+                "action": "set",
+                "obj": "1@abcdef01234500000000",
+                "elemId": "_head",
+                "insert": true,
+                "value": "﻿",
+                "pred": []
+              },
+              {
+                "action": "set",
+                "obj": "_root",
+                "key": "deleted",
+                "value": false,
+                "pred": []
+              }
+            ],
+            "actor": "abcdef01234500000000",
+            "hash": "937e27a918a193ec22ffe7a5553af7af941c9964499c52454845f518d1f2d77c",
+            "seq": 1,
+            "startOp": 1,
+            "time": 1792000000,
+            "message": null,
+            "deps": [],
+            "text": "﻿"
+          }
+        ],
+        "session": "CglwYXJhZ3JhcGgQABjoByqfAYVvSoPAbKuGAJQBAQqrze8BI0UAAAAAAZN+J6kYoZPsIv/npVU696+UHJlkSZxSRUhF9RjR8td8BgECAwITAiMGQAJWAgsBBAIEEwQVECECIwQ0AkIEVgRXA4ABAn8AfwF/A3+AgL/WBn8AfwcAAn8AAAJ/AQACfwB+B2RlbGV0ZWQEdGV4dAABAwB9A34BAgF9AQQBfQEANu+7vwMAADJAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y0JAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y1pFCkA5MzdlMjdhOTE4YTE5M2VjMjJmZmU3YTU1NTNhZjdhZjk0MWM5OTY0NDk5YzUyNDU0ODQ1ZjUxOGQxZjJkNzdjEOgH",
+        "queue": 0,
+        "heads": [
+          "937e27a918a193ec22ffe7a5553af7af941c9964499c52454845f518d1f2d77c"
+        ],
+        "processed": [
+          "937e27a918a193ec22ffe7a5553af7af941c9964499c52454845f518d1f2d77c"
+        ],
+        "saveHeads": []
+      }
+    }
+  ]
+}

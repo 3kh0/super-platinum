@@ -2,6 +2,7 @@
 use super::*;
 use crate::canvas::comments::editor_recovery_fixture as canvas_fixture;
 use crate::profile_edit::sections::fixture::member_recovery as fixture;
+use crate::slack_lists::comments::fixture::completion::title_users as list_title;
 use std::cell::Cell;
 use super_platinum_core::{
     block_actions::directory_endpoint::{DirectoryEndpoint, member_info::project_interaction},
@@ -282,6 +283,11 @@ async fn endpoint(
             fixture::discovery(state, ctx, &request).await
         } else if canvas_fixture::enabled(&state.peek()) {
             canvas_fixture::discovery(state, &request).await
+        } else if list_title::named() {
+            list_title::known_discovery(state, ctx, &request).await
+        } else if crate::slack_lists::comments::fixture::plain_members::named() {
+            crate::slack_lists::comments::fixture::plain_members::discovery(state, ctx, &request)
+                .await
         } else {
             return Err(Error::Offline("closed member fixture".into()).into());
         }
@@ -351,6 +357,13 @@ async fn pages(
                 fixture::member(state, ctx, &request).await
             } else if canvas_fixture::enabled(&state.peek()) {
                 canvas_fixture::member(state, &request).await
+            } else if list_title::named() {
+                list_title::known_member(state, ctx, &request, &read).await
+            } else if crate::slack_lists::comments::fixture::plain_members::named() {
+                crate::slack_lists::comments::fixture::plain_members::member(
+                    state, ctx, &request, &read,
+                )
+                .await
             } else {
                 Err(Error::Offline("closed member fixture".into()))
             }

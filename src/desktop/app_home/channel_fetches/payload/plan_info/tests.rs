@@ -1,6 +1,7 @@
 use super::*;
 use crate::app_home::channel_fetches::{fixture, initial, members};
 use serde_json::json;
+mod warm;
 
 fn prepared() -> (ShellState, Owner) {
     let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());

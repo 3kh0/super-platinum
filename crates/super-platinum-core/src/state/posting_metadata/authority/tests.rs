@@ -2,6 +2,7 @@ use super::*;
 use crate::{config::Session, slack::events::RtEvent, state::Workspace};
 use serde_json::json;
 mod groups;
+mod publication;
 
 fn core() -> CoreAppState {
     let credential = WorkspaceSession {

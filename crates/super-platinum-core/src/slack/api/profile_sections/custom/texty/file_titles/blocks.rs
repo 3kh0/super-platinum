@@ -5,23 +5,42 @@ use serde_json::Value;
 use std::sync::OnceLock;
 
 pub(super) fn label(items: &[Value], quip: QuipTitle<'_>) -> Result<String, Unavailable> {
-    if quip == QuipTitle::Unavailable {
-        return Err(Unavailable::UnsupportedTitle);
-    }
+    label_with_users(items, quip, &mut |_| Err(Unavailable::UnsupportedTitle))
+}
+pub(super) fn label_with_users(
+    items: &[Value],
+    quip: QuipTitle<'_>,
+    user: &mut impl FnMut(&str) -> Result<String, Unavailable>,
+) -> Result<String, Unavailable> {
+    label_with_context(items, quip, None, user)
+}
+pub(super) fn label_with_context(
+    items: &[Value],
+    quip: QuipTitle<'_>,
+    canvas_fallback: Option<&str>,
+    user: &mut impl FnMut(&str) -> Result<String, Unavailable>,
+) -> Result<String, Unavailable> {
+    let mut has_user = false;
     let mut blocks = Vec::with_capacity(items.len());
     for block in items {
         let mut sections = Vec::new();
         for section in elements(block, "rich_text")? {
             let mut text = String::new();
             for leaf in elements(section, "rich_text_section")? {
-                if leaf.get("type").and_then(Value::as_str) != Some("text") {
-                    return Err(Unavailable::UnsupportedTitle);
+                match leaf.get("type").and_then(Value::as_str) {
+                    Some("text") => text.push_str(
+                        leaf.get("text")
+                            .and_then(Value::as_str)
+                            .ok_or(Unavailable::UnsupportedTitle)?,
+                    ),
+                    Some("user") => {
+                        let id = super::users::id(leaf)?;
+                        text.push_str(&user(id)?);
+                        has_user = true;
+                    }
+                    Some("link") => text.push_str(super::link::text(leaf)?),
+                    _ => return Err(Unavailable::UnsupportedTitle),
                 }
-                text.push_str(
-                    leaf.get("text")
-                        .and_then(Value::as_str)
-                        .ok_or(Unavailable::UnsupportedTitle)?,
-                );
             }
             sections.push(text);
         }
@@ -33,14 +52,19 @@ pub(super) fn label(items: &[Value], quip: QuipTitle<'_>) -> Result<String, Unav
     }
     let extracted = blocks.join("\n\n");
     // laT0 consults localized Untitled before its nullish override selection.
-    // This bounded helper does not claim that independent localization input.
-    if extracted.is_empty() {
-        return Err(Unavailable::LocalizedFallback);
-    }
-    let selected = match quip {
-        QuipTitle::Nullish => &extracted,
-        QuipTitle::Text(value) => value,
-        QuipTitle::Unavailable => unreachable!(),
+    let extracted = if extracted.is_empty() {
+        canvas_fallback.ok_or(Unavailable::LocalizedFallback)?
+    } else {
+        &extracted
+    };
+    let selected = if has_user {
+        extracted
+    } else {
+        match quip {
+            QuipTitle::Nullish => extracted,
+            QuipTitle::Text(value) => value,
+            QuipTitle::Unavailable => return Err(Unavailable::UnsupportedTitle),
+        }
     };
     Ok(trim_emoji(selected))
 }

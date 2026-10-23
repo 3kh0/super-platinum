@@ -13,6 +13,7 @@ use super_platinum_core::{
 pub(in crate::canvas) mod annotation;
 pub(crate) mod attribution;
 pub(crate) mod check;
+pub(crate) mod emoji_fixture;
 pub(in crate::canvas) mod fixture;
 pub(crate) use fixture::attribution::install as fixture_install_attribution;
 pub(crate) use fixture::attribution::recovery as editor_recovery_fixture;
@@ -31,7 +32,7 @@ mod view;
 pub(super) use view::Panel;
 pub(in crate::canvas) use view::ProfileToken;
 pub(crate) use view::{clear_profile_hover_token, clear_profile_token, profile_hover_token};
-pub(crate) use view::{profile_active, profile_overlay};
+pub(crate) use view::{profile_active, profile_overlay, profile_visible};
 #[cfg(test)]
 mod tests;
 
@@ -85,6 +86,9 @@ pub(super) struct State {
     serial: u64,
     query: Option<Query>,
     rows: Vec<Row>,
+    // Original selected-map witness used for these cached body projections.
+    // Missing remains unobserved; this is never comment/reply authority.
+    emoji_standard: Option<crate::app_home::channel_fetches::EmojiStandard>,
     cursor: Option<String>,
     pages: pages::Pages,
     loading: bool,
@@ -104,6 +108,7 @@ pub(super) struct State {
 struct Row {
     message: Message,
     body: crate::model::MessageVm,
+    preview: Option<Message>,
     preview_body: Option<crate::model::MessageVm>,
 }
 #[derive(Clone)]
@@ -320,6 +325,8 @@ async fn fetch(state: Signal<ShellState>, mut model: Signal<State>, ticket: Tick
             }
             value.file = Some(file);
             value.rows.clear();
+            let standard =
+                crate::app_home::channel_fetches::emoji_standard(&shell, &ticket.owner.scope.team);
             if let Some((read, messages)) = files {
                 // Original JSON preserves absent fields. Publication is admitted
                 // only after the same page, selection and pagination checks.
@@ -331,21 +338,22 @@ async fn fetch(state: Signal<ShellState>, mut model: Signal<State>, ticket: Tick
                     value.root = Some(message.clone());
                 }
                 let row = Row {
-                    body: if message.subtype.as_deref() == Some("document_comment_root")
-                        && !message.files.is_empty()
-                    {
-                        projection::metadata_vm(workspace, &message, &shell.media)
-                    } else {
-                        projection::message_vm(workspace, &message, &shell.media)
-                    },
+                    body: projection::row_vm(
+                        workspace,
+                        &message,
+                        &shell.media,
+                        standard.as_ref().map(|observed| observed.standard()),
+                    ),
                     preview_body: preview.as_ref().map(|m| {
-                        crate::message_vm::message_vm_with_pending(
+                        crate::message_vm::message_vm_with_standard(
                             workspace,
                             m,
                             &shell.media,
                             false,
+                            standard.as_ref().map(|observed| observed.standard()),
                         )
                     }),
+                    preview,
                     message,
                 };
                 if let Some(index) = value
@@ -358,6 +366,7 @@ async fn fetch(state: Signal<ShellState>, mut model: Signal<State>, ticket: Tick
                     value.rows.push(row);
                 }
             }
+            value.emoji_standard = standard;
             value.cursor = cursor;
             value.loading = false;
             value.error = None;
@@ -489,4 +498,5 @@ pub(crate) fn install_fixture(shell: &mut ShellState) {
     reply::fixture::install(shell);
     annotation::fixture::install(shell);
     fixture::canonical_files::install(shell);
+    emoji_fixture::install(shell);
 }

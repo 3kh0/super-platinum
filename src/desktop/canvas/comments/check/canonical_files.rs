@@ -6,6 +6,7 @@ mod cold;
 mod custody;
 mod destinations;
 mod known;
+mod replacement;
 
 pub(super) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::DesktopContext) {
     if !data::requested() || std::env::var(data::FLAG).as_deref() != Ok("1") {
@@ -13,7 +14,9 @@ pub(super) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::Desktop
     }
     dioxus::core::spawn_forever(async move {
         let custody = data::custody();
-        let result = if data::known::requested() {
+        let result = if reply::fixture::replacement::requested() {
+            replacement::run(state, &desktop).await
+        } else if data::known::requested() {
             known::run(state, &desktop).await
         } else if data::cold::requested() {
             cold::run(state, &desktop).await
@@ -33,7 +36,13 @@ pub(super) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::Desktop
         let result = result.unwrap_or_else(
             |error| json!({"ok":false,"error":error,"proof":data::proof(&state.peek())}),
         );
-        let prefix = if data::known::requested() {
+        let prefix = if data::auto_refresh::requested() {
+            "canvas-auto-refresh"
+        } else if data::return_body::requested() {
+            "canvas-return-body"
+        } else if reply::fixture::replacement::requested() {
+            "canvas-replacement-custody"
+        } else if data::known::requested() {
             "canvas-known-file-freshness"
         } else if data::cold::requested() {
             "canvas-cold-file-roots"

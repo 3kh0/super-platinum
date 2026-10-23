@@ -73,7 +73,18 @@ pub(super) fn panel(state: Signal<ShellState>, browse: Signal<Browse>) -> Elemen
     };
     let retry = current && matches!(b.status, "idle" | "failed" | "partial");
     let status = if current { b.status } else { "retired" };
-    let probe = fixture::enabled(&s).then(|| b.snapshot(&s).to_string());
+    let probe = (fixture::enabled(&s) || crate::app_home::about::management::fixture::first_publish::confirmation::feature::enabled(&s)).then(|| b.snapshot(&s).to_string());
+    let feature_notice = s
+        .channel_workflows
+        .feature_notice
+        .as_ref()
+        .filter(|notice| {
+            s.core.active_account == notice.account
+                && s.core.account_epoch == notice.epoch
+                && s.core.active_team.as_ref() == Some(&notice.team)
+                && s.core.active_channel.as_ref() == Some(&notice.channel)
+        })
+        .map(|notice| notice.message);
     let owner = b.owner.as_ref().map(|o| o.id).unwrap_or(0);
     let featured = if ready {
         b.rows.as_ref().map(|r| r.featured()).unwrap_or_default()
@@ -96,6 +107,7 @@ pub(super) fn panel(state: Signal<ShellState>, browse: Signal<Browse>) -> Elemen
                     onclick:move |_|read::start(state,browse,false),"Refresh"}
             }
             if loading {p {id:"channel-workflows-loading",role:"status","Loading workflows\u{2026}"}}
+            if let Some(message)=feature_notice {p {id:"channel-workflows-feature-status",role:"status","{message}"}}
             if let Some(notice)=notice {
                 div {class:"channel-workflows-notice",role:"status",
                     p {"{notice}"}

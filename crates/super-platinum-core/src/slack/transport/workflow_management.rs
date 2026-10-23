@@ -4,8 +4,11 @@ mod collaborators;
 mod confirmation_add;
 mod copy_permission;
 mod delete;
+mod feature;
+mod posting_refresh;
 mod publish;
 mod run_permission;
+mod share;
 mod unpublish;
 
 impl Transport {

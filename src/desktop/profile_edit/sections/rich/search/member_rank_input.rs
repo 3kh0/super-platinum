@@ -11,8 +11,10 @@ use super_platinum_core::{
     composer_emoji::history::History,
     slack::api::custom::texty::ranking as rank,
 };
+mod save;
 #[cfg(test)]
 mod tests;
+pub(crate) use save::SaveMemberRank;
 
 #[derive(Clone)]
 pub(super) struct Input {

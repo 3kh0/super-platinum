@@ -52,6 +52,8 @@ fn retained_mixed_choice_is_unavailable_after_original_owner_retires() {
     let batch = MemberBatch {
         values: values.clone(),
         settled: true,
+        diagnostic: Arc::new(|_| Value::Null),
+        canvas_fallback: Arc::new(|_| json!({})),
         witness: Arc::new(|s| s.core.active_account.as_deref() == Some("original")),
     };
     assert_eq!(batch.choices(&shell), Some(values));

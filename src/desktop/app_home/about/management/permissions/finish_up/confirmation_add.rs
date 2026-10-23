@@ -2,6 +2,7 @@
 use super::*;
 use super_platinum_core::slack::PreparedRequest;
 mod channels;
+mod feature;
 mod native;
 mod run;
 mod view;
@@ -21,6 +22,7 @@ pub(super) struct State {
     operation: Option<run::Operation>,
     initial_checked: bool,
     initial_candidate: Option<Value>,
+    feature: feature::State,
 }
 impl State {
     pub(super) fn submitted(&self) -> bool {
@@ -39,17 +41,18 @@ impl State {
             operation: None,
             initial_checked: false,
             initial_candidate: None,
+            feature: feature::State::default(),
         }
     }
     fn expected(&self) -> Value {
-        json!({"epoch":self.epoch,"selected":self.selected,"rows":self.listing.as_ref().map(|l|l.rows().iter().map(|c|json!({"id":c.id(),"label":c.label()})).collect::<Vec<_>>()).unwrap_or_default()})
+        json!({"epoch":self.epoch,"selected":self.selected,"rows":self.listing.as_ref().map(|l|l.rows().iter().map(|c|json!({"id":c.id(),"label":c.label()})).collect::<Vec<_>>()).unwrap_or_default(),"feature":{"visible":self.feature.visible(),"checked":self.feature.checked}})
     }
     pub(super) fn snapshot(&self) -> Value {
         json!({"generation":self.generation,"epoch":self.epoch,"selected":self.selected,
             "status":if self.loading{"loading"}else if self.listing.is_some(){"ready"}else{"unavailable"},
             "notice":self.notice,"rows":self.listing.as_ref().map(|l|l.rows().iter().map(|c|json!({"id":c.id(),"label":c.label(),"raw":c.raw()})).collect::<Vec<_>>()).unwrap_or_default(),
             "incomplete":self.listing.as_ref().is_none_or(|l|l.incomplete()),"reads":self.reads,
-            "operation":self.operation.as_ref().map(run::Operation::snapshot),"initialCandidate":self.initial_candidate})
+            "operation":self.operation.as_ref().map(run::Operation::snapshot),"initialCandidate":self.initial_candidate,"feature":self.feature.snapshot()})
     }
 }
 
@@ -122,6 +125,9 @@ impl Query {
         let result = tokio::select! {
             result=async {
                 if fixture::first_publish::confirmation::requested() {
+                    if let Some(result) = fixture::first_publish::confirmation::feature::read(state,&request).await {
+                        return result;
+                    }
                     fixture::first_publish::confirmation::read(state,&request).await.unwrap_or_else(||Err(unavailable()))
                 } else if crate::fixture::is_fixture() {Err(unavailable())}
                 else {self.ctx().transport.execute(request).await}
@@ -230,7 +236,9 @@ fn bind_visible(state: Signal<ShellState>, visit: u64, id: u64) {
     if let Some(q) = Query::capture(&state.peek(), visit, id) {
         dioxus::core::spawn_forever(async move {
             if q.current(&state.peek()) {
-                native::bind(&q).await;
+                if native::bind(&q).await {
+                    feature::load(state, &q).await;
+                }
             }
         });
     }
@@ -260,6 +268,7 @@ fn refresh(mut state: Signal<ShellState>, visit: u64, id: u64) {
         v.loading = true;
         v.selected.clear();
         v.choice = None;
+        v.feature = feature::State::default();
         v.listing = None;
         v.notice = None;
         drop(s);
@@ -296,6 +305,7 @@ fn select(mut state: Signal<ShellState>, visit: u64, id: u64, value: String) {
             v.epoch = next();
             v.selected = value.clone();
             v.choice = None;
+            v.feature = feature::State::default();
             v.loading = !value.is_empty();
             v.notice = None;
         }

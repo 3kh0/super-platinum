@@ -25,7 +25,11 @@ def titlebar_point(observation):
 
 
 class WindowsPointerIO:
-    def __init__(self):
+    def __init__(self, *, caption_timeout_ms=250):
+        if type(caption_timeout_ms) is not int or not 1 <= caption_timeout_ms <= 2000:
+            raise ValueError("Caption response budget must be 1..2000 milliseconds")
+        self.caption_timeout_ms = caption_timeout_ms
+        self.caption_probes = []
         self.user, _ = _libraries()
         # Primary Win32 contracts: HTCAPTION=2 proves title bar, not a button.
         # https://learn.microsoft.com/windows/win32/inputdev/wm-nchittest
@@ -90,28 +94,67 @@ class WindowsPointerIO:
                 raise ctypes.WinError(ctypes.get_last_error())
 
     def caption(self, hwnd, point):
+        probe = {"timeout_ms": self.caption_timeout_ms, "hwnd": hwnd,
+                 "point": point, "flags": 0x22, "required_result": 2,
+                 "send_called": False, "return_value": None, "result": None,
+                 "last_error": None, "elapsed_seconds": None}
+        self.caption_probes.append(probe)
         with _physical_pixels(self.user):
-            if self.user.WindowFromPoint(W.POINT(*point)) != hwnd:
+            probe["window_from_point"] = self.user.WindowFromPoint(W.POINT(*point))
+            if probe["window_from_point"] != hwnd:
                 return False
             result = ctypes.c_size_t()
             packed = (point[0] & 0xffff) | ((point[1] & 0xffff) << 16)
             # ABORTIFHUNG | ERRORONEXIT; never broadcast or send input messages.
-            if not self.user.SendMessageTimeoutW(hwnd, 0x84, 0, packed, 0x22,
-                                                 250, ctypes.byref(result)):
+            # Microsoft documents zero + ERROR_SUCCESS as generic failure, not
+            # success or proof of a timeout. use_last_error swaps this cleared
+            # thread-local value around the actual Win32 call.
+            ctypes.set_last_error(0)
+            started = time.monotonic()
+            probe["send_called"] = True
+            returned = self.user.SendMessageTimeoutW(
+                hwnd, 0x84, 0, packed, 0x22, self.caption_timeout_ms,
+                ctypes.byref(result))
+            error = ctypes.get_last_error()
+            probe.update(return_value=returned, result=result.value,
+                         last_error=error, elapsed_seconds=time.monotonic() - started)
+            if not returned:
                 raise RuntimeError("Owned title bar hit test failed or timed out")
-            return result.value == 2
+            probe["window_from_point_after"] = self.user.WindowFromPoint(W.POINT(*point))
+            return result.value == 2 and probe["window_from_point_after"] == hwnd
 
 
 class FixturePointer:
-    def __init__(self, observe, verify_identity, io=None):
+    def __init__(self, observe, verify_identity, io=None, *, caption_timeout_ms=250):
         self.observe, self.verify_identity = observe, verify_identity
-        self.io = io or WindowsPointerIO()
+        self.io = io or WindowsPointerIO(caption_timeout_ms=caption_timeout_ms)
         self.original = self.placed = self.window = None
         self.data = {"enabled": True, "move_attempted": False, "move_observed": False,
                      "movement_observed": False, "restore_attempted": False,
                      "restore_observed": False, "checkpoints": [],
                      "continuous_input_monitoring": False,
                      "dom_tooltip_absence_asserted": False}
+        if hasattr(self.io, "caption_probes"):
+            self.data.update(caption_timeout_ms=self.io.caption_timeout_ms,
+                             caption_probes=self.io.caption_probes)
+
+    def _after_caption(self, window, position, stage, require_clear=False):
+        # A successful slow response is not authority for the state that exists
+        # now. Recheck the original process and sampled window/pointer without
+        # issuing another caption message or retrying any failed check.
+        self.verify_identity()
+        after = self.observe()
+        current = self.io.position()
+        self.data.setdefault("caption_revalidations", []).append(
+            {"stage": stage, "window": after, "position": current})
+        self.data["movement_observed"] |= current != position
+        if self.data["movement_observed"]:
+            raise RuntimeError("Pointer movement observed during caption response")
+        if (self.identity(after) != self.identity(window)
+                or after.get("foreground_owned") is not True):
+            raise RuntimeError("Owned foreground window changed during caption response")
+        if require_clear and after.get("taskbar_client_overlap") is not False:
+            raise RuntimeError("Taskbar overlap returned during caption response")
 
     @staticmethod
     def identity(window):
@@ -122,9 +165,10 @@ class FixturePointer:
         self.verify_identity()
         self.window = self.observe()
         point = titlebar_point(self.window)
+        self.original = self.io.position()
         if not self.io.caption(self.window["hwnd"], point):
             raise RuntimeError("Parking point is not the owned native title bar")
-        self.original = self.io.position()
+        self._after_caption(self.window, self.original, "park")
         self.data.update(original=self.original, requested=point, window=self.window)
         # Recheck foreground/geometry and retained process immediately before move.
         self.verify_identity()
@@ -191,11 +235,12 @@ class FixturePointer:
             raise RuntimeError("Owned foreground window changed while pointer parked")
         if not self.io.caption(window["hwnd"], self.placed):
             raise RuntimeError("Parked pointer no longer hits the owned native title bar")
+        self._after_caption(window, self.placed, stage, require_clear)
         if require_clear and window.get("taskbar_client_overlap") is not False:
             raise RuntimeError("Taskbar overlap returned before normalized capture completed")
         return window
 
-    def settle(self, native, fingerprint, timeout=5):
+    def settle(self, native, fingerprint, timeout=5, *, expected_profile_hover=None):
         started = time.monotonic()
         previous, consecutive = None, 0
         self.data["settlement"] = {"ok": False, "timeout_seconds": timeout}
@@ -205,14 +250,16 @@ class FixturePointer:
             window = self.check("settlement")
             current = fingerprint(state)
             eligible = (window.get("taskbar_client_overlap") is False
-                        and "profile_hover" in state and state["profile_hover"] is None)
+                        and "profile_hover" in state and state["profile_hover"] == expected_profile_hover)
             consecutive = (consecutive + 1 if current == previous else 1) if eligible else 0
             previous = current
             elapsed = time.monotonic() - started
             if consecutive >= 3 and elapsed >= .6:
                 self.data["settlement"].update(ok=True, elapsed_seconds=elapsed,
                     stable_samples=consecutive, taskbar_client_overlap=False,
-                    profile_hover_absent=True)
+                    profile_hover_absent=state["profile_hover"] is None,
+                    profile_hover_expected=expected_profile_hover,
+                    profile_hover_observed=state["profile_hover"])
                 return response
             time.sleep(min(.15, max(0, timeout - elapsed)))
         raise TimeoutError(f"Pointer/taskbar/profile-hover settlement was not observed within {timeout:g} seconds")

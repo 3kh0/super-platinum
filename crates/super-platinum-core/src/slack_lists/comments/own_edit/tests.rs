@@ -82,6 +82,49 @@ fn exact_http_rich_seed_and_context_append_once_are_inert() {
 }
 
 #[test]
+fn unchanged_rich_save_requires_exact_marks_opaque_fields_and_order() {
+    let s = seed();
+    let original = s.editable().to_vec();
+    assert!(s.unchanged(&original));
+    for (field, value) in [
+        ("text", json!("Changed")),
+        ("style", json!({"italic": true})),
+        ("opaque", json!(8)),
+    ] {
+        let mut edited = original.clone();
+        edited[0]["elements"][0]["elements"][0][field] = value;
+        assert!(!s.unchanged(&edited), "changed {field}");
+    }
+    let mut reordered = original.clone();
+    reordered[0]["elements"][0]["elements"]
+        .as_array_mut()
+        .unwrap()
+        .reverse();
+    assert!(!s.unchanged(&reordered));
+    assert!(s.unchanged(&original)); // An exact revert is unchanged.
+    assert!(!s.unchanged(&content::plain("Original")));
+    assert!(!s.unchanged(&[]));
+}
+
+#[test]
+fn unchanged_is_editable_only_and_never_repairs_an_invalid_original_receipt() {
+    let s = seed();
+    let mut with_context = s.editable().to_vec();
+    with_context.extend_from_slice(s.preserved());
+    assert!(!s.unchanged(&with_context));
+    // Message text is a fallback, not the rich editor equality witness.
+    assert_ne!(
+        s.original_raw()["text"],
+        json!(content::fallback(s.editable()).unwrap())
+    );
+    assert!(s.unchanged(s.editable()));
+    let mut raw = serde_json::to_value(&s).unwrap();
+    raw["preserved"][0]["opaque"] = json!("replaced");
+    let corrupt: OwnEditSeed = serde_json::from_value(raw).unwrap();
+    assert!(!corrupt.unchanged(corrupt.editable()));
+}
+
+#[test]
 fn original_http_required_after_socket_body_change_but_reactions_are_independent() {
     let mut p = page();
     let s = seed();

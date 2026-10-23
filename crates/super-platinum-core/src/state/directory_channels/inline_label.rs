@@ -6,6 +6,8 @@
 use chrono::{DateTime, Local, TimeZone};
 use serde_json::Value;
 
+#[cfg(any(test, feature = "protected-test-support"))]
+pub mod test_clock;
 #[cfg(test)]
 mod tests;
 mod time;

@@ -1,6 +1,7 @@
 pub(crate) mod broadcast;
 pub(crate) mod broadcast_check;
 use super_platinum_core::MediaAssetKind;
+use super_platinum_core::slack_lists::comments::edit_seed::prepare::StandardEmoji;
 
 use crate::blocks::{BlockCtx, block_nodes, custom_emoji_media, plain_inline_nodes};
 
@@ -45,6 +46,18 @@ pub(crate) fn message_vm_with_pending(
     message: &super_platinum_core::slack::models::Message,
     media: &MediaRegistry,
     pending: bool,
+) -> MessageVm {
+    message_vm_with_standard(workspace, message, media, pending, None)
+}
+
+/// Shared body projection with the caller's current original catalog observation.
+/// This function never acquires a catalog or changes its lifecycle.
+pub(crate) fn message_vm_with_standard(
+    workspace: &super_platinum_core::state::Workspace,
+    message: &super_platinum_core::slack::models::Message,
+    media: &MediaRegistry,
+    pending: bool,
+    standard: Option<&StandardEmoji>,
 ) -> MessageVm {
     let author = super_platinum_core::state::message_author_name(workspace, message);
     let initials = author
@@ -115,7 +128,7 @@ pub(crate) fn message_vm_with_pending(
         avatar_initials: initials,
         avatar,
         external_team,
-        body: message_body(workspace, message, media),
+        body: message_body(workspace, message, media, standard),
         edited: message.edited.is_some(),
         pinned_to: message
             .extra
@@ -322,8 +335,9 @@ fn message_body(
     workspace: &super_platinum_core::state::Workspace,
     message: &super_platinum_core::slack::models::Message,
     media: &MediaRegistry,
+    standard: Option<&StandardEmoji>,
 ) -> Vec<RichNode> {
-    let ctx = BlockCtx::new(workspace, media);
+    let ctx = BlockCtx::new(workspace, media).with_standard_emoji(standard);
     let mut nodes = message
         .blocks
         .iter()

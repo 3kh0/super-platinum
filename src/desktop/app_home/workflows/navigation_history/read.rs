@@ -8,11 +8,35 @@ pub(in crate::app_home) async fn capture_for(
     team: &str,
     current: impl Fn(&ShellState) -> bool,
 ) -> Result<(Value, Witness), Error> {
-    let shared = prepare(&mut state.write(), account, &current)?;
+    // The caller names its actual account, never a proposed storage namespace.
+    // Keep that account/currentness fence after every await as well as before
+    // resolving the strictly admitted closed-fixture namespace.
+    let original_current =
+        |s: &ShellState| s.core.active_account.as_deref() == Some(account) && current(s);
+    let (storage_owner, shared) = prepare_caller(&mut state.write(), account, &original_current)?;
     // The same gate also serializes any already captured A -> B -> A writer.
     // Caller cancellation leaves that original store's history/queue intact.
-    load_and_flush(account, &shared).await?;
-    finish(&state.peek(), account, team, &current, &shared)
+    load_and_flush(&storage_owner, &shared).await?;
+    finish(
+        &state.peek(),
+        &storage_owner,
+        team,
+        &original_current,
+        &shared,
+    )
+}
+
+fn prepare_caller(
+    shell: &mut ShellState,
+    account: &str,
+    current: &impl Fn(&ShellState) -> bool,
+) -> Result<(String, Arc<Mutex<Shared>>), Error> {
+    if shell.core.active_account.as_deref() != Some(account) || !current(shell) {
+        return Err(unavailable());
+    }
+    let storage_owner = identity(shell).ok_or_else(unavailable)?;
+    let shared = prepare(shell, &storage_owner, current)?;
+    Ok((storage_owner, shared))
 }
 
 fn prepare(
@@ -87,6 +111,26 @@ mod tests {
             .unwrap(),
         );
         shared
+    }
+    #[test]
+    fn original_uuid_caller_reuses_existing_namespace_and_writer() {
+        let mut shell = shell();
+        let original = seeded(&mut shell);
+        let (owner, shared) = prepare_caller(&mut shell, A, &|_| true).unwrap();
+        assert_eq!(owner, A);
+        assert!(Arc::ptr_eq(&original, &shared));
+        assert!(finish(&shell, &owner, "T00000001", &|_| true, &shared).is_ok());
+    }
+    #[test]
+    fn caller_cannot_propose_foreign_namespace_or_use_unadmitted_synthetic_account() {
+        let mut shell = shell();
+        assert!(prepare_caller(&mut shell, B, &|_| true).is_err());
+        assert!(prepare_caller(&mut shell, A, &|_| false).is_err());
+        assert!(shell.app_home.workflow_navigation.is_none());
+        shell.core.active_account = Some("synthetic-workflow-first-publish".into());
+        assert!(prepare_caller(&mut shell, "synthetic-workflow-first-publish", &|_| true).is_err());
+        assert!(prepare_caller(&mut shell, A, &|_| true).is_err());
+        assert!(shell.app_home.workflow_navigation.is_none());
     }
     #[test]
     fn two_readers_rejoin_the_exact_retained_store_without_new_writer_or_key() {

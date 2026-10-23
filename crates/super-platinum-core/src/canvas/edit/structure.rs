@@ -4,16 +4,25 @@ use super::text::{self, TextDraft};
 use super::{CanonicalTitle, CanvasCollabSnapshot, Error, F, RawMessage, Section};
 
 mod crdt;
+mod end;
 pub(super) use crdt::canonical_zero_base_history;
+pub use end::{AcceptedEnd, EndAppend, EndIntent, EndWitness, PreparedEndEdit};
 mod inventory;
 pub(super) mod position;
 mod prepared;
 pub mod recovery;
 mod replacement;
+mod split;
+mod start_typing;
 use inventory::Inventory;
 pub use prepared::{AcceptedStructure, PreparedStructureEdit};
 pub use replacement::{
     AcceptedReplacement, PreparedReplacement, ReplacementIntent, can_replace_main_canvas,
+};
+pub use split::{AcceptedSplit, PreparedSplitEdit, SplitIntent, SplitWitness};
+pub(super) use split::{same_split_lineage, split_child, split_parent_history};
+pub use start_typing::{
+    AcceptedStartTyping, PreparedStartTypingEdit, StartTypingIntent, StartTypingWitness,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq)]

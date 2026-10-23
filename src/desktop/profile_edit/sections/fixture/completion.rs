@@ -21,6 +21,7 @@ pub(crate) const SECOND_LABEL: &str = "project-cove";
 pub(crate) mod files;
 pub(crate) mod groups;
 pub(crate) mod members;
+pub(crate) mod title_users;
 
 type Reply = (Value, Option<Vec<String>>);
 
@@ -245,7 +246,7 @@ fn validate(
     let (expected, reply) = match method {
         "users.prefs.get" => (
             name_policy::request::user(client, owner),
-            json!({"ok":true,"prefs":{"frecency":"{}"}}),
+            title_users::prefs(),
         ),
         "experiments.getByUser" => (api::list_experiments(client, owner), files::assignments()),
         "client.gantryBoot" => (grid::discovery(client, owner), members::gantry(owner)),
@@ -310,9 +311,12 @@ fn validate(
 fn record(model: &Model, accepted: &Accepted) -> usize {
     let mut ledger = model.0.lock().unwrap();
     let serial = ledger.requests.len() + 1;
-    ledger
-        .requests
-        .push(json!({"serial":serial,"method":accepted.method,"args":accepted.args}));
+    let mut row = json!({"serial":serial,"method":accepted.method,"args":accepted.args});
+    if title_users::named() || super::empty_canvas::completion() || super::link_completion::named()
+    {
+        row["raw"] = accepted.reply.0.clone();
+    }
+    ledger.requests.push(row);
     serial
 }
 pub(crate) fn request(shell: &ShellState, request: &PreparedRequest) -> Result<Reply, Error> {

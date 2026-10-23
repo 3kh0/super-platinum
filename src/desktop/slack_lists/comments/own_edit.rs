@@ -5,19 +5,36 @@ use serde_json::json;
 use std::sync::Mutex;
 use super_platinum_core::{
     slack::models::Message,
-    slack_lists::comments::{OwnEditRecord, OwnEditSeed},
+    slack_lists::comments::{OwnEditRecord, OwnEditSeed, PlainDelta},
 };
+pub(crate) mod content;
+use content::Content;
 mod durable;
 mod native;
+mod plain;
+mod plain_observations;
+mod plain_save;
 mod publish;
 mod run;
 mod source;
 #[cfg(test)]
 mod tests;
+mod titles;
 pub(crate) use durable::persist_capture;
-pub(crate) use native::{install_native, native, native_done, retain_capture, retry_capture};
+pub(crate) use native::{
+    install_native, native, native_done, retain_capture, retain_content, retry_capture,
+};
 pub(crate) use run::{cancel, check_result, open, save};
 use source::Source;
+pub(crate) use titles::{labels as title_labels, prepare as retry_titles};
+
+pub(crate) fn editor_unavailable(mut state: Signal<ShellState>, binding: Binding) {
+    if let Some(s) = session_mut(&mut state.write(), &binding) {
+        s.native_ready = false;
+        s.capture_failed = true;
+        s.notice = Some("The original editor could not start or stopped. Both drafts are retained; retry capture before saving or leaving.".into());
+    }
+}
 
 #[derive(Clone, Default)]
 pub(crate) struct State {
@@ -41,6 +58,14 @@ impl Binding {
     pub(crate) fn generation(&self) -> u64 {
         self.token
     }
+    pub(crate) fn representation(&self, shell: &ShellState) -> Option<&'static str> {
+        let s = session(shell, self)?;
+        match (&s.plain, s.seed.plain_delta()) {
+            (Some(_), Some(_)) if s.blocks.is_empty() => Some("plain-delta"),
+            (None, None) => Some("rich-blocks"),
+            _ => None,
+        }
+    }
     pub(crate) fn owner_team(&self) -> &str {
         &self.source.owner.scope.team
     }
@@ -51,19 +76,27 @@ impl Binding {
         session(shell, self).is_some_and(|s| s.native.as_ref().is_some_and(|m| m.matches(self)))
     }
     pub(crate) fn current(&self, shell: &ShellState) -> bool {
-        self.visible_mount(shell) && self.source.current(shell)
+        self.visible_mount(shell)
+            && self.source.current(shell)
+            && session(shell, self)
+                .is_some_and(|s| s.plain_mount.as_ref().is_none_or(|m| m.current(shell)))
     }
 }
 #[derive(Clone)]
 struct Session {
+    titles: Option<titles::Job>,
     binding: Binding,
     seed: Arc<OwnEditSeed>,
     blocks: Vec<Value>,
+    // Plain operations never enter the rich-block projection or title pipeline.
+    plain: Option<PlainDelta>,
+    plain_mount: Option<plain::Mount>,
     revision: u64,
     native: Option<bridge::Mounted>,
     native_sequence: u64,
     native_ready: bool,
     composing: bool,
+    native_pending: bool,
     capture_failed: bool,
     busy: bool,
     finishing: bool,
@@ -72,6 +105,17 @@ struct Session {
     notice: Option<String>,
     suspension: Arc<Mutex<Option<draft::ReplySuspension>>>,
     attempt: Option<Arc<Mutex<Attempt>>>,
+}
+impl Session {
+    fn content(&self) -> Result<Content, Error> {
+        match (&self.plain, self.seed.plain_delta()) {
+            (Some(delta), Some(_)) if self.blocks.is_empty() => {
+                Ok(Content::PlainDelta(delta.clone()))
+            }
+            (None, None) => Ok(Content::RichBlocks(self.blocks.clone())),
+            _ => Err(unavailable()),
+        }
+    }
 }
 #[derive(Clone, Copy, PartialEq)]
 enum Phase {
@@ -110,8 +154,13 @@ struct Attempt {
 }
 #[derive(Clone)]
 pub(crate) struct Presentation {
+    pub mount_ready: bool,
+    pub title_loading: bool,
+    pub title_error: Option<String>,
+    pub can_retry_titles: bool,
     pub binding: Binding,
     pub blocks: String,
+    pub plain: Option<(Vec<Value>, delta_editor::Policy)>,
     pub revision: u64,
     pub busy: bool,
     pub finishing: bool,
@@ -151,6 +200,12 @@ fn is_attempt_buffer(s: &Session) -> bool {
         return false;
     };
     let a = a.lock().unwrap();
+    if let Some(delta) = &s.plain {
+        return a.record.plain_delta() == Some(delta);
+    }
+    if a.record.plain_delta().is_some() {
+        return false;
+    }
     let mut full = s.blocks.clone();
     full.extend_from_slice(s.seed.preserved());
     full == a.record.blocks()
@@ -232,10 +287,21 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<Presentation> {
             .as_ref()
             .and_then(|e| source::message(e, &s.binding.source.ts))
             .is_some_and(|m| s.seed.current(m));
-    let can_edit = native_ready && original_current && !s.composing && !s.finishing;
+    let can_edit =
+        native_ready && original_current && !s.composing && !s.native_pending && !s.finishing;
+    let (mount_ready, title_loading, title_error, can_retry_titles) = titles::readiness(shell, s);
     Some(Presentation {
+        mount_ready,
+        title_loading,
+        title_error,
+        can_retry_titles,
         binding: s.binding.clone(),
         blocks: serde_json::to_string(&s.blocks).unwrap_or_else(|_| "[]".into()),
+        plain: s
+            .plain
+            .as_ref()
+            .zip(s.plain_mount.as_ref())
+            .map(|(delta, mount)| (delta.ops().to_vec(), mount.policy.clone())),
         revision: s.revision,
         busy: s.busy,
         finishing: s.finishing,
@@ -245,7 +311,9 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<Presentation> {
             })
         }),
         can_save: can_edit && !s.busy && !unknown && !terminal && retry_at <= now(),
-        can_cancel: (native_ready || s.finishing) && !s.busy && !unknown,
+        can_cancel: (native_ready || s.finishing || titles::can_cancel_unmounted(shell, s))
+            && !s.busy
+            && !unknown,
         can_check: native_ready && unknown && !s.busy && retry_at <= now(),
         can_retry_capture: native::can_retry_capture(shell, &s.binding),
     })
@@ -372,7 +440,7 @@ pub(crate) fn snapshot(shell: &ShellState) -> Value {
     let state = &shell.slack_lists.comments.own_edit;
     json!({"opening":state.pending.is_some(),"events":state.events,"retired":state.retired.iter().map(|s|json!({"scope":s.binding.scope(),"ts":s.binding.source.ts,"blocks":s.blocks,"revision":s.revision})).collect::<Vec<_>>(),"active":state.active.as_ref().map(|s|json!({
         "scope":s.binding.scope(),"generation":s.binding.generation(),"ts":s.binding.source.ts,"current":s.binding.current(shell),
-        "blocks":s.blocks,"revision":s.revision,"busy":s.busy,"notice":s.notice,"composing":s.composing,"nativeReady":s.native_ready,"captureFailed":s.capture_failed,
-        "source":s.seed.original_raw(),"preserved":s.seed.preserved(),"attempt":s.attempt.as_ref().map(|a|a.lock().unwrap().id)})),
+        "blocks":s.blocks,"plainDelta":s.plain,"nativePending":s.native_pending,"revision":s.revision,"busy":s.busy,"notice":s.notice,"composing":s.composing,"nativeReady":s.native_ready,"captureFailed":s.capture_failed,
+        "source":s.seed.original_raw(),"preserved":s.seed.preserved(),"titleUsers":titles::snapshot(shell,s),"attempt":s.attempt.as_ref().map(|a|a.lock().unwrap().id)})),
         "attempts":state.attempts.iter().map(|a|{let a=a.lock().unwrap();json!({"id":a.id,"ts":a.record.ts(),"blocks":a.record.blocks(),"phase":a.phase.name(),"receipt":a.receipt,"retryAt":a.retry_at})}).collect::<Vec<_>>()})
 }

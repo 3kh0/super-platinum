@@ -20,6 +20,7 @@ pub struct TextIntent {
     section: Section,
     title: Arc<CanonicalTitle>,
     seed: TextDraft,
+    split_child: Option<Section>,
 }
 impl TextIntent {
     pub fn capture(
@@ -47,12 +48,13 @@ impl TextIntent {
             .map(|id| {
                 let title = shared.as_ref().map_err(|error| *error)?;
                 let section = lookup.get(id).copied().ok_or(Error::Changed)?;
-                eligible(snapshot, section, now_usec)?;
+                let split_child = eligible(snapshot, section, now_usec)?;
                 Ok(Self {
                     key: retained::Key::capture(snapshot, section)?,
                     section: section.clone(),
                     title: Arc::clone(title),
                     seed: canonical_draft(section)?,
+                    split_child,
                 })
             })
             .collect()
@@ -87,7 +89,9 @@ impl TextIntent {
         if self.key != retained::Key::capture(fresh, section)? || section != &self.section {
             return Err(Error::Changed);
         }
-        eligible(fresh, section, now)?;
+        if eligible(fresh, section, now)? != self.split_child {
+            return Err(Error::Changed);
+        }
         self.title.revalidate(fresh)?;
         let desired = TextDraft::from_rtml(&desired.rtml()?)?;
         if desired == self.seed {
@@ -144,6 +148,7 @@ impl TextIntent {
             sequence,
             data,
             expiry: plan.wire.uint(4)?,
+            split_child: self.split_child.clone(),
         };
         session.commit_text_plan(plan, &prepared, wire);
         session.local.insert(section.id().into(), local);
@@ -151,7 +156,11 @@ impl TextIntent {
     }
 }
 
-fn eligible(snapshot: &CanvasCollabSnapshot, section: &Section, now: u64) -> Result<(), Error> {
+fn eligible(
+    snapshot: &CanvasCollabSnapshot,
+    section: &Section,
+    now: u64,
+) -> Result<Option<Section>, Error> {
     if section.section_type()?.unwrap_or(0) != 0
         || section.style()?.unwrap_or(0) > 3
         || section.deleted()? == Some(true)
@@ -173,7 +182,7 @@ fn eligible(snapshot: &CanvasCollabSnapshot, section: &Section, now: u64) -> Res
     if let Some(wire) = section.crdt()? {
         crdt::validate(&wire, section, &draft, Some(now))?;
     }
-    Ok(())
+    super::structure::split_child(&snapshot.sections, section, now)
 }
 
 fn heading_level(section: &Section) -> Option<u8> {

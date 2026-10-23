@@ -279,6 +279,10 @@ pub(crate) fn connected(shell: &mut ShellState, team: &str, generation: u64) -> 
     if context.rt_generation != generation {
         return None;
     }
+    // The old selected map has already lost its original socket authority.
+    // Repaint cached bodies before any early return or replacement read, so a
+    // failed reconnect refresh cannot leave the retired artwork on screen.
+    shell.emoji_standard_changed(team);
     let key = context.key();
     let startup = shell
         .app_home

@@ -6,6 +6,8 @@ use crate::slack::{Error, PreparedRequest, SlackClient};
 use serde_json::{Value, json};
 
 pub mod details;
+pub mod feature;
+pub mod feature_permission;
 mod ordering;
 mod previews;
 pub use previews::{Preview, PreviewKind, Previews, Row, Rows};

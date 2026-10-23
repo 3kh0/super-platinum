@@ -14,6 +14,7 @@ struct Batch {
     group_policy: Arc<group_policy::Observation>,
     file_policy: Arc<file_policy::Observation>,
     files: Option<Arc<file_source::Snapshot>>,
+    title_users: Option<Arc<file_choice::users::Users>>,
     names: Arc<member_names::Observation>,
     preferences: Arc<ranking::Preferences>,
     renderer: Arc<member_render::Observed>,
@@ -29,6 +30,10 @@ impl Batch {
             && self.group_policy.current(shell, search)
             && self.file_policy.current(shell, search)
             && self.files.as_ref().is_none_or(|s| s.current(shell))
+            && self
+                .title_users
+                .as_ref()
+                .is_none_or(|users| users.current(shell))
             && self
                 .groups
                 .as_ref()
@@ -178,6 +183,10 @@ pub(crate) async fn run(
                 remote_ids.clone(),
             )
             .await?;
+            // Nested title recovery may have advanced this original acquisition
+            // through an accepted member election. Carry that exact lineage
+            // into the final group/file batch rather than the stale preimage.
+            let owned_source = interim.source.clone();
             publish(acquisition_state, search.clone(), interim, &on_results)?;
             let group_result = if group_policy.policy().enabled() {
                 group_read::remote(
@@ -199,7 +208,7 @@ pub(crate) async fn run(
             let batch = capture(
                 acquisition_state,
                 &search,
-                acquired.source,
+                owned_source,
                 group_source,
                 group_policy.clone(),
                 file_policy.clone(),
@@ -313,14 +322,6 @@ async fn capture(
     raw_query: &str,
     remote_ids: BTreeSet<String>,
 ) -> Result<Arc<Batch>, Error> {
-    let rows: Vec<_> = source.rows().iter().map(|r| r.source.clone()).collect();
-    let policy = Arc::new(member_policy::capture(state, search, &rows, preferences.clone()).await?);
-    let mut eligible = BTreeSet::new();
-    for row in &rows {
-        if policy.allows(row)? {
-            eligible.insert(row["id"].as_str().ok_or_else(unavailable)?.to_owned());
-        }
-    }
     let files = if file_policy.policy().enabled() {
         let snapshot = file_source::Snapshot::capture(&state.peek(), search.lease.team())?;
         if !snapshot.unavailable_ids().is_empty() {
@@ -330,6 +331,52 @@ async fn capture(
     } else {
         None
     };
+    capture_bound(
+        state,
+        search,
+        source,
+        groups,
+        group_policy,
+        file_policy,
+        names,
+        preferences,
+        raw_query,
+        remote_ids,
+        files,
+    )
+    .await
+}
+
+// Rebuilding after this query's member election retains the original file Arc;
+// it never recaptures a newer file source to rescue an obsolete candidate.
+async fn capture_bound(
+    state: Signal<ShellState>,
+    search: &Search,
+    source: Arc<intake::Snapshot>,
+    groups: Option<Arc<group_source::Snapshot>>,
+    group_policy: Arc<group_policy::Observation>,
+    file_policy: Arc<file_policy::Observation>,
+    names: Arc<member_names::Observation>,
+    preferences: Arc<ranking::Preferences>,
+    raw_query: &str,
+    remote_ids: BTreeSet<String>,
+    files: Option<Arc<file_source::Snapshot>>,
+) -> Result<Arc<Batch>, Error> {
+    if !search.current(&state.peek())
+        || !names.current(&state.peek(), search)
+        || !source.current(&state.peek())
+        || files.as_ref().is_some_and(|f| !f.current(&state.peek()))
+    {
+        return Err(unavailable());
+    }
+    let rows: Vec<_> = source.rows().iter().map(|r| r.source.clone()).collect();
+    let policy = Arc::new(member_policy::capture(state, search, &rows, preferences.clone()).await?);
+    let mut eligible = BTreeSet::new();
+    for row in &rows {
+        if policy.allows(row)? {
+            eligible.insert(row["id"].as_str().ok_or_else(unavailable)?.to_owned());
+        }
+    }
     let renderer = Arc::new(
         member_render::capture_with_files(
             state,
@@ -353,12 +400,53 @@ async fn capture(
         files.clone(),
     )
     .await?;
+    let title_users = if let Some(files) = &files {
+        let matched = file_matching::matches(
+            &renderer.query,
+            files.rows(),
+            renderer.query_has_link().map_err(|_| unavailable())?,
+            input.file_ignore_fuzzy()?,
+            |row| renderer.template_context(row),
+            |row| renderer.file_names(row),
+        )
+        .map_err(|_| unavailable())?;
+        let selected = matched
+            .iter()
+            .map(|row| row.id.to_owned())
+            .collect::<Vec<_>>();
+        let (next, users) =
+            file_choice::users::acquire(state, search, &names, files, source.clone(), &selected)
+                .await?;
+        if !Arc::ptr_eq(&next, &source) {
+            // Only the helper's accepted original election advances this source.
+            // Rebuild names/rank inputs under the same still-current query and
+            // immutable file/policy owners; no remote search is repeated.
+            return Box::pin(capture_bound(
+                state,
+                search,
+                next,
+                groups,
+                group_policy,
+                file_policy,
+                names,
+                preferences,
+                raw_query,
+                remote_ids,
+                Some(files.clone()),
+            ))
+            .await;
+        }
+        users
+    } else {
+        None
+    };
     let batch = Arc::new(Batch {
         source,
         groups,
         group_policy,
         file_policy,
         files,
+        title_users,
         names,
         preferences,
         renderer,
@@ -471,12 +559,13 @@ fn publish(
     let mut file_choices = BTreeMap::new();
     for id in &ids {
         if let query::MentionId::File(id) = id {
-            let choice = file_choice::capture(
+            let choice = file_choice::capture_with_users(
                 &state.peek(),
                 &search,
                 batch.names.clone(),
                 batch.files.clone().ok_or_else(unavailable)?,
                 id,
+                batch.title_users.clone(),
             )?;
             file_choices.insert(id.clone(), Arc::new(choice));
         }

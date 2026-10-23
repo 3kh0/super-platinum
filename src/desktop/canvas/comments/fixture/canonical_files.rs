@@ -1,10 +1,12 @@
 //! Named original embedded-file batches and fresh, disconnected file resolver.
 use super::*;
+pub(in crate::canvas) mod auto_refresh;
 mod callback;
 pub(in crate::canvas) mod cold;
 pub(in crate::canvas) mod destination_canvas;
 pub(in crate::canvas) mod known;
 pub(in crate::canvas) mod resolver;
+pub(in crate::canvas) mod return_body;
 pub(in crate::canvas) use callback::{invoke_original, remember_model, remember_token};
 pub(in crate::canvas) const FLAG: &str = "SUPER_PLATINUM_CANVAS_CANONICAL_FILE_CHECK";
 pub(in crate::canvas) const ROOT: &str = "1719800000.000100";

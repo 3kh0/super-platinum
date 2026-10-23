@@ -1,3 +1,4 @@
+pub(crate) mod clock;
 use crate::media::MediaUri;
 use dioxus::prelude::*;
 use serde_json::Value;
@@ -63,7 +64,7 @@ pub(crate) fn profile_hover_card(
     {
         return rsx! {};
     }
-    let Some(profile) = profile_display(snapshot, &hover.user_id) else {
+    let Some(profile) = profile_display(snapshot, &hover.user_id, "hover") else {
         return rsx! {};
     };
     let style = format!(
@@ -130,7 +131,7 @@ pub(crate) fn profile_hover_card(
                     }
                 }
                 if !profile.local_time.is_empty() {
-                    div { class: "profile-info-row",
+                    div { class: "profile-info-row profile-local-time",
                         {crate::icons::icon(crate::icons::Icon::Schedule, "profile-row-icon")}
                         span { "{profile.local_time}" }
                     }
@@ -171,7 +172,7 @@ pub(crate) fn profile_pane(mut state: Signal<ShellState>, snapshot: &ShellState)
     let Some(user_id) = snapshot.profile_user.as_deref() else {
         return rsx! {};
     };
-    let Some(profile) = profile_display(snapshot, user_id) else {
+    let Some(profile) = profile_display(snapshot, user_id, "pane") else {
         return rsx! {};
     };
     let loading = snapshot
@@ -263,7 +264,7 @@ pub(crate) fn profile_pane(mut state: Signal<ShellState>, snapshot: &ShellState)
                         }
                     }
                     if !profile.local_time.is_empty() {
-                        div { class: "profile-info-row",
+                        div { class: "profile-info-row profile-local-time",
                             {crate::icons::icon(crate::icons::Icon::Schedule, "profile-row-icon")}
                             span { "{profile.local_time}" }
                         }
@@ -424,7 +425,11 @@ pub(crate) fn schedule_profile_hover_close(mut state: Signal<ShellState>) {
     });
 }
 
-fn profile_display(snapshot: &ShellState, user_id: &str) -> Option<ProfileDisplay> {
+fn profile_display(
+    snapshot: &ShellState,
+    user_id: &str,
+    slot: &'static str,
+) -> Option<ProfileDisplay> {
     let team = snapshot.core.active_team.as_ref()?;
     let workspace = snapshot.core.workspaces.get(team)?;
     let user = workspace.users.get(user_id)?;
@@ -537,8 +542,7 @@ fn profile_display(snapshot: &ShellState, user_id: &str) -> Option<ProfileDispla
         status,
         status_glyph,
         status_image,
-        local_time: super_platinum_core::state::format_user_local_time(user.tz_offset)
-            .unwrap_or_default(),
+        local_time: clock::display(snapshot, user_id, slot),
         email: user_profile
             .and_then(|profile| profile.email.clone())
             .unwrap_or_default(),

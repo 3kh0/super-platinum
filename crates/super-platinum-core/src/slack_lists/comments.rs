@@ -9,8 +9,10 @@ use std::collections::HashSet;
 mod deletion;
 mod edits;
 pub use edits::{ReplyEdit, ReplyEditError};
+pub mod edit_seed;
 pub mod journal;
 mod live;
+pub mod ordered;
 mod own_delete;
 pub use own_delete::{
     OwnDeleteAccepted, OwnDeleteIntent, OwnDeletePermission, OwnDeletePermissionQuery,
@@ -19,7 +21,7 @@ pub use own_delete::{
 mod own_edit;
 pub use own_edit::{
     OwnEditAccepted, OwnEditAttempt, OwnEditIntent, OwnEditPhase, OwnEditPolicy, OwnEditRecord,
-    OwnEditSeed,
+    OwnEditSeed, PlainDelta,
 };
 pub mod projection;
 mod reaction_action;
@@ -234,6 +236,7 @@ impl ReplyQuery {
 pub struct Page {
     target: Target,
     raw: Value,
+    ordered: Option<std::sync::Arc<ordered::ResponseWitness>>,
     messages: Vec<Message>,
     root_index: Option<usize>,
     cursor: Option<String>,
@@ -328,11 +331,26 @@ impl Page {
         Ok(Self {
             target: resolved,
             raw,
+            ordered: None,
             messages,
             root_index,
             cursor,
             has_more,
         })
+    }
+    /// Attach provenance from the original replies bytes after ordinary target
+    /// validation. This receipt never supplies current typed-message authority.
+    pub fn parse_ordered(
+        target: &Target,
+        witness: ordered::ResponseWitness,
+    ) -> Result<Self, ListError> {
+        let mut page = Self::parse(target, witness.response().clone())?;
+        page.ordered = Some(std::sync::Arc::new(witness));
+        Ok(page)
+    }
+    /// Original HTTP order only; realtime and local reconciliation do not update it.
+    pub fn ordered_response(&self) -> Option<&ordered::ResponseWitness> {
+        self.ordered.as_deref()
     }
     pub fn target(&self) -> &Target {
         &self.target

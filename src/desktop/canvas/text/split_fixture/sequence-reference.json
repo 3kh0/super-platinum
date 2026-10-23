@@ -1,0 +1,782 @@
+[
+  {
+    "vector": 0,
+    "appendCount": 1,
+    "mode": "bootstrap",
+    "corpus": "ascii",
+    "layout": "no-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 1,
+    "appendCount": 1,
+    "mode": "bootstrap",
+    "corpus": "ascii",
+    "layout": "empty-final-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 2,
+    "appendCount": 1,
+    "mode": "bootstrap",
+    "corpus": "unicode",
+    "layout": "no-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 3,
+    "appendCount": 1,
+    "mode": "bootstrap",
+    "corpus": "unicode",
+    "layout": "empty-final-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 4,
+    "appendCount": 1,
+    "mode": "retained-positive",
+    "corpus": "ascii",
+    "layout": "no-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 5,
+    "appendCount": 1,
+    "mode": "retained-positive",
+    "corpus": "ascii",
+    "layout": "empty-final-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 6,
+    "appendCount": 1,
+    "mode": "retained-positive",
+    "corpus": "unicode",
+    "layout": "no-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 7,
+    "appendCount": 1,
+    "mode": "retained-positive",
+    "corpus": "unicode",
+    "layout": "empty-final-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 8,
+    "appendCount": 1,
+    "mode": "retained-zero",
+    "corpus": "ascii",
+    "layout": "no-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 9,
+    "appendCount": 1,
+    "mode": "retained-zero",
+    "corpus": "ascii",
+    "layout": "empty-final-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 10,
+    "appendCount": 1,
+    "mode": "retained-zero",
+    "corpus": "unicode",
+    "layout": "no-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 11,
+    "appendCount": 1,
+    "mode": "retained-zero",
+    "corpus": "unicode",
+    "layout": "empty-final-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 12,
+    "appendCount": 2,
+    "mode": "bootstrap",
+    "corpus": "ascii",
+    "layout": "no-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New paragraph"
+      ],
+      [
+        "Next paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 13,
+    "appendCount": 2,
+    "mode": "bootstrap",
+    "corpus": "ascii",
+    "layout": "empty-final-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New paragraph"
+      ],
+      [
+        "Next paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 14,
+    "appendCount": 2,
+    "mode": "bootstrap",
+    "corpus": "unicode",
+    "layout": "no-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 15,
+    "appendCount": 2,
+    "mode": "bootstrap",
+    "corpus": "unicode",
+    "layout": "empty-final-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 16,
+    "appendCount": 2,
+    "mode": "retained-positive",
+    "corpus": "ascii",
+    "layout": "no-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New paragraph"
+      ],
+      [
+        "Next paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 17,
+    "appendCount": 2,
+    "mode": "retained-positive",
+    "corpus": "ascii",
+    "layout": "empty-final-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New paragraph"
+      ],
+      [
+        "Next paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 18,
+    "appendCount": 2,
+    "mode": "retained-positive",
+    "corpus": "unicode",
+    "layout": "no-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 19,
+    "appendCount": 2,
+    "mode": "retained-positive",
+    "corpus": "unicode",
+    "layout": "empty-final-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 20,
+    "appendCount": 2,
+    "mode": "retained-zero",
+    "corpus": "ascii",
+    "layout": "no-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New paragraph"
+      ],
+      [
+        "Next paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 21,
+    "appendCount": 2,
+    "mode": "retained-zero",
+    "corpus": "ascii",
+    "layout": "empty-final-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New paragraph"
+      ],
+      [
+        "Next paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 22,
+    "appendCount": 2,
+    "mode": "retained-zero",
+    "corpus": "unicode",
+    "layout": "no-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 23,
+    "appendCount": 2,
+    "mode": "retained-zero",
+    "corpus": "unicode",
+    "layout": "empty-final-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 24,
+    "appendCount": 3,
+    "mode": "bootstrap",
+    "corpus": "ascii",
+    "layout": "no-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New paragraph"
+      ],
+      [
+        "Next paragraph"
+      ],
+      [
+        "Last paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 25,
+    "appendCount": 3,
+    "mode": "bootstrap",
+    "corpus": "ascii",
+    "layout": "empty-final-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New paragraph"
+      ],
+      [
+        "Next paragraph"
+      ],
+      [
+        "Last paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 26,
+    "appendCount": 3,
+    "mode": "bootstrap",
+    "corpus": "unicode",
+    "layout": "no-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 27,
+    "appendCount": 3,
+    "mode": "bootstrap",
+    "corpus": "unicode",
+    "layout": "empty-final-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 28,
+    "appendCount": 3,
+    "mode": "retained-positive",
+    "corpus": "ascii",
+    "layout": "no-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New paragraph"
+      ],
+      [
+        "Next paragraph"
+      ],
+      [
+        "Last paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 29,
+    "appendCount": 3,
+    "mode": "retained-positive",
+    "corpus": "ascii",
+    "layout": "empty-final-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New paragraph"
+      ],
+      [
+        "Next paragraph"
+      ],
+      [
+        "Last paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 30,
+    "appendCount": 3,
+    "mode": "retained-positive",
+    "corpus": "unicode",
+    "layout": "no-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 31,
+    "appendCount": 3,
+    "mode": "retained-positive",
+    "corpus": "unicode",
+    "layout": "empty-final-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 32,
+    "appendCount": 3,
+    "mode": "retained-zero",
+    "corpus": "ascii",
+    "layout": "no-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New paragraph"
+      ],
+      [
+        "Next paragraph"
+      ],
+      [
+        "Last paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 33,
+    "appendCount": 3,
+    "mode": "retained-zero",
+    "corpus": "ascii",
+    "layout": "empty-final-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New paragraph"
+      ],
+      [
+        "Next paragraph"
+      ],
+      [
+        "Last paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 34,
+    "appendCount": 3,
+    "mode": "retained-zero",
+    "corpus": "unicode",
+    "layout": "no-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 35,
+    "appendCount": 3,
+    "mode": "retained-zero",
+    "corpus": "unicode",
+    "layout": "empty-final-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 36,
+    "appendCount": 2,
+    "mode": "bootstrap",
+    "corpus": "ascii",
+    "layout": "no-following",
+    "cadence": "correction-before-enter",
+    "updates": [
+      [
+        "New",
+        "New draftx",
+        "New draft",
+        "New paragraph"
+      ],
+      [
+        "Next paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 37,
+    "appendCount": 2,
+    "mode": "retained-zero",
+    "corpus": "unicode",
+    "layout": "empty-final-following",
+    "cadence": "correction-before-enter",
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp;",
+        "New \u65e5\u672c\ud83d\ude00 &amp; draftx",
+        "New \u65e5\u672c\ud83d\ude00 &amp; draft",
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 38,
+    "appendCount": 2,
+    "mode": "bootstrap",
+    "corpus": "ascii",
+    "layout": "no-following",
+    "cadence": "erase-before-enter",
+    "updates": [
+      [
+        "New",
+        ""
+      ],
+      [
+        "Next paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 39,
+    "appendCount": 2,
+    "mode": "retained-zero",
+    "corpus": "unicode",
+    "layout": "empty-final-following",
+    "cadence": "erase-before-enter",
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp;",
+        ""
+      ],
+      [
+        "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 40,
+    "appendCount": 2,
+    "mode": "bootstrap",
+    "corpus": "ascii",
+    "layout": "no-following",
+    "cadence": "revert-before-enter",
+    "updates": [
+      [
+        "New",
+        "New draftx",
+        "New",
+        ""
+      ],
+      [
+        "Next paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 41,
+    "appendCount": 2,
+    "mode": "retained-zero",
+    "corpus": "unicode",
+    "layout": "empty-final-following",
+    "cadence": "revert-before-enter",
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp;",
+        "New \u65e5\u672c\ud83d\ude00 &amp; draftx",
+        "New \u65e5\u672c\ud83d\ude00 &amp;",
+        ""
+      ],
+      [
+        "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 42,
+    "appendCount": 1,
+    "mode": "retained-positive",
+    "corpus": "unicode",
+    "layout": "no-following",
+    "cadence": "trailing-empty",
+    "updates": [
+      []
+    ]
+  },
+  {
+    "vector": 43,
+    "appendCount": 1,
+    "mode": "retained-positive",
+    "corpus": "unicode",
+    "layout": "empty-final-following",
+    "cadence": "trailing-empty",
+    "updates": [
+      []
+    ]
+  },
+  {
+    "vector": 44,
+    "appendCount": 3,
+    "mode": "retained-positive",
+    "corpus": "unicode",
+    "layout": "no-following",
+    "cadence": "trailing-empty",
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      []
+    ]
+  },
+  {
+    "vector": 45,
+    "appendCount": 3,
+    "mode": "retained-positive",
+    "corpus": "unicode",
+    "layout": "empty-final-following",
+    "cadence": "trailing-empty",
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      []
+    ]
+  },
+  {
+    "vector": 46,
+    "appendCount": 3,
+    "mode": "retained-positive",
+    "corpus": "unicode",
+    "layout": "text-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ]
+    ]
+  },
+  {
+    "vector": 47,
+    "appendCount": 3,
+    "mode": "bootstrap",
+    "corpus": "unicode",
+    "layout": "empty-nonfinal-following",
+    "cadence": "straight",
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ]
+    ]
+  }
+]

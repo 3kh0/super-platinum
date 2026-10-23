@@ -77,7 +77,7 @@ impl EditSession {
         } else if let Some(entry) = retained {
             // Omitted-38 association is not established for the newly admitted
             // modern/base0 cohort. Never replace its known history by bootstrap.
-            if entry.wire.uint(2)? == Some(0) {
+            if entry.wire.uint(2)? == Some(0) || entry.wire.has(10) {
                 return Err(Error::Unsupported);
             }
             if entry.usable

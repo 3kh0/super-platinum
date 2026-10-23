@@ -13,6 +13,7 @@ use super_platinum_core::{
 };
 
 pub(crate) mod check;
+mod display_demand;
 mod fresh_original;
 pub(crate) use fresh_original::FreshOriginal;
 mod uri;
@@ -181,6 +182,9 @@ struct MediaSource {
     /// photo behind a thumbnail — exist as assets so the viewer can open them,
     /// but nothing downloads them until somebody asks.
     deferred: bool,
+    /// A finite emoji catalog can register appearances without prefetching all
+    /// of them. Only an actual protocol GET promotes these sources once.
+    demand_on_display: bool,
     /// Stable identity for the on-disk cache; see `MediaStore`. Only set for the
     /// small, endlessly reused images (avatars, emoji) worth persisting.
     slot: Option<String>,
@@ -515,6 +519,7 @@ impl MediaRegistry {
                     mime,
                     authenticated,
                     deferred,
+                    demand_on_display: false,
                     slot,
                 },
             );
@@ -796,6 +801,7 @@ impl MediaRegistry {
                 "no-store",
             );
         };
+        self.request_on_display(&id);
         let asset = {
             let mut assets = self.assets.lock().expect("media registry poisoned");
             let asset = assets.get(&id).cloned();
@@ -908,7 +914,10 @@ pub fn desktop_config(media: MediaRegistry) -> Config {
     let initial_size = if protected_narrow
         || matches!(
             std::env::var("SUPER_PLATINUM_FIXTURE").as_deref(),
-            Ok("completion-directory-2000-narrow"
+            Ok("profile-pane-narrow"
+                | "profile-pane-min-width-narrow"
+                | "profile-hover-card-narrow"
+                | "completion-directory-2000-narrow"
                 | "completion-directory-10000-narrow"
                 | "completion-directory-64000-narrow"
                 | "pdf-preview-narrow"
@@ -939,6 +948,7 @@ pub fn desktop_config(media: MediaRegistry) -> Config {
                 | "canvas-narrow"
                 | "canvas-checklist-narrow"
                 | "canvas-comments-narrow"
+                | "canvas-comment-emoji-narrow"
                 | "canvas-special-roots-narrow"
                 | "canvas-file-fallback-narrow"
                 | "canvas-canonical-file-roots-narrow"
@@ -1012,6 +1022,7 @@ pub fn desktop_config(media: MediaRegistry) -> Config {
                 | "block-control-values-narrow"
                 | "button-metadata-narrow"
                 | "slack-list-narrow"
+                | "channel-thread-emoji-narrow"
                 | "slack-list-board-add-narrow"
                 | "slack-list-board-heading-narrow"
                 | "slack-list-board-heading-checked-narrow"

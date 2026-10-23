@@ -2,9 +2,11 @@
 use super::super::channel as endpoint;
 use super::*;
 mod composition;
+mod grace_clock;
 mod loading;
 mod shared_frozen;
 mod special;
+mod warm;
 const KNOWN_BUTTON: &str = "workflow-activity-channel-trigger-1";
 const MISSING_BUTTON: &str = "workflow-activity-channel-step-0-1";
 const REFUSAL: &str =
@@ -75,6 +77,9 @@ async fn stage(
     captures: &mut serde_json::Map<String, Value>,
 ) -> Result<(), String> {
     let mut proof = json!({"channel":endpoint::snapshot(&state.peek()),"exercise":exercise});
+    if endpoint::warm::requested() {
+        proof["planInfoWarm"] = endpoint::warm::snapshot(&state.peek());
+    }
     if matches!(
         label,
         "detail" | "filter-refused" | "search-refused" | "malformed" | "offline" | "held"
@@ -342,6 +347,12 @@ pub(super) async fn run(
         &mut captures,
     )
     .await?;
+    if endpoint::grace_clock::requested() {
+        return grace_clock::finish(state, desktop, name, readiness, stages, captures).await;
+    }
+    if endpoint::warm::requested() {
+        return warm::finish(state, desktop, name, readiness, stages, captures).await;
+    }
     for kind in ["filter-refused", "search-refused", "composition-refused"] {
         let proof = refused(state, desktop, kind).await?;
         stage(

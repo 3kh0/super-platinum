@@ -1,0 +1,279 @@
+/*!
+ * Quill Editor v1.3.7
+ * https://quilljs.com/
+ * Copyright (c) 2014, Jason Chen
+ * Copyright (c) 2013, salesforce.com
+ */
+.list-comment-delta .ql-container {
+  box-sizing: border-box;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  height: 100%;
+  margin: 0px;
+  position: relative;
+}.list-comment-delta .ql-container.ql-disabled .ql-tooltip {
+  visibility: hidden;
+}.list-comment-delta .ql-container.ql-disabled .ql-editor ul[data-checked] > li::before {
+  pointer-events: none;
+}.list-comment-delta .ql-clipboard {
+  left: -100000px;
+  height: 1px;
+  overflow-y: hidden;
+  position: absolute;
+  top: 50%;
+}.list-comment-delta .ql-clipboard p {
+  margin: 0;
+  padding: 0;
+}.list-comment-delta .ql-editor {
+  box-sizing: border-box;
+  line-height: 1.42;
+  height: 100%;
+  outline: none;
+  overflow-y: auto;
+  padding: 12px 15px;
+  tab-size: 4;
+  -moz-tab-size: 4;
+  text-align: left;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}.list-comment-delta .ql-editor > * {
+  cursor: text;
+}.list-comment-delta .ql-editor p,.list-comment-delta .ql-editor ol,.list-comment-delta .ql-editor ul,.list-comment-delta .ql-editor pre,.list-comment-delta .ql-editor blockquote,.list-comment-delta .ql-editor h1,.list-comment-delta .ql-editor h2,.list-comment-delta .ql-editor h3,.list-comment-delta .ql-editor h4,.list-comment-delta .ql-editor h5,.list-comment-delta .ql-editor h6 {
+  margin: 0;
+  padding: 0;
+  counter-reset: list-1 list-2 list-3 list-4 list-5 list-6 list-7 list-8 list-9;
+}.list-comment-delta .ql-editor ol,.list-comment-delta .ql-editor ul {
+  padding-left: 1.5em;
+}.list-comment-delta .ql-editor ol > li,.list-comment-delta .ql-editor ul > li {
+  list-style-type: none;
+}.list-comment-delta .ql-editor ul > li::before {
+  content: '\2022';
+}.list-comment-delta .ql-editor ul[data-checked=true],.list-comment-delta .ql-editor ul[data-checked=false] {
+  pointer-events: none;
+}.list-comment-delta .ql-editor ul[data-checked=true] > li *,.list-comment-delta .ql-editor ul[data-checked=false] > li * {
+  pointer-events: all;
+}.list-comment-delta .ql-editor ul[data-checked=true] > li::before,.list-comment-delta .ql-editor ul[data-checked=false] > li::before {
+  color: #777;
+  cursor: pointer;
+  pointer-events: all;
+}.list-comment-delta .ql-editor ul[data-checked=true] > li::before {
+  content: '\2611';
+}.list-comment-delta .ql-editor ul[data-checked=false] > li::before {
+  content: '\2610';
+}.list-comment-delta .ql-editor li::before {
+  display: inline-block;
+  white-space: nowrap;
+  width: 1.2em;
+}.list-comment-delta .ql-editor li:not(.ql-direction-rtl)::before {
+  margin-left: -1.5em;
+  margin-right: 0.3em;
+  text-align: right;
+}.list-comment-delta .ql-editor li.ql-direction-rtl::before {
+  margin-left: 0.3em;
+  margin-right: -1.5em;
+}.list-comment-delta .ql-editor ol li:not(.ql-direction-rtl),.list-comment-delta .ql-editor ul li:not(.ql-direction-rtl) {
+  padding-left: 1.5em;
+}.list-comment-delta .ql-editor ol li.ql-direction-rtl,.list-comment-delta .ql-editor ul li.ql-direction-rtl {
+  padding-right: 1.5em;
+}.list-comment-delta .ql-editor ol li {
+  counter-reset: list-1 list-2 list-3 list-4 list-5 list-6 list-7 list-8 list-9;
+  counter-increment: list-0;
+}.list-comment-delta .ql-editor ol li:before {
+  content: counter(list-0, decimal) '. ';
+}.list-comment-delta .ql-editor ol li.ql-indent-1 {
+  counter-increment: list-1;
+}.list-comment-delta .ql-editor ol li.ql-indent-1:before {
+  content: counter(list-1, lower-alpha) '. ';
+}.list-comment-delta .ql-editor ol li.ql-indent-1 {
+  counter-reset: list-2 list-3 list-4 list-5 list-6 list-7 list-8 list-9;
+}.list-comment-delta .ql-editor ol li.ql-indent-2 {
+  counter-increment: list-2;
+}.list-comment-delta .ql-editor ol li.ql-indent-2:before {
+  content: counter(list-2, lower-roman) '. ';
+}.list-comment-delta .ql-editor ol li.ql-indent-2 {
+  counter-reset: list-3 list-4 list-5 list-6 list-7 list-8 list-9;
+}.list-comment-delta .ql-editor ol li.ql-indent-3 {
+  counter-increment: list-3;
+}.list-comment-delta .ql-editor ol li.ql-indent-3:before {
+  content: counter(list-3, decimal) '. ';
+}.list-comment-delta .ql-editor ol li.ql-indent-3 {
+  counter-reset: list-4 list-5 list-6 list-7 list-8 list-9;
+}.list-comment-delta .ql-editor ol li.ql-indent-4 {
+  counter-increment: list-4;
+}.list-comment-delta .ql-editor ol li.ql-indent-4:before {
+  content: counter(list-4, lower-alpha) '. ';
+}.list-comment-delta .ql-editor ol li.ql-indent-4 {
+  counter-reset: list-5 list-6 list-7 list-8 list-9;
+}.list-comment-delta .ql-editor ol li.ql-indent-5 {
+  counter-increment: list-5;
+}.list-comment-delta .ql-editor ol li.ql-indent-5:before {
+  content: counter(list-5, lower-roman) '. ';
+}.list-comment-delta .ql-editor ol li.ql-indent-5 {
+  counter-reset: list-6 list-7 list-8 list-9;
+}.list-comment-delta .ql-editor ol li.ql-indent-6 {
+  counter-increment: list-6;
+}.list-comment-delta .ql-editor ol li.ql-indent-6:before {
+  content: counter(list-6, decimal) '. ';
+}.list-comment-delta .ql-editor ol li.ql-indent-6 {
+  counter-reset: list-7 list-8 list-9;
+}.list-comment-delta .ql-editor ol li.ql-indent-7 {
+  counter-increment: list-7;
+}.list-comment-delta .ql-editor ol li.ql-indent-7:before {
+  content: counter(list-7, lower-alpha) '. ';
+}.list-comment-delta .ql-editor ol li.ql-indent-7 {
+  counter-reset: list-8 list-9;
+}.list-comment-delta .ql-editor ol li.ql-indent-8 {
+  counter-increment: list-8;
+}.list-comment-delta .ql-editor ol li.ql-indent-8:before {
+  content: counter(list-8, lower-roman) '. ';
+}.list-comment-delta .ql-editor ol li.ql-indent-8 {
+  counter-reset: list-9;
+}.list-comment-delta .ql-editor ol li.ql-indent-9 {
+  counter-increment: list-9;
+}.list-comment-delta .ql-editor ol li.ql-indent-9:before {
+  content: counter(list-9, decimal) '. ';
+}.list-comment-delta .ql-editor .ql-indent-1:not(.ql-direction-rtl) {
+  padding-left: 3em;
+}.list-comment-delta .ql-editor li.ql-indent-1:not(.ql-direction-rtl) {
+  padding-left: 4.5em;
+}.list-comment-delta .ql-editor .ql-indent-1.ql-direction-rtl.ql-align-right {
+  padding-right: 3em;
+}.list-comment-delta .ql-editor li.ql-indent-1.ql-direction-rtl.ql-align-right {
+  padding-right: 4.5em;
+}.list-comment-delta .ql-editor .ql-indent-2:not(.ql-direction-rtl) {
+  padding-left: 6em;
+}.list-comment-delta .ql-editor li.ql-indent-2:not(.ql-direction-rtl) {
+  padding-left: 7.5em;
+}.list-comment-delta .ql-editor .ql-indent-2.ql-direction-rtl.ql-align-right {
+  padding-right: 6em;
+}.list-comment-delta .ql-editor li.ql-indent-2.ql-direction-rtl.ql-align-right {
+  padding-right: 7.5em;
+}.list-comment-delta .ql-editor .ql-indent-3:not(.ql-direction-rtl) {
+  padding-left: 9em;
+}.list-comment-delta .ql-editor li.ql-indent-3:not(.ql-direction-rtl) {
+  padding-left: 10.5em;
+}.list-comment-delta .ql-editor .ql-indent-3.ql-direction-rtl.ql-align-right {
+  padding-right: 9em;
+}.list-comment-delta .ql-editor li.ql-indent-3.ql-direction-rtl.ql-align-right {
+  padding-right: 10.5em;
+}.list-comment-delta .ql-editor .ql-indent-4:not(.ql-direction-rtl) {
+  padding-left: 12em;
+}.list-comment-delta .ql-editor li.ql-indent-4:not(.ql-direction-rtl) {
+  padding-left: 13.5em;
+}.list-comment-delta .ql-editor .ql-indent-4.ql-direction-rtl.ql-align-right {
+  padding-right: 12em;
+}.list-comment-delta .ql-editor li.ql-indent-4.ql-direction-rtl.ql-align-right {
+  padding-right: 13.5em;
+}.list-comment-delta .ql-editor .ql-indent-5:not(.ql-direction-rtl) {
+  padding-left: 15em;
+}.list-comment-delta .ql-editor li.ql-indent-5:not(.ql-direction-rtl) {
+  padding-left: 16.5em;
+}.list-comment-delta .ql-editor .ql-indent-5.ql-direction-rtl.ql-align-right {
+  padding-right: 15em;
+}.list-comment-delta .ql-editor li.ql-indent-5.ql-direction-rtl.ql-align-right {
+  padding-right: 16.5em;
+}.list-comment-delta .ql-editor .ql-indent-6:not(.ql-direction-rtl) {
+  padding-left: 18em;
+}.list-comment-delta .ql-editor li.ql-indent-6:not(.ql-direction-rtl) {
+  padding-left: 19.5em;
+}.list-comment-delta .ql-editor .ql-indent-6.ql-direction-rtl.ql-align-right {
+  padding-right: 18em;
+}.list-comment-delta .ql-editor li.ql-indent-6.ql-direction-rtl.ql-align-right {
+  padding-right: 19.5em;
+}.list-comment-delta .ql-editor .ql-indent-7:not(.ql-direction-rtl) {
+  padding-left: 21em;
+}.list-comment-delta .ql-editor li.ql-indent-7:not(.ql-direction-rtl) {
+  padding-left: 22.5em;
+}.list-comment-delta .ql-editor .ql-indent-7.ql-direction-rtl.ql-align-right {
+  padding-right: 21em;
+}.list-comment-delta .ql-editor li.ql-indent-7.ql-direction-rtl.ql-align-right {
+  padding-right: 22.5em;
+}.list-comment-delta .ql-editor .ql-indent-8:not(.ql-direction-rtl) {
+  padding-left: 24em;
+}.list-comment-delta .ql-editor li.ql-indent-8:not(.ql-direction-rtl) {
+  padding-left: 25.5em;
+}.list-comment-delta .ql-editor .ql-indent-8.ql-direction-rtl.ql-align-right {
+  padding-right: 24em;
+}.list-comment-delta .ql-editor li.ql-indent-8.ql-direction-rtl.ql-align-right {
+  padding-right: 25.5em;
+}.list-comment-delta .ql-editor .ql-indent-9:not(.ql-direction-rtl) {
+  padding-left: 27em;
+}.list-comment-delta .ql-editor li.ql-indent-9:not(.ql-direction-rtl) {
+  padding-left: 28.5em;
+}.list-comment-delta .ql-editor .ql-indent-9.ql-direction-rtl.ql-align-right {
+  padding-right: 27em;
+}.list-comment-delta .ql-editor li.ql-indent-9.ql-direction-rtl.ql-align-right {
+  padding-right: 28.5em;
+}.list-comment-delta .ql-editor .ql-video {
+  display: block;
+  max-width: 100%;
+}.list-comment-delta .ql-editor .ql-video.ql-align-center {
+  margin: 0 auto;
+}.list-comment-delta .ql-editor .ql-video.ql-align-right {
+  margin: 0 0 0 auto;
+}.list-comment-delta .ql-editor .ql-bg-black {
+  background-color: #000;
+}.list-comment-delta .ql-editor .ql-bg-red {
+  background-color: #e60000;
+}.list-comment-delta .ql-editor .ql-bg-orange {
+  background-color: #f90;
+}.list-comment-delta .ql-editor .ql-bg-yellow {
+  background-color: #ff0;
+}.list-comment-delta .ql-editor .ql-bg-green {
+  background-color: #008a00;
+}.list-comment-delta .ql-editor .ql-bg-blue {
+  background-color: #06c;
+}.list-comment-delta .ql-editor .ql-bg-purple {
+  background-color: #93f;
+}.list-comment-delta .ql-editor .ql-color-white {
+  color: #fff;
+}.list-comment-delta .ql-editor .ql-color-red {
+  color: #e60000;
+}.list-comment-delta .ql-editor .ql-color-orange {
+  color: #f90;
+}.list-comment-delta .ql-editor .ql-color-yellow {
+  color: #ff0;
+}.list-comment-delta .ql-editor .ql-color-green {
+  color: #008a00;
+}.list-comment-delta .ql-editor .ql-color-blue {
+  color: #06c;
+}.list-comment-delta .ql-editor .ql-color-purple {
+  color: #93f;
+}.list-comment-delta .ql-editor .ql-font-serif {
+  font-family: Georgia, Times New Roman, serif;
+}.list-comment-delta .ql-editor .ql-font-monospace {
+  font-family: Monaco, Courier New, monospace;
+}.list-comment-delta .ql-editor .ql-size-small {
+  font-size: 0.75em;
+}.list-comment-delta .ql-editor .ql-size-large {
+  font-size: 1.5em;
+}.list-comment-delta .ql-editor .ql-size-huge {
+  font-size: 2.5em;
+}.list-comment-delta .ql-editor .ql-direction-rtl {
+  direction: rtl;
+  text-align: inherit;
+}.list-comment-delta .ql-editor .ql-align-center {
+  text-align: center;
+}.list-comment-delta .ql-editor .ql-align-justify {
+  text-align: justify;
+}.list-comment-delta .ql-editor .ql-align-right {
+  text-align: right;
+}.list-comment-delta .ql-editor.ql-blank::before {
+  color: rgba(0,0,0,0.6);
+  content: attr(data-placeholder);
+  font-style: italic;
+  left: 15px;
+  pointer-events: none;
+  position: absolute;
+  right: 15px;
+}
+
+/* Local appearance uses the shared application tokens. */
+.list-comment-delta .ql-container { font-family: var(--font-sans); font-size: var(--text-md); height: auto; }
+.list-comment-delta .ql-editor { min-height: 72px; max-height: 240px; padding: 8px; color: var(--text); background: var(--surface); }
+.list-comment-delta .ql-editor:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.list-comment-delta .comment-delta-mention { color: var(--accent); }
+.list-comment-delta [data-delta-underline-links="true"] .comment-delta-slug { text-decoration: underline; }
+.list-comment-delta .comment-delta-status { margin: 4px 0; color: var(--muted); font-size: var(--text-sm); }
+.list-comment-delta .comment-delta-embed { display: inline-block; vertical-align: baseline; }
+.list-comment-delta .comment-delta-embed img { height: 1.2em; width: 1.2em; vertical-align: text-bottom; }

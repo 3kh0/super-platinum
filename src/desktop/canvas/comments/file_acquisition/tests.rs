@@ -45,6 +45,7 @@ pub(super) fn setup(raws: &[Value]) -> (ShellState, super::super::State) {
         model.rows.push(Row {
             message,
             body,
+            preview: None,
             preview_body: None,
         });
     }

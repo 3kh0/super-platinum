@@ -215,14 +215,38 @@ def read_wire(method,args):
         read_fields(method,expected)
 
 
-def server_proof(case,stage,server):
+def server_proof(case,stage,server,*,posting_case=None,dm_case=None,person_case=None,search_case=None,multiple_case=None):
     spec=stage_state(case,stage)
     require(server.get('networkCalls')==0 and exact(server.get('owner'),OWNER),'Original first-Publish synthetic owner')
     require(server.get('ownerCurrent') is (not spec['retired']),'First-Publish owner retirement')
     require(exact(server.get('original'),original(case)),'Original never-published raw state changed')
     seed=server.get('seed',{});users=seed.get('boot',{}).get('users',[])
-    require([u.get('id') for u in users]==['UWORKFLOW','UHOME0001']+(['UMANOLD01'] if settings(case) else []),'Initial canonical member producer changed')
-    require(seed.get('boot',{}).get('team')==dict(id='TWORKFLOW',name='Home fixture')
+    additional=[]
+    if multiple_case is not None:
+        from workflow_management_share_multiple import seed_proof, PEERS, CASES
+        require(multiple_case in CASES and case=='first-success' and all(v is None for v in (posting_case,dm_case,person_case,search_case)),'Unrequested multiple source seed')
+        seed_proof(server,multiple_case);additional=list(PEERS)
+    if dm_case is not None:
+        from workflow_management_share_dm import seed_proof, PEER, CASES as DM_CASES
+        require(dm_case in DM_CASES and case=='first-success' and posting_case is None,'Unrequested DM source seed')
+        seed_proof(server)
+        additional=[PEER]
+    if person_case is not None:
+        from workflow_management_share_person import seed_proof, PEER, CASES as PERSON_CASES
+        require(person_case in PERSON_CASES and case=='first-success' and dm_case is None and posting_case is None,'Unrequested person source seed')
+        seed_proof(server);additional=[PEER]
+    if search_case is not None:
+        from workflow_management_share_search import seed_proof, CASES as SEARCH_CASES
+        require(search_case in SEARCH_CASES and case=='first-success' and dm_case is None and person_case is None and posting_case is None,'Unrequested search source seed')
+        seed_proof(server);additional=([f'URANKL{n:03}' for n in range(42)] if search_case.startswith('ranking:') else [f'USEARCH{n:03}' for n in range(75 if search_case.startswith(('empty:','startup:')) else 51)])
+    require([u.get('id') for u in users]==['UWORKFLOW','UHOME0001']+(['UMANOLD01'] if settings(case) else [])+additional,'Initial canonical member producer changed')
+    team=dict(id='TWORKFLOW',name='Home fixture')
+    if posting_case is not None:
+        from workflow_management_share_posting import CASES,seed_policy
+        require(posting_case in CASES and case=='first-success','Unrequested posting plan seed')
+        seed_policy(posting_case,server)
+        if posting_case!='missing-policy':team['plan']='plus'
+    require(seed.get('boot',{}).get('team')==team
         and seed.get('init',{}).get('team')==seed['boot']['team'] and 'TWORKFLOW' in seed.get('canonicalTeams',{}),'Genuine canonical seed absent')
     requests,responses,settlements,releases=(server.get(k) for k in ('requests','responses','settlements','releases'))
     require(all(isinstance(v,list) for v in (requests,responses,settlements,releases)),'Missing original first-Publish ledgers')
@@ -475,12 +499,15 @@ def confirmation_proof(case,stage,product,native,model):
                 require(CROP_NOTICE in [v.get('text') for v in native.get('feedback',[])],'Crop rejection guidance not visible')
 
 
-def native_proof(case,stage,native,model,viewport,rectangle):
+def native_proof(case,stage,native,model,viewport,rectangle,*,passive=None):
     require(native.get('ok') is True and native.get('noOverflow') is True and native.get('viewport')==viewport,'Original Finish Up geometry')
     controls=native.get('controls');require(isinstance(controls,list) and controls,'Missing actual original controls')
     for item in controls+native.get('feedback',[])+native.get('outcomes',[]):
-        require(item.get('visible') is True and item.get('hit') is True,'Occluded original control/feedback')
-        rectangle(item.get('rect'),viewport)
+        if passive is None:
+            require(item.get('visible') is True and item.get('hit') is True,'Occluded original control/feedback')
+            rectangle(item.get('rect'),viewport)
+        else:
+            passive(item)
         integer(item.get('nodeId'),'Actual retained DOM identity',1)
     require(native.get('composing') is False,'Native composition unsettled')
     about=stage=='about' or case=='first-retirement' and stage in ('successor','late-settled')

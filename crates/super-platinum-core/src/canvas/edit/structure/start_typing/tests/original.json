@@ -1,0 +1,586 @@
+{
+  "source": "tmp/canvas-start-typing-20261023/reference-b/start-typing-result.json",
+  "sha256": "c1fba1ee488994e2cd17b35bd0dcb0e8009184250c3f2b0ae6fde3af7950d7cb",
+  "vectors": [
+    {
+      "sourceMode": "bootstrap",
+      "corpus": "ascii",
+      "cadence": "correction",
+      "full": "Keep thisSecond paragraph",
+      "states": [
+        "New Keep thisSecond paragraph",
+        "New draftx Keep thisSecond paragraph",
+        "New draft Keep thisSecond paragraph",
+        "New paragraph Keep thisSecond paragraph"
+      ],
+      "sourceSession": null,
+      "patches": [
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "New "
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              4
+            ],
+            "value": "draftx "
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              9
+            ]
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              4
+            ],
+            "value": "parag"
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              9
+            ]
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              11
+            ],
+            "length": 2
+          },
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              11
+            ],
+            "value": "ph"
+          }
+        ]
+      ],
+      "sourceChanges": 1
+    },
+    {
+      "sourceMode": "bootstrap",
+      "corpus": "ascii",
+      "cadence": "erase",
+      "full": "Keep thisSecond paragraph",
+      "states": [
+        "xKeep thisSecond paragraph",
+        ""
+      ],
+      "sourceSession": null,
+      "patches": [
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "x"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 26
+          }
+        ]
+      ],
+      "sourceChanges": 1
+    },
+    {
+      "sourceMode": "bootstrap",
+      "corpus": "ascii",
+      "cadence": "exact-revert",
+      "full": "Keep thisSecond paragraph",
+      "states": [
+        "xKeep thisSecond paragraph",
+        "Keep thisSecond paragraph"
+      ],
+      "sourceSession": null,
+      "patches": [
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "x"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ]
+          }
+        ]
+      ],
+      "sourceChanges": 1
+    },
+    {
+      "sourceMode": "bootstrap",
+      "corpus": "unicode",
+      "cadence": "correction",
+      "full": "Café &amp; 日本😀Second paragraph",
+      "states": [
+        "New Café &amp; 日本😀Second paragraph",
+        "New 日本😀 draftx Café &amp; 日本😀Second paragraph",
+        "New 日本😀 draft Café &amp; 日本😀Second paragraph",
+        "New 日本😀 paragraph Café &amp; 日本😀Second paragraph"
+      ],
+      "sourceSession": null,
+      "patches": [
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "New "
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              4
+            ],
+            "value": "日本😀 draftx "
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              14
+            ]
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              9
+            ],
+            "value": "parag"
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              14
+            ]
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              16
+            ],
+            "length": 2
+          },
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              16
+            ],
+            "value": "ph"
+          }
+        ]
+      ],
+      "sourceChanges": 1
+    },
+    {
+      "sourceMode": "bootstrap",
+      "corpus": "unicode",
+      "cadence": "erase",
+      "full": "Café &amp; 日本😀Second paragraph",
+      "states": [
+        "xCafé &amp; 日本😀Second paragraph",
+        ""
+      ],
+      "sourceSession": null,
+      "patches": [
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "x"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 32
+          }
+        ]
+      ],
+      "sourceChanges": 1
+    },
+    {
+      "sourceMode": "bootstrap",
+      "corpus": "unicode",
+      "cadence": "exact-revert",
+      "full": "Café &amp; 日本😀Second paragraph",
+      "states": [
+        "xCafé &amp; 日本😀Second paragraph",
+        "Café &amp; 日本😀Second paragraph"
+      ],
+      "sourceSession": null,
+      "patches": [
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "x"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ]
+          }
+        ]
+      ],
+      "sourceChanges": 1
+    },
+    {
+      "sourceMode": "retained",
+      "corpus": "ascii",
+      "cadence": "correction",
+      "full": "Keep thisSecond paragraph",
+      "states": [
+        "New Keep thisSecond paragraph",
+        "New draftx Keep thisSecond paragraph",
+        "New draft Keep thisSecond paragraph",
+        "New paragraph Keep thisSecond paragraph"
+      ],
+      "sourceSession": "CglwYXJhZ3JhcGgQ6AcY6Acq1QKFb0qDzMmjdADKAgEKq83vASNFAAAAAAH3BZW9Wh1/il342FyuBPierBXGqr1FEUcc78bqABfInQcBAgMCEw4jCEAEQwRWAg4BBAIEEQgTJRUQIQIjJzQCQgVWB1cpgAEWgQECgwEMDAAMAXgWBwIFAgECAQICfgMFf4CAv9YGCwB/AAsBfwAKAQwHAAInAAACJwEAAwYAAAEfAAACfgAXBQF+ZAICAX8cAwF/YQMBfwAEAXwAAR9hAwF9IAFfBQF+B2RlbGV0ZWQEdGV4dAAnKQB9FmsWBgF/ZQIBfxwEAX9hAgF+IGEDAXsfYh8BYQIBfyACAX9fBQECJ34BBCcBfgEAJhZ/NktlZXAgdGhPcmlzU2Vjb2dpbmRhbCBwYXJhZ2lvcmFwaCB0ZXh077u/CQACAQYAAgECAAIBBgACAQQABQF/AA0Adx4BBgECAQQBBAQBCzJAZjcwNTk1YmQ1YTFkN2Y4YTVkZjhkODVjYWUwNGY4OWVhYzE1YzZhYWJkNDUxMTQ3MWNlZmM2ZWEwMDE3Yzg5ZEJANmZkYzJkMjhkMDhkNDU0ZWEyMThlODk0MTE4ZjQwMTU2ZDkxMzBlZDI5MWM5ZDY0MGY2MmY1ZWZjODg3MWIyMVpFCkBmNzA1OTViZDVhMWQ3ZjhhNWRmOGQ4NWNhZTA0Zjg5ZWFjMTVjNmFhYmQ0NTExNDcxY2VmYzZlYTAwMTdjODlkEOgH",
+      "patches": [
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "New "
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              4
+            ],
+            "value": "draftx "
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              9
+            ]
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              4
+            ],
+            "value": "parag"
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              9
+            ]
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              11
+            ],
+            "length": 2
+          },
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              11
+            ],
+            "value": "ph"
+          }
+        ]
+      ],
+      "sourceChanges": 12
+    },
+    {
+      "sourceMode": "retained",
+      "corpus": "ascii",
+      "cadence": "erase",
+      "full": "Keep thisSecond paragraph",
+      "states": [
+        "xKeep thisSecond paragraph",
+        ""
+      ],
+      "sourceSession": "CglwYXJhZ3JhcGgQ6AcY6Acq1QKFb0qDzMmjdADKAgEKq83vASNFAAAAAAH3BZW9Wh1/il342FyuBPierBXGqr1FEUcc78bqABfInQcBAgMCEw4jCEAEQwRWAg4BBAIEEQgTJRUQIQIjJzQCQgVWB1cpgAEWgQECgwEMDAAMAXgWBwIFAgECAQICfgMFf4CAv9YGCwB/AAsBfwAKAQwHAAInAAACJwEAAwYAAAEfAAACfgAXBQF+ZAICAX8cAwF/YQMBfwAEAXwAAR9hAwF9IAFfBQF+B2RlbGV0ZWQEdGV4dAAnKQB9FmsWBgF/ZQIBfxwEAX9hAgF+IGEDAXsfYh8BYQIBfyACAX9fBQECJ34BBCcBfgEAJhZ/NktlZXAgdGhPcmlzU2Vjb2dpbmRhbCBwYXJhZ2lvcmFwaCB0ZXh077u/CQACAQYAAgECAAIBBgACAQQABQF/AA0Adx4BBgECAQQBBAQBCzJAZjcwNTk1YmQ1YTFkN2Y4YTVkZjhkODVjYWUwNGY4OWVhYzE1YzZhYWJkNDUxMTQ3MWNlZmM2ZWEwMDE3Yzg5ZEJANmZkYzJkMjhkMDhkNDU0ZWEyMThlODk0MTE4ZjQwMTU2ZDkxMzBlZDI5MWM5ZDY0MGY2MmY1ZWZjODg3MWIyMVpFCkBmNzA1OTViZDVhMWQ3ZjhhNWRmOGQ4NWNhZTA0Zjg5ZWFjMTVjNmFhYmQ0NTExNDcxY2VmYzZlYTAwMTdjODlkEOgH",
+      "patches": [
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "x"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 26
+          }
+        ]
+      ],
+      "sourceChanges": 12
+    },
+    {
+      "sourceMode": "retained",
+      "corpus": "ascii",
+      "cadence": "exact-revert",
+      "full": "Keep thisSecond paragraph",
+      "states": [
+        "xKeep thisSecond paragraph",
+        "Keep thisSecond paragraph"
+      ],
+      "sourceSession": "CglwYXJhZ3JhcGgQ6AcY6Acq1QKFb0qDzMmjdADKAgEKq83vASNFAAAAAAH3BZW9Wh1/il342FyuBPierBXGqr1FEUcc78bqABfInQcBAgMCEw4jCEAEQwRWAg4BBAIEEQgTJRUQIQIjJzQCQgVWB1cpgAEWgQECgwEMDAAMAXgWBwIFAgECAQICfgMFf4CAv9YGCwB/AAsBfwAKAQwHAAInAAACJwEAAwYAAAEfAAACfgAXBQF+ZAICAX8cAwF/YQMBfwAEAXwAAR9hAwF9IAFfBQF+B2RlbGV0ZWQEdGV4dAAnKQB9FmsWBgF/ZQIBfxwEAX9hAgF+IGEDAXsfYh8BYQIBfyACAX9fBQECJ34BBCcBfgEAJhZ/NktlZXAgdGhPcmlzU2Vjb2dpbmRhbCBwYXJhZ2lvcmFwaCB0ZXh077u/CQACAQYAAgECAAIBBgACAQQABQF/AA0Adx4BBgECAQQBBAQBCzJAZjcwNTk1YmQ1YTFkN2Y4YTVkZjhkODVjYWUwNGY4OWVhYzE1YzZhYWJkNDUxMTQ3MWNlZmM2ZWEwMDE3Yzg5ZEJANmZkYzJkMjhkMDhkNDU0ZWEyMThlODk0MTE4ZjQwMTU2ZDkxMzBlZDI5MWM5ZDY0MGY2MmY1ZWZjODg3MWIyMVpFCkBmNzA1OTViZDVhMWQ3ZjhhNWRmOGQ4NWNhZTA0Zjg5ZWFjMTVjNmFhYmQ0NTExNDcxY2VmYzZlYTAwMTdjODlkEOgH",
+      "patches": [
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "x"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ]
+          }
+        ]
+      ],
+      "sourceChanges": 12
+    },
+    {
+      "sourceMode": "retained",
+      "corpus": "unicode",
+      "cadence": "correction",
+      "full": "Café &amp; 日本😀Second paragraph",
+      "states": [
+        "New Café &amp; 日本😀Second paragraph",
+        "New 日本😀 draftx Café &amp; 日本😀Second paragraph",
+        "New 日本😀 draft Café &amp; 日本😀Second paragraph",
+        "New 日本😀 paragraph Café &amp; 日本😀Second paragraph"
+      ],
+      "sourceSession": "CglwYXJhZ3JhcGgQ6AcY6Acq8QKFb0qD1ecPAADmAgEKq83vASNFAAAAAAFvdaHLZhrVW61Xyffk1Moa9qKPPB9jzEorAf/gkUFhRgcBAgMCExIjCEAEQwRWAg4BBAIEEQQTJhUQIQIjJjQCQgVWEVc3gAEWgQECgwEQDwAPAXcWAwEDAQIDAQQCAX8DAgJ/DH+AgL/WBg4AfwAOAX8ADQEPBwACLQAAAi0BAAQrAAACAgB/AgYBfhdpAgF7FwFoAQAFAXwZAgFkAgF9HAEDCgF/VgIBfgdkZWxldGVkBHRleHQALS8AfBZrGWgGAXsXAWkBFwIBfWgZaAQBfhkCAgF7ZAEcAQMLAX9WAgECLX4BBC0BfgEACRZ/JgwWAjZ/RhMWfzZDT3JpZ2luYWbDqWwgJmFtcDtyaW9yIOaXpeacrPCfmIBTdGVjb25kIHBhcmFncmFwaHh077u/AwAGAQMAfwEGAAQBBQB/AQ8AAgF/AA4AfxcCAX8CAwF/BwMBfQIGAQ4yQDZmNzVhMWNiNjYxYWQ1NWJhZDU3YzlmN2U0ZDRjYTFhZjZhMjhmM2MxZjYzY2M0YTJiMDFmZmUwOTE0MTYxNDZCQDZmZGMyZDI4ZDA4ZDQ1NGVhMjE4ZTg5NDExOGY0MDE1NmQ5MTMwZWQyOTFjOWQ2NDBmNjJmNWVmYzg4NzFiMjFaRQpANmY3NWExY2I2NjFhZDU1YmFkNTdjOWY3ZTRkNGNhMWFmNmEyOGYzYzFmNjNjYzRhMmIwMWZmZTA5MTQxNjE0NhDoBw==",
+      "patches": [
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "New "
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              4
+            ],
+            "value": "日本😀 draftx "
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              14
+            ]
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              9
+            ],
+            "value": "parag"
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              14
+            ]
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              16
+            ],
+            "length": 2
+          },
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              16
+            ],
+            "value": "ph"
+          }
+        ]
+      ],
+      "sourceChanges": 15
+    },
+    {
+      "sourceMode": "retained",
+      "corpus": "unicode",
+      "cadence": "erase",
+      "full": "Café &amp; 日本😀Second paragraph",
+      "states": [
+        "xCafé &amp; 日本😀Second paragraph",
+        ""
+      ],
+      "sourceSession": "CglwYXJhZ3JhcGgQ6AcY6Acq8QKFb0qD1ecPAADmAgEKq83vASNFAAAAAAFvdaHLZhrVW61Xyffk1Moa9qKPPB9jzEorAf/gkUFhRgcBAgMCExIjCEAEQwRWAg4BBAIEEQQTJhUQIQIjJjQCQgVWEVc3gAEWgQECgwEQDwAPAXcWAwEDAQIDAQQCAX8DAgJ/DH+AgL/WBg4AfwAOAX8ADQEPBwACLQAAAi0BAAQrAAACAgB/AgYBfhdpAgF7FwFoAQAFAXwZAgFkAgF9HAEDCgF/VgIBfgdkZWxldGVkBHRleHQALS8AfBZrGWgGAXsXAWkBFwIBfWgZaAQBfhkCAgF7ZAEcAQMLAX9WAgECLX4BBC0BfgEACRZ/JgwWAjZ/RhMWfzZDT3JpZ2luYWbDqWwgJmFtcDtyaW9yIOaXpeacrPCfmIBTdGVjb25kIHBhcmFncmFwaHh077u/AwAGAQMAfwEGAAQBBQB/AQ8AAgF/AA4AfxcCAX8CAwF/BwMBfQIGAQ4yQDZmNzVhMWNiNjYxYWQ1NWJhZDU3YzlmN2U0ZDRjYTFhZjZhMjhmM2MxZjYzY2M0YTJiMDFmZmUwOTE0MTYxNDZCQDZmZGMyZDI4ZDA4ZDQ1NGVhMjE4ZTg5NDExOGY0MDE1NmQ5MTMwZWQyOTFjOWQ2NDBmNjJmNWVmYzg4NzFiMjFaRQpANmY3NWExY2I2NjFhZDU1YmFkNTdjOWY3ZTRkNGNhMWFmNmEyOGYzYzFmNjNjYzRhMmIwMWZmZTA5MTQxNjE0NhDoBw==",
+      "patches": [
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "x"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 32
+          }
+        ]
+      ],
+      "sourceChanges": 15
+    },
+    {
+      "sourceMode": "retained",
+      "corpus": "unicode",
+      "cadence": "exact-revert",
+      "full": "Café &amp; 日本😀Second paragraph",
+      "states": [
+        "xCafé &amp; 日本😀Second paragraph",
+        "Café &amp; 日本😀Second paragraph"
+      ],
+      "sourceSession": "CglwYXJhZ3JhcGgQ6AcY6Acq8QKFb0qD1ecPAADmAgEKq83vASNFAAAAAAFvdaHLZhrVW61Xyffk1Moa9qKPPB9jzEorAf/gkUFhRgcBAgMCExIjCEAEQwRWAg4BBAIEEQQTJhUQIQIjJjQCQgVWEVc3gAEWgQECgwEQDwAPAXcWAwEDAQIDAQQCAX8DAgJ/DH+AgL/WBg4AfwAOAX8ADQEPBwACLQAAAi0BAAQrAAACAgB/AgYBfhdpAgF7FwFoAQAFAXwZAgFkAgF9HAEDCgF/VgIBfgdkZWxldGVkBHRleHQALS8AfBZrGWgGAXsXAWkBFwIBfWgZaAQBfhkCAgF7ZAEcAQMLAX9WAgECLX4BBC0BfgEACRZ/JgwWAjZ/RhMWfzZDT3JpZ2luYWbDqWwgJmFtcDtyaW9yIOaXpeacrPCfmIBTdGVjb25kIHBhcmFncmFwaHh077u/AwAGAQMAfwEGAAQBBQB/AQ8AAgF/AA4AfxcCAX8CAwF/BwMBfQIGAQ4yQDZmNzVhMWNiNjYxYWQ1NWJhZDU3YzlmN2U0ZDRjYTFhZjZhMjhmM2MxZjYzY2M0YTJiMDFmZmUwOTE0MTYxNDZCQDZmZGMyZDI4ZDA4ZDQ1NGVhMjE4ZTg5NDExOGY0MDE1NmQ5MTMwZWQyOTFjOWQ2NDBmNjJmNWVmYzg4NzFiMjFaRQpANmY3NWExY2I2NjFhZDU1YmFkNTdjOWY3ZTRkNGNhMWFmNmEyOGYzYzFmNjNjYzRhMmIwMWZmZTA5MTQxNjE0NhDoBw==",
+      "patches": [
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "x"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ]
+          }
+        ]
+      ],
+      "sourceChanges": 15
+    }
+  ]
+}

@@ -36,7 +36,7 @@ pub(crate) fn rows(owner: &WorkspaceSession) -> Vec<Value> {
     }
     // Convenience for the separately admitted files.info title receipt only;
     // ordered autocomplete uses RESPONSE directly, never these parsed rows.
-    serde_json::from_str::<Value>(RESPONSE).unwrap()["files"]
+    serde_json::from_str::<Value>(&title_users::response()).unwrap()["files"]
         .as_array()
         .unwrap()
         .clone()
@@ -51,7 +51,7 @@ pub(super) fn reply(owner: &WorkspaceSession, mode: Mode) -> Result<Reply, Error
         }
         Mode::Malformed => r#"{"ok":true,"files":false}"#,
         Mode::Empty => r#"{"ok":true,"files":[]}"#,
-        Mode::Success | Mode::Held => RESPONSE,
+        Mode::Success | Mode::Held => return Ok((Value::String(title_users::response()), None)),
     };
     // The generic closed ledger transports an opaque string for this endpoint.
     // Held/cancel paths preserve this exact allocation's bytes until decode.

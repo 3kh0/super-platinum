@@ -3,6 +3,8 @@ use super::*;
 use super_platinum_core::slack::{
     SlackClient, api::custom::texty::file_title_source::OrderedFileInfo,
 };
+pub(crate) mod empty_canvas;
+pub(crate) mod reply;
 #[cfg(test)]
 mod tests;
 
@@ -53,7 +55,9 @@ pub(crate) fn named() -> bool {
         )
 }
 pub(crate) fn enabled(shell: &ShellState) -> bool {
-    named() && super::enabled(shell) && completion::enabled(shell)
+    (named() || completion::title_users::named() || completion::empty_canvas::named())
+        && super::enabled(shell)
+        && completion::enabled(shell)
 }
 fn refused() -> Error {
     Error::Offline("Closed cold-file reader unavailable".into())
@@ -101,7 +105,12 @@ pub(crate) fn seed(shell: &mut ShellState) -> Result<Value, String> {
     let navigation = file_navigation::seed(shell)?;
     let future = [CANVAS, TARGET_LIST]
         .into_iter()
-        .map(|id| Ok((id.to_owned(), original_text(id)?.to_owned())))
+        .map(|id| {
+            Ok((
+                id.to_owned(),
+                empty_canvas::response(id, original_text(id)?)?,
+            ))
+        })
         .collect::<Result<BTreeMap<_, _>, Error>>()
         .map_err(|e| e.to_string())?;
     let proof = json!({"navigation":navigation,"initialResponses":responses(&future),"initialResponseTexts":future,"canonicalSeeded":false,"searchRequests":0});
@@ -248,6 +257,9 @@ pub(crate) async fn read(
     state: Signal<ShellState>,
     request: &PreparedRequest,
 ) -> Result<OrderedFileInfo, Error> {
+    if completion::title_users::named() {
+        return completion::title_users::file_read(state, request).await;
+    }
     let (model, serial, receiver) = {
         let shell = state.peek();
         let model = model(&shell)?;

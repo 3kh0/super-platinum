@@ -24,6 +24,8 @@ use super_platinum_core::{
     },
 };
 
+pub(crate) mod save;
+pub(crate) mod save_members;
 #[cfg(test)]
 mod tests;
 

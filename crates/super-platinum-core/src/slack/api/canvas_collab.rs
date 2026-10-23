@@ -12,7 +12,11 @@ mod edit;
 mod replacement_edit;
 mod structure_edit;
 pub use replacement_edit::execute_canvas_replacement_edit;
+mod end_edit;
+mod split_edit;
+pub use end_edit::execute_canvas_end_edit;
 mod text_edit;
+pub use split_edit::execute_canvas_split_edit;
 pub use structure_edit::execute_canvas_structure_edit;
 pub use text_edit::execute_canvas_text_edit;
 mod encoding;
@@ -305,3 +309,6 @@ pub async fn fetch_canvas_collab(
 
 #[cfg(test)]
 pub(crate) use tests::canvas_collab_test_snapshot;
+
+mod start_typing_edit;
+pub use start_typing_edit::execute_canvas_start_typing_edit;

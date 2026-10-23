@@ -2,7 +2,7 @@
 //! The actual source permits a cold/stale snapshot while an owned read refreshes.
 use super::*;
 mod consumer;
-pub(in crate::app_home) use consumer::capture_for;
+pub(in crate::app_home) use consumer::{capture_for, capture_for_without_reads};
 use super_platinum_core::{
     block_actions::home::workflow::directory_observations as observed,
     composer_emoji::{model::Model, ranking::SimilarityCache},

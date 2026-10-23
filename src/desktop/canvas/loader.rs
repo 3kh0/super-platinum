@@ -15,6 +15,10 @@ pub(super) async fn load(
         comments::annotation::fixture::refresh_reader(&mut state.write(), &mut reader.write());
         return;
     }
+    if text::split_recovery_fixture::enabled(&state.peek()) {
+        text::split_recovery_fixture::reload(state, reader).await;
+        return;
+    }
     if text::structure_fixture::enabled(&state.peek()) {
         let mut shell = state.write();
         text::structure_fixture::refresh(&mut shell);
@@ -74,8 +78,13 @@ pub(super) async fn read_pair(
     let destination =
         comments::fixture::canonical_files::destination_canvas::enabled(&state.peek(), &read.file)
             && read.current(&state.peek());
+    let auto_refresh = comments::fixture::canonical_files::auto_refresh::enabled(&state.peek())
+        && read.current(&state.peek());
+    let return_body =
+        comments::fixture::canonical_files::return_body::enabled(&state.peek(), &read.file)
+            && read.current(&state.peek());
     let context = read.request(&state.peek());
-    if !destination && context.is_none() {
+    if !destination && !return_body && !auto_refresh && context.is_none() {
         if checklist::finish_read(
             &mut state.write(),
             &read,
@@ -94,7 +103,17 @@ pub(super) async fn read_pair(
     };
     // Neither half spawns a detached task or installs state independently.
     // The event effect stays busy until both bounded requests have settled.
-    let (canonical, export) = if destination {
+    let (canonical, export) = if auto_refresh {
+        match comments::fixture::canonical_files::auto_refresh::read_pair(state, &read).await {
+            Ok((canonical, export)) => (Ok(canonical), Ok(export)),
+            Err(error) => (Err(error.clone()), Err(error)),
+        }
+    } else if return_body {
+        match comments::fixture::canonical_files::return_body::read_pair(state, &read).await {
+            Ok((canonical, export)) => (Ok(canonical), Ok(export)),
+            Err(error) => (Err(error.clone()), Err(error)),
+        }
+    } else if destination {
         match comments::fixture::canonical_files::destination_canvas::read_pair(state, &read).await
         {
             Ok((canonical, export)) => (Ok(canonical), Ok(export)),

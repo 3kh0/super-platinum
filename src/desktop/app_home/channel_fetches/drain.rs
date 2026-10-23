@@ -268,6 +268,8 @@ pub(super) fn publish(
     if !observed_current(shell, &owner.context, observed) {
         return Ok(false);
     }
+    let posting = search::posting::prepare(shell, owner, &native);
+    let opened = search::open::prepare(shell, owner);
     let w = shell
         .core
         .workspaces
@@ -275,6 +277,8 @@ pub(super) fn publish(
         .unwrap();
     w.directory_channels = store;
     w.channels = native;
+    search::posting::apply(shell, posting);
+    search::open::apply(shell, opened);
     advance(shell, owner)?;
     conditional::continuation::clear(shell, owner);
     shell.refresh_from_core();

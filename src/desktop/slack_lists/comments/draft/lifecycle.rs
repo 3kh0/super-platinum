@@ -306,6 +306,7 @@ pub(crate) fn open(mut state: Signal<ShellState>, generation: u64) {
         binding
     };
     load(state, binding.id.clone());
+    title_users::prepare_draft(state, binding);
 }
 pub(super) fn load(mut state: Signal<ShellState>, id: String) {
     let work = {
@@ -345,6 +346,17 @@ pub(super) fn load(mut state: Signal<ShellState>, id: String) {
                 "The saved comment draft could not be loaded. Retry local recovery before editing."
                     .into(),
             ),
+        }
+        let binding = shell
+            .slack_lists
+            .comments
+            .drafts
+            .active
+            .clone()
+            .filter(|b| b.id == id);
+        drop(shell);
+        if let Some(binding) = binding {
+            title_users::prepare_draft(state, binding);
         }
     });
 }

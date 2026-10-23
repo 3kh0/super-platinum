@@ -7,6 +7,7 @@ use serde_json::Value;
 mod catalog;
 pub(crate) mod files;
 mod guidance;
+pub(crate) mod title_locale;
 pub(crate) use guidance::reference_guidance;
 #[cfg(test)]
 mod group_tests;

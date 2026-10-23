@@ -1,6 +1,15 @@
 use super::*;
 
 pub(super) fn detect(p: &Patterns, input: &[u16]) -> Result<Vec<Hit>, ListError> {
+    detect_with(p, input, false, false, true)
+}
+pub(super) fn detect_with(
+    p: &Patterns,
+    input: &[u16],
+    ignore_schemeless: bool,
+    ignore_unbalanced: bool,
+    first_only: bool,
+) -> Result<Vec<Hit>, ListError> {
     let mut hits = Vec::new();
     let Some(mut cursor) = earliest_possible_start(p, input) else {
         return Ok(hits);
@@ -15,7 +24,9 @@ pub(super) fn detect(p: &Patterns, input: &[u16]) -> Result<Vec<Hit>, ListError>
         let slash = group(&m, input, 6)
             .filter(|v| !v.is_empty())
             .or_else(|| group(&m, input, 10));
-        if !bare.is_empty() && p.test("suffix", &input[m.end()..]) {
+        if ignore_schemeless && scheme.is_empty()
+            || !bare.is_empty() && p.test("suffix", &input[m.end()..])
+        {
             continue;
         }
         let previous = offset.checked_sub(1).and_then(|i| input.get(i)).copied();
@@ -109,6 +120,24 @@ pub(super) fn detect(p: &Patterns, input: &[u16]) -> Result<Vec<Hit>, ListError>
                 }
             }
         }
+        if ignore_unbalanced {
+            let mut balance = 0i64;
+            if let Some(end) = value
+                .iter()
+                .position(|c| {
+                    if *c == 40 {
+                        balance += 1;
+                    }
+                    if *c == 41 {
+                        balance -= 1;
+                    }
+                    balance < 0
+                })
+                .filter(|end| *end > 0)
+            {
+                value.truncate(end);
+            }
+        }
         if let Some((left, right)) = value.last().and_then(|c| match *c {
             41 => Some((40, 41)),
             125 => Some((123, 125)),
@@ -192,7 +221,9 @@ pub(super) fn detect(p: &Patterns, input: &[u16]) -> Result<Vec<Hit>, ListError>
             // URLs cannot win; an earlier email/phone spanning a later URL also
             // spans this first URL and is already excluded by mergeMatches.
             // Do not apply this optimization to a future full-match API.
-            break;
+            if first_only {
+                break;
+            }
         }
     }
     Ok(hits)

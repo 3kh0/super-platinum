@@ -32,6 +32,60 @@ fn record_parts() -> (OwnEditRecord, Vec<Value>) {
 }
 
 #[tokio::test]
+async fn plain_capture_reopens_as_delta_and_rejects_rich_overwrite() {
+    use super_platinum_core::slack_lists::comments::{
+        edit_seed::plain::{PlainObservations, PlainSeed},
+        ordered::ResponseWitness,
+    };
+    let (shell, binding, _) = setup();
+    let original = session(&shell, &binding).unwrap().seed.clone();
+    let raw = original.http_raw();
+    let bytes = serde_json::to_vec(raw).unwrap();
+    let ordered = ResponseWitness::decode(&bytes, raw).unwrap();
+    let message = ordered.message(1).unwrap();
+    let page = Page::parse_ordered(original.target(), ordered).unwrap();
+    let mut observed = PlainObservations::default();
+    observed.seed.emoji_as_text = Some(true);
+    observed.highlight_words = Some(vec![]);
+    let initialized = PlainSeed::capture(&message, &observed).unwrap();
+    let policy = OwnEditPolicy::observed(
+        original.workspace(),
+        original.user(),
+        json!({"id":original.target().channel_id()}),
+        true,
+        false,
+        vec![-1],
+        true,
+        false,
+    )
+    .unwrap();
+    let seed = OwnEditSeed::capture_plain(
+        original.workspace(),
+        original.user(),
+        &page,
+        &page.messages()[1],
+        &initialized,
+        &policy,
+        1_700_000_100_000,
+    )
+    .unwrap();
+    let local = Local::new();
+    let disk = local.disk(&seed);
+    let delta = PlainDelta::capture(vec![json!({"insert":"retained plain draft\n"})]).unwrap();
+    let edit = Durable::load(disk.clone(), TS.into()).await.unwrap();
+    edit.capture_content(&seed, &Content::PlainDelta(delta.clone()))
+        .await
+        .unwrap();
+    assert!(edit.capture(&seed, &[]).await.is_err());
+    drop(edit);
+    let reopened = Durable::load(disk, TS.into()).await.unwrap();
+    let inventory = reopened.inventory().await;
+    assert_eq!(inventory.plain_delta(), Some(&delta));
+    assert!(inventory.blocks().is_empty());
+    assert!(inventory.attempt().is_none());
+}
+
+#[tokio::test]
 async fn reopened_edit_preserves_original_seed_empty_rich_buffer_and_independent_reply() {
     let (record, blocks) = record_parts();
     let local = Local::new();

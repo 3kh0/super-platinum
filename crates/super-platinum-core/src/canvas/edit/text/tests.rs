@@ -2,8 +2,11 @@ use super::*;
 use crate::canvas::wire::EditAck;
 use serde_json::{Value, json};
 
+mod ack_content;
+pub(crate) mod formatted_title;
 mod headings;
 mod underline;
+mod whitespace;
 
 fn msg(fields: &[F]) -> RawMessage {
     RawMessage::from_fields(fields).unwrap()

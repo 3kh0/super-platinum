@@ -1,0 +1,9 @@
+Quill Editor 1.3.7, BSD-3-Clause. Unmodified npm distribution.
+Official source: https://github.com/slab/quill/tree/0148738cb22d52808f35873adb620ca56b1ae061
+Official archive: https://registry.npmjs.org/quill/-/quill-1.3.7.tgz
+Distribution SHA256: 08df13a20240cc270c8f4b988ac866f6699ac0f50528978987fff347f09f08ef
+LICENSE is copied unmodified and matches the release source and distribution.
+Local editor.css prefixes the upstream quill.core.css selectors to Comments
+and adds application typography/focus overrides. It is not the original CSS.
+Slack retained reference uses 1.3.7-slack8, not this distribution. No binary or
+behavioral equivalence to that private fork is asserted.

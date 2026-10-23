@@ -150,7 +150,12 @@ pub(in crate::canvas) fn install(shell: &mut ShellState) {
     if !requested() || shell.core.transport.is_some() || shell.core.session.is_some() {
         return;
     }
-    let initial = if super::replacement_fixture::requested() {
+    let initial = if super::split_recovery_fixture::requested() {
+        if !super::split_recovery_fixture::install_owner(shell) {
+            return;
+        }
+        super::split_recovery_fixture::snapshot()
+    } else if super::replacement_fixture::requested() {
         let snapshot = super::replacement_fixture::snapshot();
         if !super::replacement_fixture::install_owner(shell, &snapshot) {
             return;

@@ -15,8 +15,8 @@ pub use mpim::{
     MemberSubqueryScore, MpimScored, filter_mpims, mpim_subquery_inputs, visible_mpim_custom_name,
 };
 pub use normalization::{
-    PreparedQuery, derive_member_names, normalize_lowered_query, normalize_query_with_lowercase,
-    prepare_query,
+    PreparedQuery, derive_member_names, normalize_lowered_query, normalize_name_source,
+    normalize_query_with_lowercase, prepare_query,
 };
 
 #[derive(Clone, Debug)]

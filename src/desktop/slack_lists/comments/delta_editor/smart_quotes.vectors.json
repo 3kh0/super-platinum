@@ -1,0 +1,195 @@
+{
+  "authority": "controlled pure invocation of retained original TSF/Tkzo/O+Q+; not application runtime",
+  "vectors": [
+    {
+      "input": "He said \"hello\"; can't; '90; 6'",
+      "intermediate": "He said “hello”; can’t; ‘90; 6’",
+      "expected": "He said “hello”; can’t; ‘90; 6’"
+    },
+    {
+      "input": "\"hello\"",
+      "intermediate": "“hello”",
+      "expected": "“hello”"
+    },
+    {
+      "input": "can't",
+      "intermediate": "can’t",
+      "expected": "can’t"
+    },
+    {
+      "input": "'90",
+      "intermediate": "’90",
+      "expected": "’90"
+    },
+    {
+      "input": "6'",
+      "intermediate": "6′",
+      "expected": "6'"
+    },
+    {
+      "input": "6\"",
+      "intermediate": "6\"",
+      "expected": "6\""
+    },
+    {
+      "input": "\"x\" 'y'",
+      "intermediate": "“x” ‘y’",
+      "expected": "“x” ‘y’"
+    },
+    {
+      "input": "\"a\" \"b\"",
+      "intermediate": "“a” “b”",
+      "expected": "“a” “b”"
+    },
+    {
+      "input": "a'b",
+      "intermediate": "a’b",
+      "expected": "a’b"
+    },
+    {
+      "input": "a'",
+      "intermediate": "a’",
+      "expected": "a’"
+    },
+    {
+      "input": "a''",
+      "intermediate": "a’′",
+      "expected": "a’'"
+    },
+    {
+      "input": "''",
+      "intermediate": "‘’",
+      "expected": "‘’"
+    },
+    {
+      "input": "'",
+      "intermediate": "′",
+      "expected": "'"
+    },
+    {
+      "input": "\"",
+      "intermediate": "\"",
+      "expected": "\""
+    },
+    {
+      "input": "|a|",
+      "intermediate": "‘a’",
+      "expected": "|a|"
+    },
+    {
+      "input": "a|b",
+      "intermediate": "a’b",
+      "expected": "a|b"
+    },
+    {
+      "input": "😄 \"hello\"",
+      "intermediate": "😄 “hello”",
+      "expected": "😄 “hello”"
+    },
+    {
+      "input": "é'té \"été\"",
+      "intermediate": "é’té “été”",
+      "expected": "é’té “été”"
+    },
+    {
+      "input": "中'文 \"中文\"",
+      "intermediate": "中’文 “中文”",
+      "expected": "中’文 “中文”"
+    },
+    {
+      "input": "\"a\nb\"",
+      "intermediate": "“a\nb”",
+      "expected": "“a\nb”"
+    },
+    {
+      "input": "\"a\r\nb\"",
+      "intermediate": "“a\r\nb”",
+      "expected": "“a\r\nb”"
+    },
+    {
+      "input": "`\"code\" can't` \"outside\"",
+      "intermediate": "`\"code\" can't` “outside”",
+      "expected": "`\"code\" can't` “outside”"
+    },
+    {
+      "input": "```\n\"pre\" can't\n``` \"outside\"",
+      "intermediate": "```\n\"pre\" can't\n``` “outside”",
+      "expected": "```\n\"pre\" can't\n``` “outside”"
+    },
+    {
+      "input": "``\"not code\"``",
+      "intermediate": "``“not code”``",
+      "expected": "``“not code”``"
+    },
+    {
+      "input": "`unclosed \"quotes\"",
+      "intermediate": "`unclosed “quotes”",
+      "expected": "`unclosed “quotes”"
+    },
+    {
+      "input": "https://example.com/'a' \"outside\"",
+      "intermediate": "https://example.com/'a' “outside”",
+      "expected": "https://example.com/'a' “outside”"
+    },
+    {
+      "input": "file://example.com/'a' \"outside\"",
+      "intermediate": "file://example.com/'a' “outside”",
+      "expected": "file://example.com/'a' “outside”"
+    },
+    {
+      "input": "https://example.com/'a' https://example.org/'b'",
+      "intermediate": "https://example.com/'a' https://example.org/‘b’",
+      "expected": "https://example.com/'a' https://example.org/‘b’"
+    },
+    {
+      "input": ":'( \"sad\"",
+      "intermediate": ":'( “sad”",
+      "expected": ":'( “sad”"
+    },
+    {
+      "input": "Hi :'( then 'x'",
+      "intermediate": "Hi :'( then ‘x’",
+      "expected": "Hi :'( then ‘x’"
+    },
+    {
+      "input": "\"with :)\"",
+      "intermediate": "“with :)”",
+      "expected": "“with :)”"
+    },
+    {
+      "input": "Don't; 'tis; 'twas",
+      "intermediate": "Don’t; ’tis; ’twas",
+      "expected": "Don’t; ’tis; ’twas"
+    },
+    {
+      "input": "“old” ‘old’",
+      "intermediate": "“old” ‘old’",
+      "expected": "“old” ‘old’"
+    },
+    {
+      "input": "a \"b\"",
+      "intermediate": "a “b”",
+      "expected": "a “b”"
+    },
+    {
+      "input": "a­\"b\"",
+      "intermediate": "a­“b”",
+      "expected": "a­“b”"
+    },
+    {
+      "input": "​\"b\"﻿",
+      "intermediate": "​“b”﻿",
+      "expected": "​“b”﻿"
+    },
+    {
+      "input": "$ \"x\"",
+      "intermediate": "$ “x”",
+      "expected": "$ “x”"
+    },
+    {
+      "input": "```\"x\"```\n'y'",
+      "intermediate": "```\"x\"```\n‘y’",
+      "expected": "```\"x\"```\n‘y’"
+    }
+  ]
+}

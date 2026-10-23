@@ -32,6 +32,7 @@ pub async fn serve(
     // bind/accept errors, and normal return all release the native activity.
     let _background_activity = background::begin_if(enabled);
     crate::blocks::check_button_metadata_native(desktop.clone());
+    crate::channel_thread_emoji::check::start(state, desktop.clone());
     #[cfg(feature = "protected-test-support")]
     crate::app_home::workflows::fixture::check::start(state, desktop.clone());
     #[cfg(all(
@@ -112,6 +113,8 @@ pub async fn serve(
     crate::canvas::text::heading_check::start(state, desktop.clone());
     crate::canvas::text::underline_check::start(state, desktop.clone());
     crate::canvas::text::structure_check::start(state, desktop.clone());
+    crate::canvas::text::split_check::start(state, desktop.clone());
+    crate::canvas::text::split_recovery_check::start(state, desktop.clone());
     crate::canvas::text::continuation_check::start(state, desktop.clone());
     crate::canvas::text::structure_recovery_check::start(state, desktop.clone());
     crate::canvas::text::replacement_check::start(state, desktop.clone());

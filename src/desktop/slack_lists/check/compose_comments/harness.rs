@@ -74,6 +74,7 @@ fn validate_directory(directory: &Path, expected: &Value) -> Result<(), String> 
 pub(crate) async fn wait_runner(state: Signal<ShellState>) -> Result<Value, String> {
     if (state.read().core.transport.is_some() || state.read().core.session.is_some())
         && !fixture::completion::enabled(&state.peek())
+        && !fixture::emoji_combined::context_enabled(&state.peek())
     {
         return Err("Disconnected fixture required".into());
     }
@@ -153,6 +154,12 @@ pub(super) async fn storage_control(
     let limit = match std::env::var("SUPER_PLATINUM_LIST_COMMENTS_COMPOSE_CASE").as_deref() {
         Ok("storage-recovery") => 6,
         Ok("own-edit-storage") => 8,
+        Ok("own-edit-plain-storage" | "own-edit-plain-noop-storage")
+            if fixture::plain::storage() =>
+        {
+            2
+        }
+        Ok("own-edit-noop-storage") if fixture::own_edit::noop_named() => 2,
         Ok("own-delete-storage") => 4,
         Ok("file-navigation-custody") => 4,
         _ => 0,

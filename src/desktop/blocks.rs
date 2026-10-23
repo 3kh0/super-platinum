@@ -8,6 +8,7 @@
 
 pub(crate) mod action;
 mod controls;
+mod emoji;
 mod file_mentions;
 mod text;
 mod underline;
@@ -16,10 +17,10 @@ pub(crate) use action::fixture::apply as button_metadata_fixture;
 pub(crate) use action::fixture::check_native as check_button_metadata_native;
 pub(crate) use controls::fixture::apply as controls_fixture;
 
+use text::channel_mention;
 pub(crate) use text::{
     canvas_root_mrkdwn, custom_emoji_media, mrkdwn_blocks, mrkdwn_inline, plain_inline_nodes,
 };
-use text::{channel_mention, emoji_node};
 
 use serde_json::Value;
 use super_platinum_core::MediaAssetKind;
@@ -33,11 +34,29 @@ use crate::model::{BlockElementSource, ButtonStyle, RichNode};
 pub(crate) struct BlockCtx<'a> {
     pub workspace: &'a Workspace,
     pub media: &'a MediaRegistry,
+    pub standard_emoji:
+        Option<&'a super_platinum_core::slack_lists::comments::edit_seed::prepare::StandardEmoji>,
 }
 
 impl<'a> BlockCtx<'a> {
     pub fn new(workspace: &'a Workspace, media: &'a MediaRegistry) -> Self {
-        Self { workspace, media }
+        Self {
+            workspace,
+            media,
+            standard_emoji: None,
+        }
+    }
+
+    /// A complete selected map acquired outside rendering and checked by the caller
+    /// in the same serial read. Unobserved callers retain the existing fallback.
+    pub fn with_standard_emoji(
+        mut self,
+        standard: Option<
+            &'a super_platinum_core::slack_lists::comments::edit_seed::prepare::StandardEmoji,
+        >,
+    ) -> Self {
+        self.standard_emoji = standard;
+        self
     }
 
     fn image(&self, kind: MediaAssetKind, url: &str) -> super_platinum_core::MediaAssetId {
@@ -211,14 +230,7 @@ fn block_nodes_in(
             }]
         }
         Some("canvas" | "file") => vec![file_mentions::node(ctx, value)],
-        Some("emoji") => {
-            let name = value
-                .get("name")
-                .and_then(Value::as_str)
-                .unwrap_or("emoji")
-                .to_owned();
-            vec![emoji_node(ctx, &name)]
-        }
+        Some("emoji") => emoji::node(ctx, value).into_iter().collect(),
         Some("user") => {
             let user = value
                 .get("user_id")

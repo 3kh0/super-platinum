@@ -21,6 +21,28 @@ pub(crate) mod fixture;
 pub(crate) struct Root {
     cooldown: cooldown::Root,
     details: Option<Arc<details::Selection>>,
+    publication: Option<(String, String, u64)>,
+    feature_notice: Option<FeatureNotice>,
+}
+struct FeatureNotice {
+    account: Option<String>,
+    epoch: u64,
+    team: String,
+    channel: String,
+    message: &'static str,
+}
+pub(crate) fn feature_notice(s: &mut ShellState, team: &str, channel: &str, message: &'static str) {
+    s.channel_workflows.feature_notice = Some(FeatureNotice {
+        account: s.core.active_account.clone(),
+        epoch: s.core.account_epoch,
+        team: team.into(),
+        channel: channel.into(),
+        message,
+    });
+}
+/// Called only after an actual ordered channel response reached the shared sink.
+pub(crate) fn metadata_published(s: &mut ShellState, team: &str, channel: &str) {
+    s.channel_workflows.publication = Some((team.into(), channel.into(), next()));
 }
 impl Root {
     pub(crate) fn gate(&self, scope: &cooldown::Scope, now: std::time::Instant) -> cooldown::Gate {
@@ -174,7 +196,32 @@ fn row_snapshot(row: &Row) -> Value {
 pub(crate) fn Panel(state: Signal<ShellState>) -> Element {
     let browse = use_signal(|| Browse::new(&state.peek()));
     use_cooldown_wake(state);
-    // onmounted owns the only automatic load. Shell/media rerenders never
-    // dispatch reads. Component-scoped tasks are canceled when this panel exits.
+    let seen = use_hook(|| {
+        Rc::new(std::cell::RefCell::new(
+            state.peek().channel_workflows.publication.clone(),
+        ))
+    });
+    use_effect(move || {
+        let s = state.read();
+        let publication = s.channel_workflows.publication.clone();
+        if *seen.borrow() == publication {
+            return;
+        }
+        let relevant = publication.as_ref().is_some_and(|(team, channel, _)| {
+            s.core.active_team.as_ref() == Some(team)
+                && s.core.active_channel.as_ref() == Some(channel)
+        });
+        if relevant && details::visible(&s) {
+            return;
+        }
+        seen.replace(publication);
+        drop(s);
+        if relevant {
+            read::start(state, browse, false);
+        }
+    });
+    // onmounted owns the initial load. Only a new accepted publication above
+    // triggers another automatic read; ordinary shell/media renders do not.
+    // Component-scoped tasks are canceled when this panel exits.
     view::panel(state, browse)
 }

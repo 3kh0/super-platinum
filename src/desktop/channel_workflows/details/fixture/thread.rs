@@ -10,13 +10,18 @@ pub(crate) const DRAFT: &str = "Unsent workflow review \u{4e2d}\nKeep caf\u{e9} 
 pub(crate) fn requested() -> bool {
     std::env::var("SUPER_PLATINUM_WORKFLOW_DETAILS_THREAD_CHECK").as_deref() == Ok("1")
         && super::requested()
-        && matches!(endpoint::case().as_str(), "first-details-success" | "first-details-errors" | "first-details-close-held")
+        && matches!(
+            endpoint::case().as_str(),
+            "first-details-success" | "first-details-errors" | "first-details-close-held"
+        )
 }
 pub(crate) fn raw() -> [Value; 2] {
-    [json!({"type":"message","ts":ROOT,"channel":CHANNEL,"user":"UWORKFLOW",
+    [
+        json!({"type":"message","ts":ROOT,"channel":CHANNEL,"user":"UWORKFLOW",
         "text":"Original workflow discussion.","thread_ts":ROOT,"reply_count":1,"latest_reply":REPLY}),
-     json!({"type":"message","ts":REPLY,"channel":CHANNEL,"user":"UWORKFLOW",
-        "text":"Keep this discussion while inspecting workflow details.","thread_ts":ROOT})]
+        json!({"type":"message","ts":REPLY,"channel":CHANNEL,"user":"UWORKFLOW",
+        "text":"Keep this discussion while inspecting workflow details.","thread_ts":ROOT}),
+    ]
 }
 pub(crate) fn install(s: &mut ShellState) -> Result<(), String> {
     if std::env::var_os("SUPER_PLATINUM_WORKFLOW_DETAILS_THREAD_CHECK").is_none() {
@@ -26,8 +31,10 @@ pub(crate) fn install(s: &mut ShellState) -> Result<(), String> {
         return Err("Thread custody requires exact owned details fixture and flag=1".into());
     }
     let [parent, reply] = raw();
-    let parent: Message = serde_json::from_value(parent).map_err(|_| "Original thread parent decode")?;
-    let reply: Message = serde_json::from_value(reply).map_err(|_| "Original thread reply decode")?;
+    let parent: Message =
+        serde_json::from_value(parent).map_err(|_| "Original thread parent decode")?;
+    let reply: Message =
+        serde_json::from_value(reply).map_err(|_| "Original thread reply decode")?;
     let mut history = ChannelMessages::default();
     history.loaded = true;
     history.upsert(parent.clone());
@@ -35,18 +42,35 @@ pub(crate) fn install(s: &mut ShellState) -> Result<(), String> {
     thread.loaded = true;
     thread.upsert(parent);
     thread.upsert(reply);
-    let w = s.core.workspaces.get_mut("TWORKFLOW").ok_or("Original thread workspace missing")?;
+    let w = s
+        .core
+        .workspaces
+        .get_mut("TWORKFLOW")
+        .ok_or("Original thread workspace missing")?;
     if !w.channels.contains_key(CHANNEL) {
         return Err("Original thread destination missing".into());
     }
     w.messages.insert(CHANNEL.into(), history);
-    s.core.threads.insert(("TWORKFLOW".into(), CHANNEL.into(), ROOT.into()), thread);
+    s.core
+        .threads
+        .insert(("TWORKFLOW".into(), CHANNEL.into(), ROOT.into()), thread);
     Ok(())
 }
 pub(crate) fn snapshot(s: &ShellState) -> Value {
-    let key = DraftKey { team:"TWORKFLOW".into(), channel:CHANNEL.into(), thread:Some(ROOT.into()) };
-    let history = s.core.workspaces.get("TWORKFLOW").and_then(|w|w.messages.get(CHANNEL));
-    let thread = s.core.threads.get(&("TWORKFLOW".into(),CHANNEL.into(),ROOT.into()));
+    let key = DraftKey {
+        team: "TWORKFLOW".into(),
+        channel: CHANNEL.into(),
+        thread: Some(ROOT.into()),
+    };
+    let history = s
+        .core
+        .workspaces
+        .get("TWORKFLOW")
+        .and_then(|w| w.messages.get(CHANNEL));
+    let thread = s
+        .core
+        .threads
+        .get(&("TWORKFLOW".into(), CHANNEL.into(), ROOT.into()));
     json!({"root":ROOT,"activeRoot":s.thread_root,"threadGeneration":s.thread_generation,
         "scope":s.thread_scope(),"loading":s.thread_loading,
         "threadComposer":s.core.thread_composer,"draftKey":key,"activeDraftKey":s.core.drafts.thread,

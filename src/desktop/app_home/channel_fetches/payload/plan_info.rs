@@ -5,6 +5,46 @@ use super::*;
 pub(super) struct State {
     revision: u64,
     observed: Option<Snapshot>,
+    dirty: bool,
+}
+
+mod display;
+pub(crate) use display::{Display, capture as display};
+pub(crate) mod warm_fixture;
+
+pub(super) fn persist(mut state: Signal<ShellState>, owner: &Owner) {
+    {
+        let s = state.peek();
+        if !owner.current(&s)
+            || !s.app_home.channel_fetches.slots[&owner.context.key()]
+                .payload
+                .plan_info
+                .dirty
+        {
+            return;
+        }
+    }
+    let dirty = {
+        #[allow(deprecated)]
+        let mut s = state.write_silent();
+        if !owner.current(&s) {
+            return;
+        }
+        std::mem::take(
+            &mut s
+                .app_home
+                .channel_fetches
+                .slots
+                .get_mut(&owner.context.key())
+                .unwrap()
+                .payload
+                .plan_info
+                .dirty,
+        )
+    };
+    if dirty {
+        crate::bootstrap::persist_workspace_metadata(&state, &owner.context.session.team_id);
+    }
 }
 
 #[derive(Clone)]
@@ -107,12 +147,23 @@ pub(super) fn apply(
         .workspaces
         .get_mut(&ctx.session.team_id)
         .ok_or(source::Error::Superseded)?;
-    workspace.cfm_payload.apply(effect)?;
-    let raw = workspace
-        .cfm_payload
-        .plan_info
-        .clone()
-        .ok_or(source::Error::Adoption)?;
+    // Cached data is only a matching merge base, never a restored live Owner.
+    // Reduce into a temporary value so malformed actions cannot change it.
+    let mut next = source::Stores::default();
+    next.plan_info = workspace.cfm_payload.plan_info.clone().or_else(|| {
+        workspace
+            .cfm_payload
+            .plan_info_cache
+            .as_ref()
+            .filter(|v| v.matches(&ctx.account, &ctx.session))
+            .map(|v| v.raw().clone())
+    });
+    next.apply(effect)?;
+    let raw = next.plan_info.ok_or(source::Error::Adoption)?;
+    workspace.cfm_payload.plan_info = Some(raw.clone());
+    workspace.cfm_payload.plan_info_cache =
+        source::PlanInfoCache::accepted(&ctx.account, &ctx.session, raw.clone());
+    let dirty = workspace.cfm_payload.plan_info_cache.is_some();
     let plan = &mut shell
         .app_home
         .channel_fetches
@@ -122,6 +173,7 @@ pub(super) fn apply(
         .payload
         .plan_info;
     plan.revision = revision;
+    plan.dirty |= dirty;
     plan.observed = Some(Snapshot {
         owner: owner.clone(),
         revision,

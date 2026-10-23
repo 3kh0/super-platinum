@@ -8,7 +8,8 @@ import visual_pointer as pointer
 
 WINDOW = {"pid": 123, "hwnd": 456, "window_rect_physical": [100, 100, 1000, 700],
           "client_rect_physical": [110, 175, 980, 615],
-          "virtual_desktop_rect": [0, 0, 2560, 1600], "taskbar_client_overlap": False}
+          "virtual_desktop_rect": [0, 0, 2560, 1600], "taskbar_client_overlap": False,
+          "foreground_owned": True}
 
 
 class FakeIO:
@@ -246,6 +247,39 @@ class PointerTests(unittest.TestCase):
         self.assertFalse(parked.data["settlement"]["ok"])
         with self.assertRaises(RuntimeError): parked.check("capture", require_clear=True)
         parked.close()
+
+    def test_explicit_original_hover_settlement_is_scoped_and_exact(self):
+        class Clock:
+            now = 0
+            def monotonic(self): return self.now
+            def sleep(self, value): self.now += value
+        for mode in ('expected','default','wrong','missing','changing','taskbar','owner','pointer'):
+            with self.subTest(mode=mode):
+                parked, io, window = self.fixture();parked.park();clock=Clock()
+                class Agent:
+                    calls=0
+                    def control(self,*args,**kwargs):
+                        self.calls+=1
+                        if mode=='taskbar':window['taskbar_client_overlap']=True
+                        if mode=='owner':window['hwnd']=999
+                        if mode=='pointer':io.point=(1,1)
+                        if mode=='missing':return {'data':{}}
+                        value='U2' if mode=='wrong' or mode=='changing' and self.calls%2 else 'U1'
+                        return {'data':{'profile_hover':value}}
+                with patch.object(pointer.time,'monotonic',clock.monotonic),patch.object(pointer.time,'sleep',clock.sleep):
+                    if mode=='expected':
+                        parked.settle(Agent(),repr,.9,expected_profile_hover='U1')
+                        proof=parked.data['settlement']
+                        self.assertTrue(proof['ok']);self.assertFalse(proof['profile_hover_absent'])
+                        self.assertEqual(proof['profile_hover_expected'],'U1')
+                        self.assertEqual(proof['profile_hover_observed'],'U1')
+                        self.assertGreaterEqual(proof['stable_samples'],3)
+                        self.assertGreaterEqual(proof['elapsed_seconds'],.6)
+                    elif mode=='default':
+                        with self.assertRaises(TimeoutError):parked.settle(Agent(),repr,.9)
+                    else:
+                        with self.assertRaises((TimeoutError,RuntimeError)):
+                            parked.settle(Agent(),repr,.9,expected_profile_hover='U1')
 
 
 if __name__ == "__main__":

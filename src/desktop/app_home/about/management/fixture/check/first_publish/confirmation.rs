@@ -1,6 +1,8 @@
 //! Actual Add selector, source-backed preflight and original response retirement.
 use super::*;
 use endpoint::confirmation as server;
+mod feature;
+pub(super) mod share;
 pub(super) fn destination(s: &ShellState) -> Value {
     let b = &s.core.bookmarks;
     json!({"account":s.core.active_account,"accountEpoch":s.core.account_epoch,"team":s.core.active_team,
@@ -47,6 +49,9 @@ pub(super) async fn run(
 ) -> Result<Value, String> {
     let case = endpoint::case();
     ready(state, visit).await?;
+    if share::requested() {
+        return share::run(state, desktop, name, visit, captures, stages).await;
+    }
     let mut replacement = Value::Null;
     if case == "first-add-no-selection" {
         let before = observe(state, desktop, visit).await?;
@@ -69,7 +74,10 @@ pub(super) async fn run(
         .await?;
         return Ok(replacement);
     }
-    let exercise = choose(state, desktop, visit, server::raw::DEST).await?;
+    let mut exercise = choose(state, desktop, visit, server::raw::DEST).await?;
+    if feature::requested() {
+        exercise = feature::selected(state, desktop, visit, exercise).await?;
+    }
     if case == "first-add-unavailable" {
         if add(&exercise["after"]["firstPublish"])["notice"]
             .as_str()
@@ -200,6 +208,11 @@ pub(super) async fn run(
         } else {
             evidence::observed_wait(state,desktop,visit,"post-finally retained Add editor",r#"({ok:!document.getElementById('workflow-finish-up')&&!!document.getElementById('workflow-management-title')})"#).await?;
         }
+        let featured = if feature::requested() {
+            feature::added(state, desktop, visit).await?
+        } else {
+            Value::Null
+        };
         let after = observe(state, desktop, visit).await?;
         let label = match case.as_str() {
             "first-add-success" => "added",
@@ -214,7 +227,7 @@ pub(super) async fn run(
             name,
             label,
             visit,
-            json!({"before":before,"after":after,"quiet":q}),
+            json!({"before":before,"after":after,"quiet":q,"feature":featured}),
             captures,
             stages,
         )

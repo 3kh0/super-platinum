@@ -102,7 +102,13 @@ impl Mapping {
 }
 
 pub(in crate::canvas) fn update_mapping(shell: &ShellState, reader: &mut super::super::Reader) {
-    if super::super::text::structure_fixture::enabled(shell) {
+    if super::super::text::split_fixture::enabled(shell) {
+        if let Some(snapshot) = presentation(shell).and_then(|view| view.snapshot) {
+            reader.document = Some(Arc::new(super::super::text::split_fixture::document(
+                &snapshot,
+            )));
+        }
+    } else if super::super::text::structure_fixture::enabled(shell) {
         if let Some(snapshot) = presentation(shell).and_then(|view| view.snapshot) {
             reader.document = Some(Arc::new(super::super::text::structure_fixture::document(
                 &snapshot,
@@ -212,10 +218,26 @@ pub(in crate::canvas) fn notice(view: &Presentation) -> Option<&'static str> {
         })
 }
 
+/// An error inside the body already has its own alert and Retry control.
+pub(in crate::canvas) fn show_notice(
+    notice: &str,
+    inline_error: Option<&str>,
+    comments_open: bool,
+) -> bool {
+    comments_open || inline_error != Some(notice)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::canvas::checklist::tests::fixtures;
+    #[test]
+    fn duplicate_notice_is_hidden_only_with_equal_visible_inline_error() {
+        assert!(!show_notice("Read failed", Some("Read failed"), false));
+        assert!(show_notice("Read failed", Some("Read failed"), true));
+        assert!(show_notice("Saving", Some("Read failed"), false));
+        assert!(show_notice("Read failed", None, false));
+    }
     fn document(body: &str) -> CanvasDocument {
         CanvasDocument::parse(&format!("<div class='quip-canvas-content'><div data-section-style='7'><ul>{body}</ul></div></div>")).unwrap()
     }

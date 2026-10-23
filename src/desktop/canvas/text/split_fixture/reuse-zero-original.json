@@ -1,0 +1,12 @@
+{
+  "provenance": "tmp/canvas-end-reuse-20261023/reference/reuse-projection-result.json",
+  "referenceSha256": "830c5f687cb5c7ce99a0a193627d2a3ef2e7ff54efb61258403b4c22b4283e35",
+  "cohort": "retained-zero-base",
+  "originalId": "empty-final",
+  "sequence": 1000,
+  "session": "CgtlbXB0eS1maW5hbBAAGOgHKp8BhW9Kg6uHVfoAlAEBCgEjRWeJq83vASMBOEPsiWppEqXn88mWWx4qCD5Fq7K0JJtfExw48obH1O4GAQIDAhMCIwZAAlYCCwEEAgQTBBUQIQIjBDQCQgRWBFcDgAECfwB/AX8Df4CAv9YGfwB/BwACfwAAAn8BAAJ/AH4HZGVsZXRlZAR0ZXh0AAEDAH0DfgECAX0BBAF9AQA277u/AwAAMkAzODQzZWM4OTZhNjkxMmE1ZTdmM2M5OTY1YjFlMmEwODNlNDVhYmIyYjQyNDliNWYxMzFjMzhmMjg2YzdkNGVlQkAzODQzZWM4OTZhNjkxMmE1ZTdmM2M5OTY1YjFlMmEwODNlNDVhYmIyYjQyNDliNWYxMzFjMzhmMjg2YzdkNGVlWkUKQDM4NDNlYzg5NmE2OTEyYTVlN2YzYzk5NjViMWUyYTA4M2U0NWFiYjJiNDI0OWI1ZjEzMWMzOGYyODZjN2Q0ZWUQ6Ac=",
+  "historySha256": "85179669576fea0aeac68eea97505ec141d685e8ba2fe68ce51335a9a33554b1",
+  "head": "3843ec896a6912a5e7f3c9965b1e2a083e45abb2b4249b5f131c38f286c7d4ee",
+  "changes": 1,
+  "hostBinding": "Fixture replaces Section1 and CRDT1 with fixed modern ID; original history/heads/sequenceHeads unchanged. Adds independent fixed expiry4 only."
+}

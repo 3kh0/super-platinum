@@ -1,0 +1,4535 @@
+{
+  "results": [
+    {
+      "a": 0,
+      "b": 0,
+      "input": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "b"
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "insert": "ab\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "ab"
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "ab"
+        }
+      ]
+    },
+    {
+      "a": 0,
+      "b": 1,
+      "input": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "b",
+          "attributes": null
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "insert": "ab\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "ab"
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "ab",
+          "attributes": null
+        }
+      ]
+    },
+    {
+      "a": 0,
+      "b": 2,
+      "input": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "b",
+          "attributes": {}
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {},
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "ab"
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "b",
+          "attributes": {}
+        }
+      ]
+    },
+    {
+      "a": 0,
+      "b": 3,
+      "input": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": true
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {
+              "x": true
+            },
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": true
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": true
+          }
+        }
+      ]
+    },
+    {
+      "a": 0,
+      "b": 4,
+      "input": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {
+              "x": 1
+            },
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ]
+    },
+    {
+      "a": 0,
+      "b": 5,
+      "input": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": null
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {
+              "x": null
+            },
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": null
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": null
+          }
+        }
+      ]
+    },
+    {
+      "a": 0,
+      "b": 6,
+      "input": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": []
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {
+              "x": []
+            },
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": []
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": []
+          }
+        }
+      ]
+    },
+    {
+      "a": 0,
+      "b": 7,
+      "input": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": {}
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {
+              "x": {}
+            },
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": {}
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": {}
+          }
+        }
+      ]
+    },
+    {
+      "a": 1,
+      "b": 0,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": null
+        },
+        {
+          "insert": "b"
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "insert": "ab\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "ab"
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "ab"
+        }
+      ]
+    },
+    {
+      "a": 1,
+      "b": 1,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": null
+        },
+        {
+          "insert": "b",
+          "attributes": null
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "insert": "ab\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "ab"
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "ab",
+          "attributes": null
+        }
+      ]
+    },
+    {
+      "a": 1,
+      "b": 2,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": null
+        },
+        {
+          "insert": "b",
+          "attributes": {}
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {},
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "ab"
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": null
+        },
+        {
+          "insert": "b",
+          "attributes": {}
+        }
+      ]
+    },
+    {
+      "a": 1,
+      "b": 3,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": null
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": true
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {
+              "x": true
+            },
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": true
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": null
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": true
+          }
+        }
+      ]
+    },
+    {
+      "a": 1,
+      "b": 4,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": null
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {
+              "x": 1
+            },
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": null
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ]
+    },
+    {
+      "a": 1,
+      "b": 5,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": null
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": null
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {
+              "x": null
+            },
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": null
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": null
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": null
+          }
+        }
+      ]
+    },
+    {
+      "a": 1,
+      "b": 6,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": null
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": []
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {
+              "x": []
+            },
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": []
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": null
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": []
+          }
+        }
+      ]
+    },
+    {
+      "a": 1,
+      "b": 7,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": null
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": {}
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {
+              "x": {}
+            },
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": {}
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": null
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": {}
+          }
+        }
+      ]
+    },
+    {
+      "a": 2,
+      "b": 0,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {}
+        },
+        {
+          "insert": "b"
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {},
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "b\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "ab"
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {}
+        },
+        {
+          "insert": "b"
+        }
+      ]
+    },
+    {
+      "a": 2,
+      "b": 1,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {}
+        },
+        {
+          "insert": "b",
+          "attributes": null
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {},
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "b\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "ab"
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {}
+        },
+        {
+          "insert": "b",
+          "attributes": null
+        }
+      ]
+    },
+    {
+      "a": 2,
+      "b": 2,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {}
+        },
+        {
+          "insert": "b",
+          "attributes": {}
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "insert": "ab",
+            "attributes": {}
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "ab"
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "ab",
+          "attributes": {}
+        }
+      ]
+    },
+    {
+      "a": 2,
+      "b": 3,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {}
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": true
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {},
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {
+              "x": true
+            },
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": true
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {}
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": true
+          }
+        }
+      ]
+    },
+    {
+      "a": 2,
+      "b": 4,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {}
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {},
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {
+              "x": 1
+            },
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {}
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ]
+    },
+    {
+      "a": 2,
+      "b": 5,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {}
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": null
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {},
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {
+              "x": null
+            },
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": null
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {}
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": null
+          }
+        }
+      ]
+    },
+    {
+      "a": 2,
+      "b": 6,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {}
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": []
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {},
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {
+              "x": []
+            },
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": []
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {}
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": []
+          }
+        }
+      ]
+    },
+    {
+      "a": 2,
+      "b": 7,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {}
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": {}
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {},
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {
+              "x": {}
+            },
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": {}
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {}
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": {}
+          }
+        }
+      ]
+    },
+    {
+      "a": 3,
+      "b": 0,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": true
+          }
+        },
+        {
+          "insert": "b"
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {
+              "x": true
+            },
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "b\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": true
+          }
+        },
+        {
+          "insert": "b"
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": true
+          }
+        },
+        {
+          "insert": "b"
+        }
+      ]
+    },
+    {
+      "a": 3,
+      "b": 1,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": true
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": null
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {
+              "x": true
+            },
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "b\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": true
+          }
+        },
+        {
+          "insert": "b"
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": true
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": null
+        }
+      ]
+    },
+    {
+      "a": 3,
+      "b": 2,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": true
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {}
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {
+              "x": true
+            },
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {},
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": true
+          }
+        },
+        {
+          "insert": "b"
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": true
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {}
+        }
+      ]
+    },
+    {
+      "a": 3,
+      "b": 3,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": true
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": true
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "insert": "ab",
+            "attributes": {
+              "x": true
+            }
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "ab",
+          "attributes": {
+            "x": true
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "ab",
+          "attributes": {
+            "x": true
+          }
+        }
+      ]
+    },
+    {
+      "a": 3,
+      "b": 4,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": true
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "insert": "ab",
+            "attributes": {
+              "x": 1
+            }
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "ab",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "ab",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ]
+    },
+    {
+      "a": 3,
+      "b": 5,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": true
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": null
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {
+              "x": true
+            },
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {
+              "x": null
+            },
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": true
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": null
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": true
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": null
+          }
+        }
+      ]
+    },
+    {
+      "a": 3,
+      "b": 6,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": true
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": []
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {
+              "x": true
+            },
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {
+              "x": []
+            },
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": true
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": []
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": true
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": []
+          }
+        }
+      ]
+    },
+    {
+      "a": 3,
+      "b": 7,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": true
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": {}
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {
+              "x": true
+            },
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {
+              "x": {}
+            },
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": true
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": {}
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": true
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": {}
+          }
+        }
+      ]
+    },
+    {
+      "a": 4,
+      "b": 0,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": 1
+          }
+        },
+        {
+          "insert": "b"
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {
+              "x": 1
+            },
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "b\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": 1
+          }
+        },
+        {
+          "insert": "b"
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": 1
+          }
+        },
+        {
+          "insert": "b"
+        }
+      ]
+    },
+    {
+      "a": 4,
+      "b": 1,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": 1
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": null
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {
+              "x": 1
+            },
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "b\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": 1
+          }
+        },
+        {
+          "insert": "b"
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": 1
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": null
+        }
+      ]
+    },
+    {
+      "a": 4,
+      "b": 2,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": 1
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {}
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {
+              "x": 1
+            },
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {},
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": 1
+          }
+        },
+        {
+          "insert": "b"
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": 1
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {}
+        }
+      ]
+    },
+    {
+      "a": 4,
+      "b": 3,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": 1
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": true
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "insert": "ab",
+            "attributes": {
+              "x": true
+            }
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "ab",
+          "attributes": {
+            "x": true
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "ab",
+          "attributes": {
+            "x": true
+          }
+        }
+      ]
+    },
+    {
+      "a": 4,
+      "b": 4,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": 1
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "insert": "ab",
+            "attributes": {
+              "x": 1
+            }
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "ab",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "ab",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ]
+    },
+    {
+      "a": 4,
+      "b": 5,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": 1
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": null
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {
+              "x": 1
+            },
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {
+              "x": null
+            },
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": 1
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": null
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": 1
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": null
+          }
+        }
+      ]
+    },
+    {
+      "a": 4,
+      "b": 6,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": 1
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": []
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {
+              "x": 1
+            },
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {
+              "x": []
+            },
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": 1
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": []
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": 1
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": []
+          }
+        }
+      ]
+    },
+    {
+      "a": 4,
+      "b": 7,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": 1
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": {}
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {
+              "x": 1
+            },
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {
+              "x": {}
+            },
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": 1
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": {}
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": 1
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": {}
+          }
+        }
+      ]
+    },
+    {
+      "a": 5,
+      "b": 0,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": null
+          }
+        },
+        {
+          "insert": "b"
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {
+              "x": null
+            },
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "b\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": null
+          }
+        },
+        {
+          "insert": "b"
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": null
+          }
+        },
+        {
+          "insert": "b"
+        }
+      ]
+    },
+    {
+      "a": 5,
+      "b": 1,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": null
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": null
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {
+              "x": null
+            },
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "b\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": null
+          }
+        },
+        {
+          "insert": "b"
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": null
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": null
+        }
+      ]
+    },
+    {
+      "a": 5,
+      "b": 2,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": null
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {}
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {
+              "x": null
+            },
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {},
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": null
+          }
+        },
+        {
+          "insert": "b"
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": null
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {}
+        }
+      ]
+    },
+    {
+      "a": 5,
+      "b": 3,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": null
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": true
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {
+              "x": null
+            },
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {
+              "x": true
+            },
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": null
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": true
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": null
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": true
+          }
+        }
+      ]
+    },
+    {
+      "a": 5,
+      "b": 4,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": null
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {
+              "x": null
+            },
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {
+              "x": 1
+            },
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": null
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": null
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ]
+    },
+    {
+      "a": 5,
+      "b": 5,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": null
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": null
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "insert": "ab",
+            "attributes": {
+              "x": null
+            }
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "ab",
+          "attributes": {
+            "x": null
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "ab",
+          "attributes": {
+            "x": null
+          }
+        }
+      ]
+    },
+    {
+      "a": 5,
+      "b": 6,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": null
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": []
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {
+              "x": null
+            },
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {
+              "x": []
+            },
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": null
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": []
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": null
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": []
+          }
+        }
+      ]
+    },
+    {
+      "a": 5,
+      "b": 7,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": null
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": {}
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {
+              "x": null
+            },
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {
+              "x": {}
+            },
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": null
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": {}
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": null
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": {}
+          }
+        }
+      ]
+    },
+    {
+      "a": 6,
+      "b": 0,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": []
+          }
+        },
+        {
+          "insert": "b"
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {
+              "x": []
+            },
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "b\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": []
+          }
+        },
+        {
+          "insert": "b"
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": []
+          }
+        },
+        {
+          "insert": "b"
+        }
+      ]
+    },
+    {
+      "a": 6,
+      "b": 1,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": []
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": null
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {
+              "x": []
+            },
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "b\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": []
+          }
+        },
+        {
+          "insert": "b"
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": []
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": null
+        }
+      ]
+    },
+    {
+      "a": 6,
+      "b": 2,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": []
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {}
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {
+              "x": []
+            },
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {},
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": []
+          }
+        },
+        {
+          "insert": "b"
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": []
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {}
+        }
+      ]
+    },
+    {
+      "a": 6,
+      "b": 3,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": []
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": true
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {
+              "x": []
+            },
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {
+              "x": true
+            },
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": []
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": true
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": []
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": true
+          }
+        }
+      ]
+    },
+    {
+      "a": 6,
+      "b": 4,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": []
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {
+              "x": []
+            },
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {
+              "x": 1
+            },
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": []
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": []
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ]
+    },
+    {
+      "a": 6,
+      "b": 5,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": []
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": null
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {
+              "x": []
+            },
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {
+              "x": null
+            },
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": []
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": null
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": []
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": null
+          }
+        }
+      ]
+    },
+    {
+      "a": 6,
+      "b": 6,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": []
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": []
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "insert": "ab",
+            "attributes": {
+              "x": []
+            }
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "ab",
+          "attributes": {
+            "x": []
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "ab",
+          "attributes": {
+            "x": []
+          }
+        }
+      ]
+    },
+    {
+      "a": 6,
+      "b": 7,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": []
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": {}
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "insert": "ab",
+            "attributes": {
+              "x": {}
+            }
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "ab",
+          "attributes": {
+            "x": {}
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "ab",
+          "attributes": {
+            "x": {}
+          }
+        }
+      ]
+    },
+    {
+      "a": 7,
+      "b": 0,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": {}
+          }
+        },
+        {
+          "insert": "b"
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {
+              "x": {}
+            },
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "b\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": {}
+          }
+        },
+        {
+          "insert": "b"
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": {}
+          }
+        },
+        {
+          "insert": "b"
+        }
+      ]
+    },
+    {
+      "a": 7,
+      "b": 1,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": {}
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": null
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {
+              "x": {}
+            },
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "b\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": {}
+          }
+        },
+        {
+          "insert": "b"
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": {}
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": null
+        }
+      ]
+    },
+    {
+      "a": 7,
+      "b": 2,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": {}
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {}
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {
+              "x": {}
+            },
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {},
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": {}
+          }
+        },
+        {
+          "insert": "b"
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": {}
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {}
+        }
+      ]
+    },
+    {
+      "a": 7,
+      "b": 3,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": {}
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": true
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {
+              "x": {}
+            },
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {
+              "x": true
+            },
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": {}
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": true
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": {}
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": true
+          }
+        }
+      ]
+    },
+    {
+      "a": 7,
+      "b": 4,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": {}
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {
+              "x": {}
+            },
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {
+              "x": 1
+            },
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": {}
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": {}
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ]
+    },
+    {
+      "a": 7,
+      "b": 5,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": {}
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": null
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "attributes": {
+              "x": {}
+            },
+            "insert": "a"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "attributes": {
+              "x": null
+            },
+            "insert": "b"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": {}
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": null
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": {}
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": null
+          }
+        }
+      ]
+    },
+    {
+      "a": 7,
+      "b": 6,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": {}
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": []
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "insert": "ab",
+            "attributes": {
+              "x": []
+            }
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "ab",
+          "attributes": {
+            "x": []
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "ab",
+          "attributes": {
+            "x": []
+          }
+        }
+      ]
+    },
+    {
+      "a": 7,
+      "b": 7,
+      "input": [
+        {
+          "insert": "a",
+          "attributes": {
+            "x": {}
+          }
+        },
+        {
+          "insert": "b",
+          "attributes": {
+            "x": {}
+          }
+        }
+      ],
+      "lines": [
+        {
+          "op": {
+            "insert": "ab",
+            "attributes": {
+              "x": {}
+            }
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        },
+        {
+          "op": {
+            "insert": "\n"
+          },
+          "line": {
+            "insert": "\n",
+            "attributes": {}
+          }
+        }
+      ],
+      "composed": [
+        {
+          "insert": "ab",
+          "attributes": {
+            "x": {}
+          }
+        }
+      ],
+      "pushed": [
+        {
+          "insert": "ab",
+          "attributes": {
+            "x": {}
+          }
+        }
+      ]
+    }
+  ],
+  "symbols": [
+    {
+      "input": [
+        {
+          "insert": "↔"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ],
+      "output": [
+        {
+          "insert": "↔︎"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": null
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ],
+      "output": [
+        {
+          "insert": "↔︎"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {}
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ],
+      "output": [
+        {
+          "insert": "↔︎"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "x": true
+          }
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ],
+      "output": [
+        {
+          "insert": "↔︎\n",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "x": 1
+          }
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ],
+      "output": [
+        {
+          "insert": "↔︎\n",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "constructor": null
+          }
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ],
+      "output": [
+        {
+          "insert": "↔"
+        },
+        {
+          "attributes": {
+            "constructor": null
+          },
+          "insert": "︎"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ],
+      "output": [
+        {
+          "insert": "↔︎",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "x": 1
+          }
+        }
+      ]
+    }
+  ],
+  "inherited": [
+    {
+      "input": [
+        {
+          "insert": "x",
+          "attributes": {
+            "constructor": null,
+            "ordinary": null
+          }
+        }
+      ],
+      "output": [
+        {
+          "insert": "x",
+          "attributes": {
+            "ordinary": null
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "x",
+          "attributes": {
+            "toString": null,
+            "ordinary": null
+          }
+        }
+      ],
+      "output": [
+        {
+          "insert": "x",
+          "attributes": {
+            "ordinary": null
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "x",
+          "attributes": {
+            "valueOf": null,
+            "ordinary": null
+          }
+        }
+      ],
+      "output": [
+        {
+          "insert": "x",
+          "attributes": {
+            "ordinary": null
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "x",
+          "attributes": {
+            "hasOwnProperty": null,
+            "ordinary": null
+          }
+        }
+      ],
+      "output": [
+        {
+          "insert": "x",
+          "attributes": {
+            "ordinary": null
+          }
+        }
+      ]
+    }
+  ],
+  "modules": [
+    "/aOC",
+    "1seS",
+    "2Nju",
+    "45zb",
+    "4x3H",
+    "67Az",
+    "DmXP",
+    "FpZJ",
+    "GvjG",
+    "H1PU",
+    "PrET",
+    "UVaH",
+    "VF6F",
+    "VeU+",
+    "bZFu",
+    "cHzv",
+    "e0ER",
+    "eyOE",
+    "f66B",
+    "iL+W",
+    "iRqW",
+    "m9eX",
+    "mM05",
+    "nC51",
+    "oNNP",
+    "owfo",
+    "sdnA"
+  ]
+}

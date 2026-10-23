@@ -1,5 +1,6 @@
 //! Synthetic canonical text and manually completed requests. No transport exists.
 use super::*;
+pub(in crate::canvas::text) mod formatted_title;
 use base64::{Engine as _, engine::general_purpose::STANDARD};
 use super_platinum_core::{
     canvas::{
@@ -14,6 +15,7 @@ const INITIAL: &str = "A <b>bold</b> line 🦊 日本語 &amp; details.";
 #[derive(Default)]
 pub(in crate::canvas) struct State {
     pub attempts: usize,
+    formatted: Option<formatted_title::State>,
     pub(in crate::canvas) loader: Option<crate::canvas::loader::fixture::State>,
     canonical: Option<Arc<CanvasCollabSnapshot>>,
     pending: Option<(checklist::Attempt, PreparedTextEdit)>,
@@ -130,7 +132,12 @@ pub(in crate::canvas) fn install(shell: &mut ShellState) {
     checklist::open_visit(shell);
     if shell.canvas_checklist.text_fixture.is_none() {
         shell.canvas_checklist.text_fixture = Some(State {
-            canonical: Some(snapshot(INITIAL, 1000)),
+            canonical: Some(if formatted_title::requested() {
+                formatted_title::initial()
+            } else {
+                snapshot(INITIAL, 1000)
+            }),
+            formatted: formatted_title::requested().then(Default::default),
             ..Default::default()
         });
     }
@@ -275,4 +282,12 @@ pub(super) fn uncertain(shell: &mut ShellState) -> bool {
         return false;
     };
     checklist::finish(shell, &attempt, checklist::Outcome::Uncertain)
+}
+
+pub(in crate::canvas) fn html() -> &'static str {
+    if formatted_title::requested() {
+        formatted_title::HTML
+    } else {
+        HTML
+    }
 }

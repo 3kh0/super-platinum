@@ -71,8 +71,21 @@ async fn run(
     if !context.current(&state.peek()) {
         return;
     }
-    let transformations = match assignments.and_then(|raw| members::Transformations::decode(&raw)) {
-        Ok(value) => Arc::new(value),
+    let transformations = match assignments {
+        Ok(raw) => match members::Transformations::decode(&raw) {
+            Ok(mut value) => {
+                // Optional presentation facts share this exact original read;
+                // decoding failure must not block channel initialization.
+                value.emoji = emoji::prepare(state, context.clone(), &raw).await;
+                Arc::new(value)
+            }
+            Err(error) => {
+                state.write().report_failure(&error, "", || {
+                    "Channel initialization could not refresh metadata.".into()
+                });
+                return;
+            }
+        },
         Err(error) => {
             state.write().report_failure(&error, "", || {
                 "Channel initialization could not refresh metadata.".into()
@@ -175,12 +188,23 @@ async fn run(
 pub(super) fn begin(
     shell: &mut ShellState,
     context: Arc<Context>,
-    transformations: Arc<members::Transformations>,
+    mut transformations: Arc<members::Transformations>,
     boot: bool,
     version: bool,
 ) -> Result<Owner, Error> {
     if !context.current(shell) {
         return Err(unavailable());
+    }
+    // Resolve concurrent preparations at the actual serial acceptance sink.
+    // First accepted map wins only while its original context is still current.
+    if let Some(prior) = emoji::retained(shell, &context) {
+        Arc::make_mut(&mut transformations).emoji = Some(prior);
+    } else if transformations
+        .emoji
+        .as_ref()
+        .is_some_and(|prepared| !emoji::prepared_current(prepared, shell, &context))
+    {
+        Arc::make_mut(&mut transformations).emoji = None;
     }
     let key = context.key();
     if shell
@@ -247,6 +271,8 @@ pub(super) fn begin(
             errors: vec![],
         },
     );
+    shell.emoji_standard_changed(&owner.context.session.team_id);
+    crate::slack_lists::comments::emoji_standard_changed(shell, &owner.context.session.team_id);
     Ok(owner)
 }
 pub(super) fn retire(shell: &mut ShellState, owner: &Owner) {
@@ -312,6 +338,17 @@ async fn branch_read(
     };
     // A preceding timer effect remains applied even if a later payload sink fails.
     payload::kick(state, read.owner.clone());
+    // Init/Extras can replace self/name-policy facts after Connected launched
+    // an observation job. Reconsider only an actually accepted current sink.
+    if result.is_ok()
+        && matches!(branch, Branch::Init | Branch::Extras)
+        && read.owner.context.current(&state.peek())
+    {
+        crate::app_home::autocomplete::startup::schedule(
+            state,
+            &read.owner.context.session.team_id,
+        );
+    }
     if result.is_err() && read.current(&state.peek()) {
         branch_failed(&mut state.write(), &read, branch);
     }

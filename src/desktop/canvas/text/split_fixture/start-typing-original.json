@@ -1,0 +1,1847 @@
+{
+  "scope": "Original runtime canonical retained sessions or absent38 bootstrap source; initializedSession is runtime evidence only, never source38 in bootstrap cohort.",
+  "seeds": [
+    {
+      "sourceMode": "bootstrap",
+      "corpus": "ascii",
+      "id": "paragraph",
+      "position": "aae",
+      "sequence": 1000,
+      "rtml": "Keep thisSecond paragraph",
+      "canonicalSessionBase64": null,
+      "initializedSessionBase64": "CglwYXJhZ3JhcGgQ6AcY6AcqxgGFb0qDIiZTiAC7AQEKASNFZ4mrAAAAAAEYRgXHkwMS9JuJ9UKe6zAPIPc7MQ4B3LOkKFAZjVnPOwYBAgMCEwIjBkACVgIMAQQCBBEEEwcVECECIwU0AkIFVgdXHIABAn8AfwF/HH+AgL/WBn8AfwcAAhoAAAIaAQADGQAAAn4AAhgBfgdkZWxldGVkBHRleHQAGhwAfhxlGgECGn4BBBoBfgEAGRZ/NktlZXAgdGhpc1NlY29uZCBwYXJhZ3JhcGjvu78cAAAyQDE4NDYwNWM3OTMwMzEyZjQ5Yjg5ZjU0MjllZWIzMDBmMjBmNzNiMzEwZTAxZGNiM2E0Mjg1MDE5OGQ1OWNmM2JCQDE4NDYwNWM3OTMwMzEyZjQ5Yjg5ZjU0MjllZWIzMDBmMjBmNzNiMzEwZTAxZGNiM2E0Mjg1MDE5OGQ1OWNmM2I=",
+      "sourceHistory": [
+        {
+          "ops": [
+            {
+              "action": "makeText",
+              "obj": "_root",
+              "key": "text",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "_head",
+              "insert": true,
+              "value": "K",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "2@0123456789ab00000000",
+              "insert": true,
+              "value": "e",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "3@0123456789ab00000000",
+              "insert": true,
+              "value": "e",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "4@0123456789ab00000000",
+              "insert": true,
+              "value": "p",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "5@0123456789ab00000000",
+              "insert": true,
+              "value": " ",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "6@0123456789ab00000000",
+              "insert": true,
+              "value": "t",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "7@0123456789ab00000000",
+              "insert": true,
+              "value": "h",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "8@0123456789ab00000000",
+              "insert": true,
+              "value": "i",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "9@0123456789ab00000000",
+              "insert": true,
+              "value": "s",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "10@0123456789ab00000000",
+              "insert": true,
+              "value": "S",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "11@0123456789ab00000000",
+              "insert": true,
+              "value": "e",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "12@0123456789ab00000000",
+              "insert": true,
+              "value": "c",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "13@0123456789ab00000000",
+              "insert": true,
+              "value": "o",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "14@0123456789ab00000000",
+              "insert": true,
+              "value": "n",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "15@0123456789ab00000000",
+              "insert": true,
+              "value": "d",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "16@0123456789ab00000000",
+              "insert": true,
+              "value": " ",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "17@0123456789ab00000000",
+              "insert": true,
+              "value": "p",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "18@0123456789ab00000000",
+              "insert": true,
+              "value": "a",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "19@0123456789ab00000000",
+              "insert": true,
+              "value": "r",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "20@0123456789ab00000000",
+              "insert": true,
+              "value": "a",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "21@0123456789ab00000000",
+              "insert": true,
+              "value": "g",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "22@0123456789ab00000000",
+              "insert": true,
+              "value": "r",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "23@0123456789ab00000000",
+              "insert": true,
+              "value": "a",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "24@0123456789ab00000000",
+              "insert": true,
+              "value": "p",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "25@0123456789ab00000000",
+              "insert": true,
+              "value": "h",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "26@0123456789ab00000000",
+              "insert": true,
+              "value": "﻿",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "_root",
+              "key": "deleted",
+              "value": false,
+              "pred": []
+            }
+          ],
+          "actor": "0123456789ab00000000",
+          "hash": "184605c7930312f49b89f5429eeb300f20f73b310e01dcb3a42850198d59cf3b",
+          "seq": 1,
+          "startOp": 1,
+          "time": 1792000000,
+          "message": null,
+          "deps": [],
+          "text": "Keep thisSecond paragraph﻿"
+        }
+      ]
+    },
+    {
+      "sourceMode": "bootstrap",
+      "corpus": "unicode",
+      "id": "paragraph",
+      "position": "aae",
+      "sequence": 1000,
+      "rtml": "Café &amp; 日本😀Second paragraph",
+      "canonicalSessionBase64": null,
+      "initializedSessionBase64": "CglwYXJhZ3JhcGgQ6AcY6Acq3QGFb0qDYCZcNwDSAQEKASNFZ4mrAAAAAAE17WEFjIKJTNQQtXVZZr3x8j9HCsU6K5YENZOEKgEd2QYBAgMCEwIjBkACVgIMAQQCBBEEEwcVECECIwU0AkIFVhFXKYABAn8AfwF/IX+AgL/WBn8AfwcAAh8AAAIfAQADHgAAAn4AAh0BfgdkZWxldGVkBHRleHQAHyEAfiFgHwECH34BBB8BfgEAAxZ/JgcWAjZ/RhAWfzZDYWbDqSAmYW1wOyDml6XmnKzwn5iAU2Vjb25kIHBhcmFncmFwaO+7vyEAADJAMzVlZDYxMDU4YzgyODk0Y2Q0MTBiNTc1NTk2NmJkZjFmMjNmNDcwYWM1M2EyYjk2MDQzNTkzODQyYTAxMWRkOUJAMzVlZDYxMDU4YzgyODk0Y2Q0MTBiNTc1NTk2NmJkZjFmMjNmNDcwYWM1M2EyYjk2MDQzNTkzODQyYTAxMWRkOQ==",
+      "sourceHistory": [
+        {
+          "ops": [
+            {
+              "action": "makeText",
+              "obj": "_root",
+              "key": "text",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "_head",
+              "insert": true,
+              "value": "C",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "2@0123456789ab00000000",
+              "insert": true,
+              "value": "a",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "3@0123456789ab00000000",
+              "insert": true,
+              "value": "f",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "4@0123456789ab00000000",
+              "insert": true,
+              "value": "é",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "5@0123456789ab00000000",
+              "insert": true,
+              "value": " ",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "6@0123456789ab00000000",
+              "insert": true,
+              "value": "&",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "7@0123456789ab00000000",
+              "insert": true,
+              "value": "a",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "8@0123456789ab00000000",
+              "insert": true,
+              "value": "m",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "9@0123456789ab00000000",
+              "insert": true,
+              "value": "p",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "10@0123456789ab00000000",
+              "insert": true,
+              "value": ";",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "11@0123456789ab00000000",
+              "insert": true,
+              "value": " ",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "12@0123456789ab00000000",
+              "insert": true,
+              "value": "日",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "13@0123456789ab00000000",
+              "insert": true,
+              "value": "本",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "14@0123456789ab00000000",
+              "insert": true,
+              "value": "😀",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "15@0123456789ab00000000",
+              "insert": true,
+              "value": "S",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "16@0123456789ab00000000",
+              "insert": true,
+              "value": "e",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "17@0123456789ab00000000",
+              "insert": true,
+              "value": "c",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "18@0123456789ab00000000",
+              "insert": true,
+              "value": "o",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "19@0123456789ab00000000",
+              "insert": true,
+              "value": "n",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "20@0123456789ab00000000",
+              "insert": true,
+              "value": "d",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "21@0123456789ab00000000",
+              "insert": true,
+              "value": " ",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "22@0123456789ab00000000",
+              "insert": true,
+              "value": "p",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "23@0123456789ab00000000",
+              "insert": true,
+              "value": "a",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "24@0123456789ab00000000",
+              "insert": true,
+              "value": "r",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "25@0123456789ab00000000",
+              "insert": true,
+              "value": "a",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "26@0123456789ab00000000",
+              "insert": true,
+              "value": "g",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "27@0123456789ab00000000",
+              "insert": true,
+              "value": "r",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "28@0123456789ab00000000",
+              "insert": true,
+              "value": "a",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "29@0123456789ab00000000",
+              "insert": true,
+              "value": "p",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "30@0123456789ab00000000",
+              "insert": true,
+              "value": "h",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@0123456789ab00000000",
+              "elemId": "31@0123456789ab00000000",
+              "insert": true,
+              "value": "﻿",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "_root",
+              "key": "deleted",
+              "value": false,
+              "pred": []
+            }
+          ],
+          "actor": "0123456789ab00000000",
+          "hash": "35ed61058c82894cd410b5755966bdf1f23f470ac53a2b96043593842a011dd9",
+          "seq": 1,
+          "startOp": 1,
+          "time": 1792000000,
+          "message": null,
+          "deps": [],
+          "text": "Café &amp; 日本😀Second paragraph﻿"
+        }
+      ]
+    },
+    {
+      "sourceMode": "retained",
+      "corpus": "ascii",
+      "id": "paragraph",
+      "position": "aae",
+      "sequence": 1000,
+      "rtml": "Keep thisSecond paragraph",
+      "canonicalSessionBase64": "CglwYXJhZ3JhcGgQ6AcY6Acq1QKFb0qDzMmjdADKAgEKq83vASNFAAAAAAH3BZW9Wh1/il342FyuBPierBXGqr1FEUcc78bqABfInQcBAgMCEw4jCEAEQwRWAg4BBAIEEQgTJRUQIQIjJzQCQgVWB1cpgAEWgQECgwEMDAAMAXgWBwIFAgECAQICfgMFf4CAv9YGCwB/AAsBfwAKAQwHAAInAAACJwEAAwYAAAEfAAACfgAXBQF+ZAICAX8cAwF/YQMBfwAEAXwAAR9hAwF9IAFfBQF+B2RlbGV0ZWQEdGV4dAAnKQB9FmsWBgF/ZQIBfxwEAX9hAgF+IGEDAXsfYh8BYQIBfyACAX9fBQECJ34BBCcBfgEAJhZ/NktlZXAgdGhPcmlzU2Vjb2dpbmRhbCBwYXJhZ2lvcmFwaCB0ZXh077u/CQACAQYAAgECAAIBBgACAQQABQF/AA0Adx4BBgECAQQBBAQBCzJAZjcwNTk1YmQ1YTFkN2Y4YTVkZjhkODVjYWUwNGY4OWVhYzE1YzZhYWJkNDUxMTQ3MWNlZmM2ZWEwMDE3Yzg5ZEJANmZkYzJkMjhkMDhkNDU0ZWEyMThlODk0MTE4ZjQwMTU2ZDkxMzBlZDI5MWM5ZDY0MGY2MmY1ZWZjODg3MWIyMVpFCkBmNzA1OTViZDVhMWQ3ZjhhNWRmOGQ4NWNhZTA0Zjg5ZWFjMTVjNmFhYmQ0NTExNDcxY2VmYzZlYTAwMTdjODlkEOgH",
+      "initializedSessionBase64": "CglwYXJhZ3JhcGgQ6AcY6Acq1QKFb0qDzMmjdADKAgEKq83vASNFAAAAAAH3BZW9Wh1/il342FyuBPierBXGqr1FEUcc78bqABfInQcBAgMCEw4jCEAEQwRWAg4BBAIEEQgTJRUQIQIjJzQCQgVWB1cpgAEWgQECgwEMDAAMAXgWBwIFAgECAQICfgMFf4CAv9YGCwB/AAsBfwAKAQwHAAInAAACJwEAAwYAAAEfAAACfgAXBQF+ZAICAX8cAwF/YQMBfwAEAXwAAR9hAwF9IAFfBQF+B2RlbGV0ZWQEdGV4dAAnKQB9FmsWBgF/ZQIBfxwEAX9hAgF+IGEDAXsfYh8BYQIBfyACAX9fBQECJ34BBCcBfgEAJhZ/NktlZXAgdGhPcmlzU2Vjb2dpbmRhbCBwYXJhZ2lvcmFwaCB0ZXh077u/CQACAQYAAgECAAIBBgACAQQABQF/AA0Adx4BBgECAQQBBAQBCzJAZjcwNTk1YmQ1YTFkN2Y4YTVkZjhkODVjYWUwNGY4OWVhYzE1YzZhYWJkNDUxMTQ3MWNlZmM2ZWEwMDE3Yzg5ZEJANmZkYzJkMjhkMDhkNDU0ZWEyMThlODk0MTE4ZjQwMTU2ZDkxMzBlZDI5MWM5ZDY0MGY2MmY1ZWZjODg3MWIyMVpFCkBmNzA1OTViZDVhMWQ3ZjhhNWRmOGQ4NWNhZTA0Zjg5ZWFjMTVjNmFhYmQ0NTExNDcxY2VmYzZlYTAwMTdjODlkEOgH",
+      "sourceHistory": [
+        {
+          "ops": [
+            {
+              "action": "makeText",
+              "obj": "_root",
+              "key": "text",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "_head",
+              "insert": true,
+              "value": "O",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "2@abcdef01234500000000",
+              "insert": true,
+              "value": "r",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "3@abcdef01234500000000",
+              "insert": true,
+              "value": "i",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "4@abcdef01234500000000",
+              "insert": true,
+              "value": "g",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "5@abcdef01234500000000",
+              "insert": true,
+              "value": "i",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "6@abcdef01234500000000",
+              "insert": true,
+              "value": "n",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "7@abcdef01234500000000",
+              "insert": true,
+              "value": "a",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "8@abcdef01234500000000",
+              "insert": true,
+              "value": "l",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "9@abcdef01234500000000",
+              "insert": true,
+              "value": " ",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "10@abcdef01234500000000",
+              "insert": true,
+              "value": "p",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "11@abcdef01234500000000",
+              "insert": true,
+              "value": "r",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "12@abcdef01234500000000",
+              "insert": true,
+              "value": "i",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "13@abcdef01234500000000",
+              "insert": true,
+              "value": "o",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "14@abcdef01234500000000",
+              "insert": true,
+              "value": "r",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "15@abcdef01234500000000",
+              "insert": true,
+              "value": " ",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "16@abcdef01234500000000",
+              "insert": true,
+              "value": "t",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "17@abcdef01234500000000",
+              "insert": true,
+              "value": "e",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "18@abcdef01234500000000",
+              "insert": true,
+              "value": "x",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "19@abcdef01234500000000",
+              "insert": true,
+              "value": "t",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "20@abcdef01234500000000",
+              "insert": true,
+              "value": "﻿",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "_root",
+              "key": "deleted",
+              "value": false,
+              "pred": []
+            }
+          ],
+          "actor": "abcdef01234500000000",
+          "hash": "6fdc2d28d08d454ea218e894118f40156d9130ed291c9d640f62f5efc8871b21",
+          "seq": 1,
+          "startOp": 1,
+          "time": 1792000000,
+          "message": null,
+          "deps": [],
+          "text": "Original prior text﻿"
+        },
+        {
+          "ops": [
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "_head",
+              "insert": true,
+              "value": "K",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "23@abcdef01234500000000",
+              "insert": true,
+              "value": "e",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "24@abcdef01234500000000",
+              "insert": true,
+              "value": "e",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "25@abcdef01234500000000",
+              "insert": true,
+              "value": "p",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "26@abcdef01234500000000",
+              "insert": true,
+              "value": " ",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "27@abcdef01234500000000",
+              "insert": true,
+              "value": "t",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "28@abcdef01234500000000",
+              "insert": true,
+              "value": "h",
+              "pred": []
+            }
+          ],
+          "actor": "abcdef01234500000000",
+          "hash": "b78542912f86163f53279cdb90dafc6f2c32124349e890eb66cbdb8351384065",
+          "seq": 2,
+          "startOp": 23,
+          "time": 1792000000,
+          "message": null,
+          "deps": [
+            "6fdc2d28d08d454ea218e894118f40156d9130ed291c9d640f62f5efc8871b21"
+          ],
+          "text": "Keep thOriginal prior text﻿"
+        },
+        {
+          "ops": [
+            {
+              "action": "del",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "2@abcdef01234500000000",
+              "pred": [
+                "2@abcdef01234500000000"
+              ]
+            },
+            {
+              "action": "del",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "3@abcdef01234500000000",
+              "pred": [
+                "3@abcdef01234500000000"
+              ]
+            }
+          ],
+          "actor": "abcdef01234500000000",
+          "hash": "9518e8a63f70ac45cef7fc69f5f3b75e3f2ccf33b840ca48cebe258ff58411ea",
+          "seq": 3,
+          "startOp": 30,
+          "time": 1792000000,
+          "message": null,
+          "deps": [
+            "b78542912f86163f53279cdb90dafc6f2c32124349e890eb66cbdb8351384065"
+          ],
+          "text": "Keep thiginal prior text﻿"
+        },
+        {
+          "ops": [
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "4@abcdef01234500000000",
+              "insert": true,
+              "value": "s",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "32@abcdef01234500000000",
+              "insert": true,
+              "value": "S",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "33@abcdef01234500000000",
+              "insert": true,
+              "value": "e",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "34@abcdef01234500000000",
+              "insert": true,
+              "value": "c",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "35@abcdef01234500000000",
+              "insert": true,
+              "value": "o",
+              "pred": []
+            }
+          ],
+          "actor": "abcdef01234500000000",
+          "hash": "45d9619a61c585d6f57b73e6e7c13f7b8a443ae5bc0690ee68ec658adf374705",
+          "seq": 4,
+          "startOp": 32,
+          "time": 1792000000,
+          "message": null,
+          "deps": [
+            "9518e8a63f70ac45cef7fc69f5f3b75e3f2ccf33b840ca48cebe258ff58411ea"
+          ],
+          "text": "Keep thisSecoginal prior text﻿"
+        },
+        {
+          "ops": [
+            {
+              "action": "del",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "5@abcdef01234500000000",
+              "pred": [
+                "5@abcdef01234500000000"
+              ]
+            },
+            {
+              "action": "del",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "6@abcdef01234500000000",
+              "pred": [
+                "6@abcdef01234500000000"
+              ]
+            }
+          ],
+          "actor": "abcdef01234500000000",
+          "hash": "2ad1365be60f4243a200d1e528fb9367dcc3c58644fb124a369f8c0346dd5113",
+          "seq": 5,
+          "startOp": 37,
+          "time": 1792000000,
+          "message": null,
+          "deps": [
+            "45d9619a61c585d6f57b73e6e7c13f7b8a443ae5bc0690ee68ec658adf374705"
+          ],
+          "text": "Keep thisSeconal prior text﻿"
+        },
+        {
+          "ops": [
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "7@abcdef01234500000000",
+              "insert": true,
+              "value": "d",
+              "pred": []
+            }
+          ],
+          "actor": "abcdef01234500000000",
+          "hash": "69de658d4d71e730844ad6a9f030d87f2003e30711930f7d507cc7a3d9cc5935",
+          "seq": 6,
+          "startOp": 39,
+          "time": 1792000000,
+          "message": null,
+          "deps": [
+            "2ad1365be60f4243a200d1e528fb9367dcc3c58644fb124a369f8c0346dd5113"
+          ],
+          "text": "Keep thisSecondal prior text﻿"
+        },
+        {
+          "ops": [
+            {
+              "action": "del",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "8@abcdef01234500000000",
+              "pred": [
+                "8@abcdef01234500000000"
+              ]
+            },
+            {
+              "action": "del",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "9@abcdef01234500000000",
+              "pred": [
+                "9@abcdef01234500000000"
+              ]
+            }
+          ],
+          "actor": "abcdef01234500000000",
+          "hash": "887456bc0ed3cc1fba82ec2242802880e245f020c8090c4ee9ce69000afc2714",
+          "seq": 7,
+          "startOp": 40,
+          "time": 1792000000,
+          "message": null,
+          "deps": [
+            "69de658d4d71e730844ad6a9f030d87f2003e30711930f7d507cc7a3d9cc5935"
+          ],
+          "text": "Keep thisSecond prior text﻿"
+        },
+        {
+          "ops": [
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "11@abcdef01234500000000",
+              "insert": true,
+              "value": "a",
+              "pred": []
+            }
+          ],
+          "actor": "abcdef01234500000000",
+          "hash": "f176d6909299e8a03b8d0af3fe1e1fa74197842c8d2583136c002c6c6345e62a",
+          "seq": 8,
+          "startOp": 42,
+          "time": 1792000000,
+          "message": null,
+          "deps": [
+            "887456bc0ed3cc1fba82ec2242802880e245f020c8090c4ee9ce69000afc2714"
+          ],
+          "text": "Keep thisSecond parior text﻿"
+        },
+        {
+          "ops": [
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "12@abcdef01234500000000",
+              "insert": true,
+              "value": "a",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "43@abcdef01234500000000",
+              "insert": true,
+              "value": "g",
+              "pred": []
+            }
+          ],
+          "actor": "abcdef01234500000000",
+          "hash": "50b8d6bda3ec84d028c44408734b4fadce72e4980220ed8897973499808d990c",
+          "seq": 9,
+          "startOp": 43,
+          "time": 1792000000,
+          "message": null,
+          "deps": [
+            "f176d6909299e8a03b8d0af3fe1e1fa74197842c8d2583136c002c6c6345e62a"
+          ],
+          "text": "Keep thisSecond paragior text﻿"
+        },
+        {
+          "ops": [
+            {
+              "action": "del",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "13@abcdef01234500000000",
+              "pred": [
+                "13@abcdef01234500000000"
+              ]
+            },
+            {
+              "action": "del",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "14@abcdef01234500000000",
+              "pred": [
+                "14@abcdef01234500000000"
+              ]
+            }
+          ],
+          "actor": "abcdef01234500000000",
+          "hash": "fece9674dfb8a105834860a92f4e281a0548f3126b05959660ea826e19960ac4",
+          "seq": 10,
+          "startOp": 45,
+          "time": 1792000000,
+          "message": null,
+          "deps": [
+            "50b8d6bda3ec84d028c44408734b4fadce72e4980220ed8897973499808d990c"
+          ],
+          "text": "Keep thisSecond paragr text﻿"
+        },
+        {
+          "ops": [
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "15@abcdef01234500000000",
+              "insert": true,
+              "value": "a",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "47@abcdef01234500000000",
+              "insert": true,
+              "value": "p",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "48@abcdef01234500000000",
+              "insert": true,
+              "value": "h",
+              "pred": []
+            }
+          ],
+          "actor": "abcdef01234500000000",
+          "hash": "1cde6ea1fb1500e92c524d38d9ec12ad6cf132d18b9eb9a2b4b219b2bbea15de",
+          "seq": 11,
+          "startOp": 47,
+          "time": 1792000000,
+          "message": null,
+          "deps": [
+            "fece9674dfb8a105834860a92f4e281a0548f3126b05959660ea826e19960ac4"
+          ],
+          "text": "Keep thisSecond paragraph text﻿"
+        },
+        {
+          "ops": [
+            {
+              "action": "del",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "16@abcdef01234500000000",
+              "pred": [
+                "16@abcdef01234500000000"
+              ]
+            },
+            {
+              "action": "del",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "17@abcdef01234500000000",
+              "pred": [
+                "17@abcdef01234500000000"
+              ]
+            },
+            {
+              "action": "del",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "18@abcdef01234500000000",
+              "pred": [
+                "18@abcdef01234500000000"
+              ]
+            },
+            {
+              "action": "del",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "19@abcdef01234500000000",
+              "pred": [
+                "19@abcdef01234500000000"
+              ]
+            },
+            {
+              "action": "del",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "20@abcdef01234500000000",
+              "pred": [
+                "20@abcdef01234500000000"
+              ]
+            }
+          ],
+          "actor": "abcdef01234500000000",
+          "hash": "f70595bd5a1d7f8a5df8d85cae04f89eac15c6aabd4511471cefc6ea0017c89d",
+          "seq": 12,
+          "startOp": 50,
+          "time": 1792000000,
+          "message": null,
+          "deps": [
+            "1cde6ea1fb1500e92c524d38d9ec12ad6cf132d18b9eb9a2b4b219b2bbea15de"
+          ],
+          "text": "Keep thisSecond paragraph﻿"
+        }
+      ]
+    },
+    {
+      "sourceMode": "retained",
+      "corpus": "unicode",
+      "id": "paragraph",
+      "position": "aae",
+      "sequence": 1000,
+      "rtml": "Café &amp; 日本😀Second paragraph",
+      "canonicalSessionBase64": "CglwYXJhZ3JhcGgQ6AcY6Acq8QKFb0qD1ecPAADmAgEKq83vASNFAAAAAAFvdaHLZhrVW61Xyffk1Moa9qKPPB9jzEorAf/gkUFhRgcBAgMCExIjCEAEQwRWAg4BBAIEEQQTJhUQIQIjJjQCQgVWEVc3gAEWgQECgwEQDwAPAXcWAwEDAQIDAQQCAX8DAgJ/DH+AgL/WBg4AfwAOAX8ADQEPBwACLQAAAi0BAAQrAAACAgB/AgYBfhdpAgF7FwFoAQAFAXwZAgFkAgF9HAEDCgF/VgIBfgdkZWxldGVkBHRleHQALS8AfBZrGWgGAXsXAWkBFwIBfWgZaAQBfhkCAgF7ZAEcAQMLAX9WAgECLX4BBC0BfgEACRZ/JgwWAjZ/RhMWfzZDT3JpZ2luYWbDqWwgJmFtcDtyaW9yIOaXpeacrPCfmIBTdGVjb25kIHBhcmFncmFwaHh077u/AwAGAQMAfwEGAAQBBQB/AQ8AAgF/AA4AfxcCAX8CAwF/BwMBfQIGAQ4yQDZmNzVhMWNiNjYxYWQ1NWJhZDU3YzlmN2U0ZDRjYTFhZjZhMjhmM2MxZjYzY2M0YTJiMDFmZmUwOTE0MTYxNDZCQDZmZGMyZDI4ZDA4ZDQ1NGVhMjE4ZTg5NDExOGY0MDE1NmQ5MTMwZWQyOTFjOWQ2NDBmNjJmNWVmYzg4NzFiMjFaRQpANmY3NWExY2I2NjFhZDU1YmFkNTdjOWY3ZTRkNGNhMWFmNmEyOGYzYzFmNjNjYzRhMmIwMWZmZTA5MTQxNjE0NhDoBw==",
+      "initializedSessionBase64": "CglwYXJhZ3JhcGgQ6AcY6Acq8QKFb0qD1ecPAADmAgEKq83vASNFAAAAAAFvdaHLZhrVW61Xyffk1Moa9qKPPB9jzEorAf/gkUFhRgcBAgMCExIjCEAEQwRWAg4BBAIEEQQTJhUQIQIjJjQCQgVWEVc3gAEWgQECgwEQDwAPAXcWAwEDAQIDAQQCAX8DAgJ/DH+AgL/WBg4AfwAOAX8ADQEPBwACLQAAAi0BAAQrAAACAgB/AgYBfhdpAgF7FwFoAQAFAXwZAgFkAgF9HAEDCgF/VgIBfgdkZWxldGVkBHRleHQALS8AfBZrGWgGAXsXAWkBFwIBfWgZaAQBfhkCAgF7ZAEcAQMLAX9WAgECLX4BBC0BfgEACRZ/JgwWAjZ/RhMWfzZDT3JpZ2luYWbDqWwgJmFtcDtyaW9yIOaXpeacrPCfmIBTdGVjb25kIHBhcmFncmFwaHh077u/AwAGAQMAfwEGAAQBBQB/AQ8AAgF/AA4AfxcCAX8CAwF/BwMBfQIGAQ4yQDZmNzVhMWNiNjYxYWQ1NWJhZDU3YzlmN2U0ZDRjYTFhZjZhMjhmM2MxZjYzY2M0YTJiMDFmZmUwOTE0MTYxNDZCQDZmZGMyZDI4ZDA4ZDQ1NGVhMjE4ZTg5NDExOGY0MDE1NmQ5MTMwZWQyOTFjOWQ2NDBmNjJmNWVmYzg4NzFiMjFaRQpANmY3NWExY2I2NjFhZDU1YmFkNTdjOWY3ZTRkNGNhMWFmNmEyOGYzYzFmNjNjYzRhMmIwMWZmZTA5MTQxNjE0NhDoBw==",
+      "sourceHistory": [
+        {
+          "ops": [
+            {
+              "action": "makeText",
+              "obj": "_root",
+              "key": "text",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "_head",
+              "insert": true,
+              "value": "O",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "2@abcdef01234500000000",
+              "insert": true,
+              "value": "r",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "3@abcdef01234500000000",
+              "insert": true,
+              "value": "i",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "4@abcdef01234500000000",
+              "insert": true,
+              "value": "g",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "5@abcdef01234500000000",
+              "insert": true,
+              "value": "i",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "6@abcdef01234500000000",
+              "insert": true,
+              "value": "n",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "7@abcdef01234500000000",
+              "insert": true,
+              "value": "a",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "8@abcdef01234500000000",
+              "insert": true,
+              "value": "l",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "9@abcdef01234500000000",
+              "insert": true,
+              "value": " ",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "10@abcdef01234500000000",
+              "insert": true,
+              "value": "p",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "11@abcdef01234500000000",
+              "insert": true,
+              "value": "r",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "12@abcdef01234500000000",
+              "insert": true,
+              "value": "i",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "13@abcdef01234500000000",
+              "insert": true,
+              "value": "o",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "14@abcdef01234500000000",
+              "insert": true,
+              "value": "r",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "15@abcdef01234500000000",
+              "insert": true,
+              "value": " ",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "16@abcdef01234500000000",
+              "insert": true,
+              "value": "t",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "17@abcdef01234500000000",
+              "insert": true,
+              "value": "e",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "18@abcdef01234500000000",
+              "insert": true,
+              "value": "x",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "19@abcdef01234500000000",
+              "insert": true,
+              "value": "t",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "20@abcdef01234500000000",
+              "insert": true,
+              "value": "﻿",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "_root",
+              "key": "deleted",
+              "value": false,
+              "pred": []
+            }
+          ],
+          "actor": "abcdef01234500000000",
+          "hash": "6fdc2d28d08d454ea218e894118f40156d9130ed291c9d640f62f5efc8871b21",
+          "seq": 1,
+          "startOp": 1,
+          "time": 1792000000,
+          "message": null,
+          "deps": [],
+          "text": "Original prior text﻿"
+        },
+        {
+          "ops": [
+            {
+              "action": "del",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "2@abcdef01234500000000",
+              "pred": [
+                "2@abcdef01234500000000"
+              ]
+            },
+            {
+              "action": "del",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "3@abcdef01234500000000",
+              "pred": [
+                "3@abcdef01234500000000"
+              ]
+            },
+            {
+              "action": "del",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "4@abcdef01234500000000",
+              "pred": [
+                "4@abcdef01234500000000"
+              ]
+            }
+          ],
+          "actor": "abcdef01234500000000",
+          "hash": "56115513a00a976108e8651284760c0283bcf1ed1688554ba580830a188e8296",
+          "seq": 2,
+          "startOp": 23,
+          "time": 1792000000,
+          "message": null,
+          "deps": [
+            "6fdc2d28d08d454ea218e894118f40156d9130ed291c9d640f62f5efc8871b21"
+          ],
+          "text": "ginal prior text﻿"
+        },
+        {
+          "ops": [
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "_head",
+              "insert": true,
+              "value": "C",
+              "pred": []
+            }
+          ],
+          "actor": "abcdef01234500000000",
+          "hash": "37df1cdbd542a4017d56420554fce4954041456de760a92e430a91887a45e630",
+          "seq": 3,
+          "startOp": 26,
+          "time": 1792000000,
+          "message": null,
+          "deps": [
+            "56115513a00a976108e8651284760c0283bcf1ed1688554ba580830a188e8296"
+          ],
+          "text": "Cginal prior text﻿"
+        },
+        {
+          "ops": [
+            {
+              "action": "del",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "5@abcdef01234500000000",
+              "pred": [
+                "5@abcdef01234500000000"
+              ]
+            },
+            {
+              "action": "del",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "6@abcdef01234500000000",
+              "pred": [
+                "6@abcdef01234500000000"
+              ]
+            },
+            {
+              "action": "del",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "7@abcdef01234500000000",
+              "pred": [
+                "7@abcdef01234500000000"
+              ]
+            }
+          ],
+          "actor": "abcdef01234500000000",
+          "hash": "04734ef4c1f01d9783d692e2a2caee111fb5748ecb85659a47adc5c9f12b6611",
+          "seq": 4,
+          "startOp": 27,
+          "time": 1792000000,
+          "message": null,
+          "deps": [
+            "37df1cdbd542a4017d56420554fce4954041456de760a92e430a91887a45e630"
+          ],
+          "text": "Cal prior text﻿"
+        },
+        {
+          "ops": [
+            {
+              "action": "del",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "9@abcdef01234500000000",
+              "pred": [
+                "9@abcdef01234500000000"
+              ]
+            }
+          ],
+          "actor": "abcdef01234500000000",
+          "hash": "bece1eab93e9a2977ffec6858147df183c3ba5fa8a96ae3d9b032256044b16cd",
+          "seq": 5,
+          "startOp": 30,
+          "time": 1792000000,
+          "message": null,
+          "deps": [
+            "04734ef4c1f01d9783d692e2a2caee111fb5748ecb85659a47adc5c9f12b6611"
+          ],
+          "text": "Ca prior text﻿"
+        },
+        {
+          "ops": [
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "8@abcdef01234500000000",
+              "insert": true,
+              "value": "f",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "31@abcdef01234500000000",
+              "insert": true,
+              "value": "é",
+              "pred": []
+            }
+          ],
+          "actor": "abcdef01234500000000",
+          "hash": "eadb9d07fed2ffb7781998f32b06eb2f6f34acf32f3ab450750bc71da1526d6f",
+          "seq": 6,
+          "startOp": 31,
+          "time": 1792000000,
+          "message": null,
+          "deps": [
+            "bece1eab93e9a2977ffec6858147df183c3ba5fa8a96ae3d9b032256044b16cd"
+          ],
+          "text": "Café prior text﻿"
+        },
+        {
+          "ops": [
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "10@abcdef01234500000000",
+              "insert": true,
+              "value": "&",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "33@abcdef01234500000000",
+              "insert": true,
+              "value": "a",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "34@abcdef01234500000000",
+              "insert": true,
+              "value": "m",
+              "pred": []
+            }
+          ],
+          "actor": "abcdef01234500000000",
+          "hash": "cdd671eb9c9f1a8891ce96ba50919ad9dda556c059fa85168b332812cddb6e76",
+          "seq": 7,
+          "startOp": 33,
+          "time": 1792000000,
+          "message": null,
+          "deps": [
+            "eadb9d07fed2ffb7781998f32b06eb2f6f34acf32f3ab450750bc71da1526d6f"
+          ],
+          "text": "Café &amprior text﻿"
+        },
+        {
+          "ops": [
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "11@abcdef01234500000000",
+              "insert": true,
+              "value": ";",
+              "pred": []
+            }
+          ],
+          "actor": "abcdef01234500000000",
+          "hash": "392d2cae66a392db487656589088b043743846e732cdb84e8e994107edce3def",
+          "seq": 8,
+          "startOp": 36,
+          "time": 1792000000,
+          "message": null,
+          "deps": [
+            "cdd671eb9c9f1a8891ce96ba50919ad9dda556c059fa85168b332812cddb6e76"
+          ],
+          "text": "Café &amp;rior text﻿"
+        },
+        {
+          "ops": [
+            {
+              "action": "del",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "12@abcdef01234500000000",
+              "pred": [
+                "12@abcdef01234500000000"
+              ]
+            },
+            {
+              "action": "del",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "13@abcdef01234500000000",
+              "pred": [
+                "13@abcdef01234500000000"
+              ]
+            },
+            {
+              "action": "del",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "14@abcdef01234500000000",
+              "pred": [
+                "14@abcdef01234500000000"
+              ]
+            },
+            {
+              "action": "del",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "15@abcdef01234500000000",
+              "pred": [
+                "15@abcdef01234500000000"
+              ]
+            }
+          ],
+          "actor": "abcdef01234500000000",
+          "hash": "cc4fdf6ea87b04ba9579e64b46d21d680e9a93cac59dba0c00a7b001ed61ff05",
+          "seq": 9,
+          "startOp": 37,
+          "time": 1792000000,
+          "message": null,
+          "deps": [
+            "392d2cae66a392db487656589088b043743846e732cdb84e8e994107edce3def"
+          ],
+          "text": "Café &amp; text﻿"
+        },
+        {
+          "ops": [
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "16@abcdef01234500000000",
+              "insert": true,
+              "value": "日",
+              "pred": []
+            }
+          ],
+          "actor": "abcdef01234500000000",
+          "hash": "ba4a397d146ca2471b21b5ccea8a9c43b66dc2289d066bf733524f017841978c",
+          "seq": 10,
+          "startOp": 41,
+          "time": 1792000000,
+          "message": null,
+          "deps": [
+            "cc4fdf6ea87b04ba9579e64b46d21d680e9a93cac59dba0c00a7b001ed61ff05"
+          ],
+          "text": "Café &amp; 日text﻿"
+        },
+        {
+          "ops": [
+            {
+              "action": "del",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "17@abcdef01234500000000",
+              "pred": [
+                "17@abcdef01234500000000"
+              ]
+            }
+          ],
+          "actor": "abcdef01234500000000",
+          "hash": "b1b9c752a4c16ec1a21970c1b2ea8aecdb43e4d0d49c47eb88d3fb229bbb4f28",
+          "seq": 11,
+          "startOp": 42,
+          "time": 1792000000,
+          "message": null,
+          "deps": [
+            "ba4a397d146ca2471b21b5ccea8a9c43b66dc2289d066bf733524f017841978c"
+          ],
+          "text": "Café &amp; 日ext﻿"
+        },
+        {
+          "ops": [
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "41@abcdef01234500000000",
+              "insert": true,
+              "value": "本",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "43@abcdef01234500000000",
+              "insert": true,
+              "value": "😀",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "44@abcdef01234500000000",
+              "insert": true,
+              "value": "S",
+              "pred": []
+            }
+          ],
+          "actor": "abcdef01234500000000",
+          "hash": "70c68270029c747cd09b4b1c3481708c1149832960ea46856ef5a6e2eea4d2ed",
+          "seq": 12,
+          "startOp": 43,
+          "time": 1792000000,
+          "message": null,
+          "deps": [
+            "b1b9c752a4c16ec1a21970c1b2ea8aecdb43e4d0d49c47eb88d3fb229bbb4f28"
+          ],
+          "text": "Café &amp; 日本😀Sext﻿"
+        },
+        {
+          "ops": [
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "18@abcdef01234500000000",
+              "insert": true,
+              "value": "c",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "46@abcdef01234500000000",
+              "insert": true,
+              "value": "o",
+              "pred": []
+            }
+          ],
+          "actor": "abcdef01234500000000",
+          "hash": "99cee66750aec446c0cfc5bdf5d142801f7f4b502844765f23a95be43baf3d6b",
+          "seq": 13,
+          "startOp": 46,
+          "time": 1792000000,
+          "message": null,
+          "deps": [
+            "70c68270029c747cd09b4b1c3481708c1149832960ea46856ef5a6e2eea4d2ed"
+          ],
+          "text": "Café &amp; 日本😀Secoxt﻿"
+        },
+        {
+          "ops": [
+            {
+              "action": "del",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "19@abcdef01234500000000",
+              "pred": [
+                "19@abcdef01234500000000"
+              ]
+            },
+            {
+              "action": "del",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "20@abcdef01234500000000",
+              "pred": [
+                "20@abcdef01234500000000"
+              ]
+            }
+          ],
+          "actor": "abcdef01234500000000",
+          "hash": "8d3d14f09fb14fd7de793e8a732765fb584f8d54d69b1adc9c9d97b07a8099e9",
+          "seq": 14,
+          "startOp": 48,
+          "time": 1792000000,
+          "message": null,
+          "deps": [
+            "99cee66750aec446c0cfc5bdf5d142801f7f4b502844765f23a95be43baf3d6b"
+          ],
+          "text": "Café &amp; 日本😀Seco﻿"
+        },
+        {
+          "ops": [
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "47@abcdef01234500000000",
+              "insert": true,
+              "value": "n",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "50@abcdef01234500000000",
+              "insert": true,
+              "value": "d",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "51@abcdef01234500000000",
+              "insert": true,
+              "value": " ",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "52@abcdef01234500000000",
+              "insert": true,
+              "value": "p",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "53@abcdef01234500000000",
+              "insert": true,
+              "value": "a",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "54@abcdef01234500000000",
+              "insert": true,
+              "value": "r",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "55@abcdef01234500000000",
+              "insert": true,
+              "value": "a",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "56@abcdef01234500000000",
+              "insert": true,
+              "value": "g",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "57@abcdef01234500000000",
+              "insert": true,
+              "value": "r",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "58@abcdef01234500000000",
+              "insert": true,
+              "value": "a",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "59@abcdef01234500000000",
+              "insert": true,
+              "value": "p",
+              "pred": []
+            },
+            {
+              "action": "set",
+              "obj": "1@abcdef01234500000000",
+              "elemId": "60@abcdef01234500000000",
+              "insert": true,
+              "value": "h",
+              "pred": []
+            }
+          ],
+          "actor": "abcdef01234500000000",
+          "hash": "6f75a1cb661ad55bad57c9f7e4d4ca1af6a28f3c1f63cc4a2b01ffe091416146",
+          "seq": 15,
+          "startOp": 50,
+          "time": 1792000000,
+          "message": null,
+          "deps": [
+            "8d3d14f09fb14fd7de793e8a732765fb584f8d54d69b1adc9c9d97b07a8099e9"
+          ],
+          "text": "Café &amp; 日本😀Second paragraph﻿"
+        }
+      ]
+    }
+  ]
+}

@@ -4,7 +4,7 @@ import vm from 'node:vm';
 const script=fs.readFileSync(new URL('./native.js',import.meta.url),'utf8');
 let checks=0;
 function scene(){
- const expected={epoch:8,selected:'',rows:[{id:'CONE',label:'one'},{id:'CTWO',label:'two'}]},original={id:3},local={};
+ const expected={epoch:8,selected:'',feature:{visible:false,checked:false},rows:[{id:'CONE',label:'one'},{id:'CTWO',label:'two'}]},original={id:3},local={};
  const panel={dataset:{addEpoch:'8',addSelected:''},isConnected:true,contains:n=>Object.values(nodes).includes(n)};
  const select={tagName:'SELECT',value:'',disabled:false,isConnected:true,options:[{value:'',textContent:'No channel'},{value:'CONE',textContent:'one'},{value:'CTWO',textContent:'two'}]};
  const done={tagName:'BUTTON',textContent:'Done',isConnected:true,disabled:false},refresh={tagName:'BUTTON',textContent:'Refresh channel choices',isConnected:true,disabled:false};
@@ -40,4 +40,22 @@ await test('forged Done caption refuses',async()=>{let s=scene();await s.bind();
 await test('navigation lock owns exact original until released',async()=>{let s=scene();await s.bind();let release;const done=new Promise(r=>release=r);let proof;const task=s.lock({send:v=>proof=v,recv:()=>done});assert.equal(proof,true);assert.ok(s.saved.confirmationAddLock);let second;await s.lock({send:v=>second=v,recv:()=>done});assert.equal(second,false);release();await task;assert.equal(s.saved.confirmationAddLock,undefined);});
 await test('expired parent cannot acquire navigation lock',async()=>{let s=scene();await s.bind();s.parent=false;let proof;await s.lock({send:v=>proof=v,recv:()=>Promise.resolve()});assert.equal(proof,false);assert.equal(s.saved.confirmationAddLock,undefined);});
 await test('Done remains guarded while no-selection listing is pending',async()=>{let s=scene();s.expected.rows=[];s.nodes['workflow-confirmation-channel'].options=[{value:'',textContent:'No channel'}];s.nodes['workflow-confirmation-channel'].disabled=true;s.nodes['workflow-confirmation-retry'].disabled=true;assert.equal(await s.bind(),true);assert.equal(s.current({kind:'done'}),true);assert.equal(s.current({kind:'select',value:''}),false);assert.equal(s.current({kind:'refresh'}),false);s.parent=false;assert.equal(s.current({kind:'done'}),false);});
+function feature(s){
+ s.expected.feature={visible:true,checked:false};
+ const node={tagName:'INPUT',type:'checkbox',checked:false,indeterminate:false,isConnected:true,disabled:false};
+ node.getClientRects=()=>node.hidden?[]:[{}];
+ s.nodes['workflow-confirmation-feature']=node;return node;
+}
+await test('original Feature checkbox binds',async()=>{let s=scene();feature(s);assert.equal(await s.bind(),true);assert.equal(s.current(),true);});
+await test('only exact Feature action admits checked ahead',async()=>{let s=scene(),f=feature(s);await s.bind();f.checked=true;assert.equal(s.current(),false);assert.equal(s.current({kind:'feature',value:true}),true);for(const a of [{kind:'feature',value:false},{kind:'feature',value:1},{kind:'done'},{kind:'refresh'},{kind:'select',value:''}])assert.equal(s.current(a),false);});
+await test('Feature action cannot admit channel value ahead',async()=>{let s=scene(),f=feature(s);await s.bind();f.checked=true;s.nodes['workflow-confirmation-channel'].value='CONE';assert.equal(s.current({kind:'feature',value:true}),false);});
+await test('invisible Feature cannot act or unexpectedly appear',async()=>{let s=scene();await s.bind();assert.equal(s.current({kind:'feature',value:false}),false);feature(s);assert.equal(s.current(),false);assert.equal(await s.bind(),false);});
+await test('same epoch checkbox replacement refuses rebind',async()=>{let s=scene();feature(s);await s.bind();s.nodes['workflow-confirmation-feature']={...s.nodes['workflow-confirmation-feature']};assert.equal(s.current(),false);assert.equal(await s.bind(),false);});
+await test('same epoch checkbox removal refuses rebind',async()=>{let s=scene();feature(s);await s.bind();delete s.nodes['workflow-confirmation-feature'];s.expected.feature.visible=false;assert.equal(s.current(),false);assert.equal(await s.bind(),false);});
+await test('conditional checkbox appears and disappears on new epochs',async()=>{let s=scene();await s.bind();s.expected.epoch=9;s.nodes['workflow-confirmation-add'].dataset.addEpoch='9';feature(s);assert.equal(await s.bind(),true);assert.equal(s.current(),true);s.expected.epoch=10;s.nodes['workflow-confirmation-add'].dataset.addEpoch='10';delete s.nodes['workflow-confirmation-feature'];s.expected.feature.visible=false;assert.equal(await s.bind(),true);assert.equal(s.current(),true);});
+await test('disabled or hidden Feature cannot act',async()=>{for(const key of ['disabled','hidden']){let s=scene(),f=feature(s);await s.bind();f[key]=true;assert.equal(s.current({kind:'feature',value:false}),false);}});
+await test('detached indeterminate and wrong-type Feature refuse',async()=>{for(const change of [{isConnected:false},{indeterminate:true},{type:'text'},{tagName:'BUTTON'},{validity:{badInput:true}}]){let s=scene(),f=feature(s);await s.bind();Object.assign(f,change);assert.equal(s.current(),false);}});
+await test('Feature change preserves parent IME and draft guard',async()=>{let s=scene(),f=feature(s);await s.bind();f.checked=true;s.parent=false;assert.equal(s.current({kind:'feature',value:true}),false);});
+await test('binding never adopts checked ahead',async()=>{let s=scene(),f=feature(s);f.checked=true;assert.equal(await s.bind(),false);});
+await test('malformed expected Feature state refuses',async()=>{let s=scene();delete s.expected.feature;assert.equal(await s.bind(),false);assert.equal(s.current(),false);});
 console.log(`${checks} confirmation Add native checks passed`);

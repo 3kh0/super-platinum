@@ -1,5 +1,7 @@
 mod window;
-pub(crate) use window::{ChannelRow, channel_rows, project_channel_window};
+pub(crate) use window::{
+    ChannelRow, channel_rows, project_channel_window, project_channel_window_with_standard,
+};
 mod channel_window_checks;
 pub(crate) use channel_window_checks::fixture as channel_window_fixture;
 #[cfg(test)]

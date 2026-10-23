@@ -9,6 +9,7 @@ use std::{
 };
 mod ingress;
 mod lifecycle;
+pub mod opened;
 pub use ingress::{AcceptedIngress, IngressWitness};
 mod actions;
 pub mod freshness;
@@ -18,6 +19,7 @@ mod memberships;
 mod names;
 mod observations;
 pub mod resync;
+pub mod search_memberships;
 mod unchanged;
 pub use lifecycle::BootLease;
 pub use names::{NamePlan, NameSnapshot};
@@ -64,6 +66,8 @@ pub enum Origin {
     Boot,
     Directory,
     Direct,
+    /// Actual conversations.open result through 46wa general upsert.
+    OpenedConversation,
     /// A 0mwJ terminal marker, never a received HTTP row.
     RuntimeMissing,
 }

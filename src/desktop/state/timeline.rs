@@ -1,5 +1,6 @@
 use super::ShellState;
 use crate::model::*;
+mod emoji;
 
 impl ShellState {
     /// Exact shared mounting condition for the conversation pane (including tabs).
@@ -24,6 +25,11 @@ impl ShellState {
 
     /// Rebuild rich content only for the current absolute metadata window.
     pub(crate) fn reproject_channel_window(&mut self) {
+        let standard = self
+            .core
+            .active_team
+            .as_deref()
+            .and_then(|team| crate::app_home::channel_fetches::emoji_standard(self, team));
         let start = self.timeline_start.min(self.channel_rows.len());
         let end = self.timeline_end.max(start).min(self.channel_rows.len());
         let end = if self.selection_pinned {
@@ -33,6 +39,7 @@ impl ShellState {
         };
         self.timeline_start = start;
         self.timeline_end = end;
+        self.channel_projection_generation = self.channel_projection_generation.wrapping_add(1);
         self.messages = if let Some(messages) = &self.fixture_channel_messages {
             messages[start..end].to_vec()
         } else {
@@ -42,12 +49,13 @@ impl ShellState {
                 .and_then(|team| self.core.workspaces.get(team))
                 .zip(self.channels.get(self.active_channel))
                 .map(|(workspace, channel)| {
-                    crate::channel_vm::project_channel_window(
+                    crate::channel_vm::project_channel_window_with_standard(
                         workspace,
                         &channel.id,
                         &self.media,
                         &self.channel_rows,
                         start..end,
+                        standard.as_ref().map(|observed| observed.standard()),
                     )
                 })
                 .unwrap_or_default()

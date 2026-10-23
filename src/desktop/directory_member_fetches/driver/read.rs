@@ -1,6 +1,7 @@
 //! Conditional users/info scheduler; request order survives concurrent replies.
 use super::*;
 use crate::profile_edit::sections::fixture::member_recovery as fixture;
+use crate::slack_lists::comments::fixture::completion::title_users as list_title;
 use super_platinum_core::block_actions::directory_endpoint::{
     DirectoryEndpoint,
     member_info::{Read, project_interaction},
@@ -276,10 +277,13 @@ async fn endpoint(
     let observed = Instant::now();
     let request = DirectoryEndpoint::discovery(&ctx.client, &ctx.session)?;
     let raw = if crate::fixture::is_fixture() {
-        if !fixture::enabled() {
+        if fixture::enabled() {
+            fixture::discovery(state, ctx, &request).await
+        } else if list_title::named() {
+            list_title::discovery(state, ctx, &request).await
+        } else {
             return Err(Error::Offline("closed member fixture".into()).into());
         }
-        fixture::discovery(state, ctx, &request).await
     } else {
         // This existing closed factory is the same DirectoryEndpoint discovery
         // request, with original-owner admission after any offline hold.
@@ -321,6 +325,8 @@ async fn pages(
         let response = if crate::fixture::is_fixture() {
             if fixture::enabled() {
                 fixture::member(state, ctx, &request).await
+            } else if list_title::named() {
+                list_title::member(state, ctx, &request, &read).await
             } else {
                 Err(Error::Offline("closed member fixture".into()))
             }

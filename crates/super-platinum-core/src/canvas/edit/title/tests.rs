@@ -132,13 +132,7 @@ fn utf16_limits_are_independent_and_never_split_a_rust_character_silently() {
 
 #[test]
 fn unsupported_rich_empty_ambiguous_and_misidentified_titles_do_not_fall_back() {
-    for text in [
-        "",
-        " \u{a0}\u{200b}\u{feff}\t",
-        "<b>rich</b>",
-        "A &amp; B",
-        "A > B",
-    ] {
+    for text in ["", " \u{a0}\u{200b}\u{feff}\t", "<b></b>", "<i>&nbsp;</i>"] {
         assert!(CanonicalTitle::capture(&snapshot(text)).is_err());
     }
     assert!(CanonicalTitle::capture(&snapshot(&"x".repeat(MAX_TITLE_SOURCE_BYTES + 1))).is_err());
@@ -207,5 +201,106 @@ fn preflight_binds_identity_revision_and_all_canonical_title_fields() {
             .unwrap();
         }
         assert!(title.revalidate(&changed).is_err());
+    }
+}
+
+#[test]
+fn ordinary_title_wrappers_are_stripped_before_rich_metadata_export() {
+    for (source, expected) in [
+        ("<b>Plan &amp; Review</b>", "Plan & Review"),
+        ("<b>A<i>B</i>C</b>", "ABC"),
+        ("<u>U</u><del>S</del><code>C</code>", "USC"),
+        ("<b>A</b> <i>B</i>", "A B"),
+        ("<b><b>nested</b></b>", "nested"),
+    ] {
+        let source = snapshot(source);
+        let original = source.sections.clone();
+        let title = CanonicalTitle::capture(&source).unwrap();
+        assert_eq!(title.form_title(), expected);
+        assert_eq!(leaf_text(&title), expected); // exact single leaf, no style
+        assert_eq!(source.sections, original);
+    }
+}
+
+#[test]
+fn entity_decoding_is_once_and_metadata_contains_literal_decoded_characters() {
+    for (source, rich, form) in [
+        (
+            " <b>Plan &amp; Review</b> <i>&lt;draft&gt;</i> ",
+            " Plan & Review <draft> ",
+            "Plan & Review <draft>",
+        ),
+        ("&amp;lt;b&amp;gt;", "&lt;b&gt;", "&lt;b&gt;"),
+        ("A &gt; B", "A > B", "A > B"),
+        ("A > B", "A > B", "A > B"),
+        (
+            "&quot;A&#39;B&#x1F600;&quot;",
+            "\"A'B\u{1f600}\"",
+            "\"A'B\u{1f600}\"",
+        ),
+        ("<b>A&nbsp;B&#x200b;&#xFEFF;\tC</b>", "A B C", "A B C"),
+        ("&#32;<i>title</i>&nbsp;", " title ", "title"),
+    ] {
+        let title = CanonicalTitle::capture(&snapshot(source)).unwrap();
+        assert_eq!(title.form_title(), form, "{source}");
+        assert_eq!(leaf_text(&title), rich, "{source}");
+    }
+}
+
+#[test]
+fn static_title_admission_rejects_semantics_attributes_and_html_repair() {
+    for source in [
+        "<a href='x'>title</a>",
+        "<span>title</span>",
+        "<strong>title</strong>",
+        "<control id='u'>title</control>",
+        "<img src='x'>title",
+        "<br>title",
+        "<ul><li>title</li></ul>",
+        "<table><tr><td>title</td></tr></table>",
+        "<b style='color:red'>title</b>",
+        "<i data-id='u'>title</i>",
+        "<b title</b>",
+        "<b>unclosed",
+        "title</b>",
+        "<b><i>x</b></i>",
+        "<!--hidden-->title",
+        "<!doctype html>title",
+        "<b/>title",
+        "<B>title</B>",
+        "A &bogus; B",
+        "A &amp B",
+        "A & B",
+        "&#;",
+        "&#x;",
+        "&#xD800;",
+        "&#x110000;",
+        "<b>A\0B</b>",
+    ] {
+        assert!(
+            CanonicalTitle::capture(&snapshot(source)).is_err(),
+            "{source}"
+        );
+    }
+    let nested = format!("{}title{}", "<b>".repeat(33), "</b>".repeat(33));
+    assert!(CanonicalTitle::capture(&snapshot(&nested)).is_err());
+    let bounded = format!("{}title{}", "<b>".repeat(32), "</b>".repeat(32));
+    assert_eq!(
+        CanonicalTitle::capture(&snapshot(&bounded))
+            .unwrap()
+            .form_title(),
+        "title"
+    );
+}
+
+#[test]
+fn formatted_title_limits_apply_to_decoded_normalized_text_independently() {
+    let source = format!(" <b>{}</b> ", "&amp;".repeat(2001));
+    let title = CanonicalTitle::capture(&snapshot(&source)).unwrap();
+    assert_eq!(title.form_title(), "&".repeat(255));
+    assert_eq!(leaf_text(&title), format!(" {}", "&".repeat(1999)));
+    for count in [254, 1999] {
+        let source = format!("<b>{}&#x1F600;</b>", "a".repeat(count));
+        assert!(CanonicalTitle::capture(&snapshot(&source)).is_err());
     }
 }

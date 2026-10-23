@@ -5,12 +5,16 @@ use super_platinum_core::{
     config::Session,
     slack::{Transport, transport::Health},
 };
+pub(crate) mod empty_canvas;
 pub(crate) mod files;
 pub(crate) mod groups;
+pub(crate) mod link_title;
 pub(crate) mod members;
+pub(crate) mod plain_custom_emoji;
 pub(super) mod protocol;
 #[cfg(test)]
 mod tests;
+pub(crate) mod title_users;
 
 pub(crate) const LOCAL: &str = "CLISTLOCAL";
 pub(crate) const PRIVATE: &str = "GLISTPRIVATE";
@@ -49,6 +53,15 @@ pub(crate) enum Mode {
     Held,
 }
 pub(crate) fn named() -> bool {
+    if super::plain::named()
+        || super::ordered::named()
+        || title_users::named()
+        || empty_canvas::named()
+        || super::own_edit::noop_named()
+        || super::own_edit::runs_named()
+    {
+        return true;
+    }
     cfg!(any(test, feature = "protected-native-fixture"))
         && super::compose::check_enabled()
         && matches!(
@@ -230,7 +243,10 @@ pub(crate) fn mode(shell: &ShellState, mode: Mode) -> Result<(), Error> {
 }
 pub(crate) async fn seed(mut state: Signal<ShellState>) -> Result<(), String> {
     let model = handle(&state.peek()).map_err(|e| e.to_string())?;
-    let (boot, init) = seed_payloads(&model.session);
+    let (mut boot, init) = seed_payloads(&model.session);
+    if super::plain::named() {
+        super::plain::seed_boot(&mut boot);
+    }
     model.ledger.lock().unwrap().seed = Some(json!({"boot":boot,"init":init,"accepted":false}));
     crate::app_home::channel_fetches::canonical::fixture_seed(state, boot, init).await?;
     // Wait for the actual queued Init sink; acceptance cannot be inferred from
@@ -256,7 +272,8 @@ pub(crate) async fn seed(mut state: Signal<ShellState>) -> Result<(), String> {
 fn seed_payloads(owner: &WorkspaceSession) -> (Value, Value) {
     if members::named() {
         let user = members::self_row(owner);
-        let boot = members::boot(owner);
+        let mut boot = members::boot(owner);
+        title_users::seed_boot(&mut boot);
         let init = json!({"ok":true,"self":user,"team":{"id":owner.team_id,"name":"List member completion"},
             "workspaces":[{"id":owner.team_id}],"onboarding":{"user_data":{"onboarding_complete":true}},"user_date_created":123});
         return (boot, init);
@@ -266,6 +283,10 @@ fn seed_payloads(owner: &WorkspaceSession) -> (Value, Value) {
         "channels":[{"id":LOCAL,"name":"project-local","team_id":owner.team_id,"is_channel":true,"is_member":true,"updated":100,"previous_names":[]}],"prefs":{}});
     let init = json!({"ok":true,"self":user,"team":{"id":owner.team_id,"name":"List completion"},
         "workspaces":[{"id":owner.team_id},{"id":"TOTHER001"}],"onboarding":{"user_data":{"onboarding_complete":true}},"user_date_created":123});
+    let mut init = init;
+    if super::plain_members::named() {
+        init["workspaces"] = json!([{"id":owner.team_id}]);
+    }
     (boot, init)
 }
 pub(crate) fn snapshot(shell: &ShellState) -> Value {
@@ -284,6 +305,9 @@ pub(crate) fn snapshot(shell: &ShellState) -> Value {
             if groups::named() {
                 value["groups"] =
                     groups::snapshot(shell).unwrap_or_else(|_| json!({"unavailable":true}));
+            }
+            if title_users::named() {
+                value["titleUsers"] = title_users::snapshot(shell);
             }
             if files::named() {
                 value["files"] = files::snapshot(shell);

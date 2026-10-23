@@ -19,6 +19,7 @@ mod channel_discovery;
 mod channel_mute;
 mod channel_resources;
 mod channel_tabs;
+mod channel_thread_emoji;
 mod channel_vm;
 mod channel_workflows;
 mod clipboard;
@@ -419,6 +420,7 @@ fn app() -> Element {
     use_future(move || clipboard::watch(state));
     use_future(move || clipboard::file_check::run(state));
     use_future(move || runtime::ticks(state));
+    use_future(move || profile::clock::fixture::run(state));
     #[cfg(target_os = "macos")]
     use_future(move || notification::attention::check::run(state));
     #[cfg(target_os = "windows")]

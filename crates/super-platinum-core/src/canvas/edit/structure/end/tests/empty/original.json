@@ -1,0 +1,563 @@
+{
+  "provenance": {
+    "seeds": "tmp/canvas-empty-enter-20261023/reference/source-seeds.json",
+    "sha256": "332a5d50276ed411c5e72238edde523395c03e02eefbd926ab5eb9239d1dff5f",
+    "contract_sha256": "ba454c7a1743fc923430ef4f609b39065ecaca8b302b86505a827ff1b3b4ffa0"
+  },
+  "seeds": [
+    {
+      "mode": "bootstrap",
+      "canonicalSession": null
+    },
+    {
+      "mode": "retained-positive",
+      "canonicalSession": "CglwYXJhZ3JhcGgQ6AcY6Acq1AGFb0qDnKNqaQDJAQEKq83vASNFAAAAAAGuLNuEi57FM2WCvTQ+F+ud/c3WTrzYEbPrZtubjxVBgwcBAgMCEwMjB0ADQwJWAg4BBAIEEQQTBxUQIQIjBTQCQgVWB1cTgAEGgQECgwEEAgACAX4TEH6AgL/WBgB+AAF/AAIHAAIRAAACEQEAAxAAAAJ+AAIPAX4HZGVsZXRlZAR0ZXh0ABETAH4TbhEBAhF+AQQRAX4BABAWfzZQcmV2aW91c2x5IHR5cGVk77u/AgAQAX8AEAB/FA8BATJAYWUyY2RiODQ4YjllYzUzMzY1ODJiZDM0M2UxN2ViOWRmZGNkZDY0ZWJjZDgxMWIzZWI2NmRiOWI4ZjE1NDE4M0JANTgxZWY1NGY0OTYzZGE3Y2FmYjNmNzZjMzgyZmY2YWU2ZjAyYzA3OTAyNGRmYWRjOWYwOGUwMjkxMjYxMDRlOVpFCkBhZTJjZGI4NDhiOWVjNTMzNjU4MmJkMzQzZTE3ZWI5ZGZkY2RkNjRlYmNkODExYjNlYjY2ZGI5YjhmMTU0MTgzEOgH"
+    },
+    {
+      "mode": "retained-zero",
+      "canonicalSession": "CglwYXJhZ3JhcGgQABjoByqfAYVvSoPAbKuGAJQBAQqrze8BI0UAAAAAAZN+J6kYoZPsIv/npVU696+UHJlkSZxSRUhF9RjR8td8BgECAwITAiMGQAJWAgsBBAIEEwQVECECIwQ0AkIEVgRXA4ABAn8AfwF/A3+AgL/WBn8AfwcAAn8AAAJ/AQACfwB+B2RlbGV0ZWQEdGV4dAABAwB9A34BAgF9AQQBfQEANu+7vwMAADJAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y0JAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y1pFCkA5MzdlMjdhOTE4YTE5M2VjMjJmZmU3YTU1NTNhZjdhZjk0MWM5OTY0NDk5YzUyNDU0ODQ1ZjUxOGQxZjJkNzdjEOgH"
+    }
+  ],
+  "vectors": [
+    {
+      "mode": "bootstrap",
+      "layout": "no-following",
+      "reused": false,
+      "sourceHistoryCount": 1,
+      "selectedHistoryCount": 1,
+      "tags": [
+        [
+          1,
+          2,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "neighborText": null
+    },
+    {
+      "mode": "bootstrap",
+      "layout": "text-following-ascii",
+      "reused": false,
+      "sourceHistoryCount": 1,
+      "selectedHistoryCount": 1,
+      "tags": [
+        [
+          1,
+          2,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "neighborText": "Another paragraph"
+    },
+    {
+      "mode": "bootstrap",
+      "layout": "text-following-unicode",
+      "reused": false,
+      "sourceHistoryCount": 1,
+      "selectedHistoryCount": 1,
+      "tags": [
+        [
+          1,
+          2,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "neighborText": "Café &amp; 日本😀Second paragraph"
+    },
+    {
+      "mode": "bootstrap",
+      "layout": "empty-final-following",
+      "reused": true,
+      "sourceHistoryCount": 1,
+      "selectedHistoryCount": 1,
+      "tags": [
+        [
+          1,
+          2,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          13,
+          19,
+          20,
+          33,
+          38
+        ]
+      ],
+      "neighborText": ""
+    },
+    {
+      "mode": "bootstrap",
+      "layout": "empty-nonfinal-following",
+      "reused": false,
+      "sourceHistoryCount": 1,
+      "selectedHistoryCount": 1,
+      "tags": [
+        [
+          1,
+          2,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "neighborText": ""
+    },
+    {
+      "mode": "retained-positive",
+      "layout": "no-following",
+      "reused": false,
+      "sourceHistoryCount": 2,
+      "selectedHistoryCount": 1,
+      "tags": [
+        [
+          1,
+          2,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "neighborText": null
+    },
+    {
+      "mode": "retained-positive",
+      "layout": "text-following-ascii",
+      "reused": false,
+      "sourceHistoryCount": 2,
+      "selectedHistoryCount": 1,
+      "tags": [
+        [
+          1,
+          2,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "neighborText": "Another paragraph"
+    },
+    {
+      "mode": "retained-positive",
+      "layout": "text-following-unicode",
+      "reused": false,
+      "sourceHistoryCount": 2,
+      "selectedHistoryCount": 1,
+      "tags": [
+        [
+          1,
+          2,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "neighborText": "Café &amp; 日本😀Second paragraph"
+    },
+    {
+      "mode": "retained-positive",
+      "layout": "empty-final-following",
+      "reused": true,
+      "sourceHistoryCount": 2,
+      "selectedHistoryCount": 2,
+      "tags": [
+        [
+          1,
+          2,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          13,
+          19,
+          20,
+          33,
+          38
+        ]
+      ],
+      "neighborText": ""
+    },
+    {
+      "mode": "retained-positive",
+      "layout": "empty-nonfinal-following",
+      "reused": false,
+      "sourceHistoryCount": 2,
+      "selectedHistoryCount": 1,
+      "tags": [
+        [
+          1,
+          2,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "neighborText": ""
+    },
+    {
+      "mode": "retained-zero",
+      "layout": "no-following",
+      "reused": false,
+      "sourceHistoryCount": 1,
+      "selectedHistoryCount": 1,
+      "tags": [
+        [
+          1,
+          2,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "neighborText": null
+    },
+    {
+      "mode": "retained-zero",
+      "layout": "text-following-ascii",
+      "reused": false,
+      "sourceHistoryCount": 1,
+      "selectedHistoryCount": 1,
+      "tags": [
+        [
+          1,
+          2,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "neighborText": "Another paragraph"
+    },
+    {
+      "mode": "retained-zero",
+      "layout": "text-following-unicode",
+      "reused": false,
+      "sourceHistoryCount": 1,
+      "selectedHistoryCount": 1,
+      "tags": [
+        [
+          1,
+          2,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "neighborText": "Café &amp; 日本😀Second paragraph"
+    },
+    {
+      "mode": "retained-zero",
+      "layout": "empty-final-following",
+      "reused": true,
+      "sourceHistoryCount": 1,
+      "selectedHistoryCount": 1,
+      "tags": [
+        [
+          1,
+          2,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          13,
+          19,
+          20,
+          33,
+          38
+        ]
+      ],
+      "neighborText": ""
+    },
+    {
+      "mode": "retained-zero",
+      "layout": "empty-nonfinal-following",
+      "reused": false,
+      "sourceHistoryCount": 1,
+      "selectedHistoryCount": 1,
+      "tags": [
+        [
+          1,
+          2,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "neighborText": ""
+    }
+  ]
+}

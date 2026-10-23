@@ -1,11 +1,15 @@
-//! Bounded Profile whole-list and plain Canvas labels (p292/KhL1).
+//! Bounded whole-list and Canvas labels (p292/KhL1), including rich title
+//! text, user and ordinary link leaves under explicit source observations.
 //!
 //! The caller supplies an admitted effective record and observed normal status.
 //! This helper establishes neither cache history, kind/status authority, href,
-//! nor a localized fallback. Semantic Canvas titles remain unavailable.
+//! nor a localized fallback. Optional title context is explicit caller evidence.
 use serde_json::Value;
 
 mod blocks;
+mod link;
+mod users;
+pub use users::{member_label, user_ids};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Kind {
@@ -43,14 +47,53 @@ pub fn label(kind: Kind, status: Status, effective: &Value) -> Result<String, Un
     label_with_quip(kind, status, effective, QuipTitle::Unavailable)
 }
 
-/// Additionally admits strictly text-only Canvas title blocks when the separate
-/// Quip title selector was observed. Empty extraction still requires unavailable
-/// localization, even with an override. Lists and string titles ignore `quip`.
+/// Additionally admits text/link Canvas title blocks when the separate
+/// Quip title selector was observed. Empty extraction still requires explicit
+/// localization through `label_with_context`, even with an override. Link text is literal, not decoded or
+/// navigated. Lists and string titles ignore `quip`.
 pub fn label_with_quip(
     kind: Kind,
     status: Status,
     effective: &Value,
     quip: QuipTitle<'_>,
+) -> Result<String, Unavailable> {
+    if kind == Kind::Canvas
+        && status == Status::Normal
+        && quip == QuipTitle::Unavailable
+        && effective["title_blocks"]
+            .as_array()
+            .is_some_and(|v| !v.is_empty())
+    {
+        return Err(Unavailable::UnsupportedTitle);
+    }
+    label_with_users(kind, status, effective, quip, |_| {
+        Err(Unavailable::UnsupportedTitle)
+    })
+}
+
+/// User-containing titles consume independently observed member labels and do
+/// not consult Quip's editor override (laT0/JCh1). The callback owns policy.
+pub fn label_with_users(
+    kind: Kind,
+    status: Status,
+    effective: &Value,
+    quip: QuipTitle<'_>,
+    user: impl FnMut(&str) -> Result<String, Unavailable>,
+) -> Result<String, Unavailable> {
+    label_with_context(kind, status, effective, quip, None, user)
+}
+
+/// The caller supplies the independently observed localized canvas/Untitled
+/// value. It applies only to empty Canvas extraction, before Quip selection and
+/// sanitization. None preserves conservative behavior; this never grants file,
+/// member, status, or locale authority and does not supply a List fallback.
+pub fn label_with_context(
+    kind: Kind,
+    status: Status,
+    effective: &Value,
+    quip: QuipTitle<'_>,
+    canvas_fallback: Option<&str>,
+    mut user: impl FnMut(&str) -> Result<String, Unavailable>,
 ) -> Result<String, Unavailable> {
     if status != Status::Normal {
         return Err(Unavailable::Status);
@@ -77,14 +120,20 @@ pub fn label_with_quip(
             match &effective["title_blocks"] {
                 Value::Null => {}
                 Value::Array(blocks) if blocks.is_empty() => {}
-                Value::Array(items) => return blocks::label(items, quip).map(|v| sanitize(&v)),
+                Value::Array(items) => {
+                    return blocks::label_with_context(items, quip, canvas_fallback, &mut user)
+                        .map(|v| sanitize(&v));
+                }
                 _ => return Err(Unavailable::UnsupportedTitle),
             }
             let value = plain_canvas(&unescape(title))?;
             if value.is_empty() {
-                return Err(Unavailable::LocalizedFallback);
+                canvas_fallback
+                    .ok_or(Unavailable::LocalizedFallback)?
+                    .to_owned()
+            } else {
+                value
             }
-            value
         }
     };
     // Source chooses fallback BEFORE sanitization; a nonempty title consisting
@@ -248,3 +297,6 @@ fn plain_canvas(value: &str) -> Result<String, Unavailable> {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod context_tests;

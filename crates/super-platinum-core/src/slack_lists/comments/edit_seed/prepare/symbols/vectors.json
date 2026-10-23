@@ -1,0 +1,1699 @@
+{
+  "results": [
+    {
+      "input": [],
+      "skipMarkdownCode": false,
+      "change": [],
+      "output": []
+    },
+    {
+      "input": [],
+      "skipMarkdownCode": true,
+      "change": [],
+      "output": []
+    },
+    {
+      "input": [
+        {
+          "insert": "↔"
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": "︎"
+        }
+      ],
+      "output": [
+        {
+          "insert": "↔︎"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔"
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": "︎"
+        }
+      ],
+      "output": [
+        {
+          "insert": "↔︎"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "a↔b"
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [
+        {
+          "retain": 2
+        },
+        {
+          "insert": "︎"
+        }
+      ],
+      "output": [
+        {
+          "insert": "a↔︎b"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "a↔b"
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [
+        {
+          "retain": 2
+        },
+        {
+          "insert": "︎"
+        }
+      ],
+      "output": [
+        {
+          "insert": "a↔︎b"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔︎"
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [],
+      "output": [
+        {
+          "insert": "↔︎"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔︎"
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [],
+      "output": [
+        {
+          "insert": "↔︎"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔️"
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [],
+      "output": [
+        {
+          "insert": "↔️"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔️"
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [],
+      "output": [
+        {
+          "insert": "↔️"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "‍↔"
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [],
+      "output": [
+        {
+          "insert": "‍↔"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "‍↔"
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [],
+      "output": [
+        {
+          "insert": "‍↔"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔↔"
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": "︎"
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": "︎"
+        }
+      ],
+      "output": [
+        {
+          "insert": "↔︎↔︎"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔↔"
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": "︎"
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": "︎"
+        }
+      ],
+      "output": [
+        {
+          "insert": "↔︎↔︎"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "`↔`"
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [
+        {
+          "retain": 2
+        },
+        {
+          "insert": "︎"
+        }
+      ],
+      "output": [
+        {
+          "insert": "`↔︎`"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "`↔`"
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [],
+      "output": [
+        {
+          "insert": "`↔`"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "```↔```"
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [
+        {
+          "retain": 4
+        },
+        {
+          "insert": "︎"
+        }
+      ],
+      "output": [
+        {
+          "insert": "```↔︎```"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "```↔```"
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [],
+      "output": [
+        {
+          "insert": "```↔```"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "```a```↔"
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [
+        {
+          "retain": 8
+        },
+        {
+          "insert": "︎"
+        }
+      ],
+      "output": [
+        {
+          "insert": "```a```↔︎"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "```a```↔"
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [
+        {
+          "retain": 8
+        },
+        {
+          "insert": "︎"
+        }
+      ],
+      "output": [
+        {
+          "insert": "```a```↔︎"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "``↔"
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [
+        {
+          "retain": 3
+        },
+        {
+          "insert": "︎"
+        }
+      ],
+      "output": [
+        {
+          "insert": "``↔︎"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "``↔"
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [
+        {
+          "retain": 3
+        },
+        {
+          "insert": "︎"
+        }
+      ],
+      "output": [
+        {
+          "insert": "``↔︎"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "😀↔"
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [
+        {
+          "retain": 3
+        },
+        {
+          "insert": "︎"
+        }
+      ],
+      "output": [
+        {
+          "insert": "😀↔︎"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "😀↔"
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [
+        {
+          "retain": 3
+        },
+        {
+          "insert": "︎"
+        }
+      ],
+      "output": [
+        {
+          "insert": "😀↔︎"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "`a\n↔"
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [
+        {
+          "retain": 4
+        },
+        {
+          "insert": "︎"
+        }
+      ],
+      "output": [
+        {
+          "insert": "`a\n↔︎"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "`a\n↔"
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [],
+      "output": [
+        {
+          "insert": "`a\n↔"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "```a\n↔"
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [
+        {
+          "retain": 6
+        },
+        {
+          "insert": "︎"
+        }
+      ],
+      "output": [
+        {
+          "insert": "```a\n↔︎"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "```a\n↔"
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [],
+      "output": [
+        {
+          "insert": "```a\n↔"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "a```x```b`↔"
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [
+        {
+          "retain": 11
+        },
+        {
+          "insert": "︎"
+        }
+      ],
+      "output": [
+        {
+          "insert": "a```x```b`↔︎"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "a```x```b`↔"
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [],
+      "output": [
+        {
+          "insert": "a```x```b`↔"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "｀↔｀"
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [
+        {
+          "retain": 2
+        },
+        {
+          "insert": "︎"
+        }
+      ],
+      "output": [
+        {
+          "insert": "｀↔︎｀"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "｀↔｀"
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [
+        {
+          "retain": 2
+        },
+        {
+          "insert": "︎"
+        }
+      ],
+      "output": [
+        {
+          "insert": "｀↔︎｀"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔\n↔"
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": "︎"
+        },
+        {
+          "retain": 2
+        },
+        {
+          "insert": "︎"
+        }
+      ],
+      "output": [
+        {
+          "insert": "↔︎\n↔︎"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔\n↔"
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": "︎"
+        },
+        {
+          "retain": 2
+        },
+        {
+          "insert": "︎"
+        }
+      ],
+      "output": [
+        {
+          "insert": "↔︎\n↔︎"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [],
+      "output": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "code": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [],
+      "output": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "code": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "code": false,
+            "bold": true,
+            "custom": [
+              1
+            ]
+          }
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": "︎",
+          "attributes": {
+            "code": false,
+            "bold": true,
+            "custom": [
+              1
+            ]
+          }
+        }
+      ],
+      "output": [
+        {
+          "insert": "↔︎",
+          "attributes": {
+            "code": false,
+            "bold": true,
+            "custom": [
+              1
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "code": false,
+            "bold": true,
+            "custom": [
+              1
+            ]
+          }
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": "︎",
+          "attributes": {
+            "code": false,
+            "bold": true,
+            "custom": [
+              1
+            ]
+          }
+        }
+      ],
+      "output": [
+        {
+          "insert": "↔︎",
+          "attributes": {
+            "code": false,
+            "bold": true,
+            "custom": [
+              1
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [],
+      "output": [
+        {
+          "insert": "↔"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [],
+      "output": [
+        {
+          "insert": "↔"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "‍",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": "↔"
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [
+        {
+          "retain": 2
+        },
+        {
+          "insert": "︎"
+        }
+      ],
+      "output": [
+        {
+          "insert": "‍",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": "↔︎"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "‍",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": "↔"
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [
+        {
+          "retain": 2
+        },
+        {
+          "insert": "︎"
+        }
+      ],
+      "output": [
+        {
+          "insert": "‍",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": "↔︎"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": "️"
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": "︎",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "output": [
+        {
+          "insert": "↔︎",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": "️"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": "️"
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": "︎",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "output": [
+        {
+          "insert": "↔︎",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": "️"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "`"
+        },
+        {
+          "insert": {
+            "opaque": {
+              "x": 1
+            }
+          }
+        },
+        {
+          "insert": "↔"
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [
+        {
+          "retain": 3
+        },
+        {
+          "insert": "︎"
+        }
+      ],
+      "output": [
+        {
+          "insert": "`"
+        },
+        {
+          "insert": {
+            "opaque": {
+              "x": 1
+            }
+          }
+        },
+        {
+          "insert": "↔︎"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "`"
+        },
+        {
+          "insert": {
+            "opaque": {
+              "x": 1
+            }
+          }
+        },
+        {
+          "insert": "↔"
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [],
+      "output": [
+        {
+          "insert": "`"
+        },
+        {
+          "insert": {
+            "opaque": {
+              "x": 1
+            }
+          }
+        },
+        {
+          "insert": "↔"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "link": "https://example.com"
+          }
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": "︎",
+          "attributes": {
+            "link": "https://example.com"
+          }
+        }
+      ],
+      "output": [
+        {
+          "insert": "↔︎",
+          "attributes": {
+            "link": "https://example.com"
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "link": "https://example.com"
+          }
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": "︎",
+          "attributes": {
+            "link": "https://example.com"
+          }
+        }
+      ],
+      "output": [
+        {
+          "insert": "↔︎",
+          "attributes": {
+            "link": "https://example.com"
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slackmention": true
+          }
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [],
+      "output": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slackmention": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slackmention": true
+          }
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [],
+      "output": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slackmention": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slackmention": {}
+          }
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [],
+      "output": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slackmention": {}
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slackmention": {}
+          }
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [],
+      "output": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slackmention": {}
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slackmention": false
+          }
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": "︎",
+          "attributes": {
+            "slackmention": false
+          }
+        }
+      ],
+      "output": [
+        {
+          "insert": "↔︎",
+          "attributes": {
+            "slackmention": false
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slackmention": false
+          }
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": "︎",
+          "attributes": {
+            "slackmention": false
+          }
+        }
+      ],
+      "output": [
+        {
+          "insert": "↔︎",
+          "attributes": {
+            "slackmention": false
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slackmention": null
+          }
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": "︎",
+          "attributes": {
+            "slackmention": null
+          }
+        }
+      ],
+      "output": [
+        {
+          "insert": "↔︎",
+          "attributes": {
+            "slackmention": null
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slackmention": null
+          }
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": "︎",
+          "attributes": {
+            "slackmention": null
+          }
+        }
+      ],
+      "output": [
+        {
+          "insert": "↔︎",
+          "attributes": {
+            "slackmention": null
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slackslug": true
+          }
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [],
+      "output": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slackslug": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slackslug": true
+          }
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [],
+      "output": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slackslug": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slackslug": {}
+          }
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [],
+      "output": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slackslug": {}
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slackslug": {}
+          }
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [],
+      "output": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slackslug": {}
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slackslug": false
+          }
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": "︎",
+          "attributes": {
+            "slackslug": false
+          }
+        }
+      ],
+      "output": [
+        {
+          "insert": "↔︎",
+          "attributes": {
+            "slackslug": false
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slackslug": false
+          }
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": "︎",
+          "attributes": {
+            "slackslug": false
+          }
+        }
+      ],
+      "output": [
+        {
+          "insert": "↔︎",
+          "attributes": {
+            "slackslug": false
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slackslug": null
+          }
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": "︎",
+          "attributes": {
+            "slackslug": null
+          }
+        }
+      ],
+      "output": [
+        {
+          "insert": "↔︎",
+          "attributes": {
+            "slackslug": null
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slackslug": null
+          }
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": "︎",
+          "attributes": {
+            "slackslug": null
+          }
+        }
+      ],
+      "output": [
+        {
+          "insert": "↔︎",
+          "attributes": {
+            "slackslug": null
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slacksearchfilter": true
+          }
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [],
+      "output": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slacksearchfilter": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slacksearchfilter": true
+          }
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [],
+      "output": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slacksearchfilter": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slacksearchfilter": {}
+          }
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [],
+      "output": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slacksearchfilter": {}
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slacksearchfilter": {}
+          }
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [],
+      "output": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slacksearchfilter": {}
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slacksearchfilter": false
+          }
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": "︎",
+          "attributes": {
+            "slacksearchfilter": false
+          }
+        }
+      ],
+      "output": [
+        {
+          "insert": "↔︎",
+          "attributes": {
+            "slacksearchfilter": false
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slacksearchfilter": false
+          }
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": "︎",
+          "attributes": {
+            "slacksearchfilter": false
+          }
+        }
+      ],
+      "output": [
+        {
+          "insert": "↔︎",
+          "attributes": {
+            "slacksearchfilter": false
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slacksearchfilter": null
+          }
+        }
+      ],
+      "skipMarkdownCode": false,
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": "︎",
+          "attributes": {
+            "slacksearchfilter": null
+          }
+        }
+      ],
+      "output": [
+        {
+          "insert": "↔︎",
+          "attributes": {
+            "slacksearchfilter": null
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔",
+          "attributes": {
+            "slacksearchfilter": null
+          }
+        }
+      ],
+      "skipMarkdownCode": true,
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": "︎",
+          "attributes": {
+            "slacksearchfilter": null
+          }
+        }
+      ],
+      "output": [
+        {
+          "insert": "↔︎",
+          "attributes": {
+            "slacksearchfilter": null
+          }
+        }
+      ]
+    }
+  ],
+  "modules": [
+    "4x3H",
+    "67Az",
+    "bZFu",
+    "cHzv",
+    "e0ER",
+    "hmcY",
+    "iL+W",
+    "iRqW",
+    "mM05",
+    "nC51",
+    "owfo",
+    "sdnA",
+    "yzsb"
+  ]
+}

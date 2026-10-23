@@ -1,5 +1,7 @@
 use super::*;
 use crate::model::RichNode;
+#[path = "tests/reprojection.rs"]
+mod reprojection;
 
 fn loaded(count: usize) -> (ShellState, u64, Vec<Demand>) {
     populate(super::super::tests::shell(), count)

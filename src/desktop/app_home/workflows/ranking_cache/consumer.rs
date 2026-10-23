@@ -1,6 +1,7 @@
 //! Additional owned consumer of the existing account cache. No second model,
 //! offline observation, similarity store, freshness timer or pending namespace.
 use super::*;
+use crate::app_home::about::management::fixture::first_publish::confirmation::share::search::ranking as share_ranking;
 #[cfg(test)]
 mod tests;
 
@@ -8,9 +9,29 @@ mod tests;
 /// immutable snapshot. Background cache receipts are account-owned and do not
 /// adopt UI or authorize a selection after that query has retired.
 pub(in crate::app_home) fn capture_for(
+    state: Signal<ShellState>,
+    context: Arc<Context>,
+    current: impl Fn(&ShellState) -> bool,
+) -> Result<Snapshot, Error> {
+    capture_for_mode(state, context, current, true)
+}
+
+/// Use the identical account cache and source-defined cold fallback without
+/// reserving or launching refresh jobs. Existing in-flight account jobs and
+/// immutable snapshots are untouched; this capture initiates no Slack reads.
+pub(in crate::app_home) fn capture_for_without_reads(
+    state: Signal<ShellState>,
+    context: Arc<Context>,
+    current: impl Fn(&ShellState) -> bool,
+) -> Result<Snapshot, Error> {
+    capture_for_mode(state, context, current, false)
+}
+
+fn capture_for_mode(
     mut state: Signal<ShellState>,
     context: Arc<Context>,
     current: impl Fn(&ShellState) -> bool,
+    allow_reads: bool,
 ) -> Result<Snapshot, Error> {
     let (snapshot, jobs, owner, cookie) = {
         let mut s = state.write();
@@ -19,6 +40,7 @@ pub(in crate::app_home) fn capture_for(
                 && !crate::app_home::about::management::activity::members::fixture::enabled(&s))
                 && !crate::profile_edit::sections::fixture::completion::enabled(&s)
                 && !crate::slack_lists::comments::fixture::completion::enabled(&s)
+                && !share_ranking::enabled(&s)
         {
             return Err(unavailable());
         }
@@ -55,7 +77,7 @@ pub(in crate::app_home) fn capture_for(
             .ok_or_else(unavailable)?
             .d_cookie
             .clone();
-        let permitted = !cooling(&s, &owner.context);
+        let permitted = allow_reads && !cooling(&s, &owner.context);
         let cache = s.app_home.workflow_ranking.as_mut().unwrap();
         let now = Instant::now();
         let mut jobs = Vec::new();
@@ -173,6 +195,14 @@ fn refresh_for(
                 Kind::Model => Reply::Value(raw),
                 Kind::Offline => Reply::Offline(raw, keys),
             })
+        } else if share_ranking::enabled(&state.peek()) {
+            share_ranking::cache_read(state, &request)
+                .await
+                .unwrap_or_else(|| Err(unavailable()))
+                .map(|(raw, keys)| match kind {
+                    Kind::Model => Reply::Value(raw),
+                    Kind::Offline => Reply::Offline(raw, keys),
+                })
         } else if crate::fixture::is_fixture() {
             crate::app_home::about::management::activity::members::fixture::ranking_request(
                 &state.peek(),

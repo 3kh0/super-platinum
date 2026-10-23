@@ -8,18 +8,22 @@ use crate::{
 use std::{
     collections::BTreeMap,
     sync::Arc,
-    time::{SystemTime, UNIX_EPOCH},
+    time::{Instant, SystemTime, UNIX_EPOCH},
 };
 use super_platinum_core::state::directory_channels::inline_label::{self, Policy};
 
+mod clock;
+
 #[derive(Clone, Default)]
 pub(super) struct State {
+    clock: clock::Clock,
     pending: Option<Arc<Input>>,
     observed: Option<Arc<Observation>>,
 }
 struct Input {
+    generation: u64,
     canonical: Arc<canonical::Canonical>,
-    plan: Option<plan_info::Snapshot>,
+    plan: Option<plan_info::Display>,
     team: String,
     visit: u64,
     document: u64,
@@ -60,8 +64,9 @@ impl Input {
             return None;
         }
         Some(Self {
+            generation: d.activity.channel_labels.clock.generation(),
             canonical,
-            plan: plan_info::capture(s, &team),
+            plan: plan_info::display(s, &team),
             team,
             visit,
             document: d.id,
@@ -74,7 +79,7 @@ impl Input {
             && self.canonical.current_for(s, &self.team)
             && match &self.plan {
                 Some(plan) => plan.current(s),
-                None => plan_info::capture(s, &self.team).is_none(),
+                None => plan_info::display(s, &self.team).is_none(),
             }
             && document(s, self.visit).is_some_and(|d| {
                 d.id == self.document
@@ -93,11 +98,11 @@ pub(super) fn request(mut state: Signal<ShellState>, visit: u64) {
         let s = state.peek();
         let Some(d) = document(&s, visit) else { return };
         let labels = &d.activity.channel_labels;
+        // Even a superseded computation remains the sole in-flight worker.
         if labels.pending.as_ref().is_some_and(|v| v.current(&s))
-            || labels
-                .observed
-                .as_ref()
-                .is_some_and(|v| v.input.current(&s))
+            || labels.observed.as_ref().is_some_and(|v| {
+                v.input.current(&s) && v.input.generation == labels.clock.generation()
+            })
         {
             return;
         }
@@ -106,21 +111,22 @@ pub(super) fn request(mut state: Signal<ShellState>, visit: u64) {
         };
         Arc::new(input)
     };
-    document_mut(&mut state.write(), visit)
-        .unwrap()
-        .activity
-        .channel_labels
-        .pending = Some(input.clone());
+    {
+        #[allow(deprecated)]
+        let mut s = state.write_silent();
+        let labels = &mut document_mut(&mut s, visit).unwrap().activity.channel_labels;
+        labels.clock.started(Instant::now());
+        labels.pending = Some(input.clone());
+    }
+    let injected = fixture::channel::grace_clock::sample(&state.peek());
     dioxus::core::spawn_forever(async move {
-        // Local calendar resolution can consult timezone data on Unix. Keep it
-        // on the blocking pool, not a render or native event handler.
         let raw_rows = input.rows.clone();
         let raw_plan = input.plan.as_ref().map(|v| v.raw().clone());
-        let policies = tokio::task::spawn_blocking(move || {
+        let mut policies: BTreeMap<String, Policy> = tokio::task::spawn_blocking(move || {
             raw_rows
                 .into_iter()
                 .filter_map(|(id, row)| {
-                    inline_label::project_local(&row, raw_plan.as_ref())
+                    fixture::channel::grace_clock::project(&row, raw_plan.as_ref(), injected)
                         .ok()
                         .map(|p| (id, p))
                 })
@@ -128,24 +134,111 @@ pub(super) fn request(mut state: Signal<ShellState>, visit: u64) {
         })
         .await
         .unwrap_or_default();
-        let mut s = state.write();
-        if !input.current(&s) {
-            return;
+        let receipt = fixture::channel::grace_clock::completed(
+            &state.peek(),
+            input.generation,
+            injected,
+            &policies,
+        );
+        if let Some(wait) = receipt.wait {
+            let _ = wait.await;
         }
-        let labels = &mut document_mut(&mut s, visit).unwrap().activity.channel_labels;
-        if !labels
-            .pending
-            .as_ref()
-            .is_some_and(|v| Arc::ptr_eq(v, &input))
+        let mut applied = false;
+        let mut notify = false;
         {
-            return;
+            #[allow(deprecated)]
+            let mut s = state.write_silent();
+            if input.current(&s) {
+                let now = now_ms(&s);
+                let previous_current = observed(&s, visit).is_some();
+                let labels = &mut document_mut(&mut s, visit).unwrap().activity.channel_labels;
+                if labels
+                    .pending
+                    .as_ref()
+                    .is_some_and(|v| Arc::ptr_eq(v, &input))
+                {
+                    labels.pending = None;
+                    labels.clock.finished(input.generation, Instant::now());
+                    if labels.clock.generation() == input.generation {
+                        // Keep stable original provenance when the calendar result is unchanged.
+                        if let Some(old) = &labels.observed {
+                            for (id, p) in &mut policies {
+                                if let Some(previous) = old.policies.get(id) {
+                                    if let Ok(at_previous) = p.at_millis(previous.captured_now_ms) {
+                                        if (Policy {
+                                            captured_now_ms: previous.captured_now_ms,
+                                            ..at_previous
+                                        }) == *previous
+                                        {
+                                            *p = *previous;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        notify = !previous_current;
+                        if let Some(now) = now {
+                            notify |= labels.clock.update_face(&policies, now);
+                        }
+                        labels.observed = Some(Arc::new(Observation { input, policies }));
+                        applied = true;
+                    }
+                }
+            }
         }
-        labels.pending = None;
-        labels.observed = Some(Arc::new(Observation { input, policies }));
+        fixture::channel::grace_clock::settled(receipt.id, applied);
+        if notify {
+            drop(state.write());
+        }
     });
 }
 
-fn now_ms() -> Option<i64> {
+/// Existing runtime heartbeat, with no additional timer or timezone work here.
+/// Only a mounted, owned grace-capable detail schedules background sampling.
+pub(crate) fn tick(mut state: Signal<ShellState>) {
+    let visit =
+        {
+            let s = state.peek();
+            let Some(h) = s.app_home.about.management.surface.as_ref() else {
+                return;
+            };
+            let Some(d) = document(&s, h.id).filter(|d| d.activity.active) else {
+                return;
+            };
+            let labels = &d.activity.channel_labels;
+            if !permitted(&s, h.id) || d.activity.detail.is_none() {
+                return;
+            }
+            if labels.observed.as_ref().is_none_or(|o| {
+                !o.input.current(&s) || !o.policies.values().any(|p| p.grace_eligible)
+            }) {
+                return;
+            }
+            h.id
+        };
+    let mut notify = false;
+    {
+        #[allow(deprecated)]
+        let mut s = state.write_silent();
+        let now = now_ms(&s);
+        let labels = &mut document_mut(&mut s, visit).unwrap().activity.channel_labels;
+        labels
+            .clock
+            .advance(Instant::now(), labels.pending.is_some());
+        if let (Some(now), Some(observed)) = (now, &labels.observed) {
+            notify = labels.clock.update_face(&observed.policies, now);
+        }
+    }
+    if notify {
+        drop(state.write());
+    }
+    request(state, visit);
+}
+
+fn now_ms(s: &ShellState) -> Option<i64> {
+    if let Some(sample) = fixture::channel::grace_clock::sample(s) {
+        return Some(sample.now_ms);
+    }
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .ok()?
@@ -163,7 +256,7 @@ fn observed(s: &ShellState, visit: u64) -> Option<&Observation> {
 }
 pub(super) fn presentation(s: &ShellState, visit: u64, id: &str) -> Option<(String, Option<Icon>)> {
     let observation = observed(s, visit)?;
-    let policy = observation.policies.get(id)?.at_millis(now_ms()?).ok()?;
+    let policy = observation.policies.get(id)?.at_millis(now_ms(s)?).ok()?;
     let name = observation.input.rows.get(id)?["name"].as_str()?;
     let icon = match (policy.archive_icon, policy.private) {
         (true, true) => Icon::ArchiveFilled,
@@ -196,5 +289,21 @@ pub(crate) fn snapshot(s: &ShellState, visit: u64) -> Value {
             }))})
         })
         .collect();
-    json!({"current":true,"plan":observation.input.plan.as_ref().map(|v|v.raw()),"rows":rows})
+    let mut result =
+        json!({"current":true,"plan":observation.input.plan.as_ref().map(|v|v.raw()),"rows":rows});
+    if fixture::channel::warm::enabled(s) {
+        result["planProvenance"] = json!(observation.input.plan.as_ref().map(|v| v.provenance()));
+    }
+    if fixture::channel::grace_clock::enabled(s) {
+        result["clockGeneration"] = json!(
+            document(s, visit)
+                .unwrap()
+                .activity
+                .channel_labels
+                .clock
+                .generation()
+        );
+        result["observedGeneration"] = json!(observation.input.generation);
+    }
+    result
 }

@@ -2,6 +2,8 @@
 use super::*;
 mod actions;
 mod confirmation_add;
+mod confirmation_share;
+pub(crate) use confirmation_share::delivery_row as share_delivery_row;
 mod execute;
 mod native;
 mod readback;
@@ -22,6 +24,7 @@ pub(super) struct Local {
     epoch: u64,
     notice: Option<String>,
     avatar: avatar::State,
+    share: bool,
 }
 mod avatar;
 mod cropper;
@@ -41,11 +44,12 @@ impl Local {
             epoch: next(),
             notice: None,
             avatar: avatar::State::default(),
+            share: false,
         }
     }
     fn expected(&self) -> Value {
         json!({"epoch":self.epoch,"title":self.title,"description":self.description,
-            "icon":self.icon_url,"more":self.more,"pane":self.avatar.pane.name(),"avatarPending":self.avatar.pending,"crop":self.avatar.upload.as_ref().map(|_|json!({"x":self.avatar.x,"y":self.avatar.y,"size":self.avatar.size})),"cropper":self.avatar.cropper.geometry})
+            "icon":self.icon_url,"more":self.more,"pane":if self.share {"share"} else {self.avatar.pane.name()},"avatarPending":self.avatar.pending,"crop":self.avatar.upload.as_ref().map(|_|json!({"x":self.avatar.x,"y":self.avatar.y,"size":self.avatar.size})),"cropper":self.avatar.cropper.geometry})
     }
     fn valid(&self) -> bool {
         self.avatar.pane == avatar::Pane::Details
@@ -111,6 +115,7 @@ pub(in crate::app_home::about::management) struct Attempt {
     readback: Option<(Editor, bool)>,
     release: Option<Release>,
     confirmation_add: Option<confirmation_add::State>,
+    confirmation_share: Option<confirmation_share::State>,
 }
 pub(in crate::app_home::about::management) fn shown(s: &ShellState, visit: u64) -> bool {
     document(s, visit).is_some_and(|d| supported_first(&d.editor))

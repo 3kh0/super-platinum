@@ -61,6 +61,15 @@ pub(crate) fn source_label() -> &'static str {
     }
 }
 pub(crate) fn mounted_label() -> &'static str {
+    if super::link_title::named() {
+        return super::link_title::ORIGINAL;
+    }
+    if super::empty_canvas::existing() {
+        return super::empty_canvas::ORIGINAL;
+    }
+    if super::user_title::named() {
+        return super::user_title::label();
+    }
     if block_mode() {
         "&amp; *literal*"
     } else if list() {
@@ -70,6 +79,12 @@ pub(crate) fn mounted_label() -> &'static str {
     }
 }
 pub(crate) fn renamed_label() -> &'static str {
+    if super::link_title::named() {
+        return super::link_title::RENAMED;
+    }
+    if super::empty_canvas::existing() {
+        return super::empty_canvas::EMPTY;
+    }
     if block_mode() {
         "Changed &amp;"
     } else if list() {
@@ -83,6 +98,10 @@ pub(crate) fn raw(renamed: bool) -> Value {
         "filetype":if list(){"list"}else{"quip"},"created":101,"updated":if renamed{102}else{101},
         "title":if renamed{renamed_label()}else{source_label()},"name":"wrong-name-fallback",
         "fixture_opaque":{"preserve":[ID,1,2]}}});
+    if super::empty_canvas::existing() {
+        super::empty_canvas::decorate(&mut raw, renamed);
+        return raw;
+    }
     if block_mode() {
         raw["file"]["title"] = json!(if renamed {
             "Misleading renamed fallback"
@@ -97,6 +116,15 @@ pub(crate) fn raw(renamed: bool) -> Value {
 /// Formatting and unknown fields survive in source/effective metadata; the
 /// canonical title extractor treats these text values literally.
 pub(crate) fn title_blocks(renamed: bool) -> Value {
+    if super::link_title::named() {
+        return super::link_title::blocks(renamed);
+    }
+    if super::empty_canvas::existing() {
+        return super::empty_canvas::blocks(renamed);
+    }
+    if super::user_title::named() {
+        return super::user_title::title_blocks();
+    }
     let values = if renamed {
         [":memo: ", "Changed ", "&amp;"]
     } else {
@@ -134,7 +162,13 @@ pub(crate) fn status() -> Value {
 pub(crate) fn release() -> Value {
     let held = ledger().lock().unwrap().held.take();
     let cancelled = held.as_ref().is_some_and(|s| s.is_closed());
-    let delivered = held.is_some_and(|s| s.send(raw(false)).is_ok());
+    let response = raw(false);
+    if (super::empty_canvas::existing() || super::link_title::named()) && held.is_some() {
+        if let Some(row) = ledger().lock().unwrap().requests.last_mut() {
+            row["releasedResponse"] = response.clone();
+        }
+    }
+    let delivered = held.is_some_and(|s| s.send(response).is_ok());
     json!({"delivered":delivered,"cancelledBeforeReply":cancelled})
 }
 fn unavailable() -> Error {
@@ -161,7 +195,7 @@ fn request_url(raw: &str) -> Option<(String, Vec<(String, String)>)> {
     url.set_query(None);
     Some((url.to_string(), pairs))
 }
-fn validate(actual: &PreparedRequest, expected: &PreparedRequest) -> bool {
+pub(super) fn validate(actual: &PreparedRequest, expected: &PreparedRequest) -> bool {
     actual.method == expected.method
         && request_url(&actual.url).is_some()
         && request_url(&actual.url) == request_url(&expected.url)
@@ -235,6 +269,15 @@ pub(crate) async fn read(
         Mode::Normal => Ok(raw(false)),
         Mode::Renamed => Ok(raw(true)),
     };
+    if super::empty_canvas::existing() || super::link_title::named() {
+        if let Some(row) = ledger().lock().unwrap().requests.last_mut() {
+            row["response"] = match &result {
+                Ok(raw) => json!({"raw":raw}),
+                Err(Error::Offline(_)) => json!({"error":"offline"}),
+                Err(_) => json!({"error":"other"}),
+            };
+        }
+    }
     completed.0 = true;
     result
 }

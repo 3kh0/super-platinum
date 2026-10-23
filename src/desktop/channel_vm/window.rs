@@ -1,6 +1,7 @@
 //! Full-history geometry with rich projection limited to the selected window.
 use crate::{media::MediaRegistry, model::MessageVm};
 use std::ops::Range;
+use super_platinum_core::slack_lists::comments::edit_seed::prepare::StandardEmoji;
 use super_platinum_core::{slack::models::Message, state::Workspace};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -80,6 +81,17 @@ pub(crate) fn project_channel_window(
     rows: &[ChannelRow],
     range: Range<usize>,
 ) -> Vec<MessageVm> {
+    project_channel_window_with_standard(workspace, channel_id, media, rows, range, None)
+}
+
+pub(crate) fn project_channel_window_with_standard(
+    workspace: &Workspace,
+    channel_id: &str,
+    media: &MediaRegistry,
+    rows: &[ChannelRow],
+    range: Range<usize>,
+    standard: Option<&StandardEmoji>,
+) -> Vec<MessageVm> {
     let Some(bag) = workspace.messages.get(channel_id) else {
         return Vec::new();
     };
@@ -94,8 +106,13 @@ pub(crate) fn project_channel_window(
             {
                 return None;
             }
-            let mut vm =
-                crate::message_vm::message_vm_with_pending(workspace, message, media, row.pending);
+            let mut vm = crate::message_vm::message_vm_with_standard(
+                workspace,
+                message,
+                media,
+                row.pending,
+                standard,
+            );
             vm.broadcast_parent_preview = vm.broadcast_root.as_deref().and_then(|root| {
                 crate::message_vm::broadcast::preview(workspace, message, root, channel_id, media)
             });

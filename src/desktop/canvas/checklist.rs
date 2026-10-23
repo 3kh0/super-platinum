@@ -10,6 +10,7 @@ use super_platinum_core::{
     slack::api::CanvasCollabSnapshot,
 };
 pub(crate) mod check;
+pub(super) mod end_ops;
 pub(super) mod event_reads;
 pub(super) mod fixture;
 pub(super) mod reader;
@@ -17,6 +18,8 @@ pub(super) mod recovery;
 pub(super) mod replacement_ops;
 pub(super) mod save;
 pub(in crate::canvas) mod scope;
+pub(super) mod split_ops;
+pub(super) mod start_typing_ops;
 pub(super) mod structure_ops;
 pub(super) mod text_ops;
 use scope::Scope;
@@ -39,6 +42,7 @@ pub(crate) struct State {
     recovery: recovery::State,
     sessions: Vec<OwnedSession>,
     fixture: Option<fixture::State>,
+    pub(in crate::canvas) split_fixture: Option<super::text::split_fixture::State>,
     pub(in crate::canvas) structure_fixture: Option<super::text::structure_fixture::State>,
     pub(in crate::canvas) text_fixture: Option<super::text::fixture::State>,
     pub(in crate::canvas) underline_fixture: Option<super::text::underline_fixture::State>,
@@ -83,12 +87,31 @@ pub(super) struct Attempt {
 }
 #[derive(Clone)]
 enum Mutation {
-    Replacement { replacement: String },
+    StartTyping {
+        witness: Arc<super_platinum_core::canvas::edit::structure::StartTypingWitness>,
+        child: Option<String>,
+    },
+    End {
+        witness: Arc<super_platinum_core::canvas::edit::structure::EndWitness>,
+        child: Option<String>,
+        second_child: Option<String>,
+        appended: Vec<String>,
+    },
+    Split {
+        witness: Arc<super_platinum_core::canvas::edit::structure::SplitWitness>,
+        child: Option<String>,
+    },
+    Replacement {
+        replacement: String,
+    },
     Checkbox(bool),
     Structure(Arc<super_platinum_core::canvas::edit::text::TextDraft>),
     Text(Arc<super_platinum_core::canvas::edit::text::TextDraft>),
 }
 enum Accepted {
+    StartTyping(super_platinum_core::canvas::edit::structure::AcceptedStartTyping),
+    End(super_platinum_core::canvas::edit::structure::AcceptedEnd),
+    Split(super_platinum_core::canvas::edit::structure::AcceptedSplit),
     Replacement(super_platinum_core::canvas::edit::structure::AcceptedReplacement),
     Checkbox(AcceptedCheckbox),
     Structure(super_platinum_core::canvas::edit::structure::AcceptedStructure),
@@ -625,6 +648,42 @@ pub(super) fn confirm_readback(shell: &mut ShellState, attempt: &Attempt, read: 
     let Some(accepted) = shell.canvas_checklist.operations[index].accepted.as_ref() else {
         return false;
     };
+    if let Accepted::StartTyping(accepted) = accepted {
+        if !accepted.confirms_readback(snapshot).unwrap_or(false) {
+            return false;
+        }
+        if shell.canvas_checklist.operations[index].durable.is_some() {
+            shell.canvas_checklist.operations[index].durable_verified = Some(read.serial);
+            return false;
+        }
+        shell.canvas_checklist.view.as_mut().unwrap().settled_text = Some(attempt.serial);
+        shell.canvas_checklist.operations.remove(index);
+        return true;
+    }
+    if let Accepted::End(accepted) = accepted {
+        if !accepted.confirms_readback(snapshot).unwrap_or(false) {
+            return false;
+        }
+        if shell.canvas_checklist.operations[index].durable.is_some() {
+            shell.canvas_checklist.operations[index].durable_verified = Some(read.serial);
+            return false;
+        }
+        shell.canvas_checklist.view.as_mut().unwrap().settled_text = Some(attempt.serial);
+        shell.canvas_checklist.operations.remove(index);
+        return true;
+    }
+    if let Accepted::Split(accepted) = accepted {
+        if !accepted.confirms_readback(snapshot).unwrap_or(false) {
+            return false;
+        }
+        if shell.canvas_checklist.operations[index].durable.is_some() {
+            shell.canvas_checklist.operations[index].durable_verified = Some(read.serial);
+            return false;
+        }
+        shell.canvas_checklist.view.as_mut().unwrap().settled_text = Some(attempt.serial);
+        shell.canvas_checklist.operations.remove(index);
+        return true;
+    }
     if let Accepted::Replacement(accepted) = accepted {
         if !accepted.confirms_readback(snapshot).unwrap_or(false) {
             return false;

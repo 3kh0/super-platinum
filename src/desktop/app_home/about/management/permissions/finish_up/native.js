@@ -1,7 +1,7 @@
-const workflowFinishPaneIds={details:'workflow-finish-details',upload:'workflow-finish-upload-pane',crop:'workflow-finish-crop-pane'};
+const workflowFinishPaneIds={details:'workflow-finish-details',upload:'workflow-finish-upload-pane',crop:'workflow-finish-crop-pane',share:'workflow-finish-share-pane'};
 function workflowFinishPaneNodes(modal){return Object.fromEntries(Object.entries(workflowFinishPaneIds).map(([k,id])=>[k,modal.querySelector('#'+id)]));}
 function workflowFinishPaneReady(modal,expected,panes){
- return ['details','upload','crop'].includes(expected.pane)&&modal.dataset.finishPane===expected.pane
+ return ['details','upload','crop','share'].includes(expected.pane)&&modal.dataset.finishPane===expected.pane
   && Object.entries(panes).every(([k,n])=>n?.isConnected&&n.style.display===(k===expected.pane?'flex':'none')&&getComputedStyle(n).display===(k===expected.pane?'flex':'none'));
 }
 const workflowFinishActionIds={cancel:'workflow-finish-cancel',submit:'workflow-finish-submit',more:'workflow-finish-show-more',

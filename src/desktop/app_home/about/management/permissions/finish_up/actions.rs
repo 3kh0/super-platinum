@@ -346,6 +346,7 @@ pub(in crate::app_home::about::management) fn submit(
                     readback: None,
                     release: Some(c.release),
                     confirmation_add: None,
+                    confirmation_share: None,
                 });
         }
         execute::run(state, id).await;

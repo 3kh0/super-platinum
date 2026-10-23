@@ -50,7 +50,11 @@ pub(super) async fn run(
     data_cold::configure(&state.peek(), nav::CANVAS, data_cold::Mode::Success)
         .map_err(|e| e.to_string())?;
     retry(d, p, nav::CANVAS).await?;
-    expected(p, ("ready", RENAMED, false), ("ready", "Alex List", false));
+    expected(
+        p,
+        ("ready", data_cold::empty_canvas::label(RENAMED), false),
+        ("ready", "Alex List", false),
+    );
     capture(state, m, d, disk, "cold-recovered", p, rows, None, false).await?;
     p["visitInvalidation"] =
         data_cold::invalidate(&mut state.write(), nav::CANVAS, "Next visit Canvas")

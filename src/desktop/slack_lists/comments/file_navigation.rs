@@ -119,7 +119,7 @@ impl Source {
         if !self.current(shell) || !self.matches_occurrence(team, raw, ordinal) {
             return None;
         }
-        let target = FileTarget::capture(shell, team, raw).ok()?;
+        let target = file_acquisition::target(shell, self, team, raw).ok()?;
         Some(Token {
             source: self.clone(),
             ordinal,
@@ -162,6 +162,9 @@ impl Source {
     }
 }
 impl Token {
+    pub(crate) fn label(&self) -> &str {
+        self.target.label()
+    }
     pub(crate) fn current(&self, shell: &ShellState) -> bool {
         self.source.current(shell)
             && self.target.current(shell)

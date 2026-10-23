@@ -49,7 +49,12 @@ pub(crate) fn requested() -> bool {
 pub(crate) fn enabled(s: &ShellState) -> bool {
     requested()
         && super::super::enabled(s)
-        && s.core.active_account.as_deref() == Some("synthetic-workflow-activity-channel")
+        && s.core.active_account.as_deref()
+            == Some(if super::warm::requested() {
+                super::warm::ACCOUNT
+            } else {
+                "synthetic-workflow-activity-channel"
+            })
         && s.core.active_team.as_deref() == Some("TWORKFLOW")
         && s.core
             .session
@@ -164,12 +169,16 @@ pub(crate) async fn seed(mut state: Signal<ShellState>) -> Result<(), String> {
     if !enabled(&state.peek()) || SEED.get().is_some() {
         return Err("Fresh closed shared/frozen seed required".into());
     }
-    let start = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_err(|_| "Clock before epoch")?
-        .as_secs()
-        .checked_sub(3600)
-        .ok_or("Clock too early")?;
+    let start = if super::grace_clock::requested() {
+        super::grace_clock::START_SECONDS
+    } else {
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map_err(|_| "Clock before epoch")?
+            .as_secs()
+            .checked_sub(3600)
+            .ok_or("Clock too early")?
+    };
     {
         // New cases alone traverse strict canonical member hydration. The old
         // fixture-only U_HOME_BOT identity is not a supported member wire ID.
@@ -267,6 +276,9 @@ pub(crate) async fn seed(mut state: Signal<ShellState>) -> Result<(), String> {
                 return Err("Ordinary canonical channel lineage unavailable".into());
             }
         }
+    }
+    if super::warm::requested() {
+        super::warm::reload(state, &boot, &init).await?;
     }
     {
         // Initial setup only. The genuine accepted connection retired the initial

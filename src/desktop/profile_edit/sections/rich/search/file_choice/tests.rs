@@ -100,10 +100,18 @@ fn canvas_blocks_require_independent_runtime_and_preserve_literal_text() {
     let (_, observed) = title(&raw);
     let projected = project(&shell, observed.clone()).unwrap();
     assert_eq!(projected.label, "&amp; *literal*");
+    assert_eq!(
+        projected.quip_proof(&shell),
+        json!({"fileId":FILE,"current":true,"value":"nullish"})
+    );
     assert!(projected.current_quip(&shell));
     shell.profile_generation += 1;
     assert!(projected.current_quip(&shell));
     shell.canvas_titles = quip_titles::State::fresh();
+    assert_eq!(
+        projected.quip_proof(&shell),
+        json!({"fileId":FILE,"current":false,"value":"nullish"})
+    );
     assert!(!projected.current_quip(&shell));
     shell.canvas_titles = quip_titles::State::default();
     assert!(project(&shell, observed).is_err());
@@ -163,4 +171,54 @@ fn unsupported_record_poll_remote_unknown_and_generic_file_shapes_refuse() {
     ] {
         assert!(kind(&raw).is_err());
     }
+}
+
+#[test]
+fn profile_context_admits_empty_canvas_without_granting_generic_or_list_fallback() {
+    let shell = shell();
+    let mut raw = row("quip");
+    raw["title"] = json!(" \t");
+    raw["title_blocks"] = json!([]);
+    let (_, observed) = title(&raw);
+    assert!(project(&shell, observed.clone()).is_err());
+    assert!(CanonicalTitle::capture(&shell, &observed, FILE).is_err());
+    let projected = Projection::capture_with_context(
+        &shell,
+        "T1",
+        &shell.self_account.user_id,
+        &json!({"ok":true,"workspaces":[{"id":"T1"}]}),
+        observed,
+        FILE,
+        None,
+        Some(super::super::super::title_locale::CanvasTitle::english()),
+    )
+    .unwrap();
+    assert_eq!(projected.label, "Untitled");
+    assert_eq!(projected.quip_proof(&shell), Value::Null);
+    assert_eq!(
+        projected.value,
+        json!({"type":"canvas","file_id":FILE,
+        "url":raw["permalink"],"text":raw["permalink"]})
+    );
+    assert_eq!(projected._title.source(), &raw);
+    assert_eq!(
+        projected.canvas_locale.unwrap().descriptor()["origin"],
+        "application-presentation"
+    );
+    let mut list = row("list");
+    list["title"] = json!("");
+    let (_, observed) = title(&list);
+    assert!(
+        Projection::capture_with_context(
+            &shell,
+            "T1",
+            &shell.self_account.user_id,
+            &json!({"ok":true,"workspaces":[{"id":"T1"}]}),
+            observed,
+            FILE,
+            None,
+            Some(super::super::super::title_locale::CanvasTitle::english())
+        )
+        .is_err()
+    );
 }

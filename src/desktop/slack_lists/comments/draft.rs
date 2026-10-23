@@ -97,6 +97,8 @@ pub(crate) struct ComposeView {
     pub error: Option<String>,
     pub status: Option<String>,
     pub capture_failed: bool,
+    pub title_loading: bool,
+    pub title_error: Option<String>,
 }
 pub(crate) fn presentation(shell: &ShellState) -> Option<ComposeView> {
     let binding = shell.slack_lists.comments.drafts.active.as_ref()?;
@@ -111,6 +113,7 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<ComposeView> {
     } else {
         e.error.clone()
     };
+    let (titles_ready, title_loading, title_error) = title_users::readiness(shell, binding);
     Some(ComposeView {
         binding: binding.clone(),
         blocks: serde_json::to_string(&e.blocks).ok()?,
@@ -118,10 +121,15 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<ComposeView> {
         saving: e.saving,
         busy: e.busy,
         locked,
-        ready: e.inventory.is_some()
+        title_loading,
+        title_error,
+        ready: titles_ready
+            && e.inventory.is_some()
             && !e.loading
             && e.native.as_ref().is_none_or(|n| n.matches(binding)),
-        can_send: current
+        can_send: titles_ready
+            && (e.native.is_some() || !title_users::needs_mount(shell, binding))
+            && current
             && !locked
             && !e.loading
             && !e.saving
@@ -165,6 +173,9 @@ pub(crate) fn install_native(
     let visible = binding.visible_mount(shell);
     let retained = binding.retained_mount(shell);
     if !visible && !retained {
+        return false;
+    }
+    if visible && !title_users::readiness(shell, binding).0 {
         return false;
     }
     let Some(e) = entry_mut(shell, &binding.id) else {
@@ -387,7 +398,8 @@ fn flushed(e: &Draft, blocks: &[Value]) -> Result<bool, Error> {
 pub(crate) fn fixture_snapshot(shell: &ShellState) -> Value {
     if !fixture::compose::check_enabled()
         || ((shell.core.session.is_some() || shell.core.transport.is_some())
-            && !fixture::completion::enabled(shell))
+            && !fixture::completion::enabled(shell)
+            && !fixture::emoji_combined::context_enabled(shell))
     {
         return Value::Null;
     }

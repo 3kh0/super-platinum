@@ -18,7 +18,7 @@ pub(super) struct Accepted {
     pub reply: Reply,
     pub search: bool,
 }
-fn discovery(owner: &WorkspaceSession) -> Value {
+pub(in crate::slack_lists::comments::fixture) fn discovery(owner: &WorkspaceSession) -> Value {
     json!({"ok":true,"url":format!("https://edgeapi.slack.com/cache/{}",owner.team_id),"ttl_seconds":300})
 }
 pub(super) fn rows(owner: &WorkspaceSession) -> Vec<Value> {
@@ -143,9 +143,17 @@ pub(super) fn validate(
     let (expected, reply) = match method {
         "users.prefs.get" => (
             name_policy::request::user(client, owner),
-            json!({"ok":true,"prefs":{"frecency":"{}"}}),
+            if super::title_users::named() {
+                super::title_users::policy()
+            } else {
+                json!({"ok":true,"prefs":{"frecency":"{}"}})
+            },
         ),
         "experiments.getByUser" => (api::list_experiments(client, owner), files::assignments()),
+        "client.gantryBoot" if super::super::plain_members::named() => (
+            grid::discovery(client, owner),
+            super::super::plain_members::gantry(owner),
+        ),
         "client.gantryBoot" if members::named() => {
             (grid::discovery(client, owner), members::gantry(owner))
         }

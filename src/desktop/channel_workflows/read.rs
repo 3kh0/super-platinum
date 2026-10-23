@@ -144,6 +144,9 @@ async fn request(
     let result = tokio::select! {
         result=async {
             if crate::fixture::is_fixture() {
+                if let Some(result)=crate::app_home::about::management::fixture::first_publish::confirmation::feature::read(state,&request).await {
+                    return result;
+                }
                 fixture::read(state,&request).await.unwrap_or(Err(unavailable()))
             } else {owner.ctx.transport.execute(request).await}
         }=>result,

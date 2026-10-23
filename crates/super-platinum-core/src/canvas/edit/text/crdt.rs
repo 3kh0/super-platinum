@@ -60,6 +60,10 @@ pub(in crate::canvas::edit) fn validate(
     draft: &TextDraft,
     now: Option<u64>,
 ) -> Result<Automerge, Error> {
+    if wire.has(10) {
+        super::super::structure::split_parent_history(wire, section, draft)?;
+        return validate(&wire.remove(10)?, section, draft, now);
+    }
     if wire.uint(2)? == Some(0) {
         return super::super::structure::canonical_zero_base_history(wire, section, draft, now);
     }
@@ -197,7 +201,7 @@ pub(in crate::canvas::edit) fn check_document_state(
     Ok(())
 }
 
-pub(super) fn update(
+pub(in crate::canvas::edit) fn update(
     seed: &RawMessage,
     section: &Section,
     original: &TextDraft,

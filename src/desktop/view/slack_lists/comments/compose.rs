@@ -48,6 +48,9 @@ fn Composer(state: Signal<ShellState>) -> Element {
         labels.extend(
             crate::profile_edit::sections::rich::search::draft_file_labels(&shell, team, &blocks),
         );
+        labels.extend(crate::slack_lists::comments::title_users::labels(
+            &shell, &binding,
+        ));
         serde_json::to_string(&labels).unwrap_or_else(|_| "{}".into())
     };
     rsx! {
@@ -62,6 +65,11 @@ fn Composer(state: Signal<ShellState>) -> Element {
                         blocks:view.blocks,labels,disabled,autofocus:true,expected_generation:Some(generation)}
                 }
                 completion::Suggestions {state,generation,scope:scope.clone()}
+            }
+            if view.title_loading {p {id:"slack-list-comment-title-status",class:"slack-list-comment-compose-status",role:"status","Loading title details..."}}
+            if let Some(error)=view.title_error {p {id:"slack-list-comment-title-status",class:"slack-list-comment-compose-status slack-list-error",role:"alert","{error}"}
+                button {id:"slack-list-comment-title-retry",r#type:"button",class:"slack-list-action",disabled:view.title_loading,
+                    onclick:{let binding=binding.clone();move |_|crate::slack_lists::comments::title_users::retry_draft(state,binding.clone())},"Retry title details"}
             }
             if let Some(status)=view.status {p {class:"slack-list-comment-compose-status",role:"status","{status}"}}
             if let Some(error)=view.error {p {class:"slack-list-comment-compose-status slack-list-error",role:"alert","{error}"}}

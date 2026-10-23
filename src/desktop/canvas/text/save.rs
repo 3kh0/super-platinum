@@ -72,6 +72,18 @@ pub(super) fn submit(
     if let Some(d) = draft.write().as_mut() {
         d.pending = Some(attempt.clone());
     }
+    if super::split_fixture::enabled(&state.peek()) {
+        if !super::split_fixture::dispatch_text(&mut state.write(), &attempt, captured.3) {
+            reject(
+                state,
+                draft,
+                generation,
+                &attempt,
+                "This text or your access changed. Cancel and refresh.",
+            );
+        }
+        return;
+    }
     if super::continuation_fixture::enabled(&state.peek()) {
         super::continuation_fixture::dispatch(&mut state.write(), &attempt, captured.3);
         return;
@@ -82,6 +94,20 @@ pub(super) fn submit(
     }
     if super::heading_fixture::enabled(&state.peek()) {
         super::heading_fixture::dispatch(&mut state.write(), &attempt, captured.3);
+        return;
+    }
+    if super::fixture::formatted_title::enabled(&state.peek()) {
+        let dispatched =
+            super::fixture::formatted_title::dispatch(&mut state.write(), &attempt, captured.3);
+        if !dispatched {
+            reject(
+                state,
+                draft,
+                generation,
+                &attempt,
+                "This text or your access changed. Cancel and refresh.",
+            );
+        }
         return;
     }
     if super::fixture::enabled(&state.peek()) {

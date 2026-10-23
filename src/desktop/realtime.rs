@@ -105,6 +105,7 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     .clone()
                     .zip(shell.core.active_channel.clone());
                 drop(shell);
+                crate::app_home::autocomplete::startup::schedule(state, &team);
                 crate::app_home::channel_fetches::resume(state, channel_work);
                 crate::directory_member_fetches::automatic::resume(state, &team);
                 if owned_socket
@@ -294,6 +295,9 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                 let activity_names_revision =
                     crate::app_home::about::management::activity::refresh::policy_revision(&shell);
                 let home_load = crate::app_home::realtime(&mut shell, &team, generation, &event);
+                let observations_changed = crate::app_home::autocomplete::startup::relevant_event(
+                    &shell, &team, generation, &event,
+                );
                 let modal_load = crate::app_modal::realtime(&mut shell, &team, generation, &event);
                 let list_labels =
                     crate::slack_lists::labels::prepare(&shell, &team, generation, &event);
@@ -396,6 +400,9 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     shell.refresh_dock_badge_for(&team);
                 }
                 drop(shell);
+                if observations_changed {
+                    crate::app_home::autocomplete::startup::schedule(state, &team);
+                }
                 crate::app_home::about::management::activity::refresh::after_event(
                     state,
                     activity_names_revision,

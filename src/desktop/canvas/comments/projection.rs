@@ -4,7 +4,9 @@ use crate::blocks::{BlockCtx, block_nodes, canvas_root_mrkdwn, plain_inline_node
 use crate::media::MediaRegistry;
 use crate::model::{MessageVm, RichNode};
 use super_platinum_core::canvas::comments::display::{RootBody, root_body};
+use super_platinum_core::slack_lists::comments::edit_seed::prepare::StandardEmoji;
 use super_platinum_core::{slack::models::Message, state::Workspace};
+pub(super) mod emoji;
 mod text;
 
 /// Read-time metadata for a file-bearing root. Its body is selected reactively
@@ -29,6 +31,30 @@ pub(super) fn message_vm(
     message: &Message,
     media: &MediaRegistry,
 ) -> MessageVm {
+    message_vm_with_standard(workspace, message, media, None)
+}
+
+/// Cache only metadata for file-bearing roots. Their original fallback is
+/// selected later, after the current first-file override has refused it.
+pub(super) fn row_vm(
+    workspace: &Workspace,
+    message: &Message,
+    media: &MediaRegistry,
+    standard: Option<&StandardEmoji>,
+) -> MessageVm {
+    if message.subtype.as_deref() == Some("document_comment_root") && !message.files.is_empty() {
+        metadata_vm(workspace, message, media)
+    } else {
+        message_vm_with_standard(workspace, message, media, standard)
+    }
+}
+
+pub(super) fn message_vm_with_standard(
+    workspace: &Workspace,
+    message: &Message,
+    media: &MediaRegistry,
+    standard: Option<&StandardEmoji>,
+) -> MessageVm {
     if let Some(body) = root_body(message) {
         // Project metadata without traversing superseded/hidden body blocks or
         // registering their media. The original response remains in Row.message.
@@ -45,7 +71,7 @@ pub(super) fn message_vm(
         }
         let mut value =
             crate::message_vm::message_vm_with_pending(workspace, &metadata, media, false);
-        let context = BlockCtx::new(workspace, media);
+        let context = BlockCtx::new(workspace, media).with_standard_emoji(standard);
         value.body = match body {
             RootBody::Hidden => vec![RichNode::Text("This content was deleted.".into())],
             RootBody::Unavailable => Vec::new(),
@@ -69,7 +95,7 @@ pub(super) fn message_vm(
         };
         value
     } else {
-        crate::message_vm::message_vm_with_pending(workspace, message, media, false)
+        crate::message_vm::message_vm_with_standard(workspace, message, media, false, standard)
     }
 }
 

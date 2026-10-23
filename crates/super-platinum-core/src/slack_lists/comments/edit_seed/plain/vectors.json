@@ -1,0 +1,772 @@
+{
+  "observations": {
+    "seed": {
+      "emoji_as_text": false,
+      "users": {
+        "U1": "@Alex"
+      },
+      "channels": {
+        "C1": "#general"
+      },
+      "usergroups": {
+        "S1": "@team"
+      },
+      "broadcasts": {
+        "here": "@here",
+        "channel": "@channel",
+        "everyone": "@everyone",
+        "group": "@group",
+        "sf:accountteam": "@account team",
+        "sf:dealteam": "@deal team",
+        "assistant:einstein": "@Einstein"
+      },
+      "emoji": {
+        ":smile:": {
+          "name": "smile",
+          "unicode": "1f604",
+          "skin_tone": null
+        },
+        ":party:": {
+          "name": "party",
+          "unicode": null,
+          "skin_tone": null
+        },
+        ":wave::skin-tone-3:": {
+          "name": "wave",
+          "unicode": null,
+          "skin_tone": 3
+        }
+      },
+      "prefs": {
+        "plain_text_mode": true
+      },
+      "highlight_words": [
+        "<@U1",
+        "<!subteam^S1"
+      ]
+    },
+    "highlight_words": [
+      "<@U1",
+      "<!subteam^S1"
+    ]
+  },
+  "results": [
+    {
+      "name": "text0",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"text\":\"\"}]}",
+      "ops": [],
+      "preserved": []
+    },
+    {
+      "name": "text1",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"text\":\"  literal *bold* _italic_ :smile:  \"}]}",
+      "ops": [
+        {
+          "insert": "literal *bold* _italic_ :smile:\n"
+        }
+      ],
+      "preserved": []
+    },
+    {
+      "name": "text2",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"text\":\"a\\r\\nb\\rc d e\"}]}",
+      "ops": [
+        {
+          "insert": "a\nb\nc\nd\ne\n"
+        }
+      ],
+      "preserved": []
+    },
+    {
+      "name": "text3",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"text\":\"😀 &amp; &lt; &gt; &quot; &#39;\"}]}",
+      "ops": [
+        {
+          "insert": "😀 & < > \" '\n"
+        }
+      ],
+      "preserved": []
+    },
+    {
+      "name": "text4",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"text\":\"<https://example.test|label> <https://example.test>\"}]}",
+      "ops": [
+        {
+          "insert": "label https://example.test\n"
+        }
+      ],
+      "preserved": []
+    },
+    {
+      "name": "text5",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"text\":\"<@U1> <#C1> <!subteam^S1> <!here>\"}]}",
+      "ops": [
+        {
+          "insert": "@Alex",
+          "attributes": {
+            "slackmention": {
+              "id": "U1",
+              "label": "@Alex",
+              "mention": true,
+              "unverified": false
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": "#general",
+          "attributes": {
+            "slackmention": {
+              "id": "C1",
+              "label": "#general",
+              "mention": false,
+              "unverified": false
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": "@team",
+          "attributes": {
+            "slackmention": {
+              "id": "S1",
+              "label": "@team",
+              "mention": true,
+              "unverified": false
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": "@here",
+          "attributes": {
+            "slackmention": {
+              "id": "BKhere",
+              "label": "@here",
+              "mention": true,
+              "unverified": false
+            }
+          }
+        },
+        {
+          "insert": "\n"
+        }
+      ],
+      "preserved": []
+    },
+    {
+      "name": "text6",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"text\":\"``` code ``` > quote\\n* bullet\"}]}",
+      "ops": [
+        {
+          "insert": "``` code ``` > quote\n* bullet\n"
+        }
+      ],
+      "preserved": []
+    },
+    {
+      "name": "text7",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"text\":\"​zero​\"}]}",
+      "ops": [
+        {
+          "insert": "zero\n"
+        }
+      ],
+      "preserved": []
+    },
+    {
+      "name": "text8",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"text\":\"<https://example.test|one|two>\"}]}",
+      "ops": [
+        {
+          "insert": "one|two\n"
+        }
+      ],
+      "preserved": []
+    },
+    {
+      "name": "style-order-bi",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"blocks\":[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_section\",\"elements\":[{\"type\":\"text\",\"text\":\"word\",\"style\":{\"bold\":true,\"italic\":true}}]}]}]}]}",
+      "ops": [
+        {
+          "insert": "*_word_*\n"
+        }
+      ],
+      "preserved": []
+    },
+    {
+      "name": "style-order-ib",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"blocks\":[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_section\",\"elements\":[{\"type\":\"text\",\"text\":\"word\",\"style\":{\"italic\":true,\"bold\":true}}]}]}]}]}",
+      "ops": [
+        {
+          "insert": "_*word*_\n"
+        }
+      ],
+      "preserved": []
+    },
+    {
+      "name": "style-false",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"blocks\":[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_section\",\"elements\":[{\"type\":\"text\",\"text\":\"word\",\"style\":{\"italic\":false,\"future\":null,\"bold\":false}}]}]}]}]}",
+      "ops": [
+        {
+          "insert": "_*word*_\n"
+        }
+      ],
+      "preserved": []
+    },
+    {
+      "name": "style-numeric",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"blocks\":[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_section\",\"elements\":[{\"type\":\"text\",\"text\":\"word\",\"style\":{\"2\":1,\"10\":true,\"italic\":true,\"bold\":true}}]}]}]}]}",
+      "ops": [
+        {
+          "insert": "_*word*_\n"
+        }
+      ],
+      "preserved": []
+    },
+    {
+      "name": "style-transition",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"blocks\":[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_section\",\"elements\":[{\"type\":\"text\",\"text\":\"one\",\"style\":{\"bold\":true,\"italic\":true}},{\"type\":\"text\",\"text\":\"two\",\"style\":{\"italic\":true}},{\"type\":\"text\",\"text\":\"three\"}]}]}]}]}",
+      "ops": [
+        {
+          "insert": "*_one*two_three\n"
+        }
+      ],
+      "preserved": []
+    },
+    {
+      "name": "style-leading",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"blocks\":[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_section\",\"elements\":[{\"type\":\"text\",\"text\":\" \\n word\",\"style\":{\"bold\":true}},{\"type\":\"text\",\"text\":\"  after\",\"style\":{\"bold\":true}}]}]}]}]}",
+      "ops": [
+        {
+          "insert": " \n *word  after*\n"
+        }
+      ],
+      "preserved": []
+    },
+    {
+      "name": "style-empty",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"blocks\":[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_section\",\"elements\":[{\"type\":\"text\",\"text\":\"\",\"style\":{\"bold\":true}},{\"type\":\"text\",\"text\":\"x\",\"style\":{}}]}]}]}]}",
+      "ops": [
+        {
+          "insert": "**x\n"
+        }
+      ],
+      "preserved": []
+    },
+    {
+      "name": "quote",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"blocks\":[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_quote\",\"border\":1,\"elements\":[{\"type\":\"text\",\"text\":\"one\\ntwo\",\"style\":{\"bold\":true}}]}]}]}]}",
+      "ops": [
+        {
+          "insert": "> > *one\n> two*\n"
+        }
+      ],
+      "preserved": []
+    },
+    {
+      "name": "quote-leading",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"blocks\":[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_quote\",\"elements\":[{\"type\":\"text\",\"text\":\"> one\\n two\"}]}]}]}]}",
+      "ops": [
+        {
+          "insert": "> > one\n>  two\n"
+        }
+      ],
+      "preserved": []
+    },
+    {
+      "name": "quote-astral-tail",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"blocks\":[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_quote\",\"elements\":[{\"type\":\"text\",\"text\":\"> 😀abc\"}]}]}]}]}",
+      "ops": [
+        {
+          "insert": "> > 😀abcc\n"
+        }
+      ],
+      "preserved": []
+    },
+    {
+      "name": "quote-astral-invalid",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"blocks\":[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_quote\",\"elements\":[{\"type\":\"text\",\"text\":\"> 😀\"}]}]}]}]}",
+      "refusal": "InvalidUnicode",
+      "sourceOpsJson": "[{\"insert\":\"> > 😀\\ude00\\n\"}]",
+      "preserved": []
+    },
+    {
+      "name": "pre",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"blocks\":[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_preformatted\",\"border\":1,\"elements\":[{\"type\":\"text\",\"text\":\" code\\nsecond \"},{\"type\":\"link\",\"url\":\"https://example.test\",\"text\":\"label\"}]}]}]}]}",
+      "ops": [
+        {
+          "insert": "> ``` code\nsecond label```\n"
+        }
+      ],
+      "preserved": []
+    },
+    {
+      "name": "ordered",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"blocks\":[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_list\",\"style\":\"ordered\",\"indent\":1,\"border\":2,\"offset\":2,\"elements\":[{\"type\":\"rich_text_section\",\"elements\":[{\"type\":\"text\",\"text\":\"a\"}]},{\"type\":\"rich_text_section\",\"elements\":[{\"type\":\"text\",\"text\":\"b\"}]}]}]}]}]}",
+      "ops": [
+        {
+          "insert": ">     >     3. a\n>     >     4. b\n"
+        }
+      ],
+      "preserved": []
+    },
+    {
+      "name": "bullet",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"blocks\":[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_list\",\"style\":\"bullet\",\"indent\":2,\"elements\":[{\"type\":\"rich_text_section\",\"elements\":[{\"type\":\"text\",\"text\":\"😀\"}]},{\"type\":\"rich_text_section\",\"elements\":[{\"type\":\"text\",\"text\":\"b\",\"style\":{\"strike\":true}}]}]}]}]}]}",
+      "ops": [
+        {
+          "insert": "        * 😀\n        * ~b~\n"
+        }
+      ],
+      "preserved": []
+    },
+    {
+      "name": "header-divider",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"blocks\":[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_header\",\"elements\":[{\"type\":\"text\",\"text\":\"Title\"}]},{\"type\":\"rich_text_divider\"},{\"type\":\"rich_text_section\",\"elements\":[{\"type\":\"text\",\"text\":\"body\"}]}]}]}]}",
+      "ops": [
+        {
+          "insert": "Title\n--\nbody\n"
+        }
+      ],
+      "preserved": []
+    },
+    {
+      "name": "blocks",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"blocks\":[{\"type\":\"context\",\"elements\":[{\"type\":\"mrkdwn\",\"text\":\"opaque context\"}],\"unknown\":{\"z\":[true,null,1]}},{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_section\",\"elements\":[{\"type\":\"text\",\"text\":\"first\"}]}]},{\"type\":\"divider\"},{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_section\",\"elements\":[{\"type\":\"text\",\"text\":\"last\"}]}]},{\"type\":\"context\",\"elements\":[{\"type\":\"mrkdwn\",\"text\":\"opaque context\"}],\"unknown\":{\"z\":[true,null,1]}}]}]}",
+      "ops": [
+        {
+          "insert": "first\n--\nlast\n"
+        }
+      ],
+      "preserved": [
+        {
+          "type": "context",
+          "elements": [
+            {
+              "type": "mrkdwn",
+              "text": "opaque context"
+            }
+          ],
+          "unknown": {
+            "z": [
+              true,
+              null,
+              1
+            ]
+          }
+        },
+        {
+          "type": "context",
+          "elements": [
+            {
+              "type": "mrkdwn",
+              "text": "opaque context"
+            }
+          ],
+          "unknown": {
+            "z": [
+              true,
+              null,
+              1
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "all-editable",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"blocks\":[{\"type\":\"header\",\"text\":{\"type\":\"plain_text\",\"text\":\"Title\"}},{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"*bold* <@U1>\"}},{\"type\":\"divider\"}]}]}",
+      "ops": [
+        {
+          "insert": "Title\n*bold* "
+        },
+        {
+          "insert": "@Alex",
+          "attributes": {
+            "slackmention": {
+              "id": "U1",
+              "label": "@Alex",
+              "mention": true,
+              "unverified": false
+            }
+          }
+        },
+        {
+          "insert": "\n--\n"
+        }
+      ],
+      "preserved": []
+    },
+    {
+      "name": "fallback-context",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"text\":\"fallback\",\"blocks\":[{\"type\":\"context\",\"elements\":[{\"type\":\"mrkdwn\",\"text\":\"opaque context\"}],\"unknown\":{\"z\":[true,null,1]}},{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"ignored\"}}]}]}",
+      "ops": [
+        {
+          "insert": "fallback\n"
+        }
+      ],
+      "preserved": [
+        {
+          "type": "context",
+          "elements": [
+            {
+              "type": "mrkdwn",
+              "text": "opaque context"
+            }
+          ],
+          "unknown": {
+            "z": [
+              true,
+              null,
+              1
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "skip-accessory",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"blocks\":[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_section\",\"elements\":[{\"type\":\"text\",\"text\":\"first\"}]}]},{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"ignored\"},\"accessory\":{\"type\":\"button\"}},{\"type\":\"context\",\"elements\":[{\"type\":\"mrkdwn\",\"text\":\"opaque context\"}],\"unknown\":{\"z\":[true,null,1]}}]}]}",
+      "ops": [
+        {
+          "insert": "first\n"
+        }
+      ],
+      "preserved": [
+        {
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": "ignored"
+          },
+          "accessory": {
+            "type": "button"
+          }
+        },
+        {
+          "type": "context",
+          "elements": [
+            {
+              "type": "mrkdwn",
+              "text": "opaque context"
+            }
+          ],
+          "unknown": {
+            "z": [
+              true,
+              null,
+              1
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "semantic",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"blocks\":[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_section\",\"elements\":[{\"type\":\"user\",\"user_id\":\"U1\",\"style\":{\"bold\":true}},{\"type\":\"channel\",\"channel_id\":\"C1\",\"tab_id\":\"T1\"},{\"type\":\"usergroup\",\"usergroup_id\":\"S1\"},{\"type\":\"broadcast\",\"range\":\"here\"}]}]}]}]}",
+      "ops": [
+        {
+          "insert": "*"
+        },
+        {
+          "insert": "@Alex",
+          "attributes": {
+            "slackmention": {
+              "id": "U1",
+              "label": "@Alex",
+              "mention": true,
+              "unverified": false
+            }
+          }
+        },
+        {
+          "insert": "*"
+        },
+        {
+          "insert": "#general",
+          "attributes": {
+            "slackmention": {
+              "id": "C1",
+              "label": "#general",
+              "mention": false,
+              "unverified": false,
+              "tabId": "T1"
+            }
+          }
+        },
+        {
+          "insert": "@team",
+          "attributes": {
+            "slackmention": {
+              "id": "S1",
+              "label": "@team",
+              "mention": true,
+              "unverified": false
+            }
+          }
+        },
+        {
+          "insert": "@here",
+          "attributes": {
+            "slackmention": {
+              "id": "BKhere",
+              "label": "@here",
+              "mention": true,
+              "unverified": false
+            }
+          }
+        },
+        {
+          "insert": "\n"
+        }
+      ],
+      "preserved": []
+    },
+    {
+      "name": "broadcasts",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"blocks\":[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_section\",\"elements\":[{\"type\":\"broadcast\",\"range\":\"group\"},{\"type\":\"broadcast\",\"range\":\"sf:accountteam\"},{\"type\":\"broadcast\",\"range\":\"sf:dealteam\"},{\"type\":\"broadcast\",\"range\":\"assistant:einstein\"}]}]}]}]}",
+      "ops": [
+        {
+          "insert": "@group",
+          "attributes": {
+            "slackmention": {
+              "id": "BKgroup",
+              "label": "@group",
+              "mention": true,
+              "unverified": false
+            }
+          }
+        },
+        {
+          "insert": "@account team",
+          "attributes": {
+            "slackmention": {
+              "id": "BKsf:accountteam",
+              "label": "@account team",
+              "mention": true,
+              "unverified": false
+            }
+          }
+        },
+        {
+          "insert": "@deal team",
+          "attributes": {
+            "slackmention": {
+              "id": "BKsf:dealteam",
+              "label": "@deal team",
+              "mention": true,
+              "unverified": false
+            }
+          }
+        },
+        {
+          "insert": "@Einstein",
+          "attributes": {
+            "slackmention": {
+              "id": "BKassistant:einstein",
+              "label": "@Einstein",
+              "mention": true,
+              "unverified": false
+            }
+          }
+        },
+        {
+          "insert": "\n"
+        }
+      ],
+      "preserved": []
+    },
+    {
+      "name": "emoji",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"blocks\":[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_section\",\"elements\":[{\"type\":\"text\",\"text\":\"a\",\"style\":{\"bold\":true}},{\"type\":\"emoji\",\"name\":\"wave\",\"skin_tone\":3,\"style\":{\"italic\":true}},{\"type\":\"text\",\"text\":\"b\",\"style\":{\"bold\":true}}]}]}]}]}",
+      "ops": [
+        {
+          "insert": "*a"
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave::skin-tone-3:"
+            }
+          }
+        },
+        {
+          "insert": "b*\n"
+        }
+      ],
+      "preserved": []
+    },
+    {
+      "name": "link",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"blocks\":[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_section\",\"elements\":[{\"type\":\"link\",\"url\":\"https://example.test\",\"text\":\"label\"},{\"type\":\"link\",\"url\":\"https://example.test\",\"text\":\"code\",\"style\":{\"code\":true}},{\"type\":\"link\",\"url\":\"https://example.test\"}]}]}]}]}",
+      "ops": [
+        {
+          "insert": "[label](https://example.test)`code`https://example.test\n"
+        }
+      ],
+      "preserved": []
+    },
+    {
+      "name": "fallback-types",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"blocks\":[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_section\",\"elements\":[{\"type\":\"future_text\",\"text\":\"future\"},{\"type\":\"future_link\",\"text\":\"label\",\"url\":\"https://example.test\"},{\"type\":\"color\",\"value\":\"#ff0000\"},{\"type\":\"tag\",\"text\":\"tag\"},{\"type\":\"date\",\"fallback\":\"yesterday\"},{\"type\":\"date\"},{\"type\":\"work_object_mention\",\"text\":\"object\"}]}]}]}]}",
+      "ops": [
+        {
+          "insert": "future[label](https://example.test)#ff0000tagyesterdayobject\n"
+        }
+      ],
+      "preserved": []
+    },
+    {
+      "name": "ignored",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"blocks\":[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_section\",\"elements\":[{\"type\":\"unknown\",\"text\":\"ignored\"},{\"type\":\"truncation\",\"text\":\"ignored\"},{\"type\":\"future_empty\"}]}]}]}]}",
+      "ops": [
+        {
+          "insert": "\n"
+        }
+      ],
+      "preserved": []
+    },
+    {
+      "name": "workflow",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"blocks\":[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_section\",\"elements\":[{\"type\":\"workflowtoken\",\"id\":\"W1\",\"data_type\":\"text\",\"style\":{\"bold\":true}}]}]}]}]}",
+      "ops": [
+        {
+          "insert": "*"
+        },
+        {
+          "insert": {
+            "workflowtoken": {
+              "id": "W1",
+              "type": "text",
+              "label": "",
+              "sourceLabel": "",
+              "propertyLabel": "",
+              "isAvailable": false
+            }
+          }
+        },
+        {
+          "insert": "*\n"
+        }
+      ],
+      "preserved": []
+    },
+    {
+      "name": "empty-rich",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"blocks\":[{\"type\":\"rich_text\",\"elements\":[]},{\"type\":\"context\",\"elements\":[{\"type\":\"mrkdwn\",\"text\":\"opaque context\"}],\"unknown\":{\"z\":[true,null,1]}}]}]}",
+      "ops": [
+        {
+          "insert": "\n"
+        }
+      ],
+      "preserved": [
+        {
+          "type": "context",
+          "elements": [
+            {
+              "type": "mrkdwn",
+              "text": "opaque context"
+            }
+          ],
+          "unknown": {
+            "z": [
+              true,
+              null,
+              1
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "empty-section",
+      "response": "{\"ok\":true,\"messages\":[{\"ts\":\"1.000001\",\"channel\":\"F1\",\"thread_ts\":\"1.000000\",\"user\":\"U1\",\"blocks\":[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_section\",\"elements\":[]}]},{\"type\":\"context\",\"elements\":[{\"type\":\"mrkdwn\",\"text\":\"opaque context\"}],\"unknown\":{\"z\":[true,null,1]}}]}]}",
+      "ops": [
+        {
+          "insert": "\n"
+        }
+      ],
+      "preserved": [
+        {
+          "type": "context",
+          "elements": [
+            {
+              "type": "mrkdwn",
+              "text": "opaque context"
+            }
+          ],
+          "unknown": {
+            "z": [
+              true,
+              null,
+              1
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "loaded": [
+    "+BgX",
+    "+Li8",
+    "+Ou+",
+    "+zOH",
+    "0gHG",
+    "2pvT",
+    "4x3H",
+    "5aTY",
+    "5d2x",
+    "6/9d",
+    "6O38",
+    "7KNd",
+    "BeP8",
+    "CN+N",
+    "E1L/",
+    "Ep6a",
+    "Gm7p",
+    "HsCr",
+    "I5lA",
+    "LGum",
+    "LbGi",
+    "M5WD",
+    "N8wa",
+    "NURx",
+    "PI3W",
+    "Qlm1",
+    "R+z5",
+    "RqNB",
+    "SwHX",
+    "U7wF",
+    "W05w",
+    "WoR1",
+    "Xc/Q",
+    "ZOnG",
+    "bZFu",
+    "cHzv",
+    "dndK",
+    "iL+W",
+    "iRqW",
+    "izwF",
+    "j+eK",
+    "kSm/",
+    "mM05",
+    "nPsK",
+    "pNQA",
+    "qIlP",
+    "s+wE",
+    "sdnA",
+    "segv",
+    "tlJF",
+    "uJHS",
+    "uaiu",
+    "vda4",
+    "z3Bt"
+  ]
+}

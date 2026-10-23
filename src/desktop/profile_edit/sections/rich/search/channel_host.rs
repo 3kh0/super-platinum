@@ -6,6 +6,10 @@ use super_platinum_core::slack::api::custom::texty::files::OrderedResponse;
 
 pub(crate) trait Host: Clone + Send + Sync + 'static {
     const LIST: bool;
+    /// Explicit caller-owned presentation; generic List hosts remain conservative.
+    fn canvas_title_locale(&self) -> Option<super::super::title_locale::CanvasTitle> {
+        None
+    }
     fn context(&self, shell: &ShellState) -> Option<Arc<crate::scheduled::Context>>;
     fn account(&self) -> &str;
     fn member_generation(&self) -> String;
@@ -36,6 +40,9 @@ pub(crate) trait Host: Clone + Send + Sync + 'static {
 }
 impl Host for query::Lease {
     const LIST: bool = false;
+    fn canvas_title_locale(&self) -> Option<super::super::title_locale::CanvasTitle> {
+        Some(super::super::title_locale::CanvasTitle::english())
+    }
     fn context(&self, s: &ShellState) -> Option<Arc<crate::scheduled::Context>> {
         self.context(s)
     }

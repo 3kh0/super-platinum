@@ -39,6 +39,7 @@ fn setup(raw: &Value) -> (ShellState, Comments, Ticket, Read) {
         rows: vec![Row {
             message,
             body,
+            preview: None,
             preview_body: None,
         }],
         ..Default::default()

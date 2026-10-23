@@ -8,8 +8,10 @@ use std::time::Duration;
 mod ack_socket;
 mod channel_completion;
 mod deletions;
+mod display_source;
 mod edits;
 mod edits_ack;
+mod emoji_combined;
 mod file_completion;
 mod file_navigation;
 mod group_completion;
@@ -27,6 +29,7 @@ mod reaction_tones;
 mod reactions;
 mod refresh_reactions;
 mod storage_recovery;
+mod title_users;
 const STAGES: &[&str] = &[
     "draft",
     "back",
@@ -56,6 +59,74 @@ pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::Desktop
         let case = std::env::var("SUPER_PLATINUM_LIST_COMMENTS_COMPOSE_CASE").ok();
         let checked = match case.as_deref() {
             None | Some("compose") => run(state, &desktop).await,
+            Some("rich-emoji-display-source") if fixture::display_source::named() => {
+                display_source::run(state, &desktop).await
+            }
+            Some("rich-emoji-combined") if fixture::emoji_combined::named() => {
+                emoji_combined::run(state, &desktop).await
+            }
+            Some(
+                "own-edit-plain"
+                | "own-edit-plain-channel"
+                | "own-edit-plain-member"
+                | "own-edit-plain-group"
+                | "own-edit-plain-mixed-tie"
+                | "own-edit-plain-mixed-group"
+                | "own-edit-plain-member-agents"
+                | "own-edit-plain-storage"
+                | "own-edit-plain-emoji"
+                | "own-edit-plain-custom"
+                | "own-edit-plain-custom-retired"
+                | "own-edit-plain-noop"
+                | "own-edit-plain-noop-storage"
+                | "own-edit-plain-emoticon"
+                | "own-edit-plain-emoticon-off"
+                | "own-edit-plain-go-links"
+                | "own-edit-plain-emoji-display"
+                | "own-edit-plain-emoji-display-recovery"
+                | "own-edit-plain-smart-symbols"
+                | "own-edit-plain-smart-symbols-off"
+                | "own-edit-plain-smart-symbols-disabled",
+            ) if fixture::plain::named() => own_edit::run(state, &desktop).await,
+            Some("own-edit-ordered") if fixture::ordered::named() => {
+                own_edit::run(state, &desktop).await
+            }
+            Some("own-edit-runs") if fixture::own_edit::runs_named() => {
+                own_edit::run(state, &desktop).await
+            }
+            Some("own-edit-noop" | "own-edit-noop-storage") if fixture::own_edit::noop_named() => {
+                own_edit::run(state, &desktop).await
+            }
+            Some("own-edit-empty-lifecycle" | "own-edit-empty-recovery")
+                if fixture::completion::empty_canvas::own_edit_named() =>
+            {
+                own_edit::run(state, &desktop).await
+            }
+            Some(case @ "link-title-lifecycle") if fixture::completion::link_title::named() => {
+                title_users::run(state, &desktop, case).await
+            }
+            Some(case @ ("empty-canvas-lifecycle" | "empty-canvas-recovery"))
+                if fixture::completion::empty_canvas::named() =>
+            {
+                title_users::run(state, &desktop, case).await
+            }
+            Some(
+                case @ ("user-title-known"
+                | "user-title-hidden"
+                | "user-title-recovery"
+                | "user-title-draft-recovery"
+                | "user-title-retirement"),
+            ) if fixture::completion::title_users::named() => {
+                title_users::run(state, &desktop, case).await
+            }
+            Some(
+                "own-edit-title-known"
+                | "own-edit-title-hidden"
+                | "own-edit-title-recovery"
+                | "own-edit-title-held-cancel",
+            ) if fixture::completion::title_users::own_edit_named() => {
+                own_edit::run(state, &desktop).await
+            }
             Some("newer-draft") => newer_draft::run(state, &desktop).await,
             Some(
                 case @ ("own-delete"

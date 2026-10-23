@@ -429,6 +429,7 @@ mod tests {
             icon_url: "https://example.test/original.png".into(),
             more: true,
             defaults: false,
+            share: false,
             epoch: 17,
             notice: None,
             avatar: State {

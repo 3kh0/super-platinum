@@ -1,4 +1,5 @@
 use super::*;
+mod plain;
 
 pub(crate) fn save(state: Signal<ShellState>, binding: Binding) {
     if !presentation(&state.peek()).is_some_and(|p| p.binding.token == binding.token && p.can_save)
@@ -21,6 +22,28 @@ async fn save_owned(mut state: Signal<ShellState>, binding: Binding) {
             return;
         }
     };
+    let content = lease.content().clone();
+    let unchanged = {
+        let shell = state.peek();
+        if !presentation(&shell).is_some_and(|p| p.binding.token == binding.token && p.can_save)
+            || !suspension_current(&shell, &binding)
+        {
+            return;
+        }
+        session(&shell, &binding).is_some_and(|s| match &content {
+            Content::RichBlocks(blocks) => {
+                s.plain.is_none() && s.blocks == *blocks && s.seed.unchanged(blocks)
+            }
+            // A missing edit-draft unfurl receipt is not positively absent.
+            Content::PlainDelta(_) => false,
+        })
+    };
+    if unchanged {
+        // A local finish, not a successful HTTP edit. Keep the original native
+        // lease and durable cleanup/return path; no preflight or attempt exists.
+        restore(state, &binding, lease).await;
+        return;
+    }
     let start = {
         let mut shell = state.write();
         if !presentation(&shell).is_some_and(|p| p.binding.token == binding.token && p.can_save)
@@ -37,48 +60,101 @@ async fn save_owned(mut state: Signal<ShellState>, binding: Binding) {
         (serial, s.seed.clone(), s.revision)
     };
     let (serial, seed, revision) = start;
-    let prepared = prepare(state, &binding.source, serial)
-        .await
-        .and_then(|(loaded, policy)| {
+    let (loaded, policy) = match prepare(state, &binding.source, serial).await {
+        Ok(value) => value,
+        Err(error) => {
+            failed_preparation(state, &binding, serial, &error);
+            let _ = lease.release().await;
+            return;
+        }
+    };
+    let prepared = async {
+        {
             let shell = state.peek();
             if !binding.current(&shell)
                 || !suspension_current(&shell, &binding)
-                || !session(&shell, &binding)
-                    .is_some_and(|s| s.revision == revision && s.blocks == lease.blocks())
+                || !session(&shell, &binding).is_some_and(|s| {
+                    s.revision == revision && s.content().is_ok_and(|c| c == content)
+                })
             {
                 return Err(unavailable());
             }
-            let known = selected(&loaded.page, &binding.source.ts)?;
-            seed.revalidate(&loaded.page, known, policy.policy(), millis())
-                .map_err(|e| Error::Api(e.to_string()))?;
-            let intent = OwnEditIntent::capture(
-                &seed,
-                known,
-                policy.policy(),
-                lease.blocks().to_vec(),
-                millis(),
-            )
-            .map_err(|e| Error::Api(e.to_string()))?;
-            let (client, workspace) = inputs(&shell, &binding.source)?;
-            let request = api::list_record_comment_update(&client, &workspace, &intent)?;
-            Ok((intent, request, policy))
-        });
-    let (intent, request, policy) = match prepared {
-        Ok(v) => v,
+        }
+        let (intent, plain) = match &content {
+            Content::RichBlocks(blocks) => {
+                let known = selected(&loaded.page, &binding.source.ts)?;
+                seed.revalidate(&loaded.page, known, policy.policy(), millis())
+                    .map_err(|e| Error::Api(e.to_string()))?;
+                (
+                    Some(
+                        OwnEditIntent::capture(
+                            &seed,
+                            known,
+                            policy.policy(),
+                            blocks.clone(),
+                            millis(),
+                        )
+                        .map_err(|e| Error::Api(e.to_string()))?,
+                    ),
+                    None,
+                )
+            }
+            Content::PlainDelta(delta) => {
+                let (intent, proof) = plain::prepare(
+                    state,
+                    &binding,
+                    serial,
+                    &seed,
+                    delta,
+                    &loaded,
+                    &policy,
+                    lease.no_attachment_effects(),
+                )
+                .await?;
+                (intent, Some(proof))
+            }
+        };
+        let shell = state.peek();
+        if !binding.current(&shell)
+            || !policy.current(&shell)
+            || !plain.as_ref().is_none_or(|p| p.current(&shell))
+        {
+            return Err(unavailable());
+        }
+        Ok((intent, plain))
+    }
+    .await;
+    let (intent, plain) = match prepared {
+        Ok(value) => value,
         Err(error) => {
-            publish::finish_read(
-                &mut state.write(),
-                &binding.source.owner,
-                serial,
-                Some(&error),
-            );
-            notice(
-                state,
-                &binding,
-                "The edit was not sent. Permissions or the original comment changed. Both drafts are retained.",
-            );
+            failed_preparation(state, &binding, serial, &error);
             let _ = lease.release().await;
-            controller::arm_retry(state, binding.source.owner.serial);
+            return;
+        }
+    };
+    if let Some(proof) = plain
+        .as_ref()
+        .filter(|p| p.unchanged(&state.peek(), &binding))
+    {
+        plain::finish_noop(state, &binding, serial, lease, proof).await;
+        return;
+    }
+    let Some(intent) = intent else {
+        failed_preparation(state, &binding, serial, &unavailable());
+        let _ = lease.release().await;
+        return;
+    };
+    let request = {
+        let shell = state.peek();
+        inputs(&shell, &binding.source).and_then(|(client, workspace)| {
+            api::list_record_comment_update(&client, &workspace, &intent)
+        })
+    };
+    let request = match request {
+        Ok(request) => request,
+        Err(error) => {
+            failed_preparation(state, &binding, serial, &error);
+            let _ = lease.release().await;
             return;
         }
     };
@@ -95,6 +171,7 @@ async fn save_owned(mut state: Signal<ShellState>, binding: Binding) {
         let mut shell = state.write();
         if !binding.current(&shell)
             || !policy.current(&shell)
+            || !plain.as_ref().is_none_or(|p| p.current(&shell))
             || !binding.source.owner.reading(&shell, serial)
             || !suspension_current(&shell, &binding)
         {
@@ -137,11 +214,16 @@ async fn save_owned(mut state: Signal<ShellState>, binding: Binding) {
         let s = session_mut(&mut shell, &binding).unwrap();
         s.attempt = Some(a.clone());
         s.notice = Some("Saving the edited comment…".into());
-        publish::finish_read(&mut shell, &binding.source.owner, serial, None);
+        // Plain observations retain the original preflight serial through
+        // durable I/O and issuance. Rich lifecycle remains unchanged.
+        if plain.is_none() {
+            publish::finish_read(&mut shell, &binding.source.owner, serial, None);
+        }
         a
     };
     let durable = session(&state.peek(), &binding).and_then(|s| s.durable.clone());
     let Some(durable) = durable else {
+        publish::finish_read(&mut state.write(), &binding.source.owner, serial, None);
         attempt.lock().unwrap().phase = Phase::NotSent;
         notice(
             state,
@@ -153,6 +235,7 @@ async fn save_owned(mut state: Signal<ShellState>, binding: Binding) {
     let disk_id = match durable.begin(intent.record().clone()).await {
         Ok(id) => id,
         Err(_) => {
+            publish::finish_read(&mut state.write(), &binding.source.owner, serial, None);
             attempt.lock().unwrap().phase = Phase::NotSent;
             notice(
                 state,
@@ -169,16 +252,18 @@ async fn save_owned(mut state: Signal<ShellState>, binding: Binding) {
     }
     // The durable lock is already committed. Authority can retire during that
     // I/O, so recheck before entering either fixture or real transport.
-    let current = {
+    let current = || {
         let shell = state.peek();
         binding.current(&shell)
             && policy.current(&shell)
+            && plain.as_ref().is_none_or(|p| p.current(&shell))
             && suspension_current(&shell, &binding)
-            && session(&shell, &binding).is_some_and(|s| s.revision == revision)
+            && session(&shell, &binding)
+                .is_some_and(|s| s.revision == revision && s.content().is_ok_and(|c| c == content))
     };
     // No cancellation race after issuance: an original late result belongs in
     // this attempt even when a different account or view is now visible.
-    let result = if !current || lease.validate().await.is_err() {
+    let result = if !current() || lease.validate().await.is_err() || !current() {
         Err(ListCommentUpdateFailure::NotRequested(unavailable()))
     } else if crate::fixture::is_fixture() {
         fixture::own_edit::update(state, &request, intent).await
@@ -187,17 +272,13 @@ async fn save_owned(mut state: Signal<ShellState>, binding: Binding) {
         match context {
             Some(ctx) => {
                 ctx.transport
-                    .execute_list_comment_update(request, intent, || {
-                        binding.current(&state.peek())
-                            && policy.current(&state.peek())
-                            && session(&state.peek(), &binding)
-                                .is_some_and(|s| s.revision == revision)
-                    })
+                    .execute_list_comment_update(request, intent, current)
                     .await
             }
             None => Err(ListCommentUpdateFailure::NotRequested(unavailable())),
         }
     };
+    publish::finish_read(&mut state.write(), &binding.source.owner, serial, None);
     settle(&attempt, &result);
     let (phase, deadline, raw) = {
         let a = attempt.lock().unwrap();
@@ -268,6 +349,25 @@ async fn save_owned(mut state: Signal<ShellState>, binding: Binding) {
     } else {
         let _ = lease.release().await;
     }
+}
+fn failed_preparation(
+    mut state: Signal<ShellState>,
+    binding: &Binding,
+    serial: u64,
+    error: &Error,
+) {
+    publish::finish_read(
+        &mut state.write(),
+        &binding.source.owner,
+        serial,
+        Some(error),
+    );
+    notice(
+        state,
+        binding,
+        "The edit was not sent. Permissions, required metadata, or the original comment changed. Both drafts are retained.",
+    );
+    controller::arm_retry(state, binding.source.owner.serial);
 }
 pub(in crate::slack_lists::comments::own_edit) fn settle(
     attempt: &Arc<Mutex<Attempt>>,

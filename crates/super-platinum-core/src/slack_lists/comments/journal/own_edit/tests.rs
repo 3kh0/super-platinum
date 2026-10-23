@@ -576,6 +576,7 @@ fn bounded_rows_history_and_body_fail_atomically_without_pruning() {
             capture: id(),
             seed: None,
             blocks: vec![],
+            plain_delta: None,
             attempt: None,
             retry_at: 0,
         };

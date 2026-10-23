@@ -6,7 +6,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
 mod dispatch;
+mod plan_cache;
 mod prefs;
+pub use plan_cache::PlanInfoCache;
 mod roles;
 mod wire;
 pub use prefs::Stores;

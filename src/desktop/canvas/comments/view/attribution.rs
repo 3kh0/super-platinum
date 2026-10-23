@@ -149,13 +149,15 @@ pub(crate) fn profile_active(shell: &ShellState) -> bool {
     shell.overlay == Some(crate::state::Overlay::Canvas)
         && shell.canvas_checklist.comment_profile.is_some()
 }
-pub(crate) fn profile_overlay(mut state: Signal<ShellState>, shell: &ShellState) -> Element {
-    if !shell
+pub(crate) fn profile_visible(shell: &ShellState) -> bool {
+    shell
         .canvas_checklist
         .comment_profile
         .as_ref()
         .is_some_and(|v| v.current(shell))
-    {
+}
+pub(crate) fn profile_overlay(mut state: Signal<ShellState>, shell: &ShellState) -> Element {
+    if !profile_visible(shell) {
         return rsx! {};
     }
     rsx! {

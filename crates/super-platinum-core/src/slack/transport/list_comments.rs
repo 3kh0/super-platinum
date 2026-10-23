@@ -28,12 +28,35 @@ impl Transport {
         self.list_comments_read_once(request, current, acquire_allowed)
             .await
     }
+    /// Positive replies provenance from the original response bytes, under the
+    /// same closed request validator and original-owner cancellation as reads.
+    pub async fn execute_list_comments_read_ordered(
+        &self,
+        request: PreparedRequest,
+        current: impl FnMut() -> bool,
+    ) -> Result<comments::ordered::ResponseWitness, Error> {
+        self.list_comments_read_once_with(request, current, read_allowed, |bytes, value| {
+            comments::ordered::ResponseWitness::decode(bytes, &value)
+                .map_err(|error| Error::Api(error.to_string()))
+        })
+        .await
+    }
     async fn list_comments_read_once(
         &self,
         request: PreparedRequest,
         current: impl FnMut() -> bool,
         allowed: fn(&PreparedRequest) -> bool,
     ) -> Result<Value, Error> {
+        self.list_comments_read_once_with(request, current, allowed, |_, value| Ok(value))
+            .await
+    }
+    async fn list_comments_read_once_with<T>(
+        &self,
+        request: PreparedRequest,
+        current: impl FnMut() -> bool,
+        allowed: fn(&PreparedRequest) -> bool,
+        decode: impl FnOnce(&[u8], Value) -> Result<T, Error>,
+    ) -> Result<T, Error> {
         if !allowed(&request) {
             return Err(Error::Api("unsupported_list_comments_read".into()));
         }
@@ -43,7 +66,7 @@ impl Transport {
         let current = std::sync::Mutex::new(current);
         let check = || current.lock().is_ok_and(|mut current| current());
         let work = async {
-            self.execute_list_rename_once(request, check, allowed)
+            self.execute_list_rename_once_with(request, check, allowed, decode)
                 .await
                 .map_err(|e| match e {
                     ListColumnRenameFailure::NotRequested(e)
@@ -228,5 +251,7 @@ fn acquire_allowed(request: &PreparedRequest) -> bool {
         && serde_json::to_string(&channels).is_ok_and(|v| v == *encoded)
 }
 
+#[cfg(test)]
+mod ordered_tests;
 #[cfg(test)]
 mod tests;

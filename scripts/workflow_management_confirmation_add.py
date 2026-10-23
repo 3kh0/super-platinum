@@ -73,7 +73,7 @@ def seed_proof(server,channel_rows=None):
     channel_rows=channels() if channel_rows is None else channel_rows
     seed=server.get('seed',{});raw=seed.get('boot',{}).get('channels',[])
     require(exact(seed.get('unifiedUserClientEnabled'),{'TWORKFLOW':False}),'Original explicit non-unified credential input')
-    require(len(raw)==6 and raw[0].get('id')==ORIGINAL and exact(raw[1:],channel_rows),'Original canonical Boot channel inputs')
+    require(len(raw)==len(channel_rows)+1 and raw[0].get('id')==ORIGINAL and exact(raw[1:],channel_rows),'Original canonical Boot channel inputs')
     require(all('fromAnotherTeam' not in v for v in raw[1:]),'HTTP field manufactured processed foreign authority')
     rows=seed.get('canonicalChannels');require(isinstance(rows,list),'Actual processed channel seed absent')
     for id in CHANNELS:

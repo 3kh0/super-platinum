@@ -213,7 +213,7 @@ def validate_closed_log(path, expected, directory, admitted, expected_dimensions
                            receipts[0], closed_receipts(path, STAGE), expected_dimensions=expected_dimensions)
 
 
-def normalize(native, evidence, stack, process_api, handle):
+def normalize(native, evidence, stack, process_api, handle, *, caption_timeout_ms=250):
     if sys.platform != "win32":
         evidence["normalization"] = {"enabled": False, "reason": "Windows helpers do not apply"}
         return None
@@ -231,7 +231,7 @@ def normalize(native, evidence, stack, process_api, handle):
     observe = lambda: visual["window_observation"](native.process.pid)
     evidence["placement"] = {}
     fit_work_area(observe, verify, evidence["placement"], position_policy="top-left")
-    pointer = FixturePointer(observe, verify)
+    pointer = FixturePointer(observe, verify, caption_timeout_ms=caption_timeout_ms)
     stack.callback(pointer.close)  # Runs while the owned process/window still exists.
     evidence["pointer"] = pointer.data
     pointer.park()

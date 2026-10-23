@@ -44,6 +44,7 @@ pub(crate) struct Root {
     workflow_navigation: Option<workflows::navigation_history::Store>,
     workflow_names: Option<workflows::entity_names::Observation>,
     workflow_names_revision: u64,
+    share_ranking_observations: autocomplete::observations::Registry,
     #[cfg(feature = "protected-test-support")]
     workflow_fixture: Option<workflows::fixture::Harness>,
     pub(crate) fixture_forms: Vec<serde_json::Value>,
@@ -335,6 +336,7 @@ pub(crate) async fn refresh(mut state: Signal<ShellState>) {
 /// Socket caller supplies the accepted account's realtime generation. A home
 /// event cannot reuse modal token authority or navigate to another app/channel.
 pub(crate) fn realtime(s: &mut ShellState, team: &str, generation: u64, event: &RtEvent) -> bool {
+    autocomplete::observations::realtime(s, team, generation, event);
     let current_owner = s.app_home.surface.as_ref().is_some_and(|h| {
         h.owner.current(s) && h.owner.ctx.session.team_id == team && h.owner.rt == generation
     });

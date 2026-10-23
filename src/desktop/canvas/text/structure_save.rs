@@ -1,16 +1,46 @@
 //! Canonical preflight, one dispatch, and retained structural receipt settlement.
 use super::*;
+#[path = "structure_action.rs"]
+mod action;
 use super_platinum_core::{
     canvas::edit::text::TextDraft,
     slack::{api, transport::CanvasEditFailure},
 };
 
 pub(super) fn submit(
+    state: Signal<ShellState>,
+    reader: Signal<Reader>,
+    draft: Signal<Option<Draft>>,
+    generation: u64,
+    value: TextDraft,
+) {
+    submit_inner(state, reader, draft, generation, value, None);
+}
+
+pub(super) fn submit_start(
+    state: Signal<ShellState>,
+    reader: Signal<Reader>,
+    draft: Signal<Option<Draft>>,
+    generation: u64,
+    witness: super::split::Start,
+) {
+    submit_inner(
+        state,
+        reader,
+        draft,
+        generation,
+        TextDraft::default(),
+        Some(witness),
+    );
+}
+
+fn submit_inner(
     mut state: Signal<ShellState>,
     reader: Signal<Reader>,
     mut draft: Signal<Option<Draft>>,
     generation: u64,
     value: TextDraft,
+    start: Option<super::split::Start>,
 ) {
     let captured = {
         let mut d = draft.write();
@@ -25,21 +55,34 @@ pub(super) fn submit(
             d.error = Some("This canvas changed. Cancel and refresh before saving.");
             return;
         }
-        let Some(action) = d.kind.action() else {
-            return;
+        let action = if let Some(witness) = &start {
+            let Kind::Text(intent) = &d.kind else {
+                return;
+            };
+            if intent.heading_level().is_some() || !witness.matches(intent.seed()) {
+                d.error = Some("This paragraph changed. Cancel and refresh before saving.");
+                return;
+            }
+            Action::Before
+        } else {
+            let Some(action) = d.kind.action() else {
+                return;
+            };
+            action
         };
         (d.visit, d.read, d.section.clone(), action)
     };
     let Some(now) = checklist::save::now_usec() else {
         return;
     };
-    let (attempt, intent) = match checklist::structure_ops::begin_structure(
+    let (attempt, intent) = match action::begin(
         &mut state.write(),
         captured.0,
         captured.1,
         &captured.2,
         captured.3,
         &value,
+        start.as_ref(),
         now,
     ) {
         Ok(value) => value,
@@ -57,8 +100,35 @@ pub(super) fn submit(
     if let Some(d) = draft.write().as_mut() {
         d.pending = Some(attempt.clone());
     }
+    if super::split_fixture::enabled(&state.peek()) && super::split_fixture::is_start() {
+        spawn(async move {
+            let result = match intent {
+                action::Intent::Structure(intent) => {
+                    super::split_fixture::dispatch_start(state, &attempt, intent).await
+                }
+                action::Intent::StartTyping(intent, witness) => {
+                    super::split_fixture::dispatch_start_typing(state, &attempt, intent, &witness)
+                        .await
+                }
+            };
+            if let Err(reason) = result {
+                reject(state, draft, generation, &attempt, reason);
+            }
+        });
+        return;
+    }
     if super::structure_fixture::enabled(&state.peek()) {
-        super::structure_fixture::dispatch(&mut state.write(), &attempt, intent);
+        if let action::Intent::Structure(intent) = intent {
+            super::structure_fixture::dispatch(&mut state.write(), &attempt, intent);
+        } else {
+            reject(
+                state,
+                draft,
+                generation,
+                &attempt,
+                "The disconnected canvas fixture is unavailable.",
+            );
+        }
         return;
     }
     if crate::fixture::is_fixture() {
@@ -126,14 +196,14 @@ pub(super) fn submit(
                 return;
             }
         };
-        let ticket = match checklist::recovery::reserve(state, &attempt, &prepared).await {
+        let ticket = match prepared.reserve(state, &attempt).await {
             Ok(ticket) => ticket,
             Err(reason) => {
                 reject(state, draft, generation, &attempt, reason);
                 return;
             }
         };
-        if !checklist::structure_ops::mark_dispatched(&mut state.write(), &attempt, &prepared) {
+        if !prepared.mark_dispatched(&mut state.write(), &attempt) {
             let _ = checklist::recovery::complete(state, &ticket).await;
             reject(
                 state,
@@ -144,14 +214,7 @@ pub(super) fn submit(
             );
             return;
         }
-        let result = api::execute_canvas_structure_edit(
-            &ctx.transport,
-            &ctx.client,
-            &ctx.session,
-            &fresh,
-            prepared,
-        )
-        .await;
+        let result = prepared.execute(&ctx, &fresh).await;
         let accepted = matches!(&result, Ok(_));
         // A definite transport NotSent releases the durable reservation first.
         // A failed disk commit preserves uncertainty and keeps the file locked.
@@ -164,7 +227,7 @@ pub(super) fn submit(
             let mut shell = state.write();
             match result {
                 Ok(accepted) => {
-                    checklist::structure_ops::finish_structure(&mut shell, &attempt, accepted);
+                    accepted.finish(&mut shell, &attempt);
                 }
                 Err(CanvasEditFailure::NotSent(_)) if not_sent_cleared => {
                     checklist::finish(

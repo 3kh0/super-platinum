@@ -16,14 +16,15 @@ pub(crate) fn panel(state: Signal<ShellState>) -> Element {
 
 #[component]
 fn Editor(state: Signal<ShellState>) -> Element {
-    // Only the controller's positively admitted rich seed may create this view.
-    // RichEditor retains opaque token bytes; it is not an eligibility decoder.
+    // The controller admits the representation and native policy together.
+    // Neither native editor supplies permission to edit the original comment.
     let Some(view) = controller::presentation(&state.read()) else {
         return rsx! {};
     };
     let binding = view.binding.clone();
     let generation = binding.generation();
     let scope = binding.scope();
+    let media_epoch = state.read().media_epoch;
     let labels = {
         let shell = state.read();
         let blocks = serde_json::from_str::<Vec<Value>>(&view.blocks).unwrap_or_default();
@@ -42,6 +43,7 @@ fn Editor(state: Signal<ShellState>) -> Element {
         labels.extend(
             crate::profile_edit::sections::rich::search::draft_file_labels(&shell, team, &blocks),
         );
+        labels.extend(controller::title_labels(&shell, &binding));
         serde_json::to_string(&labels).unwrap_or_else(|_| "{}".into())
     };
     rsx! {
@@ -57,12 +59,26 @@ fn Editor(state: Signal<ShellState>) -> Element {
             "data-list-comments-compose-scope": "{scope}",
             "data-editor-generation": generation,
             "data-edit-revision": view.revision,
-            div {
+            if view.mount_ready { div {
                 key: "list-comment-edit-editor-{generation}",
                 class: "slack-list-comment-compose-editor",
                 inert: view.finishing.then_some(true),
                 onmounted: { let binding = binding.clone(); move |_| bridge::mount(state, binding.clone()) },
-                crate::view::rich_editor::RichEditor {
+                if let Some((ops, policy)) = view.plain {
+                    crate::slack_lists::comments::delta_editor::DeltaEditor {
+                        id: "slack-list-comment-edit-draft",
+                        scope: scope.clone(),
+                        generation,
+                        label: "Edit comment".to_owned(),
+                        mode: crate::slack_lists::comments::delta_editor::Mode::PlainText,
+                        ops,
+                        policy,
+                        media_epoch,
+                        disabled: false,
+                        autofocus: true,
+                        on_unavailable: { let binding = binding.clone(); move |_| controller::editor_unavailable(state, binding.clone()) },
+                    }
+                } else { crate::view::rich_editor::RichEditor {
                     id: "slack-list-comment-edit-draft",
                     label: "Edit comment".to_owned(),
                     blocks: view.blocks,
@@ -72,7 +88,12 @@ fn Editor(state: Signal<ShellState>) -> Element {
                     disabled: false,
                     autofocus: true,
                     expected_generation: Some(generation),
-                }
+                } }
+            } }
+            if view.title_loading {
+                p { id: "slack-list-comment-edit-title-status", class: "slack-list-comment-compose-status", role: "status", "Loading title details..." }
+            } else if let Some(error) = view.title_error {
+                p { id: "slack-list-comment-edit-title-status", class: "slack-list-comment-compose-status", role: "status", "{error}" }
             }
             if let Some(notice) = view.notice {
                 p { id: "slack-list-comment-edit-status", class: "slack-list-comment-compose-status", role: "status", "{notice}" }
@@ -80,6 +101,13 @@ fn Editor(state: Signal<ShellState>) -> Element {
                 p { id: "slack-list-comment-edit-status", class: "slack-list-comment-compose-status", role: "status", "Saving comment…" }
             }
             div { class: "slack-list-comment-compose-actions",
+                if view.can_retry_titles {
+                    button {
+                        id: "slack-list-comment-edit-title-retry", r#type: "button", class: "slack-list-action",
+                        onclick: { let binding = binding.clone(); move |_| controller::retry_titles(state, binding.clone()) },
+                        "Retry title details"
+                    }
+                }
                 if view.can_retry_capture {
                     button {
                         id: "slack-list-comment-edit-retry", r#type: "button", class: "slack-list-action",

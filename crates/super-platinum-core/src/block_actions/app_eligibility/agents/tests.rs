@@ -1,5 +1,37 @@
 use super::*;
 
+#[test]
+fn enabled_default_profile_is_reached_only_after_actual_settings_scope() {
+    assert_eq!(
+        Settings::decode(&json!({}), None)
+            .unwrap()
+            .enabled_default_app(),
+        None
+    );
+    let team = json!({"default_channel_knowledge_agent":{"app_id":"ADEFAULT"},
+        "ai_apps_settings":{"apps":[{"app_id":"ADEFAULT","is_ai_enabled":false}]}});
+    assert_eq!(
+        Settings::decode(&team, None).unwrap().enabled_default_app(),
+        None
+    );
+    // Enterprise locked settings supersede team app enablement, but default
+    // identity still comes from the current team's original preference.
+    assert_eq!(
+        Settings::decode(&team, Some(&json!({})))
+            .unwrap()
+            .enabled_default_app(),
+        Some("ADEFAULT")
+    );
+    let disabled =
+        json!({"ai_apps_settings":{"apps":[{"app_id":"ADEFAULT","is_ai_enabled":false}]}});
+    assert_eq!(
+        Settings::decode(&team, Some(&disabled))
+            .unwrap()
+            .enabled_default_app(),
+        None
+    );
+}
+
 fn workspace() -> WorkspaceSession {
     WorkspaceSession {
         team_id: "T1".into(),

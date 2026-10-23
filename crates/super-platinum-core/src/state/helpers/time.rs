@@ -40,14 +40,26 @@ pub fn format_ts_hm(ts: &str) -> String {
 
 /// Local wall-clock time for a user based on their Slack `tz_offset` (seconds east of UTC).
 pub fn format_user_local_time(tz_offset: Option<i32>) -> Option<String> {
-    use chrono::{FixedOffset, Utc};
-    let offset = FixedOffset::east_opt(tz_offset?)?;
+    format_user_local_time_at(tz_offset, chrono::Utc::now().timestamp())
+}
+
+/// The same fixed Slack offset at an explicit UTC second. No timezone inference.
+pub fn format_user_local_time_at(tz_offset: Option<i32>, unix_seconds: i64) -> Option<String> {
+    let offset = chrono::FixedOffset::east_opt(tz_offset?)?;
     Some(
-        Utc::now()
+        chrono::DateTime::from_timestamp(unix_seconds, 0)?
             .with_timezone(&offset)
             .format("%H:%M local time")
             .to_string(),
     )
+}
+
+/// Validated fixed-offset display minute without formatting or allocating.
+pub fn user_local_minute_at(tz_offset: Option<i32>, unix_seconds: i64) -> Option<i64> {
+    use chrono::Timelike;
+    let offset = chrono::FixedOffset::east_opt(tz_offset?)?;
+    let local = chrono::DateTime::from_timestamp(unix_seconds, 0)?.with_timezone(&offset);
+    Some(i64::from(local.hour()) * 60 + i64::from(local.minute()))
 }
 
 pub fn date_key_for_ts(ts: &str) -> Option<String> {
@@ -122,5 +134,42 @@ pub fn format_ts_unfurl_label(ts: &str) -> String {
         0 => format!("Today at {clock}"),
         1 => format!("Yesterday at {clock}"),
         _ => format!("{} {}", date.format("%b"), ordinal_day(date.day())),
+    }
+}
+
+#[cfg(test)]
+mod profile_clock_tests {
+    use super::format_user_local_time_at as at;
+
+    #[test]
+    fn minute_stamp_matches_display_validation_and_subminute_boundaries() {
+        use super::user_local_minute_at as minute;
+        assert_eq!(minute(Some(31), 28), Some(0));
+        assert_eq!(minute(Some(31), 29), Some(1));
+        assert_eq!(minute(Some(-31), 30), Some(1439));
+        assert_eq!(minute(Some(-31), 31), Some(0));
+        assert_eq!(minute(Some(0), 86460), Some(1));
+        assert_eq!(minute(None, 0), None);
+        assert_eq!(minute(Some(86400), 0), None);
+        assert_eq!(minute(Some(-86400), 0), None);
+        assert_eq!(minute(Some(0), i64::MAX), None);
+    }
+    #[test]
+    fn minute_midnight_and_fractional_hour_offsets() {
+        assert_eq!(at(Some(-25200), 25139).as_deref(), Some("23:58 local time"));
+        assert_eq!(at(Some(-25200), 25140).as_deref(), Some("23:59 local time"));
+        assert_eq!(at(Some(-25200), 25199).as_deref(), Some("23:59 local time"));
+        assert_eq!(at(Some(-25200), 25200).as_deref(), Some("00:00 local time"));
+        assert_eq!(at(Some(19800), 25200).as_deref(), Some("12:30 local time"));
+        assert_eq!(at(Some(20700), 25200).as_deref(), Some("12:45 local time"));
+    }
+    #[test]
+    fn missing_invalid_and_out_of_range_never_invent_clock() {
+        assert_eq!(at(None, 0), None);
+        for offset in [-86400, 86400, i32::MAX] {
+            assert_eq!(at(Some(offset), 0), None);
+        }
+        assert_eq!(at(Some(0), i64::MAX), None);
+        assert_eq!(at(Some(0), -1).as_deref(), Some("23:59 local time"));
     }
 }

@@ -33,50 +33,48 @@ pub(super) async fn worker(mut state: Signal<ShellState>, worker: Arc<()>) {
             }
             continue;
         }
-        let prepared = {
+        state
+            .write()
+            .slack_lists
+            .comments
+            .file_acquisition
+            .attempts
+            .iter_mut()
+            .find(|a| a.serial == attempt.serial)
+            .unwrap()
+            .phase = Phase::Loading;
+        let owned = attempt.clone();
+        let generation = format!("list-transcript-title-{}", attempt.serial);
+        let owner = Arc::new(move |s: &ShellState| owned.demand.current(s));
+        let work = title_users::acquire_transcript(
+            state,
+            &attempt.demand.team,
+            &generation,
+            vec![attempt.demand.raw.clone()],
+            owner,
+        );
+        let result = guarded(work, || attempt_current(&state.peek(), &attempt, &worker)).await;
+        let result = {
             let mut shell = state.write();
-            let context = attempt.demand.source.context(&shell);
-            let read = FileInfoRead::capture(&mut shell, &attempt.demand.team, &attempt.demand.id);
-            let slot = shell
-                .slack_lists
-                .comments
-                .file_acquisition
-                .attempts
-                .iter_mut()
-                .find(|a| a.serial == attempt.serial)
-                .unwrap();
-            slot.phase = Phase::Loading;
-            context
-                .ok_or_else(unavailable)
-                .and_then(|context| read.map(|read| (context, read)))
-        };
-        let result = match prepared {
-            Err(error) => Err(error),
-            Ok((context, read)) => {
-                let request = request(&context, &attempt.demand.id);
-                let valid = |shell: &ShellState| {
-                    attempt_current(shell, &attempt, &worker) && read.current(shell)
-                };
-                let admitted = valid(&state.peek());
-                let result = if admitted {
-                    acquire(state, request, context, valid).await
-                } else {
-                    Err(unavailable())
-                };
-                let mut shell = state.write();
-                if !attempt_current(&shell, &attempt, &worker) {
-                    continue;
-                }
-                result
-                    .and_then(|raw| read.publish(&mut shell, &raw))
-                    .and_then(|()| {
-                        attempt
-                            .demand
-                            .ready(&shell)
-                            .then_some(())
-                            .ok_or_else(unavailable)
-                    })
+            if !attempt_current(&shell, &attempt, &worker) {
+                continue;
             }
+            result.and_then(|titles| {
+                shell
+                    .slack_lists
+                    .comments
+                    .file_acquisition
+                    .attempts
+                    .iter_mut()
+                    .find(|a| a.serial == attempt.serial)
+                    .unwrap()
+                    .titles = Some(titles);
+                attempt
+                    .demand
+                    .ready(&shell)
+                    .then_some(())
+                    .ok_or_else(unavailable)
+            })
         };
         let deadline = {
             let mut shell = state.write();
@@ -95,7 +93,7 @@ pub(super) async fn worker(mut state: Signal<ShellState>, worker: Arc<()>) {
     }
 }
 
-async fn acquire(
+pub(in crate::slack_lists::comments) async fn acquire(
     state: Signal<ShellState>,
     request: PreparedRequest,
     context: crate::scheduled::Context,
@@ -120,7 +118,7 @@ async fn acquire(
     guarded(read, || current(&state.peek())).await
 }
 
-async fn guarded<T>(
+pub(in crate::slack_lists::comments) async fn guarded<T>(
     read: impl std::future::Future<Output = Result<T, Error>>,
     current: impl Fn() -> bool,
 ) -> Result<T, Error> {

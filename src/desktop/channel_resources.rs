@@ -170,7 +170,8 @@ pub async fn refresh(state: Signal<ShellState>) {
         if state.peek().channel_tab == ChannelTab::AppAbout
             && (crate::app_home::about::management::activity::fixture::channel::enabled(
                 &state.peek(),
-            ) || crate::channel_workflows::fixture::enabled(&state.peek()))
+            ) || crate::channel_workflows::fixture::enabled(&state.peek())
+                || crate::app_home::about::management::fixture::first_publish::confirmation::share::drafts::enabled(&state.peek()))
         {
             crate::app_home::about::refresh(state).await;
         }

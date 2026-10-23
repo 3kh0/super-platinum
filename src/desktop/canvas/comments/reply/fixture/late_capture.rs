@@ -12,8 +12,9 @@ pub(in crate::canvas::comments::reply) fn script(
     if !(cfg!(test) || cfg!(feature = "protected-native-fixture"))
         || !crate::fixture::is_fixture()
         || std::env::var("SUPER_PLATINUM_CANVAS_CANONICAL_FILE_CHECK").as_deref() != Ok("1")
-        || std::env::var("SUPER_PLATINUM_CANVAS_DESTINATION_LATE_CAPTURE_CHECK").as_deref()
-            != Ok("1")
+        || (!replacement::requested()
+            && std::env::var("SUPER_PLATINUM_CANVAS_DESTINATION_LATE_CAPTURE_CHECK").as_deref()
+                != Ok("1"))
         || !matches!(
             std::env::var("SUPER_PLATINUM_FIXTURE").as_deref(),
             Ok("canvas-canonical-native-canvas"
@@ -49,6 +50,22 @@ pub(in crate::canvas::comments::reply) fn script(
         || options["mount"] != native.fixture_owner(None)["mount"]
     {
         return None;
+    }
+    if replacement::requested() {
+        if super::super::super::fixture::canonical_files::return_body::requested() {
+            return Some(format!(
+                "{bridge}\n{}\n{}\nconst observed=canvasReturnBodyBridge({options},dioxus);\
+                 const held=canvasReplacementBridge({options},observed);\
+                 try{{return await canvasRichReplyBridge({options},held);}}finally{{held.close();observed.close();}}",
+                include_str!("replacement/bridge.js"),
+                include_str!("replacement/body.js")
+            ));
+        }
+        return Some(format!(
+            "{bridge}\n{}\nconst held=canvasReplacementBridge({options},dioxus);\
+             try{{return await canvasRichReplyBridge({options},held);}}finally{{held.close();}}",
+            include_str!("replacement/bridge.js")
+        ));
     }
     Some(format!(
         "{bridge}\n{WRAPPER}\nconst late=canvasLateCaptureBridge({options},dioxus);\

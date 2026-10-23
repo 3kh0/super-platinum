@@ -12,7 +12,7 @@ function scene(){
  const title=field('INPUT',expected.title),description=field('TEXTAREA',expected.description),upload={...field('INPUT',''),type:'file',files:[]};
  const modalNodes={'#workflow-finish-title':title,'#workflow-finish-description':description,'#workflow-finish-upload':upload};
  const paneNodes={};
- for(const [kind,id] of Object.entries({details:'workflow-finish-details',upload:'workflow-finish-upload-pane',crop:'workflow-finish-crop-pane'})){
+ for(const [kind,id] of Object.entries({details:'workflow-finish-details',upload:'workflow-finish-upload-pane',crop:'workflow-finish-crop-pane',share:'workflow-finish-share-pane'})){
   const pane={isConnected:true,style:{display:kind==='details'?'flex':'none'},contains:n=>n?.pane===kind};
   paneNodes[kind]=pane;modalNodes['#'+id]=pane;
  }

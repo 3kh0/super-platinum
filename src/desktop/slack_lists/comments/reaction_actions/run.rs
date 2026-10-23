@@ -73,8 +73,14 @@ async fn prepare(
             &query,
             Tombstones::Include,
         )?;
-        let raw = network::request(state, &work.owner, work.serial, request, true).await?;
-        Page::parse(loaded.page.target(), raw).map_err(|e| Error::Api(e.to_string()))?
+        network::reply_page(
+            state,
+            &work.owner,
+            work.serial,
+            request,
+            loaded.page.target(),
+        )
+        .await?
     };
     let selected = page
         .messages()

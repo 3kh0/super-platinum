@@ -10,9 +10,18 @@ use tokio::sync::oneshot;
 pub(crate) mod cold_files;
 pub(crate) mod completion;
 pub(crate) mod compose;
+pub(crate) mod display_source;
+pub(crate) mod emoji_combined;
 pub(crate) mod file_navigation;
+pub(crate) mod ordered;
 pub(crate) mod own_delete;
 pub(crate) mod own_edit;
+pub(crate) mod plain;
+pub(crate) mod plain_channels;
+pub(crate) mod plain_groups;
+pub(crate) mod plain_member_agents;
+pub(crate) mod plain_members;
+pub(crate) mod plain_mixed;
 pub(crate) mod reaction_actions;
 pub(crate) mod reaction_additions;
 pub(crate) mod reaction_family;
@@ -34,7 +43,9 @@ pub(crate) fn check_enabled() -> bool {
 pub(crate) fn enabled(s: &ShellState) -> bool {
     check_enabled()
         && crate::slack_lists::fixture::enabled(s)
-        && ((s.core.session.is_none() && s.core.transport.is_none()) || completion::enabled(s))
+        && ((s.core.session.is_none() && s.core.transport.is_none())
+            || completion::enabled(s)
+            || emoji_combined::context_enabled(s))
         && s.slack_lists.comments.fixture.is_some()
 }
 pub(crate) fn seed(document: &mut Value, records: &mut Vec<Value>) {
@@ -94,6 +105,7 @@ struct Ledger {
     navigation: Option<file_navigation::State>,
     cold_files: Option<cold_files::State>,
     own_edit: Option<own_edit::State>,
+    ordered: ordered::State,
     own_delete: Option<own_delete::State>,
 }
 #[derive(Clone)]
@@ -136,6 +148,7 @@ pub(crate) fn begin(s: &mut ShellState) -> Result<Model, String> {
         navigation: None,
         cold_files: None,
         own_edit: None,
+        ordered: Default::default(),
         own_delete: None,
     })));
     s.slack_lists.comments.fixture = Some(model.clone());
@@ -487,6 +500,8 @@ fn reply(ts: &str, next: bool) -> Value {
         response["messages"][1]["reactions"] =
             json!([{"name":"wave","count":2,"users":["U1","U2"]}]);
     }
+    display_source::decorate(ts, next, &mut response);
+    emoji_combined::decorate(ts, next, &mut response);
     response
 }
 struct Pending {

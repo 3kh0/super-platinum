@@ -4,6 +4,38 @@ use super::*;
 
 mod detector;
 
+/// Exact v+tG flags used by message preparation. Unsupported source switches
+/// (go-links/all-TLDs) are intentionally not invented here.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct MessageLinkOptions {
+    pub ignore_phone_matches: bool,
+    pub ignore_email_matches: bool,
+    pub ignore_links_without_http: bool,
+    pub include_phone_matches_with_tel_prefix: bool,
+    pub ignore_unbalanced_parentheses: bool,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MessageLinkKind {
+    Url,
+    Email,
+    Phone,
+}
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MessageLink {
+    pub kind: MessageLinkKind,
+    pub offset_utf16: usize,
+    pub text: String,
+    pub url: String,
+}
+/// Complete, untrimmed matches for retained rNCs/l8g0/k1tX message processing.
+/// This is text conversion, not URL navigation authorization.
+pub fn detect_message_links(
+    input: &str,
+    options: MessageLinkOptions,
+) -> Result<Vec<MessageLink>, ListError> {
+    detector::detect_message(input, options)
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LinkValue {
     pub original_url: String,

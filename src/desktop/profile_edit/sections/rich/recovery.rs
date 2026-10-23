@@ -180,7 +180,7 @@ impl MissingOpening {
             .await?;
         }
         if let Some(client) = client {
-            self.absent(state, client).await?;
+            self.absent(state, client, &|_| true).await?;
         }
         if automatic_members && !known {
             crate::directory_member_fetches::automatic::wait(
@@ -210,6 +210,7 @@ impl MissingOpening {
                 .await?;
             }
         }
+        self.title_members(state, known).await?;
         let ids = if known {
             self.group_recovery_ids(&state.peek())?
         } else if let Some(owner) = &automatic_groups {
@@ -233,6 +234,64 @@ impl MissingOpening {
             .as_ref()
             .is_some_and(|owner| !self.automatic_group_current(&state.peek(), owner))
         {
+            return Err(unavailable());
+        }
+        Ok(())
+    }
+    async fn title_members(&self, state: Signal<ShellState>, known: bool) -> Result<(), Error> {
+        if self.files.is_empty() {
+            return Ok(());
+        }
+        let dependencies = files::dependencies(&state.peek(), &self.token, &self.files)?;
+        let ids = &dependencies.ids;
+        if ids.is_empty() {
+            return Ok(());
+        }
+        let current =
+            |shell: &ShellState| self.current(shell) && dependencies.current(shell, &self.token);
+        if !current(&state.peek()) {
+            return Err(unavailable());
+        }
+        let mut scheduled = false;
+        if !known {
+            for id in ids {
+                let hit = crate::directory_member_fetches::automatic::observe(
+                    &state.peek(),
+                    &self.token.owner.team,
+                    id,
+                );
+                if let Ok(hit) = hit {
+                    hit.schedule(state);
+                    scheduled = true;
+                }
+            }
+        }
+        if let Some(client) = Client::begin(state, &self.token.owner.team, ids)? {
+            self.absent(state, client, &current).await?;
+        }
+        if known {
+            let needed =
+                opening::known_recovery_ids(&state.peek(), &self.token, self.opening, ids)?;
+            if !needed.is_empty() {
+                crate::directory_member_fetches::known::recover(
+                    state,
+                    &self.token.owner.team,
+                    &needed,
+                    &current,
+                )
+                .await?;
+            }
+        } else if scheduled {
+            crate::directory_member_fetches::automatic::wait(
+                state,
+                &self.token.owner.team,
+                ids,
+                &current,
+            )
+            .await?;
+        }
+        files::acquire_policy(state, &self.token, &current).await?;
+        if !current(&state.peek()) {
             return Err(unavailable());
         }
         Ok(())
@@ -279,8 +338,16 @@ impl MissingOpening {
             .cloned()
             .collect())
     }
-    async fn absent(&self, mut state: Signal<ShellState>, mut client: Client) -> Result<(), Error> {
-        while let Some(mut election) = client.next(|shell| self.current(shell)).await? {
+    async fn absent(
+        &self,
+        mut state: Signal<ShellState>,
+        mut client: Client,
+        extra: &impl Fn(&ShellState) -> bool,
+    ) -> Result<(), Error> {
+        while let Some(mut election) = client
+            .next(|shell| self.current(shell) && extra(shell))
+            .await?
+        {
             let flags = crate::app_home::channel_fetches::member_flags(
                 &state.peek(),
                 &self.token.owner.team,
@@ -299,7 +366,12 @@ impl MissingOpening {
                 let fields = pending.fields().to_vec();
                 let lowered = crate::app_home::channel_fetches::member_fields(
                     state,
-                    |shell| self.current(shell) && flags.current(shell) && election.current(shell),
+                    |shell| {
+                        self.current(shell)
+                            && extra(shell)
+                            && flags.current(shell)
+                            && election.current(shell)
+                    },
                     &generation,
                     &fields,
                 )
@@ -313,7 +385,7 @@ impl MissingOpening {
                 stage.apply(&state.peek(), &election, pending, reply)?;
             }
             stage.install(&mut state.write(), &mut election, |shell| {
-                self.current(shell) && flags.current(shell)
+                self.current(shell) && extra(shell) && flags.current(shell)
             })?;
         }
         Ok(())

@@ -17,7 +17,8 @@ struct Record {
 }
 static RECORD: OnceLock<Mutex<Record>> = OnceLock::new();
 pub(in crate::canvas) fn requested() -> bool {
-    annotation::fixture::requested()
+    super::emoji_fixture::requested()
+        || annotation::fixture::requested()
         || attribution::requested()
         || special::requested()
         || file_fallback::requested()
@@ -69,6 +70,9 @@ fn reply(ts: &str, parent: &str, text: &str) -> Value {
     json!({"type":"message","ts":ts,"thread_ts":parent,"user":"U2","text":text})
 }
 pub(super) fn response(shell: &ShellState, ticket: &Ticket) -> Result<Value, Error> {
+    if super::emoji_fixture::requested() {
+        return super::emoji_fixture::response(shell, ticket);
+    }
     if annotation::fixture::requested() {
         return annotation::fixture::response(shell, ticket);
     }

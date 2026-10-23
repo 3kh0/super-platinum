@@ -25,6 +25,7 @@ class CanvasCheck:
     private_files: tuple[tuple[str, str], ...] = ()
     readiness: bool = False
     synthetic_context: bool = False
+    prefix: str | None = None
 
 
 SYNTHETIC_FIXTURES = {
@@ -106,8 +107,8 @@ def capture_stage(native, spec, fixture, stage, ordinal, captures, acknowledgmen
 
 def validate_closed(spec, fixture, log, stages, terminal):
     expected = [{k: v for k, v in stage.items() if k != "screenshot"} for stage in stages]
-    if (closed_receipts(log, spec.fixture + "-stage: ") != expected
-            or closed_receipts(log, spec.fixture + "-check: ") != [terminal]):
+    if (closed_receipts(log, (spec.prefix or spec.fixture) + "-stage: ") != expected
+            or closed_receipts(log, (spec.prefix or spec.fixture) + "-check: ") != [terminal]):
         raise RuntimeError("Closed Canvas log changed, duplicated, or omitted receipts")
     if len(expected) != len(spec.stages):
         raise RuntimeError("Closed Canvas stage count differs")
@@ -119,7 +120,7 @@ def validate_closed(spec, fixture, log, stages, terminal):
     validate(spec, fixture, terminal)
 
 
-def run(spec, fixture, binary, captures, storage_factory=None):
+def run(spec, fixture, binary, captures, storage_factory=None, input_factory=None):
     captures.mkdir(parents=True, exist_ok=True)
     # Preserve older evidence; a new run needs new names/directory.
     names = [f"{fixture}.log", f"{fixture}.json", f"{fixture}.png",
@@ -129,6 +130,7 @@ def run(spec, fixture, binary, captures, storage_factory=None):
     evidence = {"fixture": fixture, "platform": sys.platform, "binary": str(binary),
                 "ok": False, "stages": []}
     native = None
+    input_control = None
     try:
         with tempfile.TemporaryDirectory(prefix="sp-canvas-ack-") as directory:
             acknowledgments = Path(directory)
@@ -136,12 +138,18 @@ def run(spec, fixture, binary, captures, storage_factory=None):
             readiness = canvas_readiness.prepare(spec, fixture, acknowledgments, checks)
             storage = (storage_factory.prepare(acknowledgments, fixture, checks)
                        if storage_factory is not None else None)
+            input_control = (input_factory.prepare(acknowledgments, fixture, checks)
+                             if input_factory is not None else None)
+            if input_control is not None:
+                evidence["nativeInput"] = input_control.evidence
             if storage is not None:
                 evidence["storageControl"] = storage.evidence
             native = NativeFixture(fixture, captures / f"{fixture}.log", binary, checks)
             with audited_fixture(native, evidence) as audit, storage if storage is not None else nullcontext():
                 if storage is not None:
                     storage.bind(native)
+                if input_control is not None:
+                    input_control.bind(native)
                 if readiness is not None:
                     evidence["readiness"] = canvas_readiness.release(native, spec, acknowledgments, readiness)
                 deadline = time.monotonic() + 180
@@ -151,15 +159,19 @@ def run(spec, fixture, binary, captures, storage_factory=None):
                     native.require_running()
                     if storage is not None:
                         storage.service(native)
+                    if input_control is not None:
+                        input_control.service(native)
                     if time.monotonic() - sampled >= .2:
                         audit.checkpoint("running")
                         sampled = time.monotonic()
-                    stages = native.receipts(f"{spec.fixture}-stage: ")
+                    stages = native.receipts(f"{spec.prefix or spec.fixture}-stage: ")
                     for stage in stages[seen:]:
+                        if storage is not None and hasattr(storage, "before_capture"):
+                            storage.before_capture(native, stage)
                         evidence["stages"].append(capture_stage(
                             native, spec, fixture, stage, seen, captures, acknowledgments, audit=audit))
                         seen += 1
-                    receipts = native.receipts(f"{spec.fixture}-check: ")
+                    receipts = native.receipts(f"{spec.prefix or spec.fixture}-check: ")
                     if receipts:
                         evidence["terminalReceipts"] = receipts
                         if len(receipts) != 1:
@@ -170,6 +182,8 @@ def run(spec, fixture, binary, captures, storage_factory=None):
                             raise RuntimeError("Canvas check ended before all intermediate captures")
                         if storage is not None:
                             storage.finish(native)
+                        if input_control is not None:
+                            input_control.finish(native)
                         break
                     if time.monotonic() >= deadline:
                         raise TimeoutError(f"{fixture}: no final canvas receipt; see {native.log}")
@@ -190,11 +204,16 @@ def run(spec, fixture, binary, captures, storage_factory=None):
         evidence.update(ok=False, error=f"{type(error).__name__}: {error}")
         raise
     finally:
+        if input_control is not None:
+            try:
+                input_control.closed(native)
+            except Exception as error:
+                evidence.update(ok=False, inputCleanupError=f"{type(error).__name__}: {error}")
         # Retain the actual failed terminal/error and late records on failure too.
         if native is not None and native.log.exists():
             try:
-                evidence["closedStageReceipts"] = closed_receipts(native.log, spec.fixture + "-stage: ")
-                evidence["closedTerminalReceipts"] = closed_receipts(native.log, spec.fixture + "-check: ")
+                evidence["closedStageReceipts"] = closed_receipts(native.log, (spec.prefix or spec.fixture) + "-stage: ")
+                evidence["closedTerminalReceipts"] = closed_receipts(native.log, (spec.prefix or spec.fixture) + "-check: ")
             except Exception as error:
                 evidence.update(ok=False, closedLogError=f"{type(error).__name__}: {error}")
         path = captures / f"{fixture}.json"

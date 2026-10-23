@@ -37,7 +37,7 @@ COLUMNS = ("workspace", "user", "file", "operation", "body")
 
 def rows(database):
     with closing(sqlite3.connect(database.resolve().as_uri() + "?mode=ro", uri=True)) as db:
-        if db.execute("PRAGMA user_version").fetchone() != (2,):
+        if db.execute("PRAGMA user_version").fetchone() != (5,):
             raise RuntimeError("Canvas recovery schema changed")
         if db.execute("SELECT singleton,account FROM identity").fetchall() != [(1, ACCOUNT)]:
             raise RuntimeError("Canvas recovery account changed")

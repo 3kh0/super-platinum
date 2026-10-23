@@ -10,6 +10,10 @@ fn response(
     session: &WorkspaceSession,
     request: &PreparedRequest,
 ) -> Result<Value, Error> {
+    let mut assignments =
+        json!({"ok":true,"assignments":{"portable_content_composer":{"group":"control"}}});
+    super::super::plain::smart_symbols::apply_assignments(&mut assignments);
+    super::super::plain::go_links::apply_assignments(&mut assignments);
     let requests = [
         (
             api::conversations_generic_info(
@@ -21,12 +25,13 @@ fn response(
         ),
         (
             name_policy::request::user(client, session),
-            json!({"ok":true,"prefs":{"plain_text_mode":false}}),
+            if super::super::plain::named() {
+                super::super::plain::preferences()
+            } else {
+                json!({"ok":true,"prefs":{"plain_text_mode":false}})
+            },
         ),
-        (
-            api::list_experiments(client, session),
-            json!({"ok":true,"assignments":{"portable_content_composer":{"group":"control"}}}),
-        ),
+        (api::list_experiments(client, session), assignments),
         (
             api::own_profile_team_preferences_request(client, session),
             json!({"ok":true,"team_prefs":{"toplevel_prefs":{"msg_edit_window_mins":-1},"workspace_prefs":{}}}),

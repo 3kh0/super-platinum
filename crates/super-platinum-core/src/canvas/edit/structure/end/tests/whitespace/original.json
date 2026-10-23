@@ -1,0 +1,1814 @@
+{
+  "provenance": "Original retained runtime CONTENT listener/CRDT/collector; source metadata ID binding and ACK are synthetic host boundaries. No live server evidence.",
+  "sources": {
+    "whitespace-positive-result.json": "1aaaf45fd68c94b1f98104e6c86e12c59687e44dfaf83de4ae8e7dc4f8a37d31",
+    "whitespace-zero-result.json": "9837fdaeceb551655045759b157bfe5f56c67ff9b3144cacf5df2f0c6dadd4a3",
+    "feff-positive-extension-result.json": "7b56102ebde64ffe1a071fccfef16fd8cbec93c605b67d4e0a77919c4215eff4",
+    "feff-zero-extension-result.json": "7f42ad7ced942f66d559d3489a26abd0044257667eb512de06b6120f7aab34e6",
+    "child-seeds.json": "7c41eb845aa2c4a09c56f2238a3ddb7eeb0f58c065a20d642f1defefda9501b1"
+  },
+  "seeds": [
+    {
+      "cohort": "positive",
+      "shape": "mixed-w",
+      "rtml": " \u00a0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u200b\u202f\u205f\u3000",
+      "sessionBase64": "CgtlbXB0eS1maW5hbBDoBxjoByrgAYVvSoNjMms9ANUBAQoBI0VniavN7wEjAfrTyyTcUIsydugAnnTIC512ld4+oRMEDO8nrcnq6ex9BgECAwITAiMGQAJWAgwBBAIEEQQTBxUQIQIjBTQCQgVWB1c2gAECfwB/AX8Vf4CAv9YGfwB/BwACEwAAAhMBAAMSAAACfgACEQF+B2RlbGV0ZWQEdGV4dAATFQB+FWwTAQITfgEEEwF8AQAWJhE2IMKg4ZqA4oCA4oCB4oCC4oCD4oCE4oCF4oCG4oCH4oCI4oCJ4oCK4oCL4oCv4oGf44CA77u/FQAAMkBmYWQzY2IyNGRjNTA4YjMyNzZlODAwOWU3NGM4MGI5ZDc2OTVkZTNlYTExMzA0MGNlZjI3YWRjOWVhZTllYzdkQkBmYWQzY2IyNGRjNTA4YjMyNzZlODAwOWU3NGM4MGI5ZDc2OTVkZTNlYTExMzA0MGNlZjI3YWRjOWVhZTllYzdk"
+    },
+    {
+      "cohort": "positive",
+      "shape": "mixed-w-br",
+      "rtml": " \u00a0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u200b\u202f\u205f\u3000<br>\u3000\u205f\u202f\u200b\u200a\u2009\u2008\u2007\u2006\u2005\u2004\u2003\u2002\u2001\u2000\u1680\u00a0 ",
+      "sessionBase64": "CgtlbXB0eS1maW5hbBDoBxjoByqfAoVvSoOP8ZSVAJQCAQoBI0VniavN7wEjAVuHGHq1Gc7YX2GXg+ZmuoiJA0fWh2TygBosJbqsyof8BgECAwITAiMGQAJWAgwBBAIEEQQTBxUQIQIjBTQCQgVWD1dtgAECfwB/AX8rf4CAv9YGfwB/BwACKQAAAikBAAMoAAACfgACJwF+B2RlbGV0ZWQEdGV4dAApKwB+K1YpAQIpfgEEKQF8AQAWJhA2BBYQNn0mFjYgwqDhmoDigIDigIHigILigIPigITigIXigIbigIfigIjigInigIrigIvigK/igZ/jgIA8YnI+44CA4oGf4oCv4oCL4oCK4oCJ4oCI4oCH4oCG4oCF4oCE4oCD4oCC4oCB4oCA4ZqAwqAg77u/KwAAMkA1Yjg3MTg3YWI1MTljZWQ4NWY2MTk3ODNlNjY2YmE4ODg5MDM0N2Q2ODc2NGYyODAxYTJjMjViYWFjY2E4N2ZjQkA1Yjg3MTg3YWI1MTljZWQ4NWY2MTk3ODNlNjY2YmE4ODg5MDM0N2Q2ODc2NGYyODAxYTJjMjViYWFjY2E4N2Zj"
+    },
+    {
+      "cohort": "positive",
+      "shape": "ls-ps",
+      "rtml": " \u2028\u00a0\u2029\u200b",
+      "sessionBase64": "CgtlbXB0eS1maW5hbBDoBxjoByq6AYVvSoPFeYPzAK8BAQoBI0VniavN7wEjAT9ZuC/cJ8Z7AxzPkNEHU00ZeDaGJzC18ZfAiE9P/FplBgECAwITAiMGQAJWAgwBBAIEEQQTBxUQIQIjBTQCQgVWCFcPgAECfwB/AX8If4CAv9YGfwB/BwACBgAAAgYBAAMFAAACfgACBAF+B2RlbGV0ZWQEdGV4dAAGCAB+CHkGAQIGfgEEBgF7AQAWNiYDNiDigKjCoOKAqeKAi++7vwgAADJAM2Y1OWI4MmZkYzI3YzY3YjAzMWNjZjkwZDEwNzUzNGQxOTc4MzY4NjI3MzBiNWYxOTdjMDg4NGY0ZmZjNWE2NUJAM2Y1OWI4MmZkYzI3YzY3YjAzMWNjZjkwZDEwNzUzNGQxOTc4MzY4NjI3MzBiNWYxOTdjMDg4NGY0ZmZjNWE2NQ=="
+    },
+    {
+      "cohort": "positive",
+      "shape": "feff-leading",
+      "rtml": "\ufeff ",
+      "sessionBase64": "CgtlbXB0eS1maW5hbBDoBxjoByqvAYVvSoPfkHdSAKQBAQoBI0VniavN7wEjAQzBmCDFwbki07BdcHHse49P3b4w+gtDIV+H529vE2BNBgECAwITAiMGQAJWAgwBBAIEEQQTBhUQIQIjBTQCQgVWBlcHgAECfwB/AX8Ff4CAv9YGfwB/BwACAwAAAgMBAAMCAAACfQACAX4HZGVsZXRlZAR0ZXh0AAMFAH4FfAMBAgN+AQQDAXsBADYWNu+7vyDvu78FAAAyQDBjYzE5ODIwYzVjMWI5MjJkM2IwNWQ3MDcxZWM3YjhmNGZkZGJlMzBmYTBiNDMyMTVmODdlNzZmNmYxMzYwNGRCQDBjYzE5ODIwYzVjMWI5MjJkM2IwNWQ3MDcxZWM3YjhmNGZkZGJlMzBmYTBiNDMyMTVmODdlNzZmNmYxMzYwNGQ="
+    },
+    {
+      "cohort": "positive",
+      "shape": "feff-interior",
+      "rtml": " \ufeff\u00a0",
+      "sessionBase64": "CgtlbXB0eS1maW5hbBDoBxjoByqzAYVvSoOfFhXYAKgBAQoBI0VniavN7wEjAe7AvRZl9AyafKzkVU8auE+bmphX9BSTMgjuXMkDb6a8BgECAwITAiMGQAJWAgwBBAIEEQQTBxUQIQIjBTQCQgVWB1cJgAECfwB/AX8Gf4CAv9YGfwB/BwACBAAAAgQBAAMDAAACfgACAgF+B2RlbGV0ZWQEdGV4dAAEBgB+BnsEAQIEfgEEBAF6AQAWNiY2IO+7v8Kg77u/BgAAMkBlZWMwYmQxNjY1ZjQwYzlhN2NhY2U0NTU0ZjFhYjg0ZjliOWE5ODU3ZjQxNDkzMzIwOGVlNWNjOTAzNmZhNmJjQkBlZWMwYmQxNjY1ZjQwYzlhN2NhY2U0NTU0ZjFhYjg0ZjliOWE5ODU3ZjQxNDkzMzIwOGVlNWNjOTAzNmZhNmJj"
+    },
+    {
+      "cohort": "positive",
+      "shape": "feff-post-br",
+      "rtml": "<br>\ufeff",
+      "sessionBase64": "CgtlbXB0eS1maW5hbBDoBxjoByq0AYVvSoPRKqljAKkBAQoBI0VniavN7wEjAWfrCs0p0KAz2KZYlZl13s4nPJeAQcrWSwUwwYDkwjH/BgECAwITAiMGQAJWAgwBBAIEEQQTBxUQIQIjBTQCQgVWB1cKgAECfwB/AX8If4CAv9YGfwB/BwACBgAAAgYBAAMFAAACfgACBAF+B2RlbGV0ZWQEdGV4dAAGCAB+CHkGAQIGfgEEBgF+AQAEFgI2PGJyPu+7v++7vwgAADJANjdlYjBhY2QyOWQwYTAzM2Q4YTY1ODk1OTk3NWRlY2UyNzNjOTc4MDQxY2FkNjRiMDUzMGMxODBlNGMyMzFmZkJANjdlYjBhY2QyOWQwYTAzM2Q4YTY1ODk1OTk3NWRlY2UyNzNjOTc4MDQxY2FkNjRiMDUzMGMxODBlNGMyMzFmZg=="
+    },
+    {
+      "cohort": "zero",
+      "shape": "mixed-w",
+      "rtml": " \u00a0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u200b\u202f\u205f\u3000",
+      "sessionBase64": "CgtlbXB0eS1maW5hbBAAGOgHKu4BhW9Kg5OaGJYA4wEBCgEjRWeJq83vASMB5XJc6vp+doJUYTdAkMlnBW9SXpMX3ANQJ1ZHatGS/P8HAQIDAhMDIwdAA0MCVgIMAQQCBBEGEwkVECECIwg0AkIFVgdXNoABAgIAAgF+AxJ+gIC/1gYAfgABfwACBwACEwAAAhMBAAMRAAABAAJ+AAQQAX9sfgdkZWxldGVkBHRleHQAExUAfQN+AxEBf20CE34BBBMBfAEAFiYRNiDCoOGagOKAgOKAgeKAguKAg+KAhOKAheKAhuKAh+KAiOKAieKAiuKAi+KAr+KBn+OAgO+7vxUAATJAZTU3MjVjZWFmYTdlNzY4MjU0NjEzNzQwOTBjOTY3MDU2ZjUyNWU5MzE3ZGMwMzUwMjc1NjQ3NmFkMTkyZmNmZkJAMzg0M2VjODk2YTY5MTJhNWU3ZjNjOTk2NWIxZTJhMDgzZTQ1YWJiMmI0MjQ5YjVmMTMxYzM4ZjI4NmM3ZDRlZVpFCkBlNTcyNWNlYWZhN2U3NjgyNTQ2MTM3NDA5MGM5NjcwNTZmNTI1ZTkzMTdkYzAzNTAyNzU2NDc2YWQxOTJmY2ZmEOgH"
+    },
+    {
+      "cohort": "zero",
+      "shape": "mixed-w-br",
+      "rtml": " \u00a0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u200b\u202f\u205f\u3000<br>\u3000\u205f\u202f\u200b\u200a\u2009\u2008\u2007\u2006\u2005\u2004\u2003\u2002\u2001\u2000\u1680\u00a0 ",
+      "sessionBase64": "CgtlbXB0eS1maW5hbBAAGOgHKq0ChW9Kg/LWAScAogIBCgEjRWeJq83vASMBxT17afJCXphcbr4ptgvj2fZWN1B3ks2W8crFpkBSqAsHAQIDAhMDIwdAA0MCVgIMAQQCBBEGEwkVECECIwg0AkIFVg9XbYABAgIAAgF+Ayh+gIC/1gYAfgABfwACBwACKQAAAikBAAMnAAABAAJ+AAQmAX9WfgdkZWxldGVkBHRleHQAKSsAfQN+AycBf1cCKX4BBCkBfAEAFiYQNgQWEDZ9JhY2IMKg4ZqA4oCA4oCB4oCC4oCD4oCE4oCF4oCG4oCH4oCI4oCJ4oCK4oCL4oCv4oGf44CAPGJyPuOAgOKBn+KAr+KAi+KAiuKAieKAiOKAh+KAhuKAheKAhOKAg+KAguKAgeKAgOGagMKgIO+7vysAATJAYzUzZDdiNjlmMjQyNWU5ODVjNmViZTI5YjYwYmUzZDlmNjU2Mzc1MDc3OTJjZDk2ZjFjYWM1YTY0MDUyYTgwYkJAMzg0M2VjODk2YTY5MTJhNWU3ZjNjOTk2NWIxZTJhMDgzZTQ1YWJiMmI0MjQ5YjVmMTMxYzM4ZjI4NmM3ZDRlZVpFCkBjNTNkN2I2OWYyNDI1ZTk4NWM2ZWJlMjliNjBiZTNkOWY2NTYzNzUwNzc5MmNkOTZmMWNhYzVhNjQwNTJhODBiEOgH"
+    },
+    {
+      "cohort": "zero",
+      "shape": "ls-ps",
+      "rtml": " \u2028\u00a0\u2029\u200b",
+      "sessionBase64": "CgtlbXB0eS1maW5hbBAAGOgHKsgBhW9Kg1+tLZcAvQEBCgEjRWeJq83vASMBcEZNfFAGb+0mOPhlTEKU3pQaSds44FC5H9o/BGYfHtEHAQIDAhMDIwdAA0MCVgIMAQQCBBEGEwkVECECIwg0AkIFVghXD4ABAgIAAgF+AwV+gIC/1gYAfgABfwACBwACBgAAAgYBAAMEAAABAAJ+AAQDAX95fgdkZWxldGVkBHRleHQABggAfQN+AwQBf3oCBn4BBAYBewEAFjYmAzYg4oCowqDigKnigIvvu78IAAEyQDcwNDY0ZDdjNTAwNjZmZWQyNjM4Zjg2NTRjNDI5NGRlOTQxYTQ5ZGIzOGUwNTBiOTFmZGEzZjA0NjYxZjFlZDFCQDM4NDNlYzg5NmE2OTEyYTVlN2YzYzk5NjViMWUyYTA4M2U0NWFiYjJiNDI0OWI1ZjEzMWMzOGYyODZjN2Q0ZWVaRQpANzA0NjRkN2M1MDA2NmZlZDI2MzhmODY1NGM0Mjk0ZGU5NDFhNDlkYjM4ZTA1MGI5MWZkYTNmMDQ2NjFmMWVkMRDoBw=="
+    },
+    {
+      "cohort": "zero",
+      "shape": "feff-leading",
+      "rtml": "\ufeff ",
+      "sessionBase64": "CgtlbXB0eS1maW5hbBAAGOgHKrcBhW9Kg0uDfvUArAEBCgEjRWeJq83vASMBxoYqpNjJZRJYaW868Xa7/aWFcBgSPGIMIJjcReKnc64HAQIDAhMDIwdAA0MCVgIMAQQCBBEEEwYVECECIwY0AkIFVgZXB4ABAgIAAgF+AwJ+gIC/1gYAfgABfwACBwACAwAAAgMBAAMCAAACfwACAn4HZGVsZXRlZAR0ZXh0AAMFAHsDfgECAQIDfgEEAwF7AQA2Fjbvu78g77u/BQABMkBjNjg2MmFhNGQ4Yzk2NTEyNTg2OTZmM2FmMTc2YmJmZGE1ODU3MDE4MTIzYzYyMGMyMDk4ZGM0NWUyYTc3M2FlQkAzODQzZWM4OTZhNjkxMmE1ZTdmM2M5OTY1YjFlMmEwODNlNDVhYmIyYjQyNDliNWYxMzFjMzhmMjg2YzdkNGVlWkUKQGM2ODYyYWE0ZDhjOTY1MTI1ODY5NmYzYWYxNzZiYmZkYTU4NTcwMTgxMjNjNjIwYzIwOThkYzQ1ZTJhNzczYWUQ6Ac="
+    },
+    {
+      "cohort": "zero",
+      "shape": "feff-interior",
+      "rtml": " \ufeff\u00a0",
+      "sessionBase64": "CgtlbXB0eS1maW5hbBAAGOgHKr4BhW9Kg2f4bnEAswEBCgEjRWeJq83vASMBzWig4sMyaqg5OQUbQzHsfwjsXX0bhYEXcFxJmnA8rM8HAQIDAhMCIwdAA0MCVgIMAQQCBBEGEwcVECECIwg0AkIFVgdXCYABAgIAAgECA36AgL/WBgB+AAF/AAIHAAIEAAACBAEAAwIAAAEAAnwABAF7fgdkZWxldGVkBHRleHQABAYAfQN+AwIBf3wCBH4BBAQBegEAFjYmNiDvu7/CoO+7vwYAATJAY2Q2OGEwZTJjMzMyNmFhODM5MzkwNTFiNDMzMWVjN2YwOGVjNWQ3ZDFiODU4MTE3NzA1YzQ5OWE3MDNjYWNjZkJAMzg0M2VjODk2YTY5MTJhNWU3ZjNjOTk2NWIxZTJhMDgzZTQ1YWJiMmI0MjQ5YjVmMTMxYzM4ZjI4NmM3ZDRlZVpFCkBjZDY4YTBlMmMzMzI2YWE4MzkzOTA1MWI0MzMxZWM3ZjA4ZWM1ZDdkMWI4NTgxMTc3MDVjNDk5YTcwM2NhY2NmEOgH"
+    },
+    {
+      "cohort": "zero",
+      "shape": "feff-post-br",
+      "rtml": "<br>\ufeff",
+      "sessionBase64": "CgtlbXB0eS1maW5hbBAAGOgHKsIBhW9Kg8wsUnkAtwEBCgEjRWeJq83vASMBcSQKytCxd7r1ts6WXJJeylEB0ltm2ca26JIMe2qYIccHAQIDAhMDIwdAA0MCVgIMAQQCBBEGEwkVECECIwg0AkIFVgdXCoABAgIAAgF+AwV+gIC/1gYAfgABfwACBwACBgAAAgYBAAMEAAABAAJ+AAQDAX95fgdkZWxldGVkBHRleHQABggAfQN+AwQBf3oCBn4BBAYBfgEABBYCNjxicj7vu7/vu78IAAEyQDcxMjQwYWNhZDBiMTc3YmFmNWI2Y2U5NjVjOTI1ZWNhNTEwMWQyNWI2NmQ5YzZiNmU4OTIwYzdiNmE5ODIxYzdCQDM4NDNlYzg5NmE2OTEyYTVlN2YzYzk5NjViMWUyYTA4M2U0NWFiYjJiNDI0OWI1ZjEzMWMzOGYyODZjN2Q0ZWVaRQpANzEyNDBhY2FkMGIxNzdiYWY1YjZjZTk2NWM5MjVlY2E1MTAxZDI1YjY2ZDljNmI2ZTg5MjBjN2I2YTk4MjFjNxDoBw=="
+    }
+  ],
+  "cases": [
+    {
+      "seed": 0,
+      "cadence": "clear-only",
+      "reports": [
+        ""
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 18
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 0,
+      "cadence": "correction",
+      "reports": [
+        "",
+        "New",
+        "New draftx",
+        "New draft",
+        "New paragraph"
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 18
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "New"
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              3
+            ],
+            "value": " draftx"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              9
+            ]
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              4
+            ],
+            "value": "parag"
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              9
+            ]
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              11
+            ],
+            "length": 2
+          },
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              11
+            ],
+            "value": "ph"
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 0,
+      "cadence": "erase",
+      "reports": [
+        "",
+        "x",
+        ""
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 18
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "x"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ]
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 1,
+      "cadence": "clear-only",
+      "reports": [
+        ""
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 40
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 1,
+      "cadence": "correction",
+      "reports": [
+        "",
+        "New",
+        "New draftx",
+        "New draft",
+        "New paragraph"
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 40
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "New"
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              3
+            ],
+            "value": " draftx"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              9
+            ]
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              4
+            ],
+            "value": "parag"
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              9
+            ]
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              11
+            ],
+            "length": 2
+          },
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              11
+            ],
+            "value": "ph"
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 1,
+      "cadence": "erase",
+      "reports": [
+        "",
+        "x",
+        ""
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 40
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "x"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ]
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 2,
+      "cadence": "clear-only",
+      "reports": [
+        ""
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 5
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 2,
+      "cadence": "correction",
+      "reports": [
+        "",
+        "New",
+        "New draftx",
+        "New draft",
+        "New paragraph"
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 5
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "New"
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              3
+            ],
+            "value": " draftx"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              9
+            ]
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              4
+            ],
+            "value": "parag"
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              9
+            ]
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              11
+            ],
+            "length": 2
+          },
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              11
+            ],
+            "value": "ph"
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 2,
+      "cadence": "erase",
+      "reports": [
+        "",
+        "x",
+        ""
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 5
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "x"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ]
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 3,
+      "cadence": "clear-only",
+      "reports": [
+        ""
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              1
+            ],
+            "length": 2
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 4,
+      "cadence": "clear-only",
+      "reports": [
+        ""
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 3
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 5,
+      "cadence": "clear-only",
+      "reports": [
+        ""
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 5
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 6,
+      "cadence": "clear-only",
+      "reports": [
+        ""
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 18
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 6,
+      "cadence": "correction",
+      "reports": [
+        "",
+        "New",
+        "New \u65e5\u672c\ud83d\ude00 draftx",
+        "New \u65e5\u672c\ud83d\ude00 draft",
+        "New \u65e5\u672c\ud83d\ude00 paragraph"
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 18
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "New"
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              3
+            ],
+            "value": " \u65e5\u672c\ud83d\ude00 draftx"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              14
+            ]
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              9
+            ],
+            "value": "parag"
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              14
+            ]
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              16
+            ],
+            "length": 2
+          },
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              16
+            ],
+            "value": "ph"
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 6,
+      "cadence": "erase",
+      "reports": [
+        "",
+        "x",
+        ""
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 18
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "x"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ]
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 7,
+      "cadence": "clear-only",
+      "reports": [
+        ""
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 40
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 7,
+      "cadence": "correction",
+      "reports": [
+        "",
+        "New",
+        "New \u65e5\u672c\ud83d\ude00 draftx",
+        "New \u65e5\u672c\ud83d\ude00 draft",
+        "New \u65e5\u672c\ud83d\ude00 paragraph"
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 40
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "New"
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              3
+            ],
+            "value": " \u65e5\u672c\ud83d\ude00 draftx"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              14
+            ]
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              9
+            ],
+            "value": "parag"
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              14
+            ]
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              16
+            ],
+            "length": 2
+          },
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              16
+            ],
+            "value": "ph"
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 7,
+      "cadence": "erase",
+      "reports": [
+        "",
+        "x",
+        ""
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 40
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "x"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ]
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 8,
+      "cadence": "clear-only",
+      "reports": [
+        ""
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 5
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 8,
+      "cadence": "correction",
+      "reports": [
+        "",
+        "New",
+        "New \u65e5\u672c\ud83d\ude00 draftx",
+        "New \u65e5\u672c\ud83d\ude00 draft",
+        "New \u65e5\u672c\ud83d\ude00 paragraph"
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 5
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "New"
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              3
+            ],
+            "value": " \u65e5\u672c\ud83d\ude00 draftx"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              14
+            ]
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              9
+            ],
+            "value": "parag"
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              14
+            ]
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              16
+            ],
+            "length": 2
+          },
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              16
+            ],
+            "value": "ph"
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 8,
+      "cadence": "erase",
+      "reports": [
+        "",
+        "x",
+        ""
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 5
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "x"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ]
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 9,
+      "cadence": "clear-only",
+      "reports": [
+        ""
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              1
+            ],
+            "length": 2
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 10,
+      "cadence": "clear-only",
+      "reports": [
+        ""
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 3
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 11,
+      "cadence": "clear-only",
+      "reports": [
+        ""
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 5
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 3,
+      "cadence": "correction",
+      "reports": [
+        "",
+        "New",
+        "New draftx",
+        "New draft",
+        "New paragraph"
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              1
+            ],
+            "length": 2
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "New"
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              3
+            ],
+            "value": " draftx"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              9
+            ]
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              4
+            ],
+            "value": "parag"
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              9
+            ]
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              11
+            ],
+            "length": 2
+          },
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              11
+            ],
+            "value": "ph"
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 3,
+      "cadence": "erase",
+      "reports": [
+        "",
+        "x",
+        ""
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              1
+            ],
+            "length": 2
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "x"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ]
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 4,
+      "cadence": "correction",
+      "reports": [
+        "",
+        "New",
+        "New draftx",
+        "New draft",
+        "New paragraph"
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 3
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "New"
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              3
+            ],
+            "value": " draftx"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              9
+            ]
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              4
+            ],
+            "value": "parag"
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              9
+            ]
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              11
+            ],
+            "length": 2
+          },
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              11
+            ],
+            "value": "ph"
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 4,
+      "cadence": "erase",
+      "reports": [
+        "",
+        "x",
+        ""
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 3
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "x"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ]
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 5,
+      "cadence": "correction",
+      "reports": [
+        "",
+        "New",
+        "New draftx",
+        "New draft",
+        "New paragraph"
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 5
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "New"
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              3
+            ],
+            "value": " draftx"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              9
+            ]
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              4
+            ],
+            "value": "parag"
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              9
+            ]
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              11
+            ],
+            "length": 2
+          },
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              11
+            ],
+            "value": "ph"
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 5,
+      "cadence": "erase",
+      "reports": [
+        "",
+        "x",
+        ""
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 5
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "x"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ]
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 9,
+      "cadence": "correction",
+      "reports": [
+        "",
+        "New",
+        "New \u65e5\u672c\ud83d\ude00 draftx",
+        "New \u65e5\u672c\ud83d\ude00 draft",
+        "New \u65e5\u672c\ud83d\ude00 paragraph"
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              1
+            ],
+            "length": 2
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "New"
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              3
+            ],
+            "value": " \u65e5\u672c\ud83d\ude00 draftx"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              14
+            ]
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              9
+            ],
+            "value": "parag"
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              14
+            ]
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              16
+            ],
+            "length": 2
+          },
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              16
+            ],
+            "value": "ph"
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 9,
+      "cadence": "erase",
+      "reports": [
+        "",
+        "x",
+        ""
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              1
+            ],
+            "length": 2
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "x"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ]
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 10,
+      "cadence": "correction",
+      "reports": [
+        "",
+        "New",
+        "New \u65e5\u672c\ud83d\ude00 draftx",
+        "New \u65e5\u672c\ud83d\ude00 draft",
+        "New \u65e5\u672c\ud83d\ude00 paragraph"
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 3
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "New"
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              3
+            ],
+            "value": " \u65e5\u672c\ud83d\ude00 draftx"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              14
+            ]
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              9
+            ],
+            "value": "parag"
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              14
+            ]
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              16
+            ],
+            "length": 2
+          },
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              16
+            ],
+            "value": "ph"
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 10,
+      "cadence": "erase",
+      "reports": [
+        "",
+        "x",
+        ""
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 3
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "x"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ]
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 11,
+      "cadence": "correction",
+      "reports": [
+        "",
+        "New",
+        "New \u65e5\u672c\ud83d\ude00 draftx",
+        "New \u65e5\u672c\ud83d\ude00 draft",
+        "New \u65e5\u672c\ud83d\ude00 paragraph"
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 5
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "New"
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              3
+            ],
+            "value": " \u65e5\u672c\ud83d\ude00 draftx"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              14
+            ]
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              9
+            ],
+            "value": "parag"
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              14
+            ]
+          },
+          {
+            "action": "del",
+            "path": [
+              "text",
+              16
+            ],
+            "length": 2
+          },
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              16
+            ],
+            "value": "ph"
+          }
+        ]
+      ]
+    },
+    {
+      "seed": 11,
+      "cadence": "erase",
+      "reports": [
+        "",
+        "x",
+        ""
+      ],
+      "patches": [
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ],
+            "length": 5
+          }
+        ],
+        [
+          {
+            "action": "splice",
+            "path": [
+              "text",
+              0
+            ],
+            "value": "x"
+          }
+        ],
+        [
+          {
+            "action": "del",
+            "path": [
+              "text",
+              0
+            ]
+          }
+        ]
+      ]
+    }
+  ]
+}

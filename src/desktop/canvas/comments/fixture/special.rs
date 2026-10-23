@@ -139,6 +139,7 @@ mod tests {
         state.rows.push(Row {
             message,
             body,
+            preview: None,
             preview_body: None,
         });
         let original = retained_snapshot(&shell, &state);

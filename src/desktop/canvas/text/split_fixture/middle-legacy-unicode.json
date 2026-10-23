@@ -1,0 +1,601 @@
+{
+  "status": "PASS",
+  "parentMode": "retained",
+  "corpus": "legacy-untyped-unicode",
+  "id": "paragraph",
+  "canonicalSequence": 1000,
+  "position": "aae (independent host metadata)",
+  "sourceRtml": "Café &amp; 日本😀Second paragraph",
+  "initialLeftRtml": "Café &amp; 日本😀",
+  "initialTailRtml": "Second paragraph",
+  "visibleOffset": 11,
+  "serializedOffset": 15,
+  "baseSequence": 1000,
+  "lastSavedSequence": 1000,
+  "canonicalSourceSessionBase64": "CglwYXJhZ3JhcGgQ6AcY6Acq0wKFb0qDL4D69QDIAgEKq83vASNFAAAAAAF/TssjFWc0sIrqDfFVpGR5T2eMi+6mZD2e9SOxXf/gxAcBAgMCEwwjCEAEQwRWAg4BBAIEEQQTIRUQIQIjITQCQgVWEVczgAESgQECgwEKCwALAXUeAwIBAwIBAwECBX+AgL/WBgoAfwAKAX8ACQELBwACKQAAAikBAAMoAAACfgACDQF/EAIBf24GAX8AAwF9EwFsAgF/FwMBf2YCAX4HZGVsZXRlZAR0ZXh0ACkrAH4eYw4BfxACAX4DbAUBfhVsAgF/EwIBfWwBFwQBf2YCAQIpfgEEKQF+AQADFn8mBxYCNn9GGhZ/NkNhZsOpICZhbXA7IOaXpeacrPCfmIBTZWNvT3JpZ2luZGFsIHBhcnRhZ3JhcGhpbO+7vxQABQECAAIBBAB/AQYAAgF/AAoAfSIBAgQBfwUCAQoyQDdmNGVjYjIzMTU2NzM0YjA4YWVhMGRmMTU1YTQ2NDc5NGY2NzhjOGJlZWE2NjQzZDllZjUyM2IxNWRmZmUwYzRCQDA0YzQ3NGRkMjc0Y2RkZjg0ZGEyYzcyNzU2MDAzYzQ1YjNhNDQ5ZjUxZDRhM2E4YzNlMjFjOTU1YmIyOTI1MDRaRQpAN2Y0ZWNiMjMxNTY3MzRiMDhhZWEwZGYxNTVhNDY0Nzk0ZjY3OGM4YmVlYTY2NDNkOWVmNTIzYjE1ZGZmZTBjNBDoBw==",
+  "initializedSessionBase64": "CglwYXJhZ3JhcGgQ6AcY6Acq0wKFb0qDL4D69QDIAgEKq83vASNFAAAAAAF/TssjFWc0sIrqDfFVpGR5T2eMi+6mZD2e9SOxXf/gxAcBAgMCEwwjCEAEQwRWAg4BBAIEEQQTIRUQIQIjITQCQgVWEVczgAESgQECgwEKCwALAXUeAwIBAwIBAwECBX+AgL/WBgoAfwAKAX8ACQELBwACKQAAAikBAAMoAAACfgACDQF/EAIBf24GAX8AAwF9EwFsAgF/FwMBf2YCAX4HZGVsZXRlZAR0ZXh0ACkrAH4eYw4BfxACAX4DbAUBfhVsAgF/EwIBfWwBFwQBf2YCAQIpfgEEKQF+AQADFn8mBxYCNn9GGhZ/NkNhZsOpICZhbXA7IOaXpeacrPCfmIBTZWNvT3JpZ2luZGFsIHBhcnRhZ3JhcGhpbO+7vxQABQECAAIBBAB/AQYAAgF/AAoAfSIBAgQBfwUCAQoyQDdmNGVjYjIzMTU2NzM0YjA4YWVhMGRmMTU1YTQ2NDc5NGY2NzhjOGJlZWE2NjQzZDllZjUyM2IxNWRmZmUwYzRCQDA0YzQ3NGRkMjc0Y2RkZjg0ZGEyYzcyNzU2MDAzYzQ1YjNhNDQ5ZjUxZDRhM2E4YzNlMjFjOTU1YmIyOTI1MDRaRQpAN2Y0ZWNiMjMxNTY3MzRiMDhhZWEwZGYxNTVhNDY0Nzk0ZjY3OGM4YmVlYTY2NDNkOWVmNTIzYjE1ZGZmZTBjNBDoBw==",
+  "initializedSessionPath": "parent-retained-legacy-unicode-38.bin",
+  "initializedSessionSha256": "0855d35fb02fe77e411c420034241ccda3efaa17e4c29b8bc4b5cf1843c09749",
+  "processedHeads": [
+    "7f4ecb23156734b08aea0df155a464794f678c8beea6643d9ef523b15dffe0c4"
+  ],
+  "baseHead": "04c474dd274cddf84da2c72756003c45b3a449f51d4a3a8c3e21c955bb292504",
+  "sourceHistoryChanges": 11,
+  "history": [
+    {
+      "ops": [
+        {
+          "action": "makeText",
+          "obj": "_root",
+          "key": "text",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "_head",
+          "insert": true,
+          "value": "C",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "2@abcdef01234500000000",
+          "insert": true,
+          "value": "a",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "3@abcdef01234500000000",
+          "insert": true,
+          "value": "f",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "4@abcdef01234500000000",
+          "insert": true,
+          "value": "é",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "5@abcdef01234500000000",
+          "insert": true,
+          "value": " ",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "6@abcdef01234500000000",
+          "insert": true,
+          "value": "&",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "7@abcdef01234500000000",
+          "insert": true,
+          "value": "a",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "8@abcdef01234500000000",
+          "insert": true,
+          "value": "m",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "9@abcdef01234500000000",
+          "insert": true,
+          "value": "p",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "10@abcdef01234500000000",
+          "insert": true,
+          "value": ";",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "11@abcdef01234500000000",
+          "insert": true,
+          "value": " ",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "12@abcdef01234500000000",
+          "insert": true,
+          "value": "日",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "13@abcdef01234500000000",
+          "insert": true,
+          "value": "本",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "14@abcdef01234500000000",
+          "insert": true,
+          "value": "😀",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "15@abcdef01234500000000",
+          "insert": true,
+          "value": "O",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "16@abcdef01234500000000",
+          "insert": true,
+          "value": "r",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "17@abcdef01234500000000",
+          "insert": true,
+          "value": "i",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "18@abcdef01234500000000",
+          "insert": true,
+          "value": "g",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "19@abcdef01234500000000",
+          "insert": true,
+          "value": "i",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "20@abcdef01234500000000",
+          "insert": true,
+          "value": "n",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "21@abcdef01234500000000",
+          "insert": true,
+          "value": "a",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "22@abcdef01234500000000",
+          "insert": true,
+          "value": "l",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "23@abcdef01234500000000",
+          "insert": true,
+          "value": " ",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "24@abcdef01234500000000",
+          "insert": true,
+          "value": "t",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "25@abcdef01234500000000",
+          "insert": true,
+          "value": "a",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "26@abcdef01234500000000",
+          "insert": true,
+          "value": "i",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "27@abcdef01234500000000",
+          "insert": true,
+          "value": "l",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "28@abcdef01234500000000",
+          "insert": true,
+          "value": "﻿",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "_root",
+          "key": "deleted",
+          "value": false,
+          "pred": []
+        }
+      ],
+      "actor": "abcdef01234500000000",
+      "hash": "04c474dd274cddf84da2c72756003c45b3a449f51d4a3a8c3e21c955bb292504",
+      "seq": 1,
+      "startOp": 1,
+      "time": 1792000000,
+      "message": null,
+      "deps": [],
+      "text": "Café &amp; 日本😀Original tail﻿"
+    },
+    {
+      "ops": [
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "15@abcdef01234500000000",
+          "insert": true,
+          "value": "S",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "31@abcdef01234500000000",
+          "insert": true,
+          "value": "e",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "32@abcdef01234500000000",
+          "insert": true,
+          "value": "c",
+          "pred": []
+        }
+      ],
+      "actor": "abcdef01234500000000",
+      "hash": "5bdfd49a1cca0e38ca0b9ce3bd6ff090e5c6dadbd874024b262bfd4725aa96e6",
+      "seq": 2,
+      "startOp": 31,
+      "time": 1792000000,
+      "message": null,
+      "deps": [
+        "04c474dd274cddf84da2c72756003c45b3a449f51d4a3a8c3e21c955bb292504"
+      ],
+      "text": "Café &amp; 日本😀SecOriginal tail﻿"
+    },
+    {
+      "ops": [
+        {
+          "action": "del",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "16@abcdef01234500000000",
+          "pred": [
+            "16@abcdef01234500000000"
+          ]
+        },
+        {
+          "action": "del",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "17@abcdef01234500000000",
+          "pred": [
+            "17@abcdef01234500000000"
+          ]
+        }
+      ],
+      "actor": "abcdef01234500000000",
+      "hash": "feaecd3641f802a99e38a55cb176b46869360476db6b714cd936bf75321916b9",
+      "seq": 3,
+      "startOp": 34,
+      "time": 1792000000,
+      "message": null,
+      "deps": [
+        "5bdfd49a1cca0e38ca0b9ce3bd6ff090e5c6dadbd874024b262bfd4725aa96e6"
+      ],
+      "text": "Café &amp; 日本😀Seciginal tail﻿"
+    },
+    {
+      "ops": [
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "33@abcdef01234500000000",
+          "insert": true,
+          "value": "o",
+          "pred": []
+        }
+      ],
+      "actor": "abcdef01234500000000",
+      "hash": "1bcc5d72bd787e16e2cb579ae1199153c8d1739855e2181c591eae00be27cea9",
+      "seq": 4,
+      "startOp": 36,
+      "time": 1792000000,
+      "message": null,
+      "deps": [
+        "feaecd3641f802a99e38a55cb176b46869360476db6b714cd936bf75321916b9"
+      ],
+      "text": "Café &amp; 日本😀Secoiginal tail﻿"
+    },
+    {
+      "ops": [
+        {
+          "action": "del",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "18@abcdef01234500000000",
+          "pred": [
+            "18@abcdef01234500000000"
+          ]
+        },
+        {
+          "action": "del",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "19@abcdef01234500000000",
+          "pred": [
+            "19@abcdef01234500000000"
+          ]
+        },
+        {
+          "action": "del",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "20@abcdef01234500000000",
+          "pred": [
+            "20@abcdef01234500000000"
+          ]
+        }
+      ],
+      "actor": "abcdef01234500000000",
+      "hash": "37158337afa8886eda05dfb321b8e4454515f903954c70a5ab3f42534fabac09",
+      "seq": 5,
+      "startOp": 37,
+      "time": 1792000000,
+      "message": null,
+      "deps": [
+        "1bcc5d72bd787e16e2cb579ae1199153c8d1739855e2181c591eae00be27cea9"
+      ],
+      "text": "Café &amp; 日本😀Seconal tail﻿"
+    },
+    {
+      "ops": [
+        {
+          "action": "del",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "22@abcdef01234500000000",
+          "pred": [
+            "22@abcdef01234500000000"
+          ]
+        },
+        {
+          "action": "del",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "23@abcdef01234500000000",
+          "pred": [
+            "23@abcdef01234500000000"
+          ]
+        }
+      ],
+      "actor": "abcdef01234500000000",
+      "hash": "71d92fcb951642890cbbec92af28c7a87ef8b975fba2d7c8b86b354c9a0e792e",
+      "seq": 6,
+      "startOp": 40,
+      "time": 1792000000,
+      "message": null,
+      "deps": [
+        "37158337afa8886eda05dfb321b8e4454515f903954c70a5ab3f42534fabac09"
+      ],
+      "text": "Café &amp; 日本😀Secon tail﻿"
+    },
+    {
+      "ops": [
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "21@abcdef01234500000000",
+          "insert": true,
+          "value": "d",
+          "pred": []
+        }
+      ],
+      "actor": "abcdef01234500000000",
+      "hash": "42f3ffc26ed598245f37ac0a67bf24cef898da5db54d37985cc374b9cc21f241",
+      "seq": 7,
+      "startOp": 42,
+      "time": 1792000000,
+      "message": null,
+      "deps": [
+        "71d92fcb951642890cbbec92af28c7a87ef8b975fba2d7c8b86b354c9a0e792e"
+      ],
+      "text": "Café &amp; 日本😀Second tail﻿"
+    },
+    {
+      "ops": [
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "24@abcdef01234500000000",
+          "insert": true,
+          "value": "p",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "43@abcdef01234500000000",
+          "insert": true,
+          "value": "a",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "44@abcdef01234500000000",
+          "insert": true,
+          "value": "r",
+          "pred": []
+        }
+      ],
+      "actor": "abcdef01234500000000",
+      "hash": "6f60d4b5d2b513a7043cb84b00aacd81c143dea7d1bed7ca4442459a0a45946b",
+      "seq": 8,
+      "startOp": 43,
+      "time": 1792000000,
+      "message": null,
+      "deps": [
+        "42f3ffc26ed598245f37ac0a67bf24cef898da5db54d37985cc374b9cc21f241"
+      ],
+      "text": "Café &amp; 日本😀Second partail﻿"
+    },
+    {
+      "ops": [
+        {
+          "action": "del",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "25@abcdef01234500000000",
+          "pred": [
+            "25@abcdef01234500000000"
+          ]
+        }
+      ],
+      "actor": "abcdef01234500000000",
+      "hash": "7642770bda48ed29e4986325ec331fb7d1a99e9d2e63dcf46645a804519147d1",
+      "seq": 9,
+      "startOp": 46,
+      "time": 1792000000,
+      "message": null,
+      "deps": [
+        "6f60d4b5d2b513a7043cb84b00aacd81c143dea7d1bed7ca4442459a0a45946b"
+      ],
+      "text": "Café &amp; 日本😀Second parail﻿"
+    },
+    {
+      "ops": [
+        {
+          "action": "del",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "27@abcdef01234500000000",
+          "pred": [
+            "27@abcdef01234500000000"
+          ]
+        },
+        {
+          "action": "del",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "28@abcdef01234500000000",
+          "pred": [
+            "28@abcdef01234500000000"
+          ]
+        }
+      ],
+      "actor": "abcdef01234500000000",
+      "hash": "450064e544a2e463eb23084e4fa662b1b898c7e2f31a07ff1bfc77f80a56c4f8",
+      "seq": 10,
+      "startOp": 47,
+      "time": 1792000000,
+      "message": null,
+      "deps": [
+        "7642770bda48ed29e4986325ec331fb7d1a99e9d2e63dcf46645a804519147d1"
+      ],
+      "text": "Café &amp; 日本😀Second para﻿"
+    },
+    {
+      "ops": [
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "26@abcdef01234500000000",
+          "insert": true,
+          "value": "g",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "49@abcdef01234500000000",
+          "insert": true,
+          "value": "r",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "50@abcdef01234500000000",
+          "insert": true,
+          "value": "a",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "51@abcdef01234500000000",
+          "insert": true,
+          "value": "p",
+          "pred": []
+        },
+        {
+          "action": "set",
+          "obj": "1@abcdef01234500000000",
+          "elemId": "52@abcdef01234500000000",
+          "insert": true,
+          "value": "h",
+          "pred": []
+        }
+      ],
+      "actor": "abcdef01234500000000",
+      "hash": "7f4ecb23156734b08aea0df155a464794f678c8beea6643d9ef523b15dffe0c4",
+      "seq": 11,
+      "startOp": 49,
+      "time": 1792000000,
+      "message": null,
+      "deps": [
+        "450064e544a2e463eb23084e4fa662b1b898c7e2f31a07ff1bfc77f80a56c4f8"
+      ],
+      "text": "Café &amp; 日本😀Second paragraph﻿"
+    }
+  ],
+  "historySha256": "940c34520b09e738aaa3d9097c0d8a59321c738d6f839eb5d8f5c48b09f04973",
+  "construction": "Original prior-actor retained source history using same donor update and controlled canonical hydration as main retained vectors. Existing IDparagraph/base1000/lastSaved1000, processed[sourceHead], sequenceHeads(sourceHead,1000), no pendingqueue/currentHead. No live server ACK. Fixture lease is independent metadata; no new source extraction or product edit."
+}

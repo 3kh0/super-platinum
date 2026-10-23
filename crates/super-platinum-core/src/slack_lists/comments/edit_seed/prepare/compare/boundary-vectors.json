@@ -1,0 +1,885 @@
+{
+  "results": [
+    {
+      "name": "inherited-constructor",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "constructor": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {}
+        }
+      ],
+      "supported": true,
+      "equal": false
+    },
+    {
+      "name": "own-both-constructor",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "constructor": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "constructor": null
+          }
+        }
+      ],
+      "supported": true,
+      "equal": true
+    },
+    {
+      "name": "inherited-__defineGetter__",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "__defineGetter__": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {}
+        }
+      ],
+      "supported": true,
+      "equal": false
+    },
+    {
+      "name": "own-both-__defineGetter__",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "__defineGetter__": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "__defineGetter__": null
+          }
+        }
+      ],
+      "supported": true,
+      "equal": true
+    },
+    {
+      "name": "inherited-__defineSetter__",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "__defineSetter__": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {}
+        }
+      ],
+      "supported": true,
+      "equal": false
+    },
+    {
+      "name": "own-both-__defineSetter__",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "__defineSetter__": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "__defineSetter__": null
+          }
+        }
+      ],
+      "supported": true,
+      "equal": true
+    },
+    {
+      "name": "inherited-hasOwnProperty",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "hasOwnProperty": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {}
+        }
+      ],
+      "supported": true,
+      "equal": false
+    },
+    {
+      "name": "own-both-hasOwnProperty",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "hasOwnProperty": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "hasOwnProperty": null
+          }
+        }
+      ],
+      "supported": true,
+      "equal": true
+    },
+    {
+      "name": "inherited-__lookupGetter__",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "__lookupGetter__": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {}
+        }
+      ],
+      "supported": true,
+      "equal": false
+    },
+    {
+      "name": "own-both-__lookupGetter__",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "__lookupGetter__": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "__lookupGetter__": null
+          }
+        }
+      ],
+      "supported": true,
+      "equal": true
+    },
+    {
+      "name": "inherited-__lookupSetter__",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "__lookupSetter__": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {}
+        }
+      ],
+      "supported": true,
+      "equal": false
+    },
+    {
+      "name": "own-both-__lookupSetter__",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "__lookupSetter__": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "__lookupSetter__": null
+          }
+        }
+      ],
+      "supported": true,
+      "equal": true
+    },
+    {
+      "name": "inherited-isPrototypeOf",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "isPrototypeOf": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {}
+        }
+      ],
+      "supported": true,
+      "equal": false
+    },
+    {
+      "name": "own-both-isPrototypeOf",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "isPrototypeOf": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "isPrototypeOf": null
+          }
+        }
+      ],
+      "supported": true,
+      "equal": true
+    },
+    {
+      "name": "inherited-propertyIsEnumerable",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "propertyIsEnumerable": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {}
+        }
+      ],
+      "supported": true,
+      "equal": false
+    },
+    {
+      "name": "own-both-propertyIsEnumerable",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "propertyIsEnumerable": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "propertyIsEnumerable": null
+          }
+        }
+      ],
+      "supported": true,
+      "equal": true
+    },
+    {
+      "name": "inherited-toString",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "toString": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {}
+        }
+      ],
+      "supported": true,
+      "equal": false
+    },
+    {
+      "name": "own-both-toString",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "toString": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "toString": null
+          }
+        }
+      ],
+      "supported": true,
+      "equal": true
+    },
+    {
+      "name": "inherited-valueOf",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "valueOf": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {}
+        }
+      ],
+      "supported": true,
+      "equal": false
+    },
+    {
+      "name": "own-both-valueOf",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "valueOf": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "valueOf": null
+          }
+        }
+      ],
+      "supported": true,
+      "equal": true
+    },
+    {
+      "name": "inherited-toLocaleString",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "toLocaleString": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {}
+        }
+      ],
+      "supported": true,
+      "equal": false
+    },
+    {
+      "name": "own-both-toLocaleString",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "toLocaleString": null
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "toLocaleString": null
+          }
+        }
+      ],
+      "supported": true,
+      "equal": true
+    },
+    {
+      "name": "proto-output-setter",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "__proto__": {
+              "x": 1
+            }
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "__proto__": {
+              "x": 2
+            }
+          }
+        }
+      ],
+      "supported": false,
+      "equal": true
+    },
+    {
+      "name": "descending-throw",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "x": {
+              "a": 1,
+              "z": {
+                "toString": null
+              }
+            }
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "x": {
+              "a": 2,
+              "z": false
+            }
+          }
+        }
+      ],
+      "supported": false,
+      "error": "TypeError: Cannot convert object to primitive value"
+    },
+    {
+      "name": "descending-shortcut",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "x": {
+              "a": {
+                "toString": null
+              },
+              "z": 1
+            }
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "x": {
+              "a": false,
+              "z": 2
+            }
+          }
+        }
+      ],
+      "supported": false,
+      "equal": false
+    },
+    {
+      "name": "utf16-descending-shortcut",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "x": {
+              "𐀀": {
+                "toString": null
+              },
+              "": 1
+            }
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "x": {
+              "𐀀": false,
+              "": 2
+            }
+          }
+        }
+      ],
+      "supported": false,
+      "equal": false
+    },
+    {
+      "name": "top-order-before-throw",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "a": 1,
+            "z": {
+              "toString": null
+            }
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "a": 2,
+            "z": false
+          }
+        }
+      ],
+      "supported": false,
+      "error": "TypeError: Cannot convert object to primitive value"
+    },
+    {
+      "name": "top-order-after-throw",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "z": {
+              "toString": null
+            },
+            "a": 1
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {
+            "z": false,
+            "a": 2
+          }
+        }
+      ],
+      "supported": false,
+      "error": "TypeError: Cannot convert object to primitive value"
+    },
+    {
+      "name": "later-embed-throw",
+      "left": [
+        {
+          "insert": "x"
+        },
+        {
+          "insert": {
+            "a": {
+              "toString": null
+            }
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "y"
+        },
+        {
+          "insert": {
+            "a": false
+          }
+        }
+      ],
+      "supported": false,
+      "error": "TypeError: Cannot convert object to primitive value"
+    },
+    {
+      "name": "later-embed-clone-equal",
+      "left": [
+        {
+          "insert": "x"
+        },
+        {
+          "insert": {
+            "a": {
+              "toString": null
+            }
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x"
+        },
+        {
+          "insert": {
+            "a": {
+              "toString": null
+            }
+          }
+        }
+      ],
+      "supported": false,
+      "equal": true
+    },
+    {
+      "name": "inherited-function-string-constructor",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "constructor": "function Object() { [native code] }"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {}
+        }
+      ],
+      "supported": false,
+      "equal": true
+    },
+    {
+      "name": "inherited-function-string-__defineGetter__",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "__defineGetter__": "function __defineGetter__() { [native code] }"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {}
+        }
+      ],
+      "supported": false,
+      "equal": true
+    },
+    {
+      "name": "inherited-function-string-__defineSetter__",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "__defineSetter__": "function __defineSetter__() { [native code] }"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {}
+        }
+      ],
+      "supported": false,
+      "equal": true
+    },
+    {
+      "name": "inherited-function-string-hasOwnProperty",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "hasOwnProperty": "function hasOwnProperty() { [native code] }"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {}
+        }
+      ],
+      "supported": false,
+      "equal": true
+    },
+    {
+      "name": "inherited-function-string-__lookupGetter__",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "__lookupGetter__": "function __lookupGetter__() { [native code] }"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {}
+        }
+      ],
+      "supported": false,
+      "equal": true
+    },
+    {
+      "name": "inherited-function-string-__lookupSetter__",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "__lookupSetter__": "function __lookupSetter__() { [native code] }"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {}
+        }
+      ],
+      "supported": false,
+      "equal": true
+    },
+    {
+      "name": "inherited-function-string-isPrototypeOf",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "isPrototypeOf": "function isPrototypeOf() { [native code] }"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {}
+        }
+      ],
+      "supported": false,
+      "equal": true
+    },
+    {
+      "name": "inherited-function-string-propertyIsEnumerable",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "propertyIsEnumerable": "function propertyIsEnumerable() { [native code] }"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {}
+        }
+      ],
+      "supported": false,
+      "equal": true
+    },
+    {
+      "name": "inherited-function-string-toString",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "toString": "function toString() { [native code] }"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {}
+        }
+      ],
+      "supported": false,
+      "equal": true
+    },
+    {
+      "name": "inherited-function-string-valueOf",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "valueOf": "function valueOf() { [native code] }"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {}
+        }
+      ],
+      "supported": false,
+      "equal": true
+    },
+    {
+      "name": "inherited-function-string-toLocaleString",
+      "left": [
+        {
+          "insert": "x",
+          "attributes": {
+            "toLocaleString": "function toLocaleString() { [native code] }"
+          }
+        }
+      ],
+      "right": [
+        {
+          "insert": "x",
+          "attributes": {}
+        }
+      ],
+      "supported": false,
+      "equal": true
+    }
+  ],
+  "objectPrototypeNames": [
+    "constructor",
+    "__defineGetter__",
+    "__defineSetter__",
+    "hasOwnProperty",
+    "__lookupGetter__",
+    "__lookupSetter__",
+    "isPrototypeOf",
+    "propertyIsEnumerable",
+    "toString",
+    "valueOf",
+    "__proto__",
+    "toLocaleString"
+  ]
+}

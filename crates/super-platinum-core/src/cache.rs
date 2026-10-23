@@ -46,6 +46,7 @@ struct CachedSidebar {
 
 #[derive(serde::Serialize)]
 struct CachedSidebarRef<'a> {
+    plan_info: Option<&'a crate::state::cfm_payload::PlanInfoCache>,
     draft_presence: serde_json::Value,
     directory_usergroups: serde_json::Value,
     posting_external_teams: serde_json::Value,
@@ -68,6 +69,8 @@ const MAX_CACHED_MESSAGES_PER_CHANNEL: usize = 200;
 mod directory_usergroups_tests;
 #[cfg(test)]
 mod emoji_preferences_tests;
+#[cfg(test)]
+mod plan_info_tests;
 #[cfg(test)]
 mod read_preferences_tests;
 #[cfg(test)]
@@ -239,6 +242,13 @@ impl Cache {
         };
 
         // Restore only positive routing history. Runtime authority stays absent.
+        // Parse the optional envelope independently: damage here must not erase
+        // unrelated cached sidebar state or drafts. No live PlanInfo is restored.
+        ws.cfm_payload.plan_info_cache = sidebar
+            .as_deref()
+            .and_then(|raw| serde_json::from_str::<serde_json::Value>(raw).ok())
+            .and_then(|raw| raw.get("plan_info").cloned())
+            .and_then(|raw| crate::state::cfm_payload::PlanInfoCache::restore(&raw, session));
         // Malformed stored data cannot silently become a known empty store.
         match sidebar
             .as_deref()
@@ -387,6 +397,7 @@ impl Cache {
                 serde_json::to_string(&ws.recent_channels)?,
                 serde_json::to_string(&ws.frecency)?,
                 serde_json::to_string(&CachedSidebarRef {
+                    plan_info: ws.cfm_payload.plan_info_cache.as_ref(),
                     draft_presence: ws.draft_presence.persisted(),
                     directory_usergroups: ws.directory_usergroups.save(),
                     posting_external_teams: ws.posting_metadata.cached_external_teams(),

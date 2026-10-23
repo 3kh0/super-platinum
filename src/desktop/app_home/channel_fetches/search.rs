@@ -3,6 +3,8 @@
 use super::*;
 use super_platinum_core::slack::models::Channel;
 pub(crate) mod direct;
+pub(crate) mod open;
+pub(super) mod posting;
 
 #[cfg(test)]
 mod tests;
@@ -70,6 +72,32 @@ impl Receipt {
         rows: &[Value],
         current: &impl Fn(&ShellState) -> bool,
     ) -> Result<Vec<Channel>, Error> {
+        self.accept_inner(shell, rows, None, current)
+    }
+    fn accept_with_memberships(
+        &self,
+        shell: &mut ShellState,
+        rows: &[Value],
+        membership: &[String],
+        current: &impl Fn(&ShellState) -> bool,
+    ) -> Result<Vec<Channel>, Error> {
+        if self.origin != Origin::Directory || self.requested.is_some() {
+            return Err(unavailable());
+        }
+        let normalized =
+            super_platinum_core::state::directory_channels::search_memberships::returned(
+                rows, membership,
+            )
+            .map_err(|_| unavailable())?;
+        self.accept_inner(shell, &normalized, Some(membership), current)
+    }
+    fn accept_inner(
+        &self,
+        shell: &mut ShellState,
+        rows: &[Value],
+        membership: Option<&[String]>,
+        current: &impl Fn(&ShellState) -> bool,
+    ) -> Result<Vec<Channel>, Error> {
         if !current(shell) || !self.current(shell) {
             return Err(unavailable());
         }
@@ -86,7 +114,7 @@ impl Receipt {
             .map(serde_json::from_value)
             .collect::<Result<Vec<Channel>, _>>()
             .map_err(|_| unavailable())?;
-        if rows.is_empty() {
+        if rows.is_empty() && membership.is_none_or(|ids| ids.is_empty()) {
             return Ok(typed);
         }
         let owner = &self.owner;
@@ -112,7 +140,28 @@ impl Receipt {
             .map_err(|_| unavailable())?;
         let boot = accepted.boot_in_flight();
         // Admission errors cannot leave a partially enqueued page behind.
-        let mut store = w.directory_channels.clone();
+        let mut store = if let Some(membership) = membership {
+            let ids = rows
+                .iter()
+                .map(|r| r["id"].as_str().unwrap().to_owned())
+                .collect::<Vec<_>>();
+            w.directory_channels
+                .queue_search_memberships(
+                    &self.publication,
+                    &ctx.account,
+                    &ctx.session,
+                    ctx.epoch,
+                    GENERATION,
+                    &w.channels,
+                    &ids,
+                    membership,
+                )
+                .map_err(|_| unavailable())?
+                .into_parts()
+                .0
+        } else {
+            w.directory_channels.clone()
+        };
         store
             .enqueue_ingress(accepted, &ctx.account, &ctx.session, ctx.epoch)
             .map_err(|_| unavailable())?;
@@ -161,14 +210,40 @@ impl Read {
     }
     pub(crate) async fn publish(
         self,
+        state: Signal<ShellState>,
+        rows: Vec<Value>,
+        current: impl Fn(&ShellState) -> bool,
+    ) -> Result<Arc<canonical::Canonical>, Error> {
+        self.publish_inner(state, rows, None, current).await
+    }
+    /// Completed search aggregate plus its actual member_channels companions.
+    /// Capture once before the aggregate's first read; raw pages stay caller-owned.
+    pub(crate) async fn publish_with_memberships(
+        self,
+        state: Signal<ShellState>,
+        rows: Vec<Value>,
+        membership: &[String],
+        current: impl Fn(&ShellState) -> bool,
+    ) -> Result<Arc<canonical::Canonical>, Error> {
+        self.publish_inner(state, rows, Some(membership), current)
+            .await
+    }
+    async fn publish_inner(
+        self,
         mut state: Signal<ShellState>,
         rows: Vec<Value>,
+        membership: Option<&[String]>,
         current: impl Fn(&ShellState) -> bool,
     ) -> Result<Arc<canonical::Canonical>, Error> {
         if !current(&state.peek()) || !self.current(&state.peek()) {
             return Err(unavailable());
         }
-        let typed = self.receipt.accept(&mut state.write(), &rows, &current)?;
+        let typed = if let Some(membership) = membership {
+            self.receipt
+                .accept_with_memberships(&mut state.write(), &rows, membership, &current)?
+        } else {
+            self.receipt.accept(&mut state.write(), &rows, &current)?
+        };
         self.posting.channels(&state, &typed);
         let owner = &self.receipt.owner;
         // Once accepted, this is shared source work. Closing the query does not

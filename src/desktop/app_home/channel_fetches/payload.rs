@@ -4,6 +4,7 @@ use super_platinum_core::state::{cfm_payload as source, directory_members};
 mod auxiliary;
 pub(crate) mod plan_info;
 pub(super) fn kick(mut state: Signal<ShellState>, owner: Owner) {
+    plan_info::persist(state, &owner);
     let works = {
         let mut shell = state.write();
         if !owner.current(&shell) {

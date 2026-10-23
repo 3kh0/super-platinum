@@ -43,6 +43,8 @@ pub struct ShellState {
     pub(super) fixture_channel_messages: Option<Vec<MessageVm>>,
     pub timeline_start: usize,
     pub timeline_end: usize,
+    /// Rich body presentation fence, independent of navigation/draft scope.
+    pub(crate) channel_projection_generation: u64,
     pub row_heights: HashMap<String, f64>,
     pub message_arrivals: HashMap<String, std::time::Instant>,
     /// Transient outcomes for globally unique optimistic timestamps. All send

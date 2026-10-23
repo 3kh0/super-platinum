@@ -1,0 +1,406 @@
+[
+  {
+    "text": 7,
+    "branch": "normal",
+    "input": [
+      {
+        "insert": {
+          "slackemoji": {
+            "text": 7
+          }
+        }
+      }
+    ],
+    "error": "TypeError: e.toLowerCase is not a function"
+  },
+  {
+    "text": 7,
+    "branch": "code",
+    "input": [
+      {
+        "insert": {
+          "slackemoji": {
+            "text": 7
+          }
+        },
+        "attributes": {
+          "code": true
+        }
+      }
+    ],
+    "result": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": []
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "text": 7,
+    "branch": "preformatted",
+    "input": [
+      {
+        "insert": {
+          "slackemoji": {
+            "text": 7
+          }
+        }
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "code-block": true
+        }
+      }
+    ],
+    "result": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_preformatted",
+              "border": 0,
+              "elements": []
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "text": false,
+    "branch": "normal",
+    "input": [
+      {
+        "insert": {
+          "slackemoji": {
+            "text": false
+          }
+        }
+      }
+    ],
+    "result": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": []
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "text": false,
+    "branch": "code",
+    "input": [
+      {
+        "insert": {
+          "slackemoji": {
+            "text": false
+          }
+        },
+        "attributes": {
+          "code": true
+        }
+      }
+    ],
+    "result": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": []
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "text": false,
+    "branch": "preformatted",
+    "input": [
+      {
+        "insert": {
+          "slackemoji": {
+            "text": false
+          }
+        }
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "code-block": true
+        }
+      }
+    ],
+    "result": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_preformatted",
+              "border": 0,
+              "elements": []
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "text": null,
+    "branch": "normal",
+    "input": [
+      {
+        "insert": {
+          "slackemoji": {
+            "text": null
+          }
+        }
+      }
+    ],
+    "result": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": []
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "text": null,
+    "branch": "code",
+    "input": [
+      {
+        "insert": {
+          "slackemoji": {
+            "text": null
+          }
+        },
+        "attributes": {
+          "code": true
+        }
+      }
+    ],
+    "result": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": []
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "text": null,
+    "branch": "preformatted",
+    "input": [
+      {
+        "insert": {
+          "slackemoji": {
+            "text": null
+          }
+        }
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "code-block": true
+        }
+      }
+    ],
+    "result": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_preformatted",
+              "border": 0,
+              "elements": []
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "text": {},
+    "branch": "normal",
+    "input": [
+      {
+        "insert": {
+          "slackemoji": {
+            "text": {}
+          }
+        }
+      }
+    ],
+    "error": "TypeError: e.toLowerCase is not a function"
+  },
+  {
+    "text": {},
+    "branch": "code",
+    "input": [
+      {
+        "insert": {
+          "slackemoji": {
+            "text": {}
+          }
+        },
+        "attributes": {
+          "code": true
+        }
+      }
+    ],
+    "result": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": []
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "text": {},
+    "branch": "preformatted",
+    "input": [
+      {
+        "insert": {
+          "slackemoji": {
+            "text": {}
+          }
+        }
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "code-block": true
+        }
+      }
+    ],
+    "result": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_preformatted",
+              "border": 0,
+              "elements": []
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "text": [],
+    "branch": "normal",
+    "input": [
+      {
+        "insert": {
+          "slackemoji": {
+            "text": []
+          }
+        }
+      }
+    ],
+    "error": "TypeError: e.toLowerCase is not a function"
+  },
+  {
+    "text": [],
+    "branch": "code",
+    "input": [
+      {
+        "insert": {
+          "slackemoji": {
+            "text": []
+          }
+        },
+        "attributes": {
+          "code": true
+        }
+      }
+    ],
+    "result": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": []
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "text": [],
+    "branch": "preformatted",
+    "input": [
+      {
+        "insert": {
+          "slackemoji": {
+            "text": []
+          }
+        }
+      },
+      {
+        "insert": "\n",
+        "attributes": {
+          "code-block": true
+        }
+      }
+    ],
+    "result": {
+      "blocks": [
+        {
+          "type": "rich_text",
+          "elements": [
+            {
+              "type": "rich_text_preformatted",
+              "border": 0,
+              "elements": []
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

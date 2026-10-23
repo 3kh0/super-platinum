@@ -10,6 +10,13 @@ pub(super) fn snapshot(state: Signal<ShellState>, model: &Model) -> Value {
     let mut v = compose::snapshot(&s, model);
     v["completionSource"] = data::snapshot(&s);
     v["completion"] = controller::snapshot(&s);
+    if data::title_users::named() || data::empty_canvas::named() {
+        v["titleUsers"] = crate::slack_lists::comments::title_users::snapshot(&s);
+        v["titleAcquisition"] = crate::slack_lists::comments::file_acquisition::snapshot(&s);
+    }
+    if data::empty_canvas::named() {
+        v["coldFiles"] = crate::slack_lists::comments::fixture::cold_files::snapshot(&s);
+    }
     v
 }
 pub(super) async fn wait(
@@ -64,8 +71,16 @@ pub(super) fn capture_argument(model: &Value, name: &str, sending: bool) -> Valu
     let active = q["current"] == true && q["consumed"] == false;
     let status = match name {
         "query-retired" | "stale-refused" | "empty" => "No matching mentions",
+        "query-replaced" | "late-query" if data::title_users::named() => "No matching mentions",
         "malformed" | "failure" => {
             "Mention suggestions could not load. Edit your query to try again."
+        }
+        _ if data::title_users::named()
+            && active
+            && q["revision"] == 0
+            && q["labels"].as_array().is_some_and(Vec::is_empty) =>
+        {
+            "Searching mentions..."
         }
         _ => "",
     };

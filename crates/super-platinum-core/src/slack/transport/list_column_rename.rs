@@ -20,9 +20,22 @@ impl Transport {
     pub(super) async fn execute_list_rename_once(
         &self,
         request: PreparedRequest,
-        mut current: impl FnMut() -> bool,
+        current: impl FnMut() -> bool,
         permitted: fn(&PreparedRequest) -> bool,
     ) -> Result<Value, ListColumnRenameFailure> {
+        self.execute_list_rename_once_with(request, current, permitted, |_, value| Ok(value))
+            .await
+    }
+    // The decoder sees the same original bounded bytes only after the shared
+    // HTTP, Retry-After, duplicate-key, object and rate-limit checks. It performs
+    // no additional request and cannot widen a public wrapper's validator.
+    pub(super) async fn execute_list_rename_once_with<T>(
+        &self,
+        request: PreparedRequest,
+        mut current: impl FnMut() -> bool,
+        permitted: fn(&PreparedRequest) -> bool,
+        decode: impl FnOnce(&[u8], Value) -> Result<T, Error>,
+    ) -> Result<T, ListColumnRenameFailure> {
         use ListColumnRenameFailure::{NotRequested, Unconfirmed};
         if !permitted(&request) {
             return Err(NotRequested(Error::Api(
@@ -119,7 +132,7 @@ impl Transport {
                     retry_after_secs: None,
                 });
             }
-            Ok(value)
+            decode(&bytes, value)
         })
         .await
         .map_err(|_| Unconfirmed(Error::Transport("List rename response timed out".into())))?;

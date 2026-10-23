@@ -19,11 +19,33 @@ fn native_script(mode: &str) -> String {
     } else {
         base
     };
+    let base = if confirmation::share::requested() {
+        confirmation::share::native_script(&base)
+    } else {
+        base
+    };
+    let base = if confirmation::share::drafts::requested() {
+        confirmation::share::drafts::wrap(&base)
+    } else {
+        base
+    };
+    let base = confirmation::share::search::startup_retirement_native(&base);
+    let base = if confirmation::share::cancel::requested() {
+        confirmation::share::cancel::wrap(&base)
+    } else {
+        base
+    };
+    let base =
+        if confirmation::share::resend::requested() || confirmation::share::posting::requested() {
+            confirmation::share::resend::wrap(&base)
+        } else {
+            base
+        };
     let base = if crate::channel_workflows::fixture::requested() {
-        include_str!("first_publish/workflows/native.js")
+        details::thread::exposure(include_str!("first_publish/workflows/native.js"))
             .replace(
                 "EXPOSURE",
-                include_str!("first_publish/details/exposure.js"),
+                &details::thread::exposure(include_str!("first_publish/details/exposure.js")),
             )
             .replace("BASE", &base)
     } else {
@@ -37,8 +59,18 @@ fn native_script(mode: &str) -> String {
     if crate::channel_workflows::details::fixture::thread::requested() {
         include_str!("first_publish/details/thread/native.js")
             .replace("BASE", &base)
-            .replace("BIND", if mode == "thread-bind" { "true" } else { "false" })
-            .replace("DRAFT", &json!(crate::channel_workflows::details::fixture::thread::DRAFT).to_string())
+            .replace(
+                "BIND",
+                if mode == "thread-bind" {
+                    "true"
+                } else {
+                    "false"
+                },
+            )
+            .replace(
+                "DRAFT",
+                &json!(crate::channel_workflows::details::fixture::thread::DRAFT).to_string(),
+            )
     } else {
         base
     }
@@ -67,6 +99,23 @@ async fn observe(
     let mut model = snapshot(&s);
     if endpoint::confirmation::requested() {
         model["confirmationDestination"] = confirmation::destination(&s);
+    }
+    if confirmation::share::requested() {
+        model["shareCustody"] = confirmation::share::snapshot(&s);
+    }
+    if confirmation::share::drafts::requested() {
+        model["shareDrafts"] = confirmation::share::drafts::snapshot(&s);
+    }
+    if endpoint::confirmation::share::person::requested()
+        || endpoint::confirmation::share::search::person_enabled()
+    {
+        model["sharePersonSource"] = endpoint::confirmation::share::person::snapshot(&s);
+    }
+    if confirmation::share::posting::requested() {
+        model["sharePosting"] = endpoint::confirmation::share::posting::snapshot(&s);
+    }
+    if endpoint::confirmation::share::multiple::requested() {
+        model["shareMultipleSource"] = endpoint::confirmation::share::multiple::snapshot(&s);
     }
     if crate::channel_workflows::details::fixture::requested() {
         model["workflowDetails"] = crate::channel_workflows::details::snapshot(&s);
@@ -157,6 +206,11 @@ pub(super) async fn run(
 ) -> Result<Value, String> {
     let readiness = readiness(name).await?;
     endpoint::seed(state).await?;
+    let draft_setup = if confirmation::share::drafts::requested() {
+        Some(confirmation::share::drafts::setup(state, desktop, name).await?)
+    } else {
+        None
+    };
     let case = endpoint::case();
     let mut captures = serde_json::Map::new();
     let mut stages = Vec::new();
@@ -195,27 +249,40 @@ pub(super) async fn run(
     )
     .await?;
     if case != "first-default" {
-        edit(state, desktop, TITLE).await?;
+        let draft_edit = if confirmation::share::drafts::requested() {
+            confirmation::share::drafts::edit_metadata(state, desktop, TITLE).await?
+        } else {
+            edit(state, desktop, TITLE).await?;
+            Value::Null
+        };
         stage(
             state,
             desktop,
             name,
             "draft",
             visit,
-            json!({}),
+            if draft_edit.is_null() {
+                json!({})
+            } else {
+                json!({"draftEdit":draft_edit})
+            },
             &mut captures,
             &mut stages,
         )
         .await?;
     }
-    actions::open(state, desktop, visit).await?;
+    let draft_open = actions::open(state, desktop, visit).await?;
     stage(
         state,
         desktop,
         name,
         "finish",
         visit,
-        json!({}),
+        if draft_open.is_null() {
+            json!({})
+        } else {
+            json!({"draftOpen":draft_open})
+        },
         &mut captures,
         &mut stages,
     )
@@ -519,6 +586,63 @@ pub(super) async fn run(
         None
     };
     let mut receipt = json!({"ok":true,"fixture":name,"scenario":"editor","firstPublishCase":case,"readiness":readiness,"syntheticSession":true,"noLiveNetwork":true,"aboutConfiguration":true,"viewport":stages[0]["geometry"]["viewport"],"stages":stages,"captures":captures,"final":final_state,"replacement":replacement});
+    if endpoint::confirmation::feature::requested() {
+        receipt["featureCase"] =
+            json!(std::env::var("SUPER_PLATINUM_WORKFLOW_FEATURE_CASE").unwrap_or_default());
+    }
+    if confirmation::share::requested() {
+        receipt["shareCase"] =
+            json!(std::env::var(endpoint::confirmation::share::CASE_ENV).unwrap_or_default());
+        if endpoint::confirmation::share::multiple::requested() {
+            receipt["shareMultipleCheck"] = json!(true);
+            receipt["shareMultipleCase"] = json!(endpoint::confirmation::share::multiple::case());
+        }
+        if endpoint::confirmation::share::search::requested() {
+            receipt["shareSearchCheck"] = json!(true);
+            receipt["shareSearchCase"] = json!(endpoint::confirmation::share::search::case());
+            if endpoint::confirmation::share::startup::requested() {
+                receipt["shareStartupCase"] = json!(endpoint::confirmation::share::startup::case());
+            }
+            if endpoint::confirmation::share::search::empty::requested() {
+                receipt["shareEmptyCase"] =
+                    json!(endpoint::confirmation::share::search::empty::case());
+            }
+            if endpoint::confirmation::share::search::ranking::requested() {
+                receipt["shareRankingCase"] =
+                    json!(endpoint::confirmation::share::search::ranking::case());
+            }
+        }
+        if endpoint::confirmation::share::person::requested() {
+            receipt["sharePersonCheck"] = json!(true);
+            receipt["sharePersonCase"] = json!(endpoint::confirmation::share::person::case());
+        }
+        if endpoint::confirmation::share::dm::requested() {
+            receipt["shareDmCheck"] = json!(true);
+            receipt["shareDmCase"] = json!(endpoint::confirmation::share::dm::case());
+        }
+    }
+    if let Some(draft_setup) = draft_setup {
+        if confirmation::share::posting::requested() {
+            receipt["sharePostingCheck"] = json!(true);
+            receipt["sharePostingCase"] = json!(endpoint::confirmation::share::posting::case());
+            receipt["sharePosting"] =
+                confirmation::share::posting::run(state, desktop, name, visit).await?;
+        }
+        if confirmation::share::resend::requested() {
+            receipt["shareResendCheck"] = json!(true);
+            receipt["shareResendCase"] = json!(endpoint::confirmation::share::resend::case());
+            receipt["shareResend"] =
+                confirmation::share::resend::run(state, desktop, name, visit).await?;
+        }
+        if confirmation::share::cancel::requested() {
+            receipt["shareCancelCheck"] = json!(true);
+            receipt["shareCancel"] =
+                confirmation::share::cancel::run(state, desktop, name, visit).await?;
+        }
+        let returned = confirmation::share::drafts::returned(state, desktop, name).await?;
+        receipt["shareDraftCustody"] = json!(true);
+        receipt["shareDrafts"] = json!({"captures":{"draft-setup":draft_setup["capture"]["path"],"draft-returned":returned["capture"]["path"]},"setup":draft_setup,"returned":returned});
+    }
     if let Some(setup) = setup {
         receipt["setup"] = json!(setup);
     }

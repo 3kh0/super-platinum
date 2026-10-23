@@ -309,13 +309,25 @@ TAB/LF/CR to spaces and strips other C0/C1 controls. Its text-mode escaping does
 not encode ampersands or angle brackets after RTML parsing. Rich output is bounded
 to 2000 JavaScript UTF-16 units. The separate form title is DOM-extracted, trimmed
 and bounded to 255 UTF-16 units; these two fields can intentionally differ. Empty
-titles use localized Untitled text. Native synthesis handles nonempty plain
-canonical titles, the observed normalization, and UTF-16 limits. Markup/entities,
-localized empty-title fallback and a cutoff splitting a surrogate remain
-unsupported. It validates a unique canonical title section and binds its exact
+titles use localized Untitled text. Native synthesis handles nonempty plain canonical titles and the bounded
+static formatting/entity extension below, with the observed normalization and
+UTF-16 limits. Unknown semantic markup, localized empty-title fallback and a
+cutoff splitting a surrogate remain unsupported. It validates a unique canonical title section and binds its exact
 source to the intent and fresh preflight. Both generated title fields matched the
 captured stock requests; detached Chromium checks cover normalization. Document
 field 69 is neither required nor copied.
+
+The bounded static-title extension has a separate retained-source contract in
+[`canvas-formatted-title-edit-20261023/reference/contract.json`](../tmp/canvas-formatted-title-edit-20261023/reference/contract.json).
+`TITLE_TYPE.renderToDom` passes `8v0o.X0` as `tagsToRemove`: ordinary
+`b/i/u/del/code` wrappers are omitted before the title is mounted and exported.
+Calling IRZY directly on the original formatted markup would therefore produce
+the wrong style fields for this path. For `<b>Plan &amp; Review</b>`, the expected
+form title and single unstyled rich-text leaf are both `Plan & Review`, while
+the canonical title bytes remain unchanged as preflight authority. The retained
+oracle ran 16 controlled vectors with modeled DOM/protobuf collaborators;
+browser parsing and native application acceptance were not part of that oracle.
+The active checkpoint records implementation and executed acceptance separately.
 
 ## Retained CRDT state and explicit client reset
 

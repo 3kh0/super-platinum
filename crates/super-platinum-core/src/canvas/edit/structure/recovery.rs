@@ -1,5 +1,6 @@
-//! Inert evidence for one structural dispatch. Loading never recreates an actor,
-//! intent, PreparedStructureEdit, accepted receipt, or permission to replay.
+//! Inert evidence for one structural dispatch. Validation may plan ephemeral
+//! history patches, but never recreates executable intent, accepted receipts,
+//! transport authority or permission to replay.
 use super::*;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
@@ -22,10 +23,91 @@ enum Action {
         position: String,
     },
     Delete,
+    EndSequence {
+        members: Vec<SequenceMember>,
+    },
+    EndRepeatTyping {
+        child: String,
+        position: String,
+        reused: bool,
+        second_child: String,
+        second_position: String,
+        second_child_updates: Vec<String>,
+    },
+    EndRepeat {
+        child: String,
+        position: String,
+        reused: bool,
+        second_child: String,
+        second_position: String,
+    },
+    EmptyEnter {
+        child: String,
+        position: String,
+        reused: bool,
+    },
+    EmptyTyping {
+        child: String,
+        position: String,
+        reused: bool,
+        child_updates: Vec<String>,
+    },
+    StartTyping {
+        child: String,
+        position: String,
+        original_updates: Vec<String>,
+    },
+    End {
+        child: String,
+        position: String,
+        offset_utf16: usize,
+    },
+    EndReuse {
+        child: String,
+        position: String,
+        offset_utf16: usize,
+    },
+    EndTyping {
+        child: String,
+        position: String,
+        offset_utf16: usize,
+        reused: bool,
+        child_updates: Vec<String>,
+    },
+    EndClearing {
+        child: String,
+        position: String,
+        offset_utf16: usize,
+        child_updates: Vec<String>,
+    },
+    Split {
+        child: String,
+        position: String,
+        offset_utf16: usize,
+        parent_draft: String,
+        child_draft: String,
+    },
+    SplitTyping {
+        child: String,
+        position: String,
+        offset_utf16: usize,
+        parent_draft: String,
+        child_draft: String,
+        child_updates: Vec<String>,
+    },
     Replace {
         replacement: String,
         position: String,
     },
+}
+
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SequenceMember {
+    id: String,
+    position: String,
+    reused: bool,
+    updates: Vec<String>,
 }
 
 /// Credential-free, byte-preserving evidence. Fields and serialization stay
@@ -97,6 +179,70 @@ impl Checkpoint {
     pub fn is_replacement(&self) -> bool {
         matches!(self.action, Action::Replace { .. })
     }
+    /// A split is a whole-file unresolved pair, never a single-target review.
+    pub fn is_split(&self) -> bool {
+        matches!(
+            self.action,
+            Action::Split { .. } | Action::SplitTyping { .. }
+        )
+    }
+    pub fn is_split_typing(&self) -> bool {
+        matches!(self.action, Action::SplitTyping { .. })
+    }
+    pub fn is_sequence(&self) -> bool {
+        matches!(self.action, Action::EndSequence { .. })
+    }
+    pub fn is_repeat(&self) -> bool {
+        matches!(
+            self.action,
+            Action::EndRepeat { .. } | Action::EndRepeatTyping { .. }
+        )
+    }
+    pub fn is_repeat_typing(&self) -> bool {
+        matches!(self.action, Action::EndRepeatTyping { .. })
+    }
+    /// End Enter retains an unchanged parent and its child, optionally with typing.
+    pub fn is_end(&self) -> bool {
+        matches!(
+            self.action,
+            Action::End { .. }
+                | Action::EndSequence { .. }
+                | Action::EndRepeat { .. }
+                | Action::EndRepeatTyping { .. }
+                | Action::EmptyEnter { .. }
+                | Action::EmptyTyping { .. }
+                | Action::EndReuse { .. }
+                | Action::EndTyping { .. }
+                | Action::EndClearing { .. }
+        )
+    }
+    pub fn is_end_reuse(&self) -> bool {
+        if let Action::EndSequence { members } = &self.action {
+            return members.first().is_some_and(|m| m.reused);
+        }
+        matches!(
+            self.action,
+            Action::EndReuse { .. }
+                | Action::EndRepeat { reused: true, .. }
+                | Action::EndRepeatTyping { reused: true, .. }
+                | Action::EmptyEnter { reused: true, .. }
+                | Action::EmptyTyping { reused: true, .. }
+                | Action::EndTyping { reused: true, .. }
+                | Action::EndClearing { .. }
+        )
+    }
+    pub fn is_empty_enter(&self) -> bool {
+        matches!(
+            self.action,
+            Action::EmptyEnter { .. } | Action::EmptyTyping { .. }
+        )
+    }
+    pub fn is_empty_typing(&self) -> bool {
+        matches!(self.action, Action::EmptyTyping { .. })
+    }
+    pub fn is_start_typing(&self) -> bool {
+        matches!(self.action, Action::StartTyping { .. })
+    }
     pub fn is_delete(&self) -> bool {
         matches!(self.action, Action::Delete)
     }
@@ -107,7 +253,20 @@ impl Checkpoint {
     fn validate(&self) -> Result<(), Error> {
         if !matches!(
             (&self.action, self.version),
-            (Action::Insert { .. } | Action::Delete, 1) | (Action::Replace { .. }, 2)
+            (Action::Insert { .. } | Action::Delete, 1)
+                | (Action::Replace { .. }, 2)
+                | (Action::Split { .. }, 3)
+                | (Action::End { .. }, 4)
+                | (Action::EndReuse { .. }, 5)
+                | (Action::EndTyping { .. }, 6)
+                | (Action::EndClearing { .. }, 7)
+                | (Action::SplitTyping { .. }, 8)
+                | (Action::StartTyping { .. }, 9)
+                | (Action::EmptyEnter { .. }, 10)
+                | (Action::EmptyTyping { .. }, 11)
+                | (Action::EndRepeat { .. }, 12)
+                | (Action::EndRepeatTyping { .. }, 13)
+                | (Action::EndSequence { .. }, 14)
         ) || self.sequence != 1
             || self.session.len() != 12
             || !self.session.bytes().all(|b| b.is_ascii_hexdigit())
@@ -155,11 +314,52 @@ impl Checkpoint {
                 return Err(Error::Unsupported);
             }
         }
+        if self.is_sequence() {
+            return self.validate_end_sequence();
+        }
+        if self.is_repeat() {
+            return self.validate_end_repeat();
+        }
+        if self.is_empty_enter() {
+            return self.validate_empty_enter();
+        }
+        if self.is_start_typing() {
+            return self.validate_start_typing();
+        }
+        if matches!(self.action, Action::EndClearing { .. }) {
+            return self.validate_end_clearing();
+        }
+        if matches!(self.action, Action::EndTyping { .. }) {
+            return self.validate_end_typing();
+        }
+        if self.is_split() {
+            return self.validate_split();
+        }
+        if self.is_end_reuse() {
+            return self.validate_end_reuse();
+        }
+        if self.is_end() {
+            return self.validate_end();
+        }
         if matches!(self.action, Action::Replace { .. }) {
             return self.validate_pair();
         }
         match &self.action {
-            Action::Replace { .. } => return Err(Error::Unsupported),
+            Action::Replace { .. }
+            | Action::EndSequence { .. }
+            | Action::EndRepeat { .. }
+            | Action::EndRepeatTyping { .. }
+            | Action::EmptyEnter { .. }
+            | Action::EmptyTyping { .. }
+            | Action::StartTyping { .. }
+            | Action::Split { .. }
+            | Action::SplitTyping { .. }
+            | Action::End { .. }
+            | Action::EndReuse { .. }
+            | Action::EndTyping { .. }
+            | Action::EndClearing { .. } => {
+                return Err(Error::Unsupported);
+            }
             Action::Insert {
                 anchor, position, ..
             } => {
@@ -199,7 +399,16 @@ impl Checkpoint {
     }
 }
 
+mod empty_enter;
+mod end;
+mod end_clearing;
+mod end_repeat;
+mod end_reuse;
+mod end_sequence;
+mod end_typing;
 mod replacement;
+mod split;
+mod start_typing;
 
 #[cfg(test)]
 mod tests;

@@ -27,6 +27,7 @@ impl Drop for Running {
 pub(crate) fn fixture_status(shell: &ShellState) -> Value {
     if !crate::profile_edit::sections::fixture::member_recovery::enabled()
         && !crate::profile_edit::sections::fixture::group_recovery::enabled()
+        && !crate::slack_lists::comments::fixture::completion::title_users::named()
     {
         return Value::Null;
     }
@@ -49,6 +50,7 @@ impl Client {
     ) -> Result<Option<Self>, Error> {
         if crate::fixture::is_fixture()
             && !crate::profile_edit::sections::fixture::member_recovery::enabled()
+            && !crate::slack_lists::comments::fixture::completion::title_users::named()
         {
             let shell = state.peek();
             if crate::profile_edit::sections::fixture::completion::files::enabled(&shell)

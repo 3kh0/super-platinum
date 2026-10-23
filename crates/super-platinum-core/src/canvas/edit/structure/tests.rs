@@ -666,3 +666,4 @@ fn action_projection_preserves_core_eligibility_without_allocating_write_intents
 mod base_zero_text;
 
 mod mixed;
+mod start;

@@ -303,3 +303,81 @@ fn plain_canvas_and_whole_list_titles_do_not_claim_a_quip_dependency() {
         assert!(observed.quip.is_none());
     }
 }
+
+#[test]
+fn nested_member_dependency_does_not_invalidate_current_file_receipt() {
+    let (mut shell, token) = setup();
+    let mut raw = response("FFILE0001", "Not the nested title", "quip");
+    raw["file"]["title_blocks"] = json!([{"type":"rich_text","elements":[{"type":"rich_text_section","elements":[{"type":"text","text":"With "},{"type":"user","user_id":"UMISSING01"}]}]}]);
+    put(&mut shell, &token, &raw);
+    assert!(metadata_current(&shell, &token, "FFILE0001"));
+    assert!(Observation::capture(&shell, &token, "FFILE0001").is_err());
+    assert!(reuse_metadata(&shell, &token, "FFILE0001", false));
+    assert!(reuse_metadata(&shell, &token, "FFILE0001", true));
+    let before = dependencies(&shell, &token, &["FFILE0001".into()]).unwrap();
+    assert_eq!(before.ids, vec!["UMISSING01"]);
+    raw["file"]["title_blocks"][0]["elements"][0]["elements"][1]["user_id"] = json!("UREPLACED01");
+    put(&mut shell, &token, &raw);
+    assert!(!before.current(&shell, &token));
+    invalidate(&mut shell, &token.owner.team, "FFILE0001");
+    assert!(!reuse_metadata(&shell, &token, "FFILE0001", false));
+    assert!(!reuse_metadata(&shell, &token, "FFILE0001", true));
+}
+#[test]
+fn list_metadata_does_not_acquire_canvas_title_users() {
+    let mut raw = response("FLIST0001", "List name", "list");
+    raw["file"]["title_blocks"] = json!([{"type":"unsupported"}]);
+    assert!(title_user_ids(&raw["file"]).unwrap().is_empty());
+}
+
+#[test]
+fn profile_empty_canvas_uses_explicit_english_without_replacing_wire_or_owner() {
+    let (mut shell, token) = setup();
+    shell.canvas_titles = Default::default(); // No Quip observation for plain titles.
+    let id = "FFILE0001";
+    put(&mut shell, &token, &response(id, "Old title", "quip"));
+    let old = Observation::capture(&shell, &token, id).unwrap();
+    let wire = json!({"type":"canvas","file_id":id,"url":"https://fixture.invalid/original",
+        "text":"original wire","style":{"bold":true},"opaque":{"keep":7}});
+    let before = wire.clone();
+    let mut empty = response(id, " \t\n", "quip");
+    empty["file"]["title_blocks"] = json!([]);
+    put(&mut shell, &token, &empty);
+    assert!(!old.current(&shell));
+    assert_eq!(old.label(&wire).unwrap(), "Old title"); // Mounted label remains frozen.
+    let current = Observation::capture(&shell, &token, id).unwrap();
+    assert_eq!(current.label(&wire).unwrap(), "Untitled");
+    assert_eq!(wire, before);
+    assert_eq!(current.row.source(), &empty["file"]);
+    assert!(current.quip.is_none());
+    shell
+        .core
+        .workspaces
+        .get_mut(&token.owner.team)
+        .unwrap()
+        .rt_generation += 1;
+    assert!(!current.current(&shell));
+    assert!(Observation::capture(&shell, &token, id).is_err());
+}
+
+#[test]
+fn profile_empty_blocks_still_require_actual_quip_observation() {
+    let (mut shell, token) = setup();
+    let id = "FFILE0001";
+    let mut empty = response(id, "not extraction", "quip");
+    empty["file"]["title_blocks"] = json!([{"type":"rich_text","elements":[
+        {"type":"rich_text_section","elements":[{"type":"text","text":" \t"}]}]}]);
+    put(&mut shell, &token, &empty);
+    shell.canvas_titles = Default::default();
+    assert!(Observation::capture(&shell, &token, id).is_err());
+    shell.canvas_titles = crate::canvas::quip_titles::State::fresh();
+    let current = Observation::capture(&shell, &token, id).unwrap();
+    assert_eq!(
+        current
+            .label(&json!({"type":"canvas","file_id":id}))
+            .unwrap(),
+        "Untitled"
+    );
+    shell.canvas_titles = crate::canvas::quip_titles::State::fresh();
+    assert!(!current.current(&shell));
+}

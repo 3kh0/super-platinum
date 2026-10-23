@@ -10,10 +10,19 @@ use super_platinum_core::{
 pub(crate) mod channel_host;
 mod facts;
 use channel_host::Host;
+pub(crate) use group_source::Snapshot as SaveGroupSource;
+pub(crate) use member_names::SaveMemberNames;
+pub(crate) use member_rank_input::SaveMemberRank;
 pub(crate) use ranking::Preferences;
+pub(crate) use ranking::save::ChannelRank;
+pub(crate) use render::save::{ChannelStrings, beyond_boundaries};
+pub(crate) use render::save_members::{MemberStrings, history_query, normalize_member};
 pub(crate) use run::{ChannelBatch, run_channels};
 pub(super) mod file_choice;
-pub(crate) use file_choice::{FileTarget, draft_file_labels};
+pub(crate) use file_choice::users::{
+    DisplaySource as TitleMemberSource, acquire_display as acquire_title_members,
+};
+pub(crate) use file_choice::{FileTarget, FileTitles, draft_file_labels};
 mod file_policy;
 mod file_rank_input;
 mod file_read;

@@ -50,33 +50,83 @@ async fn open_owned(mut state: Signal<ShellState>, source: Arc<Source>) {
         let disk = storage::Disk::capture(&state.peek(), &source.owner, &source.target)?;
         let durable = durable::Durable::load(disk.clone(), source.ts.clone()).await?;
         let inventory = durable.inventory().await;
-        let seed = if let Some(seed) = inventory.seed() {
+        let (seed, mut plain_mount) = if let Some(seed) = inventory.seed() {
             // Inert saved content can be shown without granting fresh permission.
             // Save still performs the complete current-source/policy preflight.
-            seed.clone()
+            if seed.plain_delta().is_some() {
+                // Current native behavior is acquired independently of this
+                // inert saved seed; it grants no new Save permission.
+                let (_, policy) = prepare(state, &source, serial).await?;
+                (
+                    seed.clone(),
+                    Some(plain::acquire_mount(state, &source, serial, &policy).await?),
+                )
+            } else {
+                (seed.clone(), None)
+            }
         } else {
             let (loaded, policy) = prepare(state, &source, serial).await?;
-            let shell = state.peek();
-            if !source.current(&shell) || !suspension.current(&shell) || !policy.current(&shell) {
-                return Err(unavailable());
+            if policy.policy().mode()
+                == super_platinum_core::slack_lists::comments::edit_seed::mode::EditMode::PlainText
+            {
+                let (seed, mount) =
+                    plain::initial(state, &source, serial, &loaded, &policy).await?;
+                (seed, Some(mount))
+            } else {
+                let shell = state.peek();
+                if !source.current(&shell) || !suspension.current(&shell) || !policy.current(&shell)
+                {
+                    return Err(unavailable());
+                }
+                let known = selected(&loaded.page, &source.ts)?;
+                let (_, team, user) = source.owner.scope.stable_owner();
+                (
+                    OwnEditSeed::capture(
+                        &team,
+                        &user,
+                        &loaded.page,
+                        known,
+                        policy.policy(),
+                        millis(),
+                    )
+                    .map_err(|e| Error::Api(e.to_string()))?,
+                    None,
+                )
             }
-            let known = selected(&loaded.page, &source.ts)?;
-            let (_, team, user) = source.owner.scope.stable_owner();
-            OwnEditSeed::capture(&team, &user, &loaded.page, known, policy.policy(), millis())
-                .map_err(|e| Error::Api(e.to_string()))?
         };
         let restored = inventory.seed().is_some();
+        let plain = if restored {
+            inventory.plain_delta().cloned()
+        } else {
+            seed.plain_delta().cloned()
+        };
+        // Restored content can differ from both the server seed and original
+        // seed Delta. Admit exactly the journal's reached embeds, against this
+        // opening's fresh catalog; never borrow its previous mount appearance.
+        if let (Some(mount), Some(delta)) = (&mut plain_mount, &plain) {
+            mount.observe_content(delta)?;
+            if !mount.current(&state.peek()) {
+                return Err(unavailable());
+            }
+        }
         let blocks = if restored {
             inventory.blocks().to_vec()
         } else {
             seed.editable().to_vec()
         };
-        durable.capture(&seed, &blocks).await?;
+        let content = if let Some(delta) = &plain {
+            Content::PlainDelta(delta.clone())
+        } else {
+            Content::RichBlocks(blocks.clone())
+        };
+        durable.capture_content(&seed, &content).await?;
         let inventory = durable.inventory().await;
         let attempt = durable::restored_attempt(&inventory, &disk.account);
         Ok((
             seed,
             blocks,
+            plain,
+            plain_mount,
             durable,
             attempt,
             restored,
@@ -98,8 +148,10 @@ async fn open_owned(mut state: Signal<ShellState>, source: Arc<Source>) {
     }
     shell.slack_lists.comments.own_edit.pending = None;
     match result {
-        Ok((seed, blocks, durable, attempt, restored, local_retry_at))
-            if source.current(&shell) && suspension.current(&shell) =>
+        Ok((seed, blocks, plain, plain_mount, durable, attempt, restored, local_retry_at))
+            if source.current(&shell)
+                && suspension.current(&shell)
+                && plain_mount.as_ref().is_none_or(|m| m.current(&shell)) =>
         {
             let binding = Binding {
                 source,
@@ -142,14 +194,18 @@ async fn open_owned(mut state: Signal<ShellState>, source: Arc<Source>) {
                 None
             };
             shell.slack_lists.comments.own_edit.active = Some(Session {
+                titles: None,
                 binding,
                 blocks,
+                plain,
+                plain_mount,
                 seed: Arc::new(seed),
                 revision: 0,
                 native: None,
                 native_sequence: 0,
                 native_ready: false,
                 composing: false,
+                native_pending: false,
                 capture_failed: false,
                 busy: false,
                 finishing: false,
@@ -166,9 +222,21 @@ async fn open_owned(mut state: Signal<ShellState>, source: Arc<Source>) {
         _ => {}
     }
     drop(shell);
+    let binding = state
+        .peek()
+        .slack_lists
+        .comments
+        .own_edit
+        .active
+        .as_ref()
+        .filter(|s| s.binding.source.owner.serial == source_generation)
+        .map(|s| s.binding.clone());
+    if let Some(binding) = binding {
+        titles::prepare(state, binding);
+    }
     controller::arm_retry(state, source_generation);
 }
-fn millis() -> u64 {
+pub(super) fn millis() -> u64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX))
@@ -227,9 +295,9 @@ async fn loaded(
             },
             Tombstones::Include,
         )?;
-        let raw = network::request(state, &source.owner, serial, request, true).await?;
         loaded.page =
-            Page::parse(loaded.page.target(), raw).map_err(|e| Error::Api(e.to_string()))?;
+            network::reply_page(state, &source.owner, serial, request, loaded.page.target())
+                .await?;
     }
     Ok(loaded)
 }
@@ -294,11 +362,19 @@ fn suspension_current(shell: &ShellState, binding: &Binding) -> bool {
             .is_some_and(|s| s.current(shell))
     })
 }
-pub(crate) fn cancel(state: Signal<ShellState>, binding: Binding) {
+pub(crate) fn cancel(mut state: Signal<ShellState>, binding: Binding) {
     if !presentation(&state.peek())
         .is_some_and(|p| p.binding.token == binding.token && p.can_cancel)
     {
         return;
+    }
+    // No native buffer exists before the first mount. Retire the title job
+    // synchronously, then use the same original durable clear/return path.
+    {
+        let mut shell = state.write();
+        if session(&shell, &binding).is_some_and(|s| titles::can_cancel_unmounted(&shell, s)) {
+            session_mut(&mut shell, &binding).unwrap().finishing = true;
+        }
     }
     dioxus::core::spawn_forever(async move {
         if session(&state.peek(), &binding).is_some_and(|s| s.finishing) {
@@ -322,8 +398,24 @@ pub(crate) fn cancel(state: Signal<ShellState>, binding: Binding) {
         }
     });
 }
-async fn restore(mut state: Signal<ShellState>, binding: &Binding, lease: bridge::Lease) {
+async fn restore(state: Signal<ShellState>, binding: &Binding, lease: bridge::Lease) {
+    restore_checked(state, binding, lease, &|shell| binding.visible_mount(shell)).await;
+}
+async fn restore_checked(
+    mut state: Signal<ShellState>,
+    binding: &Binding,
+    lease: bridge::Lease,
+    current: &impl Fn(&ShellState) -> bool,
+) {
     if !binding.visible_mount(&state.peek()) {
+        return;
+    }
+    if !current(&state.peek()) {
+        notice(
+            state,
+            binding,
+            "The original edit changed before returning. Both drafts are retained.",
+        );
         return;
     }
     if lease.validate().await.is_err() {
@@ -337,6 +429,14 @@ async fn restore(mut state: Signal<ShellState>, binding: &Binding, lease: bridge
     if !binding.visible_mount(&state.peek()) {
         return;
     }
+    if !current(&state.peek()) {
+        notice(
+            state,
+            binding,
+            "The original edit changed before returning. Both drafts are retained.",
+        );
+        return;
+    }
     if lease.finish().await.is_err() {
         notice(
             state,
@@ -347,10 +447,26 @@ async fn restore(mut state: Signal<ShellState>, binding: &Binding, lease: bridge
     }
     if let Some(s) = session_mut(&mut state.write(), binding) {
         s.finishing = true;
+        s.busy = false;
     }
-    finish_return(state, binding).await;
+    finish_return_checked(state, binding, current).await;
 }
-async fn finish_return(mut state: Signal<ShellState>, binding: &Binding) {
+async fn finish_return(state: Signal<ShellState>, binding: &Binding) {
+    finish_return_checked(state, binding, &|shell| binding.visible_mount(shell)).await;
+}
+async fn finish_return_checked(
+    mut state: Signal<ShellState>,
+    binding: &Binding,
+    current: &impl Fn(&ShellState) -> bool,
+) {
+    if !current(&state.peek()) {
+        notice(
+            state,
+            binding,
+            "The original edit changed before returning. Both drafts are retained.",
+        );
+        return;
+    }
     let durable = {
         let mut shell = state.write();
         let Some(s) = session_mut(&mut shell, binding) else {
@@ -381,6 +497,16 @@ async fn finish_return(mut state: Signal<ShellState>, binding: &Binding) {
     let suspended = {
         let mut shell = state.write();
         if !binding.visible_mount(&shell) {
+            return;
+        }
+        if !current(&shell) {
+            if let Some(s) = session_mut(&mut shell, binding) {
+                s.busy = false;
+                s.notice = Some(
+                    "The original edit changed after local cleanup. The edit remains in memory; retry return to your retained reply."
+                        .into(),
+                );
+            }
             return;
         }
         let s = shell.slack_lists.comments.own_edit.active.take().unwrap();

@@ -9,6 +9,7 @@ mod policy;
 pub(crate) mod restart;
 #[cfg(test)]
 mod tests;
+pub(crate) mod title_users;
 pub(crate) use policy::policy;
 pub(crate) const RECEIVED_TS: &str = "1781524801.000001";
 
@@ -36,6 +37,15 @@ pub(super) struct State {
     releases: Vec<Value>,
 }
 pub(crate) fn named() -> bool {
+    if super::plain::named()
+        || super::ordered::named()
+        || noop_named()
+        || runs_named()
+        || completion::title_users::own_edit_named()
+        || completion::empty_canvas::own_edit_named()
+    {
+        return true;
+    }
     cfg!(any(test, feature = "protected-native-fixture"))
         && compose::check_enabled()
         && matches!(
@@ -58,6 +68,22 @@ pub(crate) fn named() -> bool {
                 | "own-edit-restart-unknown-exercise"
                 | "own-edit-restart-unknown-restore")
         )
+}
+pub(crate) fn noop_named() -> bool {
+    cfg!(any(test, feature = "protected-native-fixture"))
+        && compose::check_enabled()
+        && std::env::var("SUPER_PLATINUM_LIST_OWN_EDIT_NOOP_CHECK").as_deref() == Ok("1")
+        && matches!(
+            std::env::var("SUPER_PLATINUM_LIST_COMMENTS_COMPOSE_CASE").as_deref(),
+            Ok("own-edit-noop" | "own-edit-noop-storage")
+        )
+}
+pub(crate) fn runs_named() -> bool {
+    cfg!(any(test, feature = "protected-native-fixture"))
+        && compose::check_enabled()
+        && std::env::var("SUPER_PLATINUM_LIST_OWN_EDIT_RUNS_CHECK").as_deref() == Ok("1")
+        && std::env::var("SUPER_PLATINUM_LIST_COMMENTS_COMPOSE_CASE").as_deref()
+            == Ok("own-edit-runs")
 }
 pub(crate) fn enabled(shell: &ShellState) -> bool {
     named() && super::enabled(shell) && completion::enabled(shell)
@@ -87,14 +113,21 @@ fn session(shell: &ShellState) -> Result<WorkspaceSession, Error> {
         .ok_or_else(refused)
 }
 pub(crate) fn received_message() -> Value {
-    json!({"type":"message","ts":RECEIVED_TS,"thread_ts":ROOT,"user":completion::SELF,
+    if super::plain::named() || super::ordered::named() {
+        return super::ordered::initial_message();
+    }
+    let mut raw = json!({"type":"message","ts":RECEIVED_TS,"thread_ts":ROOT,"user":completion::SELF,
         "text":"Original own comment 中🙂.\nSecond editable line.",
         "edit_fixture_opaque":{"keep":"original receipt"},
         "reactions":[{"name":"wave","count":1,"users":[completion::members::FIRST]}],
         "blocks":[{"type":"rich_text","block_id":"own-edit-rich","elements":[
             {"type":"rich_text_section","elements":[{"type":"text","text":"Original own comment 中🙂.","style":{"bold":true}}]},
             {"type":"rich_text_section","elements":[{"type":"text","text":"Second editable line.","style":{"italic":true}}]}
-        ]},{"type":"context","block_id":"own-edit-context","elements":[{"type":"plain_text","text":"Preserved original context"}],"edit_context_opaque":{"keep":true}}]})
+        ]},{"type":"context","block_id":"own-edit-context","elements":[{"type":"plain_text","text":"Preserved original context"}],"edit_context_opaque":{"keep":true}}]});
+    if title_users::named() {
+        title_users::decorate(&mut raw);
+    }
+    raw
 }
 pub(crate) fn seed(mut state: Signal<ShellState>) -> Result<Value, String> {
     let mut shell = state.write();
@@ -188,6 +221,11 @@ pub(crate) fn snapshot(shell: &ShellState) -> Value {
     let Ok(model) = model(shell) else {
         return json!({"enabled":false});
     };
+    retained_snapshot(&model)
+}
+/// Inspect the original offline ledger after owner replacement. This grants no
+/// current owner, request admission or network capability.
+pub(crate) fn retained_snapshot(model: &Model) -> Value {
     let l = model.0.lock().unwrap();
     let Some(l) = &l.own_edit else {
         return json!({"enabled":false});

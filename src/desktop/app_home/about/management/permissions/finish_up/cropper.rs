@@ -303,6 +303,7 @@ mod tests {
             icon_url: "https://example.test/icon.png".into(),
             more: false,
             defaults: true,
+            share: false,
             epoch: 7,
             notice: None,
             avatar,

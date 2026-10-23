@@ -133,6 +133,9 @@ pub(super) async fn run(
     settled(d).await?;
     let mut p = json!({"seed":seed,"coldSeed":cold_seed,"received":cold_seed["navigation"],"expectedBlocks":group_completion::current_blocks(d).await?,
         "clicks":[],"retries":[],"releases":[],"runtimeForgotten":false,"coldExpected":null});
+    if let Some(case) = data_cold::empty_canvas::case() {
+        p["emptyCanvas"] = json!({"case":case,"expectedLabel":"Untitled"});
+    }
     stable_drafts(state, &m).await?;
     let mut rows = Vec::new();
     if case == "cold-files" {
@@ -148,7 +151,11 @@ pub(super) async fn run(
         release(state, second, true, &mut p).await?;
         expected(
             &mut p,
-            ("ready", "Alex Canvas", false),
+            (
+                "ready",
+                data_cold::empty_canvas::label("Alex Canvas"),
+                false,
+            ),
             ("ready", "Alex List", false),
         );
         capture(

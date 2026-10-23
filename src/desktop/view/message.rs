@@ -407,6 +407,9 @@ pub(crate) fn message_row(
                         {pending_attachment_strip(attachments, snapshot.upload_ui_epoch)}
                         {delivery::row(state,snapshot,&message.id)}
                     }
+                    if !read_only {
+                        {crate::app_home::about::management::permissions::finish_up::share_delivery_row(state,snapshot,channel_id,&message.id)}
+                    }
                 }
                 if !message.reactions.is_empty() || matches!(surface, RowSurface::ListComments { .. }) {
                     div { class: "message-actions",

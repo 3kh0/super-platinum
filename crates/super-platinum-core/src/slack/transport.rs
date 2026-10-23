@@ -89,10 +89,12 @@ mod slash_command;
 mod upload_readback;
 mod workflow_management;
 mod workflow_settings;
+mod workflow_share_search;
 pub use crate::slack::api::custom::texty::file_title_source::OrderedFileInfo;
 pub use crate::slack::api::custom::texty::files::OrderedResponse as ProfileFileSearchResponse;
 pub use channel_read_dispatch::{ChannelReadAttempt, ChannelReadReceipt, ChannelReadResponse};
 pub use directory_response::DirectoryResponse as WorkflowSettingsResponse;
+pub use directory_response::DirectoryResponse as WorkflowShareSearchResponse;
 pub use directory_response::DirectoryResponse as ActivityMemberResponse;
 pub use directory_response::DirectoryResponse as AutocompleteOfflineResponse;
 pub use directory_response::DirectoryResponse as DirectoryMemberInfoResponse;
@@ -106,6 +108,8 @@ pub use list_record_delete::ListDeleteFailure;
 pub(super) use notification_preferences::notification_preferences_success;
 pub use offline_features::AutocompletePrioritiesResponse;
 
+#[cfg(test)]
+mod execute_current_tests;
 #[cfg(test)]
 mod file_viewing_tests;
 #[cfg(test)]
@@ -248,9 +252,28 @@ impl Transport {
     }
 
     pub async fn execute(&self, req: PreparedRequest) -> Result<Value, Error> {
+        self.execute_current(req, || true).await
+    }
+
+    /// Ordinary execution with an original-owner fence at asynchronous dispatch
+    /// boundaries. Retry classification, delays and link holds match `execute`.
+    /// Retirement does not undo an attempt already sent, but refuses its result
+    /// and prevents subsequent attempts. No polling task or timer is added.
+    pub async fn execute_current(
+        &self,
+        req: PreparedRequest,
+        current: impl Fn() -> bool,
+    ) -> Result<Value, Error> {
         let mut attempt = 0;
         loop {
-            self.await_link().await?;
+            if !current() {
+                return Err(Error::Api("request_superseded".into()));
+            }
+            let link = self.await_link().await;
+            if !current() {
+                return Err(Error::Api("request_superseded".into()));
+            }
+            link?;
             // A call already on the wire when the link goes has nothing to wait
             // for but its own timeout. Cutting it loose the moment the shell
             // says the network is gone is what keeps a pane from sitting on
@@ -269,6 +292,9 @@ impl Transport {
             } else {
                 self.execute_once(&req).await
             };
+            if !current() {
+                return Err(Error::Api("request_superseded".into()));
+            }
             match attempted {
                 Ok(value) => return Ok(value),
                 Err(e) if req.retry_safe() && retryable_error(&e) && attempt < 2 => {

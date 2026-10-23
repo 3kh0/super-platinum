@@ -12,6 +12,7 @@ pub struct PreparedTextEdit {
     pub(super) sequence: u64,
     pub(super) data: RawMessage,
     pub(super) expiry: Option<u64>,
+    pub(super) split_child: Option<Section>,
 }
 impl PreparedTextEdit {
     pub fn file_id(&self) -> &str {
@@ -69,7 +70,9 @@ impl PreparedTextEdit {
         if self.expiry.is_some_and(|expires| expires <= now) {
             return Err(Error::Expired);
         }
-        eligible(fresh, section, now)?;
+        if eligible(fresh, section, now)? != self.split_child {
+            return Err(Error::Changed);
+        }
         self.title.revalidate(fresh)
     }
     pub fn validate_ack(&self, ack: &EditAck) -> Result<AcceptedText, Error> {
@@ -107,6 +110,19 @@ impl PreparedTextEdit {
         let document = crdt::validate(&wire, section, &self.desired, Some(0))?;
         let update = self.data.message(1)?.ok_or(Error::Unsupported)?;
         let outgoing = update.message(38)?.ok_or(Error::Unsupported)?;
+        if !super::super::structure::same_split_lineage(&wire, &outgoing)? {
+            return Err(Error::Unconfirmed);
+        }
+        if self.split_child.is_some() {
+            if !processed_contains(&wire, outgoing.string(12)?.ok_or(Error::Unconfirmed)?)?
+                || section.raw().uint(20)? != update.uint(20)?
+                || section.raw().string(33)? != update.string(33)?
+                || zero_stable(&self.canonical)?
+                    != zero_stable(&self.canonical.merge_partial(section)?)?
+            {
+                return Err(Error::Unconfirmed);
+            }
+        }
         let zero_sent_head = if outgoing.uint(2)? == Some(0) {
             let sent_head = outgoing.string(12)?.ok_or(Error::Unsupported)?;
             if !processed_contains(&wire, sent_head)?
@@ -141,9 +157,21 @@ impl PreparedTextEdit {
         {
             return Err(Error::Unconfirmed);
         }
-        // ContentText.language must not disappear while confirming a text edit.
-        let expected = content(&self.canonical, &self.desired)?;
-        if section.raw().message(12)? != Some(expected) {
+        // canonical_draft above admits only singular Content.text and
+        // ContentText.text/language with their exact types. A server serializer
+        // may place text before retained language; field order is not content.
+        // Compare exact payloads (including absent vs empty language), not the
+        // normalized draft, so different RTML cannot confirm the sent body.
+        let expected = content(&self.canonical, &self.desired)?
+            .message(1)?
+            .ok_or(Error::Unconfirmed)?;
+        let actual = section
+            .raw()
+            .message(12)?
+            .ok_or(Error::Unconfirmed)?
+            .message(1)?
+            .ok_or(Error::Unconfirmed)?;
+        if actual.bytes(1)? != expected.bytes(1)? || actual.bytes(2)? != expected.bytes(2)? {
             return Err(Error::Unconfirmed);
         }
         let baseline = self.canonical.merge_partial(section)?;
@@ -162,11 +190,13 @@ impl PreparedTextEdit {
             session: self.session.clone(),
             sequence: self.sequence,
             zero_sent_head,
+            split_child: self.split_child.clone(),
         })
     }
 }
 
 pub struct AcceptedText {
+    split_child: Option<Section>,
     // Sealed outgoing head; a descendant alone cannot confirm this save.
     zero_sent_head: Option<String>,
     pub(super) key: retained::Key,
@@ -201,6 +231,9 @@ impl AcceptedText {
         {
             return Ok(false);
         }
+        if let Some(child) = self.split_child.as_ref() {
+            return self.confirms_split_readback(snapshot, section, child);
+        }
         // Even a later revision cannot confirm this text-only operation across
         // a heading conversion or structural change. Paragraph policy is intact.
         if self.heading_level().is_some()
@@ -231,6 +264,37 @@ impl AcceptedText {
                 .baseline
                 .parents()?
                 .is_none_or(|p| p.fields().is_empty()))
+    }
+    fn confirms_split_readback(
+        &self,
+        snapshot: &CanvasCollabSnapshot,
+        section: &Section,
+        child: &Section,
+    ) -> Result<bool, Error> {
+        if section.sequence()? != self.section.sequence()?
+            || snapshot.section(child.id()) != Some(child)
+            || readback_association(section)? != readback_association(&self.baseline)?
+        {
+            return Ok(false);
+        }
+        let wire = section.crdt()?.ok_or(Error::Unconfirmed)?;
+        let acknowledged = self.section.crdt()?.ok_or(Error::Unconfirmed)?;
+        if !super::super::structure::same_split_lineage(&wire, &acknowledged)?
+            || super::super::structure::split_child(&snapshot.sections, section, 0)?.as_ref()
+                != Some(child)
+            || wire.uint(2)? != acknowledged.uint(2)?
+            || wire.uint(3)? != section.sequence()?
+            || wire.string(8)? != acknowledged.string(8)?
+        {
+            return Ok(false);
+        }
+        let doc = crdt::validate(&wire, section, &self.desired, Some(0))?;
+        let ack_doc = automerge::Automerge::load(acknowledged.bytes(5)?.ok_or(Error::Unconfirmed)?)
+            .map_err(|_| Error::Unconfirmed)?;
+        Ok(ack_doc
+            .get_changes(&[])
+            .iter()
+            .all(|c| doc.get_change_by_hash(&c.hash()).is_some()))
     }
     fn confirms_zero_base_readback(&self, section: &Section) -> Result<bool, Error> {
         // No current-server omission or later-revision normalization is claimed

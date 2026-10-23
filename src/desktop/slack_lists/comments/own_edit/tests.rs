@@ -1,4 +1,5 @@
 use super::*;
+mod capture;
 mod durable;
 use super_platinum_core::{
     slack::events::RtEvent,
@@ -10,7 +11,7 @@ fn rich(text: &str) -> Vec<Value> {
         json!({"type":"rich_text","elements":[{"type":"rich_text_section","elements":[{"type":"text","text":text,"style":{"bold":true},"opaque":7}]}]}),
     ]
 }
-fn setup() -> (ShellState, Binding, OwnEditPolicy) {
+pub(super) fn setup() -> (ShellState, Binding, OwnEditPolicy) {
     let mut shell = super::super::tests::shell();
     shell.core.workspaces.get_mut("T1").unwrap().rt_generation = 7;
     let user = shell.core.workspaces["T1"].self_user_id.clone();
@@ -58,14 +59,18 @@ fn setup() -> (ShellState, Binding, OwnEditPolicy) {
         token: next_id(),
     };
     shell.slack_lists.comments.own_edit.active = Some(Session {
+        titles: None,
         binding: binding.clone(),
         blocks: seed.editable().to_vec(),
+        plain: None,
+        plain_mount: None,
         seed: Arc::new(seed),
         revision: 0,
         native: None,
         native_sequence: 0,
         native_ready: false,
         composing: false,
+        native_pending: false,
         capture_failed: false,
         busy: false,
         finishing: false,
@@ -246,6 +251,32 @@ fn unknown_blocks_save_cancel_and_departure_and_survives_account_carry() {
     let (mut successor, _, _) = setup();
     carry_pending(&shell, &mut successor);
     assert_eq!(successor.slack_lists.comments.own_edit.attempts.len(), 1);
+}
+
+#[test]
+fn exact_unchanged_body_does_not_bypass_native_source_or_uncertain_save_guards() {
+    let (mut shell, binding, policy) = setup();
+    assert!(
+        session(&shell, &binding)
+            .unwrap()
+            .seed
+            .unchanged(&session(&shell, &binding).unwrap().blocks)
+    );
+    assert!(!presentation(&shell).unwrap().can_save); // Native mount not ready.
+    ready(&mut shell, &binding, "unchanged-original");
+    assert!(presentation(&shell).unwrap().can_save);
+    let a = attempt(&shell, &binding, &policy, Phase::Unknown);
+    session_mut(&mut shell, &binding).unwrap().attempt = Some(a);
+    assert!(!presentation(&shell).unwrap().can_save);
+    session_mut(&mut shell, &binding).unwrap().attempt = None;
+    shell.slack_lists.comments.own_edit.events += 1;
+    assert!(!presentation(&shell).unwrap().can_save);
+    assert!(
+        session(&shell, &binding)
+            .unwrap()
+            .seed
+            .unchanged(&session(&shell, &binding).unwrap().blocks)
+    ); // Equality does not grant original-source authority.
 }
 #[test]
 fn confirmed_projection_preserves_live_reactions_original_receipt_and_cancels_only_owned_page_read()

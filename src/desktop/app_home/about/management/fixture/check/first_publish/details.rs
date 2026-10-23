@@ -2,6 +2,7 @@
 use super::*;
 use crate::channel_workflows::details::fixture as server;
 mod rate;
+pub(super) mod thread;
 const A: &str = "channel-workflow-open-featured-0";
 const B: &str = "channel-workflow-open-bookmarked-0";
 
@@ -42,7 +43,10 @@ async fn open(
         .ok_or("Original available opener missing")?;
     let expected = json!({"id":button,"nodeId":opener["nodeId"],"owner":tab["product"]["owner"],"serial":tab["product"]["serial"]});
     let script = include_str!("details/open.js")
-        .replace("EXPOSURE", include_str!("details/exposure.js"))
+        .replace(
+            "EXPOSURE",
+            &thread::exposure(include_str!("details/exposure.js")),
+        )
         .replace("EXPECTED", &expected.to_string());
     let activation = evidence::observed_wait(
         state,
@@ -158,7 +162,22 @@ async fn private(
     visit: u64,
 ) -> Result<Value, String> {
     let before = observe(state, desktop, visit).await?;
-    let activation=evidence::observed_wait(state,desktop,visit,"inert original private workflow",r#"(()=>{const e=document.querySelector('#channel-workflows-featured [data-trigger-id="FtDenied01"]'),r=window.__firstPublishRegistry;if(!e||e.querySelector('button,a,input,select'))return{ok:false};e.scrollIntoView({block:'center'});const b=e.getBoundingClientRect(),h=document.elementFromPoint(b.left+b.width/2,b.top+b.height/2);if(h!==e&&!e.contains(h))return{ok:false};e.click();return{ok:true,nodeId:r.ids.get(e),actions:0,trigger:e.dataset.triggerId}})()"#).await?;
+    let script = if server::thread::requested() {
+        include_str!("details/thread/private.js").replace(
+            "EXPOSURE",
+            &thread::exposure(include_str!("details/exposure.js")),
+        )
+    } else {
+        r#"(()=>{const e=document.querySelector('#channel-workflows-featured [data-trigger-id="FtDenied01"]'),r=window.__firstPublishRegistry;if(!e||e.querySelector('button,a,input,select'))return{ok:false};e.scrollIntoView({block:'center'});const b=e.getBoundingClientRect(),h=document.elementFromPoint(b.left+b.width/2,b.top+b.height/2);if(h!==e&&!e.contains(h))return{ok:false};e.click();return{ok:true,nodeId:r.ids.get(e),actions:0,trigger:e.dataset.triggerId}})()"#.into()
+    };
+    let activation = evidence::observed_wait(
+        state,
+        desktop,
+        visit,
+        "inert original private workflow",
+        &script,
+    )
+    .await?;
     let q = quiet(state, desktop, visit).await?;
     let after = observe(state, desktop, visit).await?;
     if before != after {
@@ -229,10 +248,17 @@ pub(super) async fn run(
         captures,
         stages,
     };
+    let thread_setup = if server::thread::requested() {
+        Some(thread::setup(state, desktop, visit).await?)
+    } else {
+        None
+    };
     let private = private(state, desktop, visit).await?;
-    scene
-        .stage("browse", json!({"admission":admission,"private":private}))
-        .await?;
+    let mut exercise = json!({"admission":admission,"private":private});
+    if let Some(setup) = thread_setup {
+        exercise["threadSetup"] = setup;
+    }
+    scene.stage("browse", exercise).await?;
     match endpoint::case().as_str() {
         "first-details-success" => {
             scene.open("details-a", A, "ready").await?;

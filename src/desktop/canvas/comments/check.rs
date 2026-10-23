@@ -3,10 +3,12 @@ use super::*;
 use serde_json::{Value, json};
 mod attribution;
 mod canonical_files;
+mod emoji;
 mod file_fallback;
 mod ready;
 mod special;
 pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::DesktopContext) {
+    emoji::start(state, desktop.clone());
     annotation::heading_check::start(state, desktop.clone());
     annotation::underline_check::start(state, desktop.clone());
     mutation::check::start(state, desktop.clone());

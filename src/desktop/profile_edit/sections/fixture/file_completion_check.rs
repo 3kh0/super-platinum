@@ -5,12 +5,27 @@ use dioxus::desktop::DesktopContext;
 use serde_json::json;
 use source::files;
 use std::time::Duration;
+mod empty_canvas;
+mod link_title;
+mod title_users;
 const JS: &str = include_str!("file_completion_check.js");
 const SHARED: &str = include_str!("member_completion_check.js");
 const FAILURE: &str = "People suggestions could not load. Edit your query to try again.";
 
 pub(crate) fn start(state: Signal<ShellState>, desktop: DesktopContext) {
     if !files::named() {
+        return;
+    }
+    if super::link_completion::named() {
+        link_title::start(state, desktop);
+        return;
+    }
+    if super::empty_canvas::completion() {
+        empty_canvas::start(state, desktop);
+        return;
+    }
+    if source::title_users::named() {
+        title_users::start(state, desktop);
         return;
     }
     let name = std::env::var("SUPER_PLATINUM_FIXTURE").unwrap();

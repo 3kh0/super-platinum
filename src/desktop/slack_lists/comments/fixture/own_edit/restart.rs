@@ -6,6 +6,14 @@ use super_platinum_core::slack_lists::comments::journal::{
 };
 
 fn named() -> bool {
+    if super::super::plain::named()
+        || super::super::ordered::named()
+        || super::title_users::named()
+        || super::noop_named()
+        || super::runs_named()
+    {
+        return true;
+    }
     matches!(
         std::env::var("SUPER_PLATINUM_LIST_COMMENTS_COMPOSE_CASE").as_deref(),
         Ok("own-edit-storage"

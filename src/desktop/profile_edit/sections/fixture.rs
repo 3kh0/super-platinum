@@ -4,12 +4,15 @@ use super::*;
 pub(crate) mod check;
 pub(crate) mod completion;
 pub(crate) mod completion_check;
+pub(crate) mod empty_canvas;
 pub(crate) mod file_completion_check;
 pub(crate) mod files;
 pub(crate) mod group_completion_check;
 pub(crate) mod group_recovery;
 pub(crate) mod group_recovery_check;
 mod interaction;
+pub(crate) mod link_completion;
+pub(crate) mod link_title;
 pub(crate) mod member_completion_check;
 pub(crate) mod member_freshness;
 pub(crate) mod member_freshness_check;
@@ -21,6 +24,7 @@ pub(crate) mod mentions;
 pub(crate) mod mentions_check;
 pub(crate) mod recovery;
 pub(crate) mod recovery_check;
+pub(crate) mod user_title;
 pub(super) use interaction::{Interaction, check, load, save};
 pub(crate) use interaction::{
     Outcome, complete, enabled as interaction_enabled, install_interaction,

@@ -2,6 +2,7 @@
 //! the parent, first reply and unloaded page boundaries visually distinct.
 use crate::{media::MediaRegistry, model::MessageVm};
 use super_platinum_core::{
+    slack_lists::comments::edit_seed::prepare::StandardEmoji,
     state::{ChannelMessages, Workspace},
     thread_history::ThreadHistory,
 };
@@ -26,6 +27,18 @@ pub(crate) fn project_window(
     media: &MediaRegistry,
     window: &crate::thread_window::ThreadWindow,
 ) -> Vec<MessageVm> {
+    project_window_with_standard(workspace, bag, history, root, media, window, None)
+}
+
+pub(crate) fn project_window_with_standard(
+    workspace: &Workspace,
+    bag: &ChannelMessages,
+    history: &ThreadHistory,
+    root: &str,
+    media: &MediaRegistry,
+    window: &crate::thread_window::ThreadWindow,
+    standard: Option<&StandardEmoji>,
+) -> Vec<MessageVm> {
     if !window.source_shape_matches(bag) {
         return Vec::new();
     }
@@ -46,8 +59,13 @@ pub(crate) fn project_window(
             {
                 return None;
             }
-            let mut vm =
-                crate::message_vm::message_vm_with_pending(workspace, message, media, row.pending);
+            let mut vm = crate::message_vm::message_vm_with_standard(
+                workspace,
+                message,
+                media,
+                row.pending,
+                standard,
+            );
             vm.compact = previous.is_some_and(|(previous_index, previous)| {
                 row.previous_source_index == Some(previous_index)
                     && previous.ts.as_deref() != Some(root)

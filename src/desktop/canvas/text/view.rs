@@ -28,6 +28,14 @@ pub(in crate::canvas) fn Editor(
         "{MOUNT}\nmountCanvasText({generation},{visit},{});",
         serde_json::to_string(&section).unwrap()
     );
+    let mount = if matches!(d.kind, Kind::Text(_)) && !d.kind.heading() {
+        format!(
+            "{mount}\n{}",
+            super::split::mount(generation, visit, &blocks)
+        )
+    } else {
+        mount
+    };
     let label = d.kind.label();
     let replacement = matches!(d.kind, Kind::Replacement);
     let deletion = replacement || d.kind.action() == Some(Action::Delete);
@@ -101,12 +109,12 @@ pub(in crate::canvas) fn Editor(
                         spawn(async move {
                             // Snapshot and disable in the same JS task: no keystroke may
                             // change a draft after the value authorized for dispatch.
-                            let mut eval=dioxus::document::eval(&format!("let root,field;try{{root=document.getElementById('canvas-text-editor');field=root?.querySelector('#canvas-text-draft');let value=null;if(root?.dataset.editorGeneration==='{generation}'&&root.dataset.canvasVisit==='{visit}'&&field){{value=window.superPlatinumRichEditor.read('canvas-text-draft');field.contentEditable='false';root.querySelectorAll('.format-toolbar button,#canvas-text-save').forEach(e=>e.disabled=true);}}dioxus.send(value);}}catch{{dioxus.send(null);}}const restore=await dioxus.recv();if(restore&&root?.isConnected&&root.dataset.editorGeneration==='{generation}'){{field.contentEditable='true';root.querySelectorAll('.format-toolbar button,#canvas-text-save').forEach(e=>e.disabled=false);}}"));
-                            let blocks=eval.recv::<Option<Vec<serde_json::Value>>>().await.ok().flatten();
-                            let value=blocks.as_deref().and_then(|blocks|TextDraft::from_rich_blocks(blocks).ok());
+                            let mut eval=dioxus::document::eval(&format!("let root,field;try{{root=document.getElementById('canvas-text-editor');field=root?.querySelector('#canvas-text-draft');let value=null;if(root?.dataset.editorGeneration==='{generation}'&&root.dataset.canvasVisit==='{visit}'&&field){{const split=window.superPlatinumCanvasSplit?.capture(field,'{generation}','{visit}')??null;value={{blocks:(split?.kind==='end'||split?.kind==='middle'||split?.kind==='start'||split?.kind==='empty'||split?.kind==='sequence')?(split.sequence?.after??split.typing?.after??split.repeat?.after??split.after):window.superPlatinumRichEditor.read('canvas-text-draft'),split}};field.contentEditable='false';root.querySelectorAll('.format-toolbar button,#canvas-text-save').forEach(e=>e.disabled=true);}}dioxus.send(value);}}catch{{dioxus.send(null);}}const restore=await dioxus.recv();if(restore&&root?.isConnected&&root.dataset.editorGeneration==='{generation}'){{field.contentEditable='true';root.querySelectorAll('.format-toolbar button,#canvas-text-save').forEach(e=>e.disabled=false);}}"));
+                            let capture=eval.recv::<Option<super::split::Capture>>().await.ok().flatten();
+                            let value=capture.and_then(|capture|super::split::parse(capture,generation,visit));
                             let still_owned=draft.try_read().ok().is_some_and(|d|d.as_ref().is_some_and(|d|d.generation==generation));
                             if still_owned {
-                                if let Some(value)=value {super::save::submit(state,reader,draft,generation,value);}
+                                if let Some(value)=value {match value {super::split::Captured::Start(witness)=>super::structure_save::submit_start(state,reader,draft,generation,witness),super::split::Captured::Text(value)=>super::save::submit(state,reader,draft,generation,value),super::split::Captured::Split(witness)=>super::split_save::submit(state,reader,draft,generation,witness),super::split::Captured::End(witness)=>super::end_save::submit(state,reader,draft,generation,witness)}}
                                 else if let Ok(mut d)=draft.try_write() {if let Some(d)=d.as_mut().filter(|d|d.generation==generation) {d.reading=false;d.error=Some("Keep this edit to one paragraph with supported text formatting.");}}
                             }
                             let restore=draft.try_read().ok().is_some_and(|d|d.as_ref().is_some_and(|d|d.generation==generation&&d.pending.is_none()&&current(&state.peek(),d))) && !reader.peek().loading;

@@ -6,8 +6,10 @@ mod accepted;
 pub(crate) mod completion;
 mod controller;
 mod deletions;
+pub(crate) mod delta_editor;
 pub(crate) mod draft;
 mod edits;
+mod emoji_standard;
 pub(crate) mod file_acquisition;
 pub(crate) mod file_navigation;
 pub(crate) mod fixture;
@@ -25,9 +27,11 @@ pub(crate) mod reply;
 mod storage;
 #[cfg(test)]
 mod tests;
+pub(crate) mod title_users;
 pub(crate) use controller::{close, next_page, open, refresh};
 pub(super) use deletions::apply as apply_deletion;
 pub(super) use edits::apply as apply_edit;
+pub(crate) use emoji_standard::changed as emoji_standard_changed;
 pub(super) use incoming::apply as apply_incoming;
 use owner::Owner;
 pub(super) use reactions::apply as apply_reaction;
@@ -39,6 +43,7 @@ pub(crate) struct State {
     // Credential-free account/workspace debt survives switching List records.
     cooldown: Option<(Scope, i64)>,
     drafts: draft::Root,
+    title_users: title_users::State,
     completion: completion::State,
     member_root: member_root::State,
     file_acquisition: file_acquisition::State,

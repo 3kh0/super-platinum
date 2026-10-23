@@ -76,7 +76,7 @@ impl Members {
         member_label(&row.source)
     }
 }
-pub(super) fn member_label(row: &Value) -> Result<String, Error> {
+pub(crate) fn member_label(row: &Value) -> Result<String, Error> {
     for key in ["isUnknown", "isNonExistent"] {
         if row
             .get(key)
@@ -264,6 +264,26 @@ fn prepare(
                     id,
                 ) {
                     hits.push(Hit::Member(hit));
+                }
+            }
+        }
+    }
+    if automatic_members {
+        let file_ids = tokens
+            .iter()
+            .filter(|raw| matches!(raw["type"].as_str(), Some("file" | "canvas")))
+            .filter_map(|raw| raw["file_id"].as_str().map(str::to_owned))
+            .collect::<Vec<_>>();
+        if !file_ids.is_empty() {
+            if let Ok(dependencies) = files::dependencies(shell, &token, &file_ids) {
+                for id in dependencies.ids {
+                    if let Ok(hit) = crate::directory_member_fetches::automatic::observe(
+                        shell,
+                        &token.owner.team,
+                        &id,
+                    ) {
+                        hits.push(Hit::Member(hit));
+                    }
                 }
             }
         }

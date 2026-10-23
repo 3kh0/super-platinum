@@ -39,6 +39,7 @@ pub mod thread_feed;
 pub mod thread_history;
 pub mod thread_reads;
 pub mod thread_subscriptions;
+pub mod workflow_share;
 
 mod app_state;
 pub mod appearance;

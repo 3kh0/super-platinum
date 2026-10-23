@@ -23,6 +23,7 @@ pub(super) fn read(conn: &Connection, scope: &Scope, ts: &str) -> Result<EditInv
                 capture: String::new(),
                 seed: None,
                 blocks: vec![],
+                plain_delta: None,
                 attempt: None,
                 retry_at: 0,
             }

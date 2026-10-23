@@ -4,13 +4,15 @@ use serde_json::Map;
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct OwnEditSeed {
-    workspace: String,
-    user: String,
-    target: Target,
-    ts: String,
-    http: Value,
-    editable: Vec<Value>,
-    preserved: Vec<Value>,
+    pub(super) workspace: String,
+    pub(super) user: String,
+    pub(super) target: Target,
+    pub(super) ts: String,
+    pub(super) http: Value,
+    pub(super) editable: Vec<Value>,
+    pub(super) preserved: Vec<Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) plain: Option<super::plain::PlainSource>,
 }
 impl OwnEditSeed {
     pub fn capture(
@@ -47,6 +49,7 @@ impl OwnEditSeed {
             http: page.raw().clone(),
             editable,
             preserved,
+            plain: None,
         };
         seed.validate()?;
         if !seed.current(known) {
@@ -78,7 +81,11 @@ impl OwnEditSeed {
         if page.raw()["deleted"]
             .as_array()
             .is_some_and(|a| a.iter().any(|v| v == &self.ts))
-            || partition(raw)? != (self.editable.clone(), self.preserved.clone())
+            || if let Some(plain) = &self.plain {
+                !self.editable.is_empty() || plain.validate(self).is_err()
+            } else {
+                partition(raw)? != (self.editable.clone(), self.preserved.clone())
+            }
         {
             return Err(ListError("The original comment receipt is unavailable."));
         }
@@ -136,7 +143,22 @@ impl OwnEditSeed {
                 "The fresh comment body does not match this draft.",
             ));
         }
-        policy.admit(&self.workspace, &self.user, &self.target, &self.ts, now_ms)
+        if let Some(original) = self.ordered_message()? {
+            let fresh = super::plain::ordered_message(page, self.ts())?;
+            if !original.same_seed(&fresh) {
+                return Err(ListError(
+                    "The ordered original comment changed while editing.",
+                ));
+            }
+        }
+        policy.admit_mode(
+            &self.workspace,
+            &self.user,
+            &self.target,
+            &self.ts,
+            now_ms,
+            self.mode(),
+        )
     }
     pub fn workspace(&self) -> &str {
         &self.workspace
@@ -160,6 +182,16 @@ impl OwnEditSeed {
     }
     pub fn editable(&self) -> &[Value] {
         &self.editable
+    }
+    /// Conservative subset of the source's unchanged-Delta save path. The
+    /// original rich blocks must be exact except for adjacent ordinary text-run
+    /// segmentation within a section. Marks and opaque fields stay exact.
+    /// This is not permission to write or a substitute for the host's current
+    /// source, native capture, and suspended-reply guards.
+    pub fn unchanged(&self, edited: &[Value]) -> bool {
+        self.mode() == EditMode::Rich
+            && self.validate().is_ok()
+            && super::comparison::unchanged(&self.editable, edited)
     }
     pub fn preserved(&self) -> &[Value] {
         &self.preserved
@@ -207,7 +239,7 @@ fn partition(raw: &Value) -> Result<(Vec<Value>, Vec<Value>), ListError> {
     // Context is immutable opaque source data, never an editable/rendered seed.
     Ok((rich, context))
 }
-fn root_available(page: &Page) -> Result<(), ListError> {
+pub(super) fn root_available(page: &Page) -> Result<(), ListError> {
     let root = page
         .root()
         .ok_or(ListError("The original comment root is unavailable."))?;

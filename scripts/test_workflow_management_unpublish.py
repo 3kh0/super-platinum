@@ -253,7 +253,7 @@ class CompleteReceiptTests(unittest.TestCase):
         edges=[dict(stage=stage,edge=edge) for stage in U.STAGES[value['unpublishCase']] for edge in ('before','after')]
         with tempfile.TemporaryDirectory() as directory:
             log=Path(directory)/'native.log'
-            records={R['WAITING']:[ready],R['EDGE']:edges,R['PREFIX']:[value]}
+            records={R['WAITING']:[ready],R['EDGE']:edges,R['PREFIX']:[value],'workflow-thread-keyboard: ':[]}
             log.write_text(''.join(prefix+json.dumps(row)+'\n' for prefix,rows in records.items() for row in rows),encoding='utf-8')
             class Native:
                 def receipts(self,prefix):return records[prefix]

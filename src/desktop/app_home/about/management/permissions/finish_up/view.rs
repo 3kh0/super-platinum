@@ -55,12 +55,18 @@ pub(in crate::app_home::about::management) fn panel(
         .map(str::to_owned);
     let upload = l.avatar.upload.clone();
     let avatar_pending = l.avatar.pending;
-    let pane = l.avatar.pane.name();
-    let details = l.avatar.pane == avatar::Pane::Details;
+    let pane = if l.share {
+        "share"
+    } else {
+        l.avatar.pane.name()
+    };
+    let details = !l.share && l.avatar.pane == avatar::Pane::Details;
     let upload_pane = l.avatar.pane == avatar::Pane::Upload;
     let crop_pane = l.avatar.pane == avatar::Pane::Crop;
     let pane_bound = l.avatar.pane_bound;
-    let heading = if upload_pane {
+    let heading = if l.share {
+        "Share this workflow in a message"
+    } else if upload_pane {
         if avatar_pending {
             "Uploading your photo\u{2026}"
         } else if l
@@ -104,7 +110,7 @@ pub(in crate::app_home::about::management) fn panel(
       div{class:"modal-overlay workflow-finish-overlay",
        section{id:"workflow-finish-up",class:"modal workflow-finish-up",role:"dialog","aria-modal":"true","aria-labelledby":"workflow-finish-heading",
         "data-finish-owner":id,"data-finish-epoch":epoch,"data-finish-title":title.clone(),"data-finish-description":description.clone(),"data-finish-icon":icon.clone(),"data-finish-busy":busy.to_string(),"data-finish-pane":pane,"data-finish-bound":pane_bound.to_string(),
-        onkeydown:move|e|if e.key()==dioxus::prelude::Key::Escape&&!submitted{e.stop_propagation();actions::escape(state,visit,id)},
+        onkeydown:move|e|if e.key()==dioxus::prelude::Key::Escape {if pane=="share" {e.stop_propagation();confirmation_share::cancel(state,visit,id)}else if !submitted{e.stop_propagation();actions::escape(state,visit,id)}},
         h2{id:"workflow-finish-heading",tabindex:"-1","{heading}"}
         div{id:"workflow-finish-details",class:"workflow-finish-pane",style:if details{"display: flex;"}else{"display: none;"},
          p{"Make sure the workflow details and permission are correct before publishing."}
@@ -151,11 +157,15 @@ pub(in crate::app_home::about::management) fn panel(
          }else{
           if let Some(link)=link{p{class:"workflow-finish-link","{link}"}button{id:"workflow-finish-copy-link",r#type:"button",onclick:move |_|copy_link(state,visit,id),"Copy link"}}
           button{id:"workflow-finish-check",r#type:"button",disabled:busy||add_submitted,onclick:move |_|super::check(state,visit,id),"Check current publication"}
-          if complete{{confirmation_add::panel(state,visit,id)}}else{
+          if complete{
+           button{id:"workflow-confirmation-share-open",r#type:"button",disabled:add_submitted,onmounted:move |_|confirmation_share::bind_entry(state,visit,id),onclick:move |_|confirmation_share::open(state,visit,id),"Share"}
+           {confirmation_add::panel(state,visit,id)}
+          }else{
            button{id:"workflow-finish-done",r#type:"button",disabled:busy,onclick:move |_|super::close(state,visit,id),"Done"}
           }
          }
         }
+        {confirmation_share::panel(state,visit,id)}
         section{id:"workflow-finish-upload-pane",class:"workflow-finish-pane",style:if upload_pane{"display: flex;"}else{"display: none;"},"aria-label":"Upload workflow icon",
          button{id:"workflow-finish-upload-back",r#type:"button",disabled:!pane_bound,onclick:move |_|avatar::back(state,visit,id,"upload-back"),"Back"}
          div{class:"workflow-finish-avatar-status",role:"status",

@@ -564,5 +564,39 @@ pub(crate) fn fixture_choices(shell: &ShellState) -> Option<Value> {
     if q.consumed {
         return None;
     }
-    Some(serde_json::json!({"sequence":q.sequence,"revision":q.revision,"values":q.values}))
+    let title_users = q
+        .files
+        .as_ref()
+        .map(|files| {
+            files
+                .choices
+                .iter()
+                .filter_map(|(id, choice)| choice.title_users_proof(shell).map(|v| (id.clone(), v)))
+                .collect::<serde_json::Map<String, Value>>()
+        })
+        .unwrap_or_default();
+    let mut proof =
+        serde_json::json!({"sequence":q.sequence,"revision":q.revision,"values":q.values});
+    if !title_users.is_empty() {
+        proof["titleUsers"] = Value::Object(title_users);
+    }
+    let fallback = q
+        .files
+        .as_ref()
+        .map(|files| {
+            files
+                .choices
+                .iter()
+                .filter_map(|(id, choice)| {
+                    choice
+                        .canvas_fallback_proof(shell, &files.search)
+                        .map(|v| (id.clone(), v))
+                })
+                .collect::<serde_json::Map<String, Value>>()
+        })
+        .unwrap_or_default();
+    if !fallback.is_empty() {
+        proof["canvasFallback"] = Value::Object(fallback);
+    }
+    Some(proof)
 }

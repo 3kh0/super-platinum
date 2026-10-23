@@ -17,25 +17,7 @@ impl PreparedStructureEdit {
                 position, draft, ..
             } => {
                 let wire = crdt::insert(id, draft, &intent.session, now)?;
-                let fields = vec![
-                    F::bytes(1, id.as_bytes())?,
-                    F::uint(2, 0)?,
-                    F::uint(3, 0)?,
-                    F::bytes(8, position.as_bytes())?,
-                    F::uint(9, 0)?,
-                    F::uint(10, 0)?,
-                    F::uint(11, 0)?,
-                    F::message(12, &new_content(draft)?)?,
-                    F::message(13, &RawMessage::decode(&[])?)?,
-                    F::message(16, &RawMessage::from_fields(&[F::uint(4, 0)?])?)?,
-                    F::uint(19, 1)?,
-                    F::uint(20, 1)?,
-                    F::bytes(21, position.as_bytes())?,
-                    F::uint(29, 0)?,
-                    F::bytes(33, trace.as_bytes())?,
-                    F::uint(35, 0)?,
-                    F::message(38, &wire)?,
-                ];
+                let fields = creation_fields(id, position, &intent.session, draft, &wire)?;
                 (fields, wire, None)
             }
             Operation::Delete { draft, .. } => {
@@ -438,4 +420,33 @@ impl PreparedStructureEdit {
     pub fn checkpoint(&self) -> Result<super::recovery::Checkpoint, Error> {
         super::recovery::Checkpoint::capture(&self.intent, &self.data)
     }
+}
+
+pub(super) fn creation_fields(
+    id: &str,
+    position: &str,
+    session: &str,
+    draft: &TextDraft,
+    wire: &RawMessage,
+) -> Result<Vec<F>, Error> {
+    let trace = format!("{session}-0");
+    Ok(vec![
+        F::bytes(1, id.as_bytes())?,
+        F::uint(2, 0)?,
+        F::uint(3, 0)?,
+        F::bytes(8, position.as_bytes())?,
+        F::uint(9, 0)?,
+        F::uint(10, 0)?,
+        F::uint(11, 0)?,
+        F::message(12, &new_content(draft)?)?,
+        F::message(13, &RawMessage::decode(&[])?)?,
+        F::message(16, &RawMessage::from_fields(&[F::uint(4, 0)?])?)?,
+        F::uint(19, 1)?,
+        F::uint(20, 1)?,
+        F::bytes(21, position.as_bytes())?,
+        F::uint(29, 0)?,
+        F::bytes(33, trace.as_bytes())?,
+        F::uint(35, 0)?,
+        F::message(38, &wire)?,
+    ])
 }

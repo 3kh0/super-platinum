@@ -192,6 +192,7 @@ async fn fixture_seed_inner(
                 | "profile-group-recovery"
                 | "profile-group-recovery-narrow")
         ) || crate::slack_lists::comments::fixture::completion::enabled(&state.peek())
+            || crate::slack_lists::comments::fixture::emoji_combined::context_enabled(&state.peek())
             || crate::canvas::comments::editor_recovery_fixture::enabled(&state.peek())
             || crate::app_home::about::management::activity::fixture::channel::shared_frozen::enabled(&state.peek())
             || crate::app_home::about::management::fixture::run_access::enabled(&state.peek())

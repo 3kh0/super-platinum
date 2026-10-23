@@ -62,6 +62,10 @@ pub struct Stores {
     /// Older caches and stores with no observed action remain unobserved.
     #[serde(default)]
     pub plan_info: Option<Value>,
+    /// Persisted separately by Cache. Deserializing arbitrary payload stores
+    /// must not manufacture accepted historical provenance.
+    #[serde(skip)]
+    pub plan_info_cache: Option<super::PlanInfoCache>,
     pub screen_reader_enabled: Option<bool>,
     pub member_roles: BTreeMap<String, BTreeMap<String, Value>>,
     pub workspace_roles: BTreeMap<String, Value>,

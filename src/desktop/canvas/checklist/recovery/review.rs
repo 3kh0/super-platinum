@@ -3,6 +3,11 @@
 use super::*;
 use super_platinum_core::canvas::edit::structure::recovery::journal::{LocalDecision, LocalReview};
 
+mod insertion;
+mod sequence;
+mod split;
+mod start_typing;
+
 const CHANGED: &str = "This canvas changed. Cancel and refresh before reviewing again.";
 const STORAGE: &str =
     "The local record could not be updated. It remains locked. Refresh to check its state.";
@@ -31,9 +36,10 @@ impl Request {
         if disk.owner.as_ref() != Some(&owner) || !disk.loaded || disk.error {
             return None;
         }
+        let receipt = disk.receipt.clone()?;
         Some(Self {
             owner,
-            receipt: disk.receipt.clone()?,
+            receipt,
             generation: disk.generation,
             read: Read {
                 scope: view.scope.clone(),
@@ -277,22 +283,112 @@ pub(in crate::canvas) fn Panel(
         .map(|ready| ready.review.draft_text())
         .unwrap_or_default();
     let action = value.ready.as_ref().map(|ready| {
-        if ready.review.is_replacement() {
+        if ready.review.end().is_some_and(|end| end.is_sequence()) {
+            if ready.review.end().unwrap().reuses_child() {
+                "Reuse the following empty paragraph and continue adding paragraphs"
+            } else {
+                "Add and edit paragraphs after this paragraph"
+            }
+        } else if ready.review.end().is_some_and(|end| end.is_repeat()) {
+            if ready.review.end().unwrap().reuses_child() {
+                "Reuse the following empty paragraph and add another after it"
+            } else {
+                "Add two empty paragraphs after this paragraph"
+            }
+        } else if ready.review.is_start_typing() {
+            "Add an empty paragraph before and edit this paragraph"
+        } else if ready.review.end().is_some_and(|end| end.is_empty_typing()) {
+            if ready.review.end().unwrap().reuses_child() {
+                "Reuse and edit the existing empty paragraph after this paragraph"
+            } else {
+                "Add and edit a paragraph after this paragraph"
+            }
+        } else if ready
+            .review
+            .end()
+            .is_some_and(|end| end.clears_child() && !end.child_text().is_empty())
+        {
+            "Clear and edit the following paragraph"
+        } else if ready.review.end().is_some_and(|end| end.clears_child()) {
+            "Clear and reuse the following paragraph"
+        } else if ready
+            .review
+            .end()
+            .is_some_and(|end| end.reuses_child() && !end.child_text().is_empty())
+        {
+            "Reuse and edit the existing empty paragraph after this paragraph"
+        } else if ready.review.end().is_some_and(|end| end.reuses_child()) {
+            "Reuse the existing empty paragraph after this paragraph"
+        } else if ready
+            .review
+            .end()
+            .is_some_and(|end| !end.child_text().is_empty())
+        {
+            "Add a paragraph after this paragraph"
+        } else if ready.review.is_end() {
+            "Add an empty paragraph after this paragraph"
+        } else if ready.review.is_split() {
+            "Split a paragraph into two paragraphs"
+        } else if ready.review.is_replacement() {
             "Delete a paragraph and create an empty replacement"
         } else if ready.review.is_delete() {
             "Delete a paragraph"
+        } else if let Some((_, side)) = ready.review.insertion_anchor() {
+            match (side, ready.review.draft_text().is_empty()) {
+                (super_platinum_core::canvas::edit::structure::Side::Before, true) => {
+                    "Add an empty paragraph before this paragraph"
+                }
+                (super_platinum_core::canvas::edit::structure::Side::After, true) => {
+                    "Add an empty paragraph after this paragraph"
+                }
+                (super_platinum_core::canvas::edit::structure::Side::Before, false) => {
+                    "Add a paragraph before this paragraph"
+                }
+                (super_platinum_core::canvas::edit::structure::Side::After, false) => {
+                    "Add a paragraph after this paragraph"
+                }
+            }
         } else {
             "Insert a paragraph"
         }
     });
-    let error = value.error;
+    let is_sequence = value
+        .ready
+        .as_ref()
+        .is_some_and(|r| r.review.end().is_some_and(|e| e.is_sequence()));
+    let is_repeat = value
+        .ready
+        .as_ref()
+        .is_some_and(|ready| ready.review.end().is_some_and(|end| end.is_repeat()));
+    let is_start_typing = value
+        .ready
+        .as_ref()
+        .is_some_and(|r| r.review.is_start_typing());
+    let is_split = value
+        .ready
+        .as_ref()
+        .is_some_and(|ready| ready.review.is_split() || ready.review.is_end());
+    let is_insertion = value
+        .ready
+        .as_ref()
+        .is_some_and(|r| r.review.insertion_anchor().is_some());
+    let error =
+        value.error.or(
+            ((is_split || is_insertion || is_start_typing) && !enabled && !busy).then_some(CHANGED),
+        );
     rsx! {
         section {class:"canvas-local-review","aria-label":"Review unconfirmed canvas change",
             h3 {"Review unconfirmed change"}
             p {"Slack may have applied this change. Check the canvas in Slack and close other copies of Super Platinum before continuing."}
             if let Some(action) = action {p {strong {"Saved request: "}"{action}"}}
-            if value.ready.as_ref().is_some_and(|ready| ready.review.is_replacement()) {p {"Either part, both parts, or neither part may have reached Slack. Removing this lock leaves both outcomes unknown."}}
-            if !text.is_empty() {div {class:"canvas-review-preview","{text}"}}
+            if is_sequence {p {"Any, all, or none of these paragraph changes may have reached Slack. Removing this lock leaves every outcome unknown."}} else if is_repeat {p {"Any, all, or none of these three paragraph changes may have reached Slack. Removing this lock leaves all three outcomes unknown."}} else if is_start_typing || is_split || value.ready.as_ref().is_some_and(|ready| ready.review.is_replacement()) {p {"Either part, both parts, or neither part may have reached Slack. Removing this lock leaves both outcomes unknown."}}
+            if is_sequence {if let Some(ready)=value.ready.as_ref() {{sequence::comparison(&ready.review)}}} else if is_start_typing {
+                if let Some(ready) = value.ready.as_ref() {{start_typing::comparison(&ready.review)}}
+            } else if is_split {
+                if let Some(ready) = value.ready.as_ref() {{split::comparison(&ready.review)}}
+            } else if is_insertion {
+                if let Some(ready) = value.ready.as_ref() {{insertion::comparison(&ready.review)}}
+            } else if !text.is_empty() {div {class:"canvas-review-preview","{text}"}}
             p {"Removing this local edit lock does not confirm success, undo a change, or send it again. The saved record will remain on this computer with an unknown outcome."}
             if busy {p {role:"status","Checking the local record…"}}
             if let Some(error) = error {p {role:"alert","{error}"}}

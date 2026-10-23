@@ -1,0 +1,10535 @@
+{
+  "results": [
+    {
+      "input": [],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": []
+    },
+    {
+      "input": [],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": []
+    },
+    {
+      "input": [],
+      "locale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": []
+    },
+    {
+      "input": [],
+      "locale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": []
+    },
+    {
+      "input": [],
+      "locale": "fr-FR",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": []
+    },
+    {
+      "input": [],
+      "locale": "fr-FR",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": []
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":unknown:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":unknown:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":unknown:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":unknown:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":unknown:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":unknown:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":unknown:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":unknown:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":unknown:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":unknown:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":unknown:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":unknown:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":party: text :smile:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        },
+        {
+          "retain": 6
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "insert": " text "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":party: text :smile:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        },
+        {
+          "retain": 6
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "insert": " text "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":party: text :smile:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        },
+        {
+          "retain": 6
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "insert": " text "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":party: text :smile:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        },
+        {
+          "retain": 6
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "insert": " text "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":party: text :smile:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        },
+        {
+          "retain": 6
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "insert": " text "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":party: text :smile:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        },
+        {
+          "retain": 6
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "insert": " text "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":foo-bar: :foo_bar:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":foo-bar:"
+            }
+          }
+        },
+        {
+          "delete": 9
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":foo_bar:"
+            }
+          }
+        },
+        {
+          "delete": 9
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":foo-bar:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":foo_bar:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":foo-bar: :foo_bar:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":foo-bar:"
+            }
+          }
+        },
+        {
+          "delete": 9
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":foo_bar:"
+            }
+          }
+        },
+        {
+          "delete": 9
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":foo-bar:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":foo_bar:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":foo-bar: :foo_bar:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":foo-bar:"
+            }
+          }
+        },
+        {
+          "delete": 9
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":foo_bar:"
+            }
+          }
+        },
+        {
+          "delete": 9
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":foo-bar:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":foo_bar:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":foo-bar: :foo_bar:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":foo-bar:"
+            }
+          }
+        },
+        {
+          "delete": 9
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":foo_bar:"
+            }
+          }
+        },
+        {
+          "delete": 9
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":foo-bar:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":foo_bar:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":foo-bar: :foo_bar:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":foo-bar:"
+            }
+          }
+        },
+        {
+          "delete": 9
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":foo_bar:"
+            }
+          }
+        },
+        {
+          "delete": 9
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":foo-bar:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":foo_bar:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":foo-bar: :foo_bar:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":foo-bar:"
+            }
+          }
+        },
+        {
+          "delete": 9
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":foo_bar:"
+            }
+          }
+        },
+        {
+          "delete": 9
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":foo-bar:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":foo_bar:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":SMILE:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":SMILE:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":SMILE:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":SMILE:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":SMILE:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":SMILE:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":wave::skin-tone-3:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave::skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 19
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave::skin-tone-3:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":wave::skin-tone-3:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave::skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 19
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave::skin-tone-3:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":wave::skin-tone-3:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave::skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 19
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave::skin-tone-3:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":wave::skin-tone-3:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave::skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 19
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave::skin-tone-3:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":wave::skin-tone-3:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave::skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 19
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave::skin-tone-3:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":wave::skin-tone-3:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave::skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 19
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave::skin-tone-3:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":skin-tone-3:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 13
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":skin-tone-3:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 13
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":skin-tone-3:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 13
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":skin-tone-3:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 13
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":skin-tone-3:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 13
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":skin-tone-3:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 13
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":skin-tone-3-4:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":skin-tone-3-4:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":skin-tone-3-4:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":skin-tone-3-4:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":skin-tone-3-4:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":skin-tone-3-4:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":skin-tone-3-4:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":skin-tone-3-4:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":skin-tone-3-4:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":skin-tone-3-4:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":skin-tone-3-4:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":skin-tone-3-4:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":123:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":123:"
+            }
+          }
+        },
+        {
+          "delete": 5
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":123:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":123:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":123:"
+            }
+          }
+        },
+        {
+          "delete": 5
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":123:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":123:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":123:"
+            }
+          }
+        },
+        {
+          "delete": 5
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":123:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":123:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":123:"
+            }
+          }
+        },
+        {
+          "delete": 5
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":123:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":123:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":123:"
+            }
+          }
+        },
+        {
+          "delete": 5
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":123:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":123:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":123:"
+            }
+          }
+        },
+        {
+          "delete": 5
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":123:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "10 :123:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 3
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":123:"
+            }
+          }
+        },
+        {
+          "delete": 5
+        }
+      ],
+      "output": [
+        {
+          "insert": "10 "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":123:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "10 :123:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 3
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":123:"
+            }
+          }
+        },
+        {
+          "delete": 5
+        }
+      ],
+      "output": [
+        {
+          "insert": "10 "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":123:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "10 :123:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 3
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":123:"
+            }
+          }
+        },
+        {
+          "delete": 5
+        }
+      ],
+      "output": [
+        {
+          "insert": "10 "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":123:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "10 :123:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 3
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":123:"
+            }
+          }
+        },
+        {
+          "delete": 5
+        }
+      ],
+      "output": [
+        {
+          "insert": "10 "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":123:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "10 :123:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 3
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":123:"
+            }
+          }
+        },
+        {
+          "delete": 5
+        }
+      ],
+      "output": [
+        {
+          "insert": "10 "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":123:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "10 :123:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 3
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":123:"
+            }
+          }
+        },
+        {
+          "delete": 5
+        }
+      ],
+      "output": [
+        {
+          "insert": "10 "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":123:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile: :smile:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile: :smile:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile: :smile:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile: :smile:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile: :smile:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile: :smile:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "`:smile:` :party:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        },
+        {
+          "retain": 2
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": "`"
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "insert": "` "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "`:smile:` :party:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 10
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": "`:smile:` "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "`:smile:` :party:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        },
+        {
+          "retain": 2
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": "`"
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "insert": "` "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "`:smile:` :party:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 10
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": "`:smile:` "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "`:smile:` :party:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        },
+        {
+          "retain": 2
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": "`"
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "insert": "` "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "`:smile:` :party:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 10
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": "`:smile:` "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "```\n:smile:\n``` :party:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 4
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        },
+        {
+          "retain": 5
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": "```\n"
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "insert": "\n``` "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "```\n:smile:\n``` :party:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 16
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": "```\n:smile:\n``` "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "```\n:smile:\n``` :party:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 4
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        },
+        {
+          "retain": 5
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": "```\n"
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "insert": "\n``` "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "```\n:smile:\n``` :party:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 16
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": "```\n:smile:\n``` "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "```\n:smile:\n``` :party:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 4
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        },
+        {
+          "retain": 5
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": "```\n"
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "insert": "\n``` "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "```\n:smile:\n``` :party:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 16
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": "```\n:smile:\n``` "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://x.test/:smile: :party:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 15
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": "https://x.test/"
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://x.test/:smile: :party:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 23
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": "https://x.test/:smile: "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://x.test/:smile: :party:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 15
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": "https://x.test/"
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://x.test/:smile: :party:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 23
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": "https://x.test/:smile: "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://x.test/:smile: :party:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 15
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": "https://x.test/"
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://x.test/:smile: :party:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 23
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": "https://x.test/:smile: "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "😀 :smile:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 3
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": "😀 "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "😀 :smile:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 3
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": "😀 "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "😀 :smile:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 3
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": "😀 "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "😀 :smile:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 3
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": "😀 "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "😀 :smile:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 3
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": "😀 "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "😀 :smile:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 3
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": "😀 "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "：smile："
+        }
+      ],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": "：smile："
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "：smile："
+        }
+      ],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": "：smile："
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "：smile："
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "：smile："
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "：smile："
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": "：smile："
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "：smile："
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": "：smile："
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":sourire:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":sourire:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":sourire:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":sourire:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":sourire:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":sourire:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":sourire:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":sourire:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":sourire:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 9
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":sourire:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 9
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "code": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "code": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "code": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "code": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "code": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "code": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "link": true
+          }
+        }
+      ],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "link": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "link": true
+          }
+        }
+      ],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "link": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "link": true
+          }
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "link": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "link": true
+          }
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "link": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "link": true
+          }
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "link": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "link": true
+          }
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "link": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slackmention": true
+          }
+        }
+      ],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slackmention": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slackmention": true
+          }
+        }
+      ],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slackmention": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slackmention": true
+          }
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slackmention": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slackmention": true
+          }
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slackmention": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slackmention": true
+          }
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slackmention": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slackmention": true
+          }
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slackmention": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slackslug": true
+          }
+        }
+      ],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slackslug": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slackslug": true
+          }
+        }
+      ],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slackslug": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slackslug": true
+          }
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slackslug": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slackslug": true
+          }
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slackslug": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slackslug": true
+          }
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slackslug": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slackslug": true
+          }
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slackslug": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slacksearchfilter": true
+          }
+        }
+      ],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slacksearchfilter": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slacksearchfilter": true
+          }
+        }
+      ],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slacksearchfilter": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slacksearchfilter": true
+          }
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slacksearchfilter": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slacksearchfilter": true
+          }
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slacksearchfilter": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slacksearchfilter": true
+          }
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slacksearchfilter": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slacksearchfilter": true
+          }
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:",
+          "attributes": {
+            "slacksearchfilter": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":smile:"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3: :smile:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave::skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 14
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave::skin-tone-3:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3: :smile:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave::skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 14
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave::skin-tone-3:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3: :smile:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave::skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 14
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave::skin-tone-3:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3: :smile:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave::skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 14
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave::skin-tone-3:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3: :smile:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave::skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 14
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave::skin-tone-3:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3: :smile:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave::skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 14
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave::skin-tone-3:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3-4: :smile:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave:"
+            }
+          }
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "insert": "one-3-4: :smile:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3-4: :smile:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave:"
+            }
+          }
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "insert": "one-3-4: :smile:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3-4: :smile:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave:"
+            }
+          }
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "insert": "one-3-4: :smile:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3-4: :smile:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave:"
+            }
+          }
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "insert": "one-3-4: :smile:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3-4: :smile:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave:"
+            }
+          }
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "insert": "one-3-4: :smile:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3-4: :smile:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":wave:"
+            }
+          }
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "insert": "one-3-4: :smile:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":handshake:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3: :smile:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 13
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":handshake:"
+            }
+          }
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":handshake:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3: :smile:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 13
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":handshake:"
+            }
+          }
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":handshake:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3: :smile:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 13
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":handshake:"
+            }
+          }
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":handshake:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3: :smile:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 13
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":handshake:"
+            }
+          }
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":handshake:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3: :smile:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 13
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":handshake:"
+            }
+          }
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":handshake:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3: :smile:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 13
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":handshake:"
+            }
+          }
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":handshake:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3-4: :smile:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":handshake::skin-tone-3-4:"
+            }
+          }
+        },
+        {
+          "delete": 16
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":handshake::skin-tone-3-4:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":handshake:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3-4: :smile:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":handshake::skin-tone-3-4:"
+            }
+          }
+        },
+        {
+          "delete": 16
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":handshake::skin-tone-3-4:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":handshake:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3-4: :smile:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":handshake::skin-tone-3-4:"
+            }
+          }
+        },
+        {
+          "delete": 16
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":handshake::skin-tone-3-4:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":handshake:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3-4: :smile:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":handshake::skin-tone-3-4:"
+            }
+          }
+        },
+        {
+          "delete": 16
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":handshake::skin-tone-3-4:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":handshake:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3-4: :smile:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":handshake::skin-tone-3-4:"
+            }
+          }
+        },
+        {
+          "delete": 16
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":handshake::skin-tone-3-4:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":handshake:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3-4: :smile:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":handshake::skin-tone-3-4:"
+            }
+          }
+        },
+        {
+          "delete": 16
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":handshake::skin-tone-3-4:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3: :smile:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 13
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3: :smile:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 13
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3: :smile:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 13
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3: :smile:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 13
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3: :smile:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 13
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3: :smile:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 13
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3-4: :smile:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "insert": "one-3-4: :smile:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3-4: :smile:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "insert": "one-3-4: :smile:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3-4: :smile:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "insert": "one-3-4: :smile:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3-4: :smile:"
+        }
+      ],
+      "locale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "insert": "one-3-4: :smile:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3-4: :smile:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "insert": "one-3-4: :smile:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3-4: :smile:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "retain": 1
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":party:"
+            }
+          }
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "insert": "one-3-4: :smile:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "：smile："
+        }
+      ],
+      "locale": "en-US",
+      "currentLocale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "：smile："
+        }
+      ],
+      "locale": "en-US",
+      "currentLocale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "：smile："
+        }
+      ],
+      "locale": "ja-JP",
+      "currentLocale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": "：smile："
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "：smile："
+        }
+      ],
+      "locale": "ja-JP",
+      "currentLocale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": "：smile："
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "：smile："
+        }
+      ],
+      "locale": "",
+      "currentLocale": "ja-JP",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": "：smile："
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "：smile："
+        }
+      ],
+      "locale": "",
+      "currentLocale": "ja-JP",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": "：smile："
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:"
+        }
+      ],
+      "locale": "en-US",
+      "currentLocale": "",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":smile:"
+        }
+      ],
+      "locale": "en-US",
+      "currentLocale": "",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "delete": 7
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":skin-tone-3::skin-tone-4:"
+        }
+      ],
+      "locale": "en-US",
+      "currentLocale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 26
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":skin-tone-3::skin-tone-4:"
+        }
+      ],
+      "locale": "en-US",
+      "currentLocale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 26
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":skin-tone-3:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":constructor: :toString:"
+        }
+      ],
+      "locale": "en-US",
+      "currentLocale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":constructor: :toString:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":constructor: :toString:"
+        }
+      ],
+      "locale": "en-US",
+      "currentLocale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":constructor: :toString:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":constructor: :toString:"
+        }
+      ],
+      "locale": "fr-FR",
+      "currentLocale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":constructor: :toString:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":constructor: :toString:"
+        }
+      ],
+      "locale": "fr-FR",
+      "currentLocale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":constructor: :toString:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":constructor:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar",
+        "constructor"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":constructor:"
+            }
+          }
+        },
+        {
+          "delete": 13
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":constructor:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":constructor:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar",
+        "constructor"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":constructor:"
+            }
+          }
+        },
+        {
+          "delete": 13
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":constructor:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":constructor:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar",
+        "constructor"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":constructor:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ":constructor:"
+        }
+      ],
+      "locale": "fr-FR",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar",
+        "constructor"
+      ],
+      "facts": {
+        "single": [
+          "wave"
+        ],
+        "multiple": [
+          "handshake"
+        ]
+      },
+      "change": [],
+      "output": [
+        {
+          "insert": ":constructor:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ""
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": false,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          ""
+        ],
+        "multiple": []
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":undefined::skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 14
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":undefined::skin-tone-3:"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ""
+            }
+          }
+        },
+        {
+          "insert": ":skin-tone-3:"
+        }
+      ],
+      "locale": "en-US",
+      "plain": true,
+      "names": [
+        "smile",
+        "wave",
+        "party",
+        "123",
+        "handshake",
+        "foo_bar",
+        "foo-bar"
+      ],
+      "facts": {
+        "single": [
+          ""
+        ],
+        "multiple": []
+      },
+      "change": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":undefined::skin-tone-3:"
+            }
+          }
+        },
+        {
+          "delete": 14
+        }
+      ],
+      "output": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":undefined::skin-tone-3:"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "unsupported": [
+    192,
+    193,
+    196,
+    197
+  ],
+  "modules": [
+    "+EB+",
+    "+ris",
+    "/AWF",
+    "/efW",
+    "09IQ",
+    "0gHG",
+    "3+SO",
+    "3MHn",
+    "3qOO",
+    "4x3H",
+    "5+Zh",
+    "67Az",
+    "9UHZ",
+    "9n32",
+    "A8gZ",
+    "AY7U",
+    "AkOy",
+    "EACB",
+    "F5nq",
+    "FheB",
+    "Fks7",
+    "GQhO",
+    "HSTN",
+    "HsCr",
+    "Hu4T",
+    "IhIt",
+    "J3F/",
+    "Kg8K",
+    "LFws",
+    "M5WD",
+    "MI1U",
+    "MiTi",
+    "NaDL",
+    "OajW",
+    "Ov5q",
+    "P/Dz",
+    "PI3W",
+    "Q+fg",
+    "R+z5",
+    "RqNB",
+    "SeL9",
+    "Tsnj",
+    "Ud4l",
+    "VPjS",
+    "VaYH",
+    "WzJ+",
+    "Yeb6",
+    "YlrH",
+    "bZFu",
+    "blJ7",
+    "bm2k",
+    "bseP",
+    "cHzv",
+    "e0ER",
+    "ey+u",
+    "f66B",
+    "froO",
+    "hB/I",
+    "hSFS",
+    "hmcY",
+    "iL+W",
+    "iRqW",
+    "ivgy",
+    "izwF",
+    "jVvf",
+    "kN/G",
+    "l4EU",
+    "lWGk",
+    "m6Mr",
+    "mM05",
+    "nCyo",
+    "nIb6",
+    "nVsM",
+    "nZYd",
+    "nbro",
+    "nrLU",
+    "nv/P",
+    "owfo",
+    "oyjU",
+    "pH4l",
+    "qBuu",
+    "qV1X",
+    "rC7M",
+    "sdnA",
+    "ue25",
+    "usIq",
+    "vAcU",
+    "vKCI",
+    "vmJG",
+    "yzsb"
+  ]
+}

@@ -17,6 +17,7 @@ pub(crate) mod canonical;
 pub(crate) mod conditional;
 pub(super) mod context;
 mod drain;
+mod emoji;
 mod events;
 pub(crate) mod fixture;
 mod initial;
@@ -28,6 +29,9 @@ pub(crate) mod search;
 pub(crate) mod teams;
 mod topics;
 use context::Context;
+pub(crate) use emoji::{
+    EmojiStandard, emoji_standard, fixture_emoji_assignments, fixture_emoji_guard_probe,
+};
 pub(crate) use events::request_initialization;
 pub(crate) use events::{after_event, before_event, connected, resume};
 pub(crate) use initial::{initialize, resync};
@@ -50,6 +54,8 @@ pub(crate) struct Registry {
     fixture: Option<fixture::Model>,
     startup: BTreeMap<Key, (Arc<Context>, bool)>,
     conditional: conditional::Registry,
+    posting: Vec<search::posting::Pending>,
+    opened: Vec<search::open::Pending>,
 }
 struct Slot {
     serial: u64,

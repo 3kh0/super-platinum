@@ -4,7 +4,7 @@ mod canonical_file;
 pub(in crate::canvas) use attribution::ProfileToken;
 pub(crate) use attribution::clear_profile_token;
 pub(crate) use attribution::{HoverToken, clear_profile_hover_token, profile_hover_token};
-pub(crate) use attribution::{profile_active, profile_overlay};
+pub(crate) use attribution::{profile_active, profile_overlay, profile_visible};
 
 #[component]
 pub(in crate::canvas) fn Panel(
@@ -13,7 +13,11 @@ pub(in crate::canvas) fn Panel(
     mut opened: Signal<bool>,
 ) -> Element {
     use_effect(move || file_acquisition::observe(state, model));
+    use_effect(move || projection::emoji::observe(state, model));
     let value = model.read();
+    if emoji_fixture::requested() {
+        emoji_fixture::observe(&state.read(), &value);
+    }
     if fixture::special::requested() {
         fixture::special::observe(&state.read(), &value);
     }

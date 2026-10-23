@@ -63,6 +63,11 @@ impl ShellState {
             return state;
         }
         match fixture.as_str() {
+            "channel-thread-emoji" | "channel-thread-emoji-narrow" => {
+                let mut state = Self::fixture(media);
+                crate::channel_thread_emoji::fixture::install(&mut state);
+                state
+            }
             "login" => Self::login(media),
             "opening" => Self::opening(media),
             "loading" => {
@@ -374,6 +379,7 @@ impl ShellState {
             messages,
             timeline_start: timeline_end.saturating_sub(100),
             timeline_end,
+            channel_projection_generation: 0,
             row_heights: HashMap::new(),
             message_arrivals: HashMap::new(),
             pending_delivery: HashMap::new(),
@@ -532,6 +538,7 @@ impl ShellState {
             messages: Vec::new(),
             timeline_start: 0,
             timeline_end: 0,
+            channel_projection_generation: 0,
             row_heights: HashMap::new(),
             message_arrivals: HashMap::new(),
             pending_delivery: HashMap::new(),
@@ -884,6 +891,7 @@ impl ShellState {
             messages,
             timeline_start: timeline_end.saturating_sub(100),
             timeline_end,
+            channel_projection_generation: 0,
             row_heights: HashMap::new(),
             message_arrivals: HashMap::new(),
             pending_delivery: HashMap::new(),
@@ -1898,6 +1906,8 @@ impl ShellState {
             | "canvas-narrow"
             | "canvas-comments"
             | "canvas-comments-narrow"
+            | "canvas-comment-emoji"
+            | "canvas-comment-emoji-narrow"
             | "canvas-special-roots"
             | "canvas-special-roots-narrow"
             | "canvas-file-fallback"
@@ -2402,7 +2412,7 @@ impl ShellState {
                 }
                 state.sync_fixture_messages();
             }
-            "profile-hover-card" => {
+            "profile-hover-card" | "profile-hover-card-narrow" => {
                 state.profile_hover = Some(ProfileHoverVm {
                     user_id: "U1".into(),
                     x: 610.0,
@@ -2410,6 +2420,8 @@ impl ShellState {
                 });
             }
             "profile-pane"
+            | "profile-pane-narrow"
+            | "profile-pane-min-width-narrow"
             | "profile-loading"
             | "profile-loading-narrow"
             | "profile-dm-opening"
@@ -2454,7 +2466,10 @@ impl ShellState {
                         include_bytes!("../../../assets/icons/icon-512.png").as_slice(),
                     );
                 }
-                if name == "profile-pane-min-width" {
+                if matches!(
+                    name,
+                    "profile-pane-min-width" | "profile-pane-min-width-narrow"
+                ) {
                     state.profile_pane_width = 200.0;
                 }
             }

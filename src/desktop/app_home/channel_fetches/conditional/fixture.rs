@@ -22,6 +22,9 @@ pub(super) struct Model {
     hold_drain: bool,
 }
 pub(in crate::app_home) fn enabled() -> bool {
+    if crate::slack_lists::comments::fixture::plain_channels::named() {
+        return true;
+    }
     crate::fixture::is_fixture()
         && std::env::var("SUPER_PLATINUM_PROFILE_CHANNEL_RECOVERY_CHECK").as_deref() == Ok("1")
         && matches!(

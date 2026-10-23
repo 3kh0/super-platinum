@@ -1,0 +1,804 @@
+[
+  {
+    "appendCount": 4,
+    "mode": "bootstrap",
+    "corpus": "unicode",
+    "layout": "empty-final-following",
+    "cadence": "straight",
+    "vector": 0,
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 4 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ]
+    ]
+  },
+  {
+    "appendCount": 4,
+    "mode": "retained-positive",
+    "corpus": "ascii",
+    "layout": "no-following",
+    "cadence": "straight",
+    "vector": 1,
+    "updates": [
+      [
+        "New paragraph"
+      ],
+      [
+        "Next paragraph"
+      ],
+      [
+        "Last paragraph"
+      ],
+      [
+        "Row 4 paragraph"
+      ]
+    ]
+  },
+  {
+    "appendCount": 4,
+    "mode": "retained-zero",
+    "corpus": "unicode",
+    "layout": "empty-final-following",
+    "cadence": "straight",
+    "vector": 2,
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 4 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ]
+    ]
+  },
+  {
+    "appendCount": 8,
+    "mode": "bootstrap",
+    "corpus": "ascii",
+    "layout": "no-following",
+    "cadence": "straight",
+    "vector": 3,
+    "updates": [
+      [
+        "New paragraph"
+      ],
+      [
+        "Next paragraph"
+      ],
+      [
+        "Last paragraph"
+      ],
+      [
+        "Row 4 paragraph"
+      ],
+      [
+        "Row 5 paragraph"
+      ],
+      [
+        "Row 6 paragraph"
+      ],
+      [
+        "Row 7 paragraph"
+      ],
+      [
+        "Row 8 paragraph"
+      ]
+    ]
+  },
+  {
+    "appendCount": 8,
+    "mode": "retained-positive",
+    "corpus": "unicode",
+    "layout": "empty-final-following",
+    "cadence": "straight",
+    "vector": 4,
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 4 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 5 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 6 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 7 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 8 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ]
+    ]
+  },
+  {
+    "appendCount": 8,
+    "mode": "retained-zero",
+    "corpus": "ascii",
+    "layout": "no-following",
+    "cadence": "straight",
+    "vector": 5,
+    "updates": [
+      [
+        "New paragraph"
+      ],
+      [
+        "Next paragraph"
+      ],
+      [
+        "Last paragraph"
+      ],
+      [
+        "Row 4 paragraph"
+      ],
+      [
+        "Row 5 paragraph"
+      ],
+      [
+        "Row 6 paragraph"
+      ],
+      [
+        "Row 7 paragraph"
+      ],
+      [
+        "Row 8 paragraph"
+      ]
+    ]
+  },
+  {
+    "appendCount": 16,
+    "mode": "bootstrap",
+    "corpus": "ascii",
+    "layout": "no-following",
+    "cadence": "straight",
+    "vector": 6,
+    "updates": [
+      [
+        "New paragraph"
+      ],
+      [
+        "Next paragraph"
+      ],
+      [
+        "Last paragraph"
+      ],
+      [
+        "Row 4 paragraph"
+      ],
+      [
+        "Row 5 paragraph"
+      ],
+      [
+        "Row 6 paragraph"
+      ],
+      [
+        "Row 7 paragraph"
+      ],
+      [
+        "Row 8 paragraph"
+      ],
+      [
+        "Row 9 paragraph"
+      ],
+      [
+        "Row 10 paragraph"
+      ],
+      [
+        "Row 11 paragraph"
+      ],
+      [
+        "Row 12 paragraph"
+      ],
+      [
+        "Row 13 paragraph"
+      ],
+      [
+        "Row 14 paragraph"
+      ],
+      [
+        "Row 15 paragraph"
+      ],
+      [
+        "Row 16 paragraph"
+      ]
+    ]
+  },
+  {
+    "appendCount": 16,
+    "mode": "retained-positive",
+    "corpus": "unicode",
+    "layout": "empty-final-following",
+    "cadence": "straight",
+    "vector": 7,
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 4 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 5 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 6 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 7 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 8 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 9 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 10 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 11 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 12 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 13 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 14 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 15 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 16 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ]
+    ]
+  },
+  {
+    "appendCount": 16,
+    "mode": "retained-zero",
+    "corpus": "ascii",
+    "layout": "no-following",
+    "cadence": "straight",
+    "vector": 8,
+    "updates": [
+      [
+        "New paragraph"
+      ],
+      [
+        "Next paragraph"
+      ],
+      [
+        "Last paragraph"
+      ],
+      [
+        "Row 4 paragraph"
+      ],
+      [
+        "Row 5 paragraph"
+      ],
+      [
+        "Row 6 paragraph"
+      ],
+      [
+        "Row 7 paragraph"
+      ],
+      [
+        "Row 8 paragraph"
+      ],
+      [
+        "Row 9 paragraph"
+      ],
+      [
+        "Row 10 paragraph"
+      ],
+      [
+        "Row 11 paragraph"
+      ],
+      [
+        "Row 12 paragraph"
+      ],
+      [
+        "Row 13 paragraph"
+      ],
+      [
+        "Row 14 paragraph"
+      ],
+      [
+        "Row 15 paragraph"
+      ],
+      [
+        "Row 16 paragraph"
+      ]
+    ]
+  },
+  {
+    "appendCount": 8,
+    "mode": "retained-zero",
+    "corpus": "unicode",
+    "layout": "empty-final-following",
+    "cadence": "correction-before-enter",
+    "vector": 9,
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 4 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 5 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 6 \u65e5\u672c\ud83d\ude00 &amp;",
+        "Row 6 \u65e5\u672c\ud83d\ude00 &amp; draftx",
+        "Row 6 \u65e5\u672c\ud83d\ude00 &amp; draft",
+        "Row 6 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 7 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 8 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ]
+    ]
+  },
+  {
+    "appendCount": 16,
+    "mode": "bootstrap",
+    "corpus": "ascii",
+    "layout": "no-following",
+    "cadence": "correction-before-enter",
+    "vector": 10,
+    "updates": [
+      [
+        "New paragraph"
+      ],
+      [
+        "Next paragraph"
+      ],
+      [
+        "Last paragraph"
+      ],
+      [
+        "Row 4 paragraph"
+      ],
+      [
+        "Row 5 paragraph"
+      ],
+      [
+        "Row 6 paragraph"
+      ],
+      [
+        "Row 7 paragraph"
+      ],
+      [
+        "Row 8 paragraph"
+      ],
+      [
+        "Row 9 paragraph"
+      ],
+      [
+        "Row 10 paragraph"
+      ],
+      [
+        "Row 11 paragraph"
+      ],
+      [
+        "Row 12 paragraph"
+      ],
+      [
+        "Row 13 paragraph"
+      ],
+      [
+        "Row 14 paragraph"
+      ],
+      [
+        "Row 15",
+        "Row 15 draftx",
+        "Row 15 draft",
+        "Row 15 paragraph"
+      ],
+      [
+        "Row 16 paragraph"
+      ]
+    ]
+  },
+  {
+    "appendCount": 8,
+    "mode": "retained-zero",
+    "corpus": "unicode",
+    "layout": "empty-final-following",
+    "cadence": "erase-before-enter",
+    "vector": 11,
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 4 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 5 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 6 \u65e5\u672c\ud83d\ude00 &amp;",
+        ""
+      ],
+      [
+        "Row 7 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 8 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ]
+    ]
+  },
+  {
+    "appendCount": 16,
+    "mode": "bootstrap",
+    "corpus": "ascii",
+    "layout": "no-following",
+    "cadence": "erase-before-enter",
+    "vector": 12,
+    "updates": [
+      [
+        "New paragraph"
+      ],
+      [
+        "Next paragraph"
+      ],
+      [
+        "Last paragraph"
+      ],
+      [
+        "Row 4 paragraph"
+      ],
+      [
+        "Row 5 paragraph"
+      ],
+      [
+        "Row 6 paragraph"
+      ],
+      [
+        "Row 7 paragraph"
+      ],
+      [
+        "Row 8 paragraph"
+      ],
+      [
+        "Row 9 paragraph"
+      ],
+      [
+        "Row 10 paragraph"
+      ],
+      [
+        "Row 11 paragraph"
+      ],
+      [
+        "Row 12 paragraph"
+      ],
+      [
+        "Row 13 paragraph"
+      ],
+      [
+        "Row 14 paragraph"
+      ],
+      [
+        "Row 15",
+        ""
+      ],
+      [
+        "Row 16 paragraph"
+      ]
+    ]
+  },
+  {
+    "appendCount": 8,
+    "mode": "retained-zero",
+    "corpus": "unicode",
+    "layout": "empty-final-following",
+    "cadence": "revert-before-enter",
+    "vector": 13,
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 4 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 5 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 6 \u65e5\u672c\ud83d\ude00 &amp;",
+        "Row 6 \u65e5\u672c\ud83d\ude00 &amp; draftx",
+        "Row 6 \u65e5\u672c\ud83d\ude00 &amp;",
+        ""
+      ],
+      [
+        "Row 7 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 8 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ]
+    ]
+  },
+  {
+    "appendCount": 16,
+    "mode": "bootstrap",
+    "corpus": "ascii",
+    "layout": "no-following",
+    "cadence": "revert-before-enter",
+    "vector": 14,
+    "updates": [
+      [
+        "New paragraph"
+      ],
+      [
+        "Next paragraph"
+      ],
+      [
+        "Last paragraph"
+      ],
+      [
+        "Row 4 paragraph"
+      ],
+      [
+        "Row 5 paragraph"
+      ],
+      [
+        "Row 6 paragraph"
+      ],
+      [
+        "Row 7 paragraph"
+      ],
+      [
+        "Row 8 paragraph"
+      ],
+      [
+        "Row 9 paragraph"
+      ],
+      [
+        "Row 10 paragraph"
+      ],
+      [
+        "Row 11 paragraph"
+      ],
+      [
+        "Row 12 paragraph"
+      ],
+      [
+        "Row 13 paragraph"
+      ],
+      [
+        "Row 14 paragraph"
+      ],
+      [
+        "Row 15",
+        "Row 15 draftx",
+        "Row 15",
+        ""
+      ],
+      [
+        "Row 16 paragraph"
+      ]
+    ]
+  },
+  {
+    "appendCount": 16,
+    "mode": "retained-positive",
+    "corpus": "unicode",
+    "layout": "no-following",
+    "cadence": "trailing-empty",
+    "vector": 15,
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 4 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 5 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 6 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 7 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 8 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 9 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 10 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 11 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 12 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 13 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 14 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 15 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      []
+    ]
+  },
+  {
+    "appendCount": 16,
+    "mode": "retained-positive",
+    "corpus": "unicode",
+    "layout": "empty-final-following",
+    "cadence": "trailing-empty",
+    "vector": 16,
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 4 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 5 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 6 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 7 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 8 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 9 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 10 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 11 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 12 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 13 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 14 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 15 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      []
+    ]
+  },
+  {
+    "appendCount": 16,
+    "mode": "retained-zero",
+    "corpus": "unicode",
+    "layout": "text-following",
+    "cadence": "straight",
+    "vector": 17,
+    "updates": [
+      [
+        "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 4 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 5 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 6 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 7 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 8 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 9 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 10 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 11 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 12 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 13 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 14 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 15 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ],
+      [
+        "Row 16 \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+      ]
+    ]
+  }
+]

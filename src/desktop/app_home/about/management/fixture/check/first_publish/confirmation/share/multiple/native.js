@@ -1,0 +1,7 @@
+(()=>{
+ const b=BASE,r=window.__firstPublishRegistry,root=document.getElementById('workflow-management'),saved=root?.__workflowManagement?.permissionsConfirmation?.share;
+ const id=e=>{if(!e)return null;if(!r.ids.has(e))r.ids.set(e,r.next++);return r.ids.get(e)},rect=e=>{const q=e.getBoundingClientRect();return{left:q.left,top:q.top,right:q.right,bottom:q.bottom,width:q.width,height:q.height}};
+ const panel=document.getElementById('workflow-finish-share-pane'),tokens=panel?[...panel.querySelectorAll('[data-workflow-share-recipient]')]:[];
+ const recipients=tokens.map((e,i)=>{const remove=e.querySelector('[data-workflow-share-recipient-remove]');remove?.scrollIntoView({block:'center',inline:'nearest',behavior:'instant'});const q=remove?rect(remove):null,x=q?(q.left+q.right)/2:0,y=q?(q.top+q.bottom)/2:0,h=q?document.elementFromPoint(x,y):null;return{id:e.dataset.workflowShareRecipient,nodeId:id(e),connected:e.isConnected,selected:e.dataset.selected,label:e.querySelector('span')?.textContent??null,original:!!saved&&saved.tokens[i]===e&&saved.removes[i]===remove,remove:remove?{nodeId:id(remove),connected:remove.isConnected,disabled:remove.disabled,label:remove.getAttribute('aria-label'),rect:q,hitPoint:h===remove||remove.contains(h)?{x,y}:null}:null}});
+ return{...b,multiple:{recipients,recipientRevision:panel?.dataset.recipientRevision??null,queryNodeId:id(saved?.query),queryFocused:!!saved&&document.activeElement===saved.query,query:saved?.query?.value??null,original:!panel||recipients.every(v=>v.original&&v.remove?.hitPoint)}};
+})()

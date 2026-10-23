@@ -12,6 +12,12 @@ pub(crate) const DELETED: &str = "SLISTGRP4";
 pub(crate) const LABEL: &str = "@alex-team";
 
 pub(crate) fn named() -> bool {
+    if super::title_users::named()
+        || super::empty_canvas::named()
+        || super::super::plain_members::named()
+    {
+        return true;
+    }
     matches!(
         std::env::var("SUPER_PLATINUM_LIST_COMMENTS_COMPOSE_CASE").as_deref(),
         Ok("group-completion"
@@ -30,6 +36,11 @@ pub(crate) fn restricted() -> bool {
             == Ok("group-completion-restricted")
 }
 fn row(owner: &WorkspaceSession, id: &str, handle: &str, deleted: bool, hidden: bool) -> Value {
+    let handle = if id == FIRST && super::super::plain_mixed::named() {
+        "harbor"
+    } else {
+        handle
+    };
     json!({"id":id,"team_id":owner.team_id,"name":format!("Alex group {id}"),
         "handle":handle,"date_update":101,"date_delete":if deleted {123}else{0},
         "is_hidden":hidden,"users":[],"user_count":"0","is_external":false,

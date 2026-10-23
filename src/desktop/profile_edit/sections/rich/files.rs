@@ -2,10 +2,12 @@
 //! it is neither the typed file browser nor Slack's complete file collection.
 use super::*;
 use std::collections::BTreeMap;
+mod users;
 use super_platinum_core::slack::{
     PreparedRequest,
     api::custom::texty::{file_title_source as source, file_titles},
 };
+pub(super) use users::acquire_policy;
 #[cfg(test)]
 mod tests;
 
@@ -15,6 +17,7 @@ pub(in crate::profile_edit::sections) struct Cache {
     store: source::Store,
     reads: BTreeMap<String, (u64, u64)>,
     changes: BTreeMap<String, Arc<()>>,
+    policy: Option<Arc<users::Policy>>,
 }
 
 #[derive(Clone)]
@@ -25,6 +28,7 @@ pub(super) struct Observation {
     quip: Option<crate::canvas::quip_titles::Observation>,
     socket: u64,
     revision: u64,
+    members: Option<users::Members>,
 }
 fn socket(shell: &ShellState, token: &Token) -> Option<u64> {
     token
@@ -50,7 +54,9 @@ impl Observation {
         let row = cache.store.row(id).map_err(|_| unavailable())?;
         // File metadata does not establish the independent editor-title state.
         // Only block-title Canvas labels consume that runtime observation.
-        let quip = if has_canvas_blocks(row.effective()) {
+        let ids = title_user_ids(row.effective())?;
+        let members = users::Members::capture(shell, token, &ids)?;
+        let quip = if has_canvas_blocks(row.effective()) && ids.is_empty() {
             Some(
                 crate::canvas::quip_titles::Observation::capture(shell, id)
                     .ok_or_else(unavailable)?,
@@ -65,6 +71,7 @@ impl Observation {
             quip,
             socket: generation,
             revision,
+            members,
         };
         observed
             .current(shell)
@@ -73,6 +80,10 @@ impl Observation {
     }
     pub(super) fn current(&self, shell: &ShellState) -> bool {
         socket(shell, &self.token) == Some(self.socket)
+            && self
+                .members
+                .as_ref()
+                .is_none_or(|m| m.current(shell, &self.token))
             && self.quip.as_ref().is_none_or(|quip| quip.current(shell))
             && !crate::file_events::changed_since(
                 shell,
@@ -109,13 +120,20 @@ impl Observation {
             Some("file") if list => file_titles::Kind::WholeList,
             _ => return Err(unavailable()),
         };
-        let label = file_titles::label_with_quip(
+        let label = file_titles::label_with_context(
             kind,
             file_titles::Status::Normal,
             effective,
             self.quip
                 .as_ref()
                 .map_or(file_titles::QuipTitle::Unavailable, |quip| quip.value()),
+            Some(super::title_locale::CanvasTitle::english().value()),
+            |id| {
+                self.members
+                    .as_ref()
+                    .ok_or(file_titles::Unavailable::InvalidMetadata)?
+                    .label(id)
+            },
         )
         .map_err(|_| unavailable())?;
         // The same closed whole-token grammar is used for opening and capture.
@@ -126,11 +144,96 @@ impl Observation {
     }
 }
 
+fn title_user_ids(effective: &Value) -> Result<std::collections::BTreeSet<String>, Error> {
+    if !has_canvas_blocks(effective) {
+        return Ok(Default::default());
+    }
+    file_titles::user_ids(effective).map_err(|_| unavailable())
+}
 fn has_canvas_blocks(effective: &Value) -> bool {
     (effective["mode"] == "quip" || effective["filetype"] == "quip")
         && effective["title_blocks"]
             .as_array()
             .is_some_and(|blocks| !blocks.is_empty())
+}
+
+/// File receipt readiness is separate from nested member/policy display custody.
+fn metadata_current(shell: &ShellState, token: &Token, id: &str) -> bool {
+    shell
+        .profile_edit
+        .sections
+        .file_titles
+        .as_ref()
+        .is_some_and(|cache| {
+            cache.token == *token
+                && token.current(shell)
+                && cache.store.row(id).is_ok()
+                && cache.reads.get(id).is_some_and(|(generation, revision)| {
+                    socket(shell, token) == Some(*generation)
+                        && !crate::file_events::changed_since(
+                            shell,
+                            &token.owner.team,
+                            id,
+                            *revision,
+                        )
+                })
+                && shell
+                    .core
+                    .workspaces
+                    .get(&token.owner.team)
+                    .is_some_and(|w| !w.deleted_files.contains(id))
+        })
+}
+fn reuse_metadata(shell: &ShellState, token: &Token, id: &str, force: bool) -> bool {
+    metadata_current(shell, token, id)
+        && (!force || dependencies(shell, token, &[id.to_owned()]).is_ok_and(|v| !v.ids.is_empty()))
+}
+pub(super) struct Dependencies {
+    pub(super) ids: Vec<String>,
+    rows: Vec<(String, source::Observation, Arc<()>)>,
+}
+impl Dependencies {
+    pub(super) fn current(&self, shell: &ShellState, token: &Token) -> bool {
+        shell
+            .profile_edit
+            .sections
+            .file_titles
+            .as_ref()
+            .is_some_and(|cache| {
+                self.rows.iter().all(|(id, row, stamp)| {
+                    metadata_current(shell, token, id)
+                        && row.current(&cache.store)
+                        && cache.changes.get(id).is_some_and(|v| Arc::ptr_eq(v, stamp))
+                })
+            })
+    }
+}
+pub(super) fn dependencies(
+    shell: &ShellState,
+    token: &Token,
+    ids: &[String],
+) -> Result<Dependencies, Error> {
+    let cache = shell
+        .profile_edit
+        .sections
+        .file_titles
+        .as_ref()
+        .ok_or_else(unavailable)?;
+    let mut users = std::collections::BTreeSet::new();
+    let mut rows = Vec::new();
+    for id in ids {
+        if !metadata_current(shell, token, id) {
+            return Err(unavailable());
+        }
+        let row = cache.store.row(id).map_err(|_| unavailable())?;
+        users.extend(title_user_ids(row.effective())?);
+        let stamp = cache.changes.get(id).ok_or_else(unavailable)?.clone();
+        rows.push((id.clone(), row, stamp));
+    }
+    Ok(Dependencies {
+        ids: users.into_iter().collect(),
+        rows,
+    })
 }
 
 /// Local metadata writes already call this shared invalidation boundary. Keep
@@ -180,7 +283,7 @@ pub(super) async fn recover(
         if !current(&state.peek()) || socket(&state.peek(), token) != Some(generation) {
             return Err(unavailable());
         }
-        if !force && Observation::capture(&state.peek(), token, id).is_ok() {
+        if reuse_metadata(&state.peek(), token, id, force) {
             continue;
         }
         let revision = crate::file_events::snapshot_revision(&state.peek());
@@ -264,6 +367,15 @@ pub(crate) fn fixture_status(shell: &ShellState, id: &str) -> Value {
         Ok(row) => {
             let mut value = serde_json::json!({"source":row.source(),"effective":row.effective(),
                 "current":Observation::capture(shell,&cache.token,id).is_ok()});
+            if row.effective()["mode"] == "quip" || row.effective()["filetype"] == "quip" {
+                value["canvasFallback"] = super::title_locale::CanvasTitle::english()
+                    .proof(Observation::capture(shell, &cache.token, id).is_ok());
+            }
+            if let Ok(Some(members)) = title_user_ids(row.effective())
+                .and_then(|ids| users::Members::capture(shell, &cache.token, &ids))
+            {
+                value["titleUsers"] = members.snapshot();
+            }
             if has_canvas_blocks(row.effective()) {
                 value["quipTitle"] = match crate::canvas::quip_titles::Observation::capture(
                     shell, id,
@@ -319,6 +431,7 @@ fn cache<'a>(shell: &'a mut ShellState, token: &Token) -> Result<&'a mut Cache, 
             store: source::Store::new(),
             reads: BTreeMap::new(),
             changes: BTreeMap::new(),
+            policy: None,
         });
     }
     Ok(slot.as_mut().unwrap())

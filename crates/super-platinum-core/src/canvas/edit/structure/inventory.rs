@@ -130,6 +130,11 @@ impl Inventory {
         if draft.runs.iter().any(|run| run.style.underline) {
             return Err(Error::Unsupported);
         }
+        if let Some(wire) = section.crdt()?.filter(|w| w.has(10)) {
+            text::crdt::validate(&wire, section, &draft, Some(now))?;
+            super::split_child(self.sections.values(), section, now)?;
+            return Ok(draft);
+        }
         if let Some(wire) = section.crdt()? {
             // A modern stable ID may retain the initial base_sequence0 after
             // its canonical section sequence advances. It is not a new local
@@ -178,7 +183,11 @@ impl Inventory {
         position::between(before, after)
     }
     pub fn safe_delete(&self, id: &str) -> Result<(), Error> {
-        self.get(id)?;
+        if self.get(id)?.crdt()?.is_some_and(|w| w.has(10)) {
+            // Parent text continuation is verified; structural deletion still
+            // needs its own lineage-sealed receipt policy before exposure.
+            return Err(Error::Unsupported);
+        }
         // Source sibling lookup uses REACHABLE. Only known top-level text and
         // H1-H3 headings witness it here: title/unknown/list-child visibility is
         // not inferred from count. No nested target or replacement is admitted.
@@ -204,7 +213,7 @@ impl Inventory {
 /// Preserve mixed siblings without granting editing authority over them. The
 /// one admitted parented shape is an ordinary child of a top-level known list.
 /// Layouts, orphan/ambiguous parents and arbitrary nested containers still fail.
-fn validate_placement(
+pub(super) fn validate_placement(
     section: &Section,
     sections: &BTreeMap<String, Section>,
 ) -> Result<(), Error> {

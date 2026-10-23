@@ -9,7 +9,7 @@ mod completion;
 mod task;
 pub use completion::{TaskCompletion, TaskCompletionCell, TaskCompletionReference};
 pub use task::{TaskAssignment, TaskAssignmentDecision};
-mod link;
+pub(super) mod link;
 pub use link::LinkValue;
 #[cfg(test)]
 mod date_tests;

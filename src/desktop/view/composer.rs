@@ -435,6 +435,7 @@ pub(crate) fn schedule_timeline_measure(
         let shell = state.read();
         (
             shell.channel_generation,
+            shell.channel_projection_generation,
             shell.core.active_team.clone(),
             shell.core.active_channel.clone(),
         )
@@ -446,6 +447,7 @@ pub(crate) fn schedule_timeline_measure(
         let changed = source
             != (
                 shell.channel_generation,
+                shell.channel_projection_generation,
                 shell.core.active_team.clone(),
                 shell.core.active_channel.clone(),
             );
@@ -457,10 +459,11 @@ pub(crate) fn schedule_timeline_measure(
 }
 
 async fn measure_timeline(mut state: Signal<ShellState>, queued: Signal<bool>) {
-    let (generation, team, channel, window, first_measurement) = {
+    let (generation, projection_generation, team, channel, window, first_measurement) = {
         let shell = state.read();
         (
             shell.channel_generation,
+            shell.channel_projection_generation,
             shell.core.active_team.clone(),
             shell.core.active_channel.clone(),
             (shell.timeline_start, shell.timeline_end),
@@ -487,6 +490,7 @@ async fn measure_timeline(mut state: Signal<ShellState>, queued: Signal<bool>) {
               }));
               const visible = rows.filter(row => row.bottom >= bounds.top && row.top <= bounds.bottom);
               dioxus.send({
+                projectionGeneration: timeline.dataset.channelProjectionGeneration,
                 windowStart: Number(timeline.dataset.windowStart),
                 windowEnd: Number(timeline.dataset.windowEnd),
                 visible: visible.length > 0,
@@ -509,6 +513,16 @@ async fn measure_timeline(mut state: Signal<ShellState>, queued: Signal<bool>) {
     // A newer scroll has already requested another sample. Applying this one
     // would move the virtual window back underneath the reader's next gesture.
     if value.is_null() || *queued.peek() {
+        return;
+    }
+    // A committed body can change glyph/image geometry without changing any
+    // timestamp, navigation scope, or viewport bound. Reject that old sample.
+    if !state.peek().channel_projection_receipt_is_current(
+        projection_generation,
+        value["projectionGeneration"].as_str(),
+    ) {
+        let mut queued = queued;
+        queued.set(true);
         return;
     }
     let mut first = value

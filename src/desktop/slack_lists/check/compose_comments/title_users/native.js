@@ -1,0 +1,6 @@
+(function titleState(){
+ const base=window.__listCompose.snapshot(),panel=document.querySelector('.slack-list-dialog'),editor=document.getElementById('slack-list-comment-draft');
+ const box=n=>{if(!n)return null;const r=n.getBoundingClientRect(),s=getComputedStyle(n),hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);return {text:n.textContent,id:n.id,disabled:!!n.disabled,rect:{left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:r.width,height:r.height},visible:n.isConnected&&s.display!=='none'&&s.visibility==='visible'&&r.width>0&&r.height>0&&r.left>=0&&r.top>=0&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1,hit:hit===n||n.contains(hit)};};
+ const status=box(document.getElementById('slack-list-comment-title-status')),retry=box(document.getElementById('slack-list-comment-title-retry'));
+ return {...base,ok:base.ok&&!editor&&(!status||status.visible)&&(!retry||(retry.visible&&retry.hit)),record:document.getElementById('slack-list-record-detail')?.dataset.recordId??null,titleStatus:status,titleRetry:retry,editorAbsent:!editor,dialogPresent:!!panel};
+})

@@ -126,7 +126,14 @@ fn install_case(s: &mut ShellState, scenario: &str) {
     ) {
         // Real tab history requires account custody. Bind it before About and
         // management capture their owners; a non-UUID cannot persist history.
-        s.core.active_account = Some("synthetic-workflow-activity-channel".into());
+        s.core.active_account = Some(
+            if channel::warm::requested() {
+                channel::warm::ACCOUNT
+            } else {
+                "synthetic-workflow-activity-channel"
+            }
+            .into(),
+        );
     }
     super::super::fixture::install(s, false, scenario == "retirement");
     s.app_home.about.management.activity_fixture = Some(Model::default());

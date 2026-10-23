@@ -1,0 +1,4824 @@
+{
+  "results": [
+    {
+      "input": [],
+      "first": [],
+      "repair": [],
+      "markdown": [],
+      "final": [],
+      "strip": []
+    },
+    {
+      "input": [
+        {
+          "insert": "hello"
+        }
+      ],
+      "first": [
+        {
+          "insert": "hello"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "hello"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "hello"
+        }
+      ],
+      "final": [
+        {
+          "insert": "hello"
+        }
+      ],
+      "strip": [
+        {
+          "insert": "hello"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "hello\n"
+        }
+      ],
+      "first": [
+        {
+          "insert": "hello\n"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "hello\n"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "hello\n"
+        }
+      ],
+      "final": [
+        {
+          "insert": "hello\n"
+        }
+      ],
+      "strip": [
+        {
+          "insert": "hello\n"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "hello\n\n"
+        }
+      ],
+      "first": [
+        {
+          "insert": "hello\n\n"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "hello\n\n"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "hello\n\n"
+        }
+      ],
+      "final": [
+        {
+          "insert": "hello\n\n"
+        }
+      ],
+      "strip": [
+        {
+          "insert": "hello\n\n"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "*bold* _italic_ ~strike~ `code`"
+        }
+      ],
+      "first": [
+        {
+          "insert": "*bold* _italic_ ~strike~ `code`"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "*bold* _italic_ ~strike~ `code`"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "bold",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": "italic",
+          "attributes": {
+            "italic": true
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": "strike",
+          "attributes": {
+            "strike": true
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": "code",
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "bold": true
+          },
+          "insert": "bold"
+        },
+        {
+          "insert": " "
+        },
+        {
+          "attributes": {
+            "italic": true
+          },
+          "insert": "italic"
+        },
+        {
+          "insert": " "
+        },
+        {
+          "attributes": {
+            "strike": true
+          },
+          "insert": "strike"
+        },
+        {
+          "insert": " "
+        },
+        {
+          "attributes": {
+            "code": true
+          },
+          "insert": "code"
+        }
+      ],
+      "strip": [
+        {
+          "insert": "*bold* _italic_ ~strike~ `code`"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "a *bold* b"
+        }
+      ],
+      "first": [
+        {
+          "insert": "a *bold* b"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "a *bold* b"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "a "
+        },
+        {
+          "insert": "bold",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": " b"
+        }
+      ],
+      "final": [
+        {
+          "insert": "a "
+        },
+        {
+          "attributes": {
+            "bold": true
+          },
+          "insert": "bold"
+        },
+        {
+          "insert": " b"
+        }
+      ],
+      "strip": [
+        {
+          "insert": "a *bold* b"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "😀 *bold* after"
+        }
+      ],
+      "first": [
+        {
+          "insert": "😀 *bold* after"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "😀 *bold* after"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "😀 "
+        },
+        {
+          "insert": "bold",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": " after"
+        }
+      ],
+      "final": [
+        {
+          "insert": "😀 "
+        },
+        {
+          "attributes": {
+            "bold": true
+          },
+          "insert": "bold"
+        },
+        {
+          "insert": " after"
+        }
+      ],
+      "strip": [
+        {
+          "insert": "😀 *bold* after"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "**double**"
+        }
+      ],
+      "first": [
+        {
+          "insert": "**double**"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "**double**"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "*"
+        },
+        {
+          "insert": "double",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": "*"
+        }
+      ],
+      "final": [
+        {
+          "insert": "*"
+        },
+        {
+          "attributes": {
+            "bold": true
+          },
+          "insert": "double"
+        },
+        {
+          "insert": "*"
+        }
+      ],
+      "strip": [
+        {
+          "insert": "**double**"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "_a_b_"
+        }
+      ],
+      "first": [
+        {
+          "insert": "_a_b_"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "_a_b_"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "_a_b_"
+        }
+      ],
+      "final": [
+        {
+          "insert": "_a_b_"
+        }
+      ],
+      "strip": [
+        {
+          "insert": "_a_b_"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "a_b_c"
+        }
+      ],
+      "first": [
+        {
+          "insert": "a_b_c"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "a_b_c"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "a_b_c"
+        }
+      ],
+      "final": [
+        {
+          "insert": "a_b_c"
+        }
+      ],
+      "strip": [
+        {
+          "insert": "a_b_c"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "_(ツ)_"
+        }
+      ],
+      "first": [
+        {
+          "insert": "_(ツ)_"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "_(ツ)_"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "_(ツ)_"
+        }
+      ],
+      "final": [
+        {
+          "insert": "_(ツ)_"
+        }
+      ],
+      "strip": [
+        {
+          "insert": "_(ツ)_"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "＊bold＊ ＿italic＿ ｀code｀"
+        }
+      ],
+      "first": [
+        {
+          "insert": "＊bold＊ ＿italic＿ ｀code｀"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "＊bold＊ ＿italic＿ ｀code｀"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "bold",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": "italic",
+          "attributes": {
+            "italic": true
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": "code",
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "bold": true
+          },
+          "insert": "bold"
+        },
+        {
+          "insert": " "
+        },
+        {
+          "attributes": {
+            "italic": true
+          },
+          "insert": "italic"
+        },
+        {
+          "insert": " "
+        },
+        {
+          "attributes": {
+            "code": true
+          },
+          "insert": "code"
+        }
+      ],
+      "strip": [
+        {
+          "insert": "＊bold＊ ＿italic＿ ｀code｀"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "[label](https://example.com/a(b))"
+        }
+      ],
+      "first": [
+        {
+          "insert": "[label]("
+        },
+        {
+          "attributes": {
+            "link": "https://example.com/a(b)"
+          },
+          "insert": "https://example.com/a(b)"
+        },
+        {
+          "insert": ")"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "[label]("
+        },
+        {
+          "insert": "https://example.com/a(b)",
+          "attributes": {
+            "link": "https://example.com/a(b)"
+          }
+        },
+        {
+          "insert": ")"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "label",
+          "attributes": {
+            "link": "https://example.com/a(b)"
+          }
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "link": "https://example.com/a(b)"
+          },
+          "insert": "label"
+        }
+      ],
+      "strip": [
+        {
+          "insert": "[label](https://example.com/a(b))"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "[Email](mailto:user@example.com)"
+        }
+      ],
+      "first": [
+        {
+          "insert": "[Email](mailto:"
+        },
+        {
+          "attributes": {
+            "link": "mailto:user@example.com"
+          },
+          "insert": "user@example.com"
+        },
+        {
+          "insert": ")"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "[Email](mailto:"
+        },
+        {
+          "insert": "user@example.com",
+          "attributes": {
+            "link": "mailto:user@example.com"
+          }
+        },
+        {
+          "insert": ")"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "Email",
+          "attributes": {
+            "link": "mailto:user@example.com"
+          }
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "link": "mailto:user@example.com"
+          },
+          "insert": "Email"
+        }
+      ],
+      "strip": [
+        {
+          "insert": "[Email](mailto:user@example.com)"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "[Call](tel:212-555-0123)"
+        }
+      ],
+      "first": [
+        {
+          "insert": "[Call](tel:212-555-0123)"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "[Call](tel:212-555-0123)"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "Call",
+          "attributes": {
+            "link": "tel:212-555-0123"
+          }
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "link": "tel:212-555-0123"
+          },
+          "insert": "Call"
+        }
+      ],
+      "strip": [
+        {
+          "insert": "[Call](tel:212-555-0123)"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "[a](https://example.com)"
+        }
+      ],
+      "first": [
+        {
+          "insert": "[a]("
+        },
+        {
+          "attributes": {
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        },
+        {
+          "insert": ")"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "[a]("
+        },
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "link": "https://example.com"
+          }
+        },
+        {
+          "insert": ")"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "[a]("
+        },
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "link": "https://example.com"
+          }
+        },
+        {
+          "insert": ")"
+        }
+      ],
+      "final": [
+        {
+          "insert": "[a]("
+        },
+        {
+          "attributes": {
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        },
+        {
+          "insert": ")"
+        }
+      ],
+      "strip": [
+        {
+          "insert": "[a](https://example.com)"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "`[label](https://example.com)`"
+        }
+      ],
+      "first": [
+        {
+          "insert": "`[label]("
+        },
+        {
+          "attributes": {
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        },
+        {
+          "insert": ")`"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "`[label]("
+        },
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "link": "https://example.com"
+          }
+        },
+        {
+          "insert": ")`"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "[label](https://example.com)",
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "code": true
+          },
+          "insert": "[label]("
+        },
+        {
+          "attributes": {
+            "code": true,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        },
+        {
+          "attributes": {
+            "code": true
+          },
+          "insert": ")"
+        }
+      ],
+      "strip": [
+        {
+          "insert": "`[label](https://example.com)`"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "*https://example.com/a*"
+        }
+      ],
+      "first": [
+        {
+          "insert": "*"
+        },
+        {
+          "attributes": {
+            "link": "https://example.com/a*"
+          },
+          "insert": "https://example.com/a*"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "*"
+        },
+        {
+          "insert": "https://example.com/a*",
+          "attributes": {
+            "link": "https://example.com/a*"
+          }
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "*"
+        },
+        {
+          "insert": "https://example.com/a*",
+          "attributes": {
+            "link": "https://example.com/a*"
+          }
+        }
+      ],
+      "final": [
+        {
+          "insert": "*"
+        },
+        {
+          "attributes": {
+            "link": "https://example.com/a*"
+          },
+          "insert": "https://example.com/a*"
+        }
+      ],
+      "strip": [
+        {
+          "insert": "*https://example.com/a*"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "> quote\nnext\n> last\n"
+        }
+      ],
+      "first": [
+        {
+          "insert": "> quote\nnext\n> last\n"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "> quote\nnext\n> last\n"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "quote"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "blockquote": true
+          }
+        },
+        {
+          "insert": "next\nlast"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "blockquote": true
+          }
+        }
+      ],
+      "final": [
+        {
+          "insert": "quote"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "blockquote": true
+          }
+        },
+        {
+          "insert": "next\nlast"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "blockquote": true
+          }
+        }
+      ],
+      "strip": [
+        {
+          "insert": "> quote\nnext\n> last\n"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ">"
+        }
+      ],
+      "first": [
+        {
+          "insert": ">"
+        }
+      ],
+      "repair": [
+        {
+          "insert": ">"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": ">"
+        }
+      ],
+      "final": [
+        {
+          "insert": ">"
+        }
+      ],
+      "strip": [
+        {
+          "insert": ">"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "> "
+        }
+      ],
+      "first": [
+        {
+          "insert": "> "
+        }
+      ],
+      "repair": [
+        {
+          "insert": "> "
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "> "
+        }
+      ],
+      "final": [
+        {
+          "insert": "> "
+        }
+      ],
+      "strip": [
+        {
+          "insert": "> "
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ">>> all\nlines"
+        }
+      ],
+      "first": [
+        {
+          "insert": ">>> all\nlines"
+        }
+      ],
+      "repair": [
+        {
+          "insert": ">>> all\nlines"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "all"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "blockquote": true
+          }
+        },
+        {
+          "insert": "lines"
+        },
+        {
+          "attributes": {
+            "blockquote": true
+          },
+          "insert": "\n"
+        }
+      ],
+      "final": [
+        {
+          "insert": "all"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "blockquote": true
+          }
+        },
+        {
+          "insert": "lines"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "blockquote": true
+          }
+        }
+      ],
+      "strip": [
+        {
+          "insert": ">>> all\nlines"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ">>>\nnext\n"
+        }
+      ],
+      "first": [
+        {
+          "insert": ">>>\nnext\n"
+        }
+      ],
+      "repair": [
+        {
+          "insert": ">>>\nnext\n"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "next"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "blockquote": true
+          }
+        }
+      ],
+      "final": [
+        {
+          "insert": "next"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "blockquote": true
+          }
+        }
+      ],
+      "strip": [
+        {
+          "insert": ">>>\nnext\n"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "> > nested\n"
+        }
+      ],
+      "first": [
+        {
+          "insert": "> > nested\n"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "> > nested\n"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "nested"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "blockquote": true,
+            "border": 1
+          }
+        }
+      ],
+      "final": [
+        {
+          "insert": "nested"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "blockquote": true,
+            "border": 1
+          }
+        }
+      ],
+      "strip": [
+        {
+          "insert": "> > nested\n"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "1. one\n2. two\n"
+        }
+      ],
+      "first": [
+        {
+          "insert": "1. one\n2. two\n"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "1. one\n2. two\n"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "one"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "ordered",
+            "indent": 0
+          }
+        },
+        {
+          "insert": "two"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "ordered",
+            "indent": 0
+          }
+        }
+      ],
+      "final": [
+        {
+          "insert": "one"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "ordered",
+            "indent": 0
+          }
+        },
+        {
+          "insert": "two"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "ordered",
+            "indent": 0
+          }
+        }
+      ],
+      "strip": [
+        {
+          "insert": "1. one\n2. two\n"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "2. two\n3. three\n"
+        }
+      ],
+      "first": [
+        {
+          "insert": "2. two\n3. three\n"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "2. two\n3. three\n"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "2. two\n3. three\n"
+        }
+      ],
+      "final": [
+        {
+          "insert": "2. two\n3. three\n"
+        }
+      ],
+      "strip": [
+        {
+          "insert": "2. two\n3. three\n"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "1. lone"
+        }
+      ],
+      "first": [
+        {
+          "insert": "1. lone"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "1. lone"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "1. lone"
+        }
+      ],
+      "final": [
+        {
+          "insert": "1. lone"
+        }
+      ],
+      "strip": [
+        {
+          "insert": "1. lone"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "* bullet\n- next\n"
+        }
+      ],
+      "first": [
+        {
+          "insert": "* bullet\n- next\n"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "* bullet\n- next\n"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "bullet"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "indent": 0
+          }
+        },
+        {
+          "insert": "next"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "indent": 0
+          }
+        }
+      ],
+      "final": [
+        {
+          "insert": "bullet"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "indent": 0
+          }
+        },
+        {
+          "insert": "next"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "indent": 0
+          }
+        }
+      ],
+      "strip": [
+        {
+          "insert": "* bullet\n- next\n"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "* a\n    * nested\n* b\n"
+        }
+      ],
+      "first": [
+        {
+          "insert": "* a\n    * nested\n* b\n"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "* a\n    * nested\n* b\n"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "indent": 0
+          }
+        },
+        {
+          "insert": "nested"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "indent": 1
+          }
+        },
+        {
+          "insert": "b"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "indent": 0,
+            "offset": 1
+          }
+        }
+      ],
+      "final": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "indent": 0
+          }
+        },
+        {
+          "insert": "nested"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "indent": 1
+          }
+        },
+        {
+          "insert": "b"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "indent": 0,
+            "offset": 1
+          }
+        }
+      ],
+      "strip": [
+        {
+          "insert": "* a\n    * nested\n* b\n"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "1. a\n    1. b\n    2. c\n2. d\n"
+        }
+      ],
+      "first": [
+        {
+          "insert": "1. a\n    1. b\n    2. c\n2. d\n"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "1. a\n    1. b\n    2. c\n2. d\n"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "ordered",
+            "indent": 0
+          }
+        },
+        {
+          "insert": "b"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "ordered",
+            "indent": 1
+          }
+        },
+        {
+          "insert": "c"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "ordered",
+            "indent": 1
+          }
+        },
+        {
+          "insert": "d"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "ordered",
+            "indent": 0,
+            "offset": 1
+          }
+        }
+      ],
+      "final": [
+        {
+          "insert": "a"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "ordered",
+            "indent": 0
+          }
+        },
+        {
+          "insert": "b"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "ordered",
+            "indent": 1
+          }
+        },
+        {
+          "insert": "c"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "ordered",
+            "indent": 1
+          }
+        },
+        {
+          "insert": "d"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "ordered",
+            "indent": 0,
+            "offset": 1
+          }
+        }
+      ],
+      "strip": [
+        {
+          "insert": "1. a\n    1. b\n    2. c\n2. d\n"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "```\ncode\n```"
+        }
+      ],
+      "first": [
+        {
+          "insert": "```\ncode\n```"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "```"
+        },
+        {
+          "insert": "\ncode\n",
+          "attributes": {
+            "bold": false,
+            "italic": false,
+            "strike": false,
+            "code": false,
+            "underline": false,
+            "slackmention": false,
+            "slackslug": false,
+            "link": false,
+            "unlink": false
+          }
+        },
+        {
+          "insert": "```"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "code",
+          "attributes": {
+            "bold": false,
+            "italic": false,
+            "strike": false,
+            "code": false,
+            "underline": false,
+            "slackmention": false,
+            "slackslug": false,
+            "link": false,
+            "unlink": false
+          }
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true,
+            "bold": false,
+            "italic": false,
+            "strike": false,
+            "code": false,
+            "underline": false,
+            "slackmention": false,
+            "slackslug": false,
+            "link": false,
+            "unlink": false
+          }
+        }
+      ],
+      "final": [
+        {
+          "insert": "code",
+          "attributes": {
+            "bold": false,
+            "italic": false,
+            "strike": false,
+            "code": false,
+            "underline": false,
+            "slackmention": false,
+            "slackslug": false,
+            "link": false,
+            "unlink": false
+          }
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true,
+            "bold": false,
+            "italic": false,
+            "strike": false,
+            "code": false,
+            "underline": false,
+            "slackmention": false,
+            "slackslug": false,
+            "link": false,
+            "unlink": false
+          }
+        }
+      ],
+      "strip": [
+        {
+          "insert": "```\ncode\n```"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "before ```one``` after"
+        }
+      ],
+      "first": [
+        {
+          "insert": "before ```one``` after"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "before ```"
+        },
+        {
+          "insert": "one",
+          "attributes": {
+            "bold": false,
+            "italic": false,
+            "strike": false,
+            "code": false,
+            "underline": false,
+            "slackmention": false,
+            "slackslug": false,
+            "link": false,
+            "unlink": false
+          }
+        },
+        {
+          "insert": "``` after"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "before\n"
+        },
+        {
+          "insert": "one",
+          "attributes": {
+            "bold": false,
+            "italic": false,
+            "strike": false,
+            "code": false,
+            "underline": false,
+            "slackmention": false,
+            "slackslug": false,
+            "link": false,
+            "unlink": false
+          }
+        },
+        {
+          "attributes": {
+            "code-block": true
+          },
+          "insert": "\n"
+        },
+        {
+          "insert": "after"
+        }
+      ],
+      "final": [
+        {
+          "insert": "before\n"
+        },
+        {
+          "attributes": {
+            "bold": false,
+            "italic": false,
+            "strike": false,
+            "code": false,
+            "underline": false,
+            "slackmention": false,
+            "slackslug": false,
+            "link": false,
+            "unlink": false
+          },
+          "insert": "one"
+        },
+        {
+          "attributes": {
+            "code-block": true
+          },
+          "insert": "\n"
+        },
+        {
+          "insert": "after"
+        }
+      ],
+      "strip": [
+        {
+          "insert": "before ```one``` after"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "```one```\n```two```"
+        }
+      ],
+      "first": [
+        {
+          "insert": "```one```\n```two```"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "```"
+        },
+        {
+          "insert": "one",
+          "attributes": {
+            "bold": false,
+            "italic": false,
+            "strike": false,
+            "code": false,
+            "underline": false,
+            "slackmention": false,
+            "slackslug": false,
+            "link": false,
+            "unlink": false
+          }
+        },
+        {
+          "insert": "```\n```"
+        },
+        {
+          "insert": "two",
+          "attributes": {
+            "bold": false,
+            "italic": false,
+            "strike": false,
+            "code": false,
+            "underline": false,
+            "slackmention": false,
+            "slackslug": false,
+            "link": false,
+            "unlink": false
+          }
+        },
+        {
+          "insert": "```"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "one",
+          "attributes": {
+            "bold": false,
+            "italic": false,
+            "strike": false,
+            "code": false,
+            "underline": false,
+            "slackmention": false,
+            "slackslug": false,
+            "link": false,
+            "unlink": false
+          }
+        },
+        {
+          "attributes": {
+            "code-block": true
+          },
+          "insert": "\n"
+        },
+        {
+          "insert": "\n"
+        },
+        {
+          "insert": "two",
+          "attributes": {
+            "bold": false,
+            "italic": false,
+            "strike": false,
+            "code": false,
+            "underline": false,
+            "slackmention": false,
+            "slackslug": false,
+            "link": false,
+            "unlink": false
+          }
+        },
+        {
+          "attributes": {
+            "code-block": true
+          },
+          "insert": "\n"
+        }
+      ],
+      "final": [
+        {
+          "insert": "one",
+          "attributes": {
+            "bold": false,
+            "italic": false,
+            "strike": false,
+            "code": false,
+            "underline": false,
+            "slackmention": false,
+            "slackslug": false,
+            "link": false,
+            "unlink": false
+          }
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        },
+        {
+          "insert": "\n"
+        },
+        {
+          "insert": "two",
+          "attributes": {
+            "bold": false,
+            "italic": false,
+            "strike": false,
+            "code": false,
+            "underline": false,
+            "slackmention": false,
+            "slackslug": false,
+            "link": false,
+            "unlink": false
+          }
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ],
+      "strip": [
+        {
+          "insert": "```one```\n```two```"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "> ```one```\n"
+        }
+      ],
+      "first": [
+        {
+          "insert": "> ```one```\n"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "> ```"
+        },
+        {
+          "insert": "one",
+          "attributes": {
+            "bold": false,
+            "italic": false,
+            "strike": false,
+            "code": false,
+            "underline": false,
+            "slackmention": false,
+            "slackslug": false,
+            "link": false,
+            "unlink": false
+          }
+        },
+        {
+          "insert": "```\n"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "one",
+          "attributes": {
+            "bold": false,
+            "italic": false,
+            "strike": false,
+            "code": false,
+            "underline": false,
+            "slackmention": false,
+            "slackslug": false,
+            "link": false,
+            "unlink": false
+          }
+        },
+        {
+          "attributes": {
+            "code-block": true,
+            "border": 1
+          },
+          "insert": "\n"
+        }
+      ],
+      "final": [
+        {
+          "insert": "one",
+          "attributes": {
+            "bold": false,
+            "italic": false,
+            "strike": false,
+            "code": false,
+            "underline": false,
+            "slackmention": false,
+            "slackslug": false,
+            "link": false,
+            "unlink": false
+          }
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true,
+            "border": 1
+          }
+        }
+      ],
+      "strip": [
+        {
+          "insert": "> ```one```\n"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "｀｀｀code｀｀｀"
+        }
+      ],
+      "first": [
+        {
+          "insert": "｀｀｀code｀｀｀"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "｀｀｀"
+        },
+        {
+          "insert": "code",
+          "attributes": {
+            "bold": false,
+            "italic": false,
+            "strike": false,
+            "code": false,
+            "underline": false,
+            "slackmention": false,
+            "slackslug": false,
+            "link": false,
+            "unlink": false
+          }
+        },
+        {
+          "insert": "｀｀｀"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "code",
+          "attributes": {
+            "bold": false,
+            "italic": false,
+            "strike": false,
+            "code": false,
+            "underline": false,
+            "slackmention": false,
+            "slackslug": false,
+            "link": false,
+            "unlink": false
+          }
+        },
+        {
+          "attributes": {
+            "code-block": true
+          },
+          "insert": "\n"
+        }
+      ],
+      "final": [
+        {
+          "insert": "code",
+          "attributes": {
+            "bold": false,
+            "italic": false,
+            "strike": false,
+            "code": false,
+            "underline": false,
+            "slackmention": false,
+            "slackslug": false,
+            "link": false,
+            "unlink": false
+          }
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ],
+      "strip": [
+        {
+          "insert": "｀｀｀code｀｀｀"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com/a)b www.example.com user@example.com +1 212-555-0123"
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "link": "https://example.com/a"
+          },
+          "insert": "https://example.com/a"
+        },
+        {
+          "insert": ")b "
+        },
+        {
+          "attributes": {
+            "link": "http://www.example.com"
+          },
+          "insert": "www.example.com"
+        },
+        {
+          "insert": " "
+        },
+        {
+          "attributes": {
+            "link": "mailto:user@example.com"
+          },
+          "insert": "user@example.com"
+        },
+        {
+          "insert": " "
+        },
+        {
+          "attributes": {
+            "link": "tel:+12125550123"
+          },
+          "insert": "+1 212-555-0123"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "https://example.com/a",
+          "attributes": {
+            "link": "https://example.com/a"
+          }
+        },
+        {
+          "insert": ")b "
+        },
+        {
+          "insert": "www.example.com",
+          "attributes": {
+            "link": "http://www.example.com"
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": "user@example.com",
+          "attributes": {
+            "link": "mailto:user@example.com"
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": "+1 212-555-0123",
+          "attributes": {
+            "link": "tel:+12125550123"
+          }
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "https://example.com/a",
+          "attributes": {
+            "link": "https://example.com/a"
+          }
+        },
+        {
+          "insert": ")b "
+        },
+        {
+          "insert": "www.example.com",
+          "attributes": {
+            "link": "http://www.example.com"
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": "user@example.com",
+          "attributes": {
+            "link": "mailto:user@example.com"
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": "+1 212-555-0123",
+          "attributes": {
+            "link": "tel:+12125550123"
+          }
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "link": "https://example.com/a"
+          },
+          "insert": "https://example.com/a"
+        },
+        {
+          "insert": ")b "
+        },
+        {
+          "attributes": {
+            "link": "http://www.example.com"
+          },
+          "insert": "www.example.com"
+        },
+        {
+          "insert": " "
+        },
+        {
+          "attributes": {
+            "link": "mailto:user@example.com"
+          },
+          "insert": "user@example.com"
+        },
+        {
+          "insert": " "
+        },
+        {
+          "attributes": {
+            "link": "tel:+12125550123"
+          },
+          "insert": "+1 212-555-0123"
+        }
+      ],
+      "strip": [
+        {
+          "insert": "https://example.com/a)b www.example.com user@example.com +1 212-555-0123"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "tel:+1-212-555-0123"
+        }
+      ],
+      "first": [
+        {
+          "insert": "tel:+1-212-555-0123"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "tel:+1-212-555-0123"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "tel:+1-212-555-0123"
+        }
+      ],
+      "final": [
+        {
+          "insert": "tel:+1-212-555-0123"
+        }
+      ],
+      "strip": [
+        {
+          "insert": "tel:+1-212-555-0123"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com/😀"
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "link": "https://example.com/😀"
+          },
+          "insert": "https://example.com/😀"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "https://example.com/😀",
+          "attributes": {
+            "link": "https://example.com/😀"
+          }
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "https://example.com/😀",
+          "attributes": {
+            "link": "https://example.com/😀"
+          }
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "link": "https://example.com/😀"
+          },
+          "insert": "https://example.com/😀"
+        }
+      ],
+      "strip": [
+        {
+          "insert": "https://example.com/😀"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "↔ ↔︎ ↔️ ‍↔"
+        }
+      ],
+      "first": [
+        {
+          "insert": "↔ ↔︎ ↔️ ‍↔"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "↔ ↔︎ ↔️ ‍↔"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "↔ ↔︎ ↔️ ‍↔"
+        }
+      ],
+      "final": [
+        {
+          "insert": "↔ ↔︎ ↔️ ‍↔"
+        }
+      ],
+      "strip": [
+        {
+          "insert": "↔ ↔︎ ↔️ ‍↔"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "link": "https://old.example.com",
+            "bold": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "link": "https://example.com",
+            "bold": true
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "link": "https://example.com",
+            "bold": true
+          }
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "link": "https://example.com",
+            "bold": true
+          }
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "link": "https://example.com",
+            "bold": true
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "strip": [
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "link": "https://old.example.com",
+            "bold": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "examp",
+          "attributes": {
+            "link": "https://example.com"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "link": "https://example.com"
+          },
+          "insert": "examp"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "examp",
+          "attributes": {
+            "link": "https://example.com"
+          }
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "examp",
+          "attributes": {
+            "link": "https://example.com"
+          }
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "link": "https://example.com"
+          },
+          "insert": "examp"
+        }
+      ],
+      "strip": [
+        {
+          "insert": "examp",
+          "attributes": {
+            "link": "https://example.com"
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "https://exam[…]com",
+          "attributes": {
+            "link": "https://example.com"
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "link": "https://example.com"
+          },
+          "insert": "https://exam[…]com"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "https://exam[…]com",
+          "attributes": {
+            "link": "https://example.com"
+          }
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "https://exam[…]com",
+          "attributes": {
+            "link": "https://example.com"
+          }
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "link": "https://example.com"
+          },
+          "insert": "https://exam[…]com"
+        }
+      ],
+      "strip": [
+        {
+          "insert": "https://exam[…]com",
+          "attributes": {
+            "link": "https://example.com"
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "example.com",
+          "attributes": {
+            "unlink": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "unlink": true
+          },
+          "insert": "example.com"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "example.com",
+          "attributes": {
+            "unlink": true
+          }
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "example.com",
+          "attributes": {
+            "unlink": true
+          }
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "unlink": true
+          },
+          "insert": "example.com"
+        }
+      ],
+      "strip": [
+        {
+          "insert": "example.com",
+          "attributes": {
+            "unlink": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "example.com user@example.com ftp://example.com https://example.com"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "insert": "example.com",
+          "attributes": {
+            "link": "http://example.com"
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": "user@example.com",
+          "attributes": {
+            "link": "mailto:user@example.com"
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": "ftp://example.com",
+          "attributes": {
+            "link": "ftp://example.com"
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "link": "https://example.com"
+          }
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ],
+      "repair": [
+        {
+          "insert": "example.com",
+          "attributes": {
+            "link": "http://example.com"
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": "user@example.com",
+          "attributes": {
+            "link": "mailto:user@example.com"
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": "ftp://example.com",
+          "attributes": {
+            "link": "ftp://example.com"
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "link": "https://example.com"
+          }
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "example.com user@example.com ftp://example.com https://example.com"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ],
+      "final": [
+        {
+          "insert": "example.com user@example.com "
+        },
+        {
+          "insert": "ftp://example.com",
+          "attributes": {
+            "link": "ftp://example.com"
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": "https://example.com",
+          "attributes": {
+            "link": "https://example.com"
+          }
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ],
+      "strip": [
+        {
+          "insert": "example.com user@example.com ftp://example.com https://example.com"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "```"
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          },
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": " code```"
+        }
+      ],
+      "first": [
+        {
+          "insert": "```"
+        },
+        {
+          "attributes": {
+            "bold": true
+          },
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        },
+        {
+          "insert": " code```"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "```:smile:"
+        },
+        {
+          "insert": " code",
+          "attributes": {
+            "bold": false,
+            "italic": false,
+            "strike": false,
+            "code": false,
+            "underline": false,
+            "slackmention": false,
+            "slackslug": false,
+            "link": false,
+            "unlink": false
+          }
+        },
+        {
+          "insert": "```"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": ":smile:"
+        },
+        {
+          "insert": " code",
+          "attributes": {
+            "bold": false,
+            "italic": false,
+            "strike": false,
+            "code": false,
+            "underline": false,
+            "slackmention": false,
+            "slackslug": false,
+            "link": false,
+            "unlink": false
+          }
+        },
+        {
+          "attributes": {
+            "code-block": true
+          },
+          "insert": "\n"
+        }
+      ],
+      "final": [
+        {
+          "insert": ":smile:"
+        },
+        {
+          "insert": " code",
+          "attributes": {
+            "bold": false,
+            "italic": false,
+            "strike": false,
+            "code": false,
+            "underline": false,
+            "slackmention": false,
+            "slackslug": false,
+            "link": false,
+            "unlink": false
+          }
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ],
+      "strip": [
+        {
+          "insert": "```"
+        },
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          },
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": " code```"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "```"
+        },
+        {
+          "insert": {
+            "workflowtoken": {
+              "type": "string",
+              "id": "v",
+              "name": "Var"
+            }
+          }
+        },
+        {
+          "insert": " code```"
+        }
+      ],
+      "first": [
+        {
+          "insert": "```"
+        },
+        {
+          "insert": {
+            "workflowtoken": {
+              "type": "string",
+              "id": "v",
+              "name": "Var"
+            }
+          }
+        },
+        {
+          "insert": " code```"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "```"
+        },
+        {
+          "insert": " code",
+          "attributes": {
+            "bold": false,
+            "italic": false,
+            "strike": false,
+            "code": false,
+            "underline": false,
+            "slackmention": false,
+            "slackslug": false,
+            "link": false,
+            "unlink": false
+          }
+        },
+        {
+          "insert": "```"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": " code",
+          "attributes": {
+            "bold": false,
+            "italic": false,
+            "strike": false,
+            "code": false,
+            "underline": false,
+            "slackmention": false,
+            "slackslug": false,
+            "link": false,
+            "unlink": false
+          }
+        },
+        {
+          "attributes": {
+            "code-block": true
+          },
+          "insert": "\n"
+        }
+      ],
+      "final": [
+        {
+          "insert": " code",
+          "attributes": {
+            "bold": false,
+            "italic": false,
+            "strike": false,
+            "code": false,
+            "underline": false,
+            "slackmention": false,
+            "slackslug": false,
+            "link": false,
+            "unlink": false
+          }
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": true
+          }
+        }
+      ],
+      "strip": [
+        {
+          "insert": "```"
+        },
+        {
+          "insert": {
+            "workflowtoken": {
+              "type": "string",
+              "id": "v",
+              "name": "Var"
+            }
+          }
+        },
+        {
+          "insert": " code```"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "```"
+        },
+        {
+          "insert": {
+            "unknown": {
+              "opaque": [
+                1,
+                2
+              ]
+            }
+          }
+        },
+        {
+          "insert": " code```"
+        }
+      ],
+      "first": [
+        {
+          "insert": "```"
+        },
+        {
+          "insert": {
+            "unknown": {
+              "opaque": [
+                1,
+                2
+              ]
+            }
+          }
+        },
+        {
+          "insert": " code```"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "```"
+        },
+        {
+          "insert": {
+            "unknown": {
+              "opaque": [
+                1,
+                2
+              ]
+            }
+          },
+          "attributes": {
+            "bold": false,
+            "italic": false,
+            "strike": false,
+            "code": false,
+            "underline": false,
+            "slackmention": false,
+            "slackslug": false,
+            "link": false,
+            "unlink": false
+          }
+        },
+        {
+          "insert": " code```",
+          "attributes": {
+            "bold": false,
+            "italic": false,
+            "strike": false,
+            "code": false,
+            "underline": false,
+            "slackmention": false,
+            "slackslug": false,
+            "link": false,
+            "unlink": false
+          }
+        }
+      ],
+      "markdown": [
+        {
+          "insert": {
+            "unknown": {
+              "opaque": [
+                1,
+                2
+              ]
+            }
+          },
+          "attributes": {
+            "bold": false,
+            "italic": false,
+            "strike": false,
+            "code": false,
+            "underline": false,
+            "slackmention": false,
+            "slackslug": false,
+            "link": false,
+            "unlink": false
+          }
+        },
+        {
+          "insert": " code```",
+          "attributes": {
+            "bold": false,
+            "italic": false,
+            "strike": false,
+            "code": false,
+            "underline": false,
+            "slackmention": false,
+            "slackslug": false,
+            "link": false,
+            "unlink": false
+          }
+        },
+        {
+          "retain": 11
+        },
+        {
+          "attributes": {
+            "code-block": true
+          },
+          "insert": "\n"
+        },
+        {
+          "delete": 3
+        }
+      ],
+      "final": [],
+      "strip": [
+        {
+          "insert": "```"
+        },
+        {
+          "insert": {
+            "unknown": {
+              "opaque": [
+                1,
+                2
+              ]
+            }
+          }
+        },
+        {
+          "insert": " code```"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          },
+          "attributes": {
+            "code": true,
+            "bold": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "code": true,
+            "bold": true
+          },
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          }
+        }
+      ],
+      "repair": [
+        {
+          "insert": {
+            "slackemoji": {
+              "text": ":smile:"
+            }
+          },
+          "attributes": {
+            "code": true,
+            "bold": true
+          }
+        }
+      ],
+      "markdown": [
+        {
+          "attributes": {
+            "code": true,
+            "bold": true
+          },
+          "insert": ":smile:"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "code": true,
+            "bold": true
+          },
+          "insert": ":smile:"
+        }
+      ],
+      "strip": [
+        {
+          "attributes": {
+            "code": true,
+            "bold": true
+          },
+          "insert": ":smile:"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "@Alex",
+          "attributes": {
+            "code": true,
+            "slackmention": {
+              "id": "U1",
+              "label": "@Alex"
+            },
+            "bold": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "code": true,
+            "slackmention": {
+              "id": "U1",
+              "label": "@Alex"
+            },
+            "bold": true
+          },
+          "insert": "@Alex"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "@Alex",
+          "attributes": {
+            "code": true,
+            "slackmention": {
+              "id": "U1",
+              "label": "@Alex"
+            },
+            "bold": true
+          }
+        }
+      ],
+      "markdown": [
+        {
+          "attributes": {
+            "code": true,
+            "bold": true
+          },
+          "insert": "@Alex"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "code": true,
+            "bold": true
+          },
+          "insert": "@Alex"
+        }
+      ],
+      "strip": [
+        {
+          "attributes": {
+            "code": true,
+            "bold": true
+          },
+          "insert": "@Alex"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "label",
+          "attributes": {
+            "code": true,
+            "slackslug": {
+              "url": "https://example.com",
+              "label": "label"
+            },
+            "bold": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "code": true,
+            "slackslug": {
+              "url": "https://example.com",
+              "label": "label"
+            },
+            "bold": true
+          },
+          "insert": "label"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "label",
+          "attributes": {
+            "code": true,
+            "slackslug": {
+              "url": "https://example.com",
+              "label": "label"
+            },
+            "bold": true
+          }
+        }
+      ],
+      "markdown": [
+        {
+          "attributes": {
+            "code": true,
+            "bold": true
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "code": true,
+            "bold": true,
+            "link": "https://example.com"
+          },
+          "insert": "https://example.com"
+        }
+      ],
+      "strip": [
+        {
+          "attributes": {
+            "code": true,
+            "bold": true
+          },
+          "insert": "https://example.com"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "label",
+          "attributes": {
+            "code": true,
+            "link": "https://example.com",
+            "bold": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "code": true,
+            "link": "https://example.com",
+            "bold": true
+          },
+          "insert": "label"
+        }
+      ],
+      "repair": [
+        {
+          "insert": "label",
+          "attributes": {
+            "code": true,
+            "link": "https://example.com",
+            "bold": true
+          }
+        }
+      ],
+      "markdown": [
+        {
+          "attributes": {
+            "code": true,
+            "bold": true
+          },
+          "insert": "label"
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "code": true,
+            "bold": true
+          },
+          "insert": "label"
+        }
+      ],
+      "strip": [
+        {
+          "attributes": {
+            "code": true,
+            "bold": true
+          },
+          "insert": "label"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "workflowtoken": {
+              "type": "string",
+              "id": "v",
+              "name": "Var"
+            }
+          },
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "first": [
+        {
+          "attributes": {
+            "code": true
+          },
+          "insert": {
+            "workflowtoken": {
+              "type": "string",
+              "id": "v",
+              "name": "Var"
+            }
+          }
+        }
+      ],
+      "repair": [
+        {
+          "insert": {
+            "workflowtoken": {
+              "type": "string",
+              "id": "v",
+              "name": "Var"
+            }
+          },
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "markdown": [
+        {
+          "insert": {
+            "workflowtoken": {
+              "type": "string",
+              "id": "v",
+              "name": "Var"
+            }
+          },
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "final": [
+        {
+          "attributes": {
+            "code": true
+          },
+          "insert": {
+            "workflowtoken": {
+              "type": "string",
+              "id": "v",
+              "name": "Var"
+            }
+          }
+        }
+      ],
+      "strip": [
+        {
+          "insert": {
+            "workflowtoken": {
+              "type": "string",
+              "id": "v",
+              "name": "Var"
+            }
+          },
+          "attributes": {
+            "code": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "first"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "border": 1,
+            "list": "bullet"
+          }
+        },
+        {
+          "insert": "middle\nlast"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "border": 1,
+            "list": "bullet"
+          }
+        }
+      ],
+      "first": [
+        {
+          "insert": "first"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "border": 1,
+            "list": "bullet"
+          }
+        },
+        {
+          "insert": "middle\nlast"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "border": 1,
+            "list": "bullet"
+          }
+        }
+      ],
+      "repair": [
+        {
+          "insert": "first"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "border": 1,
+            "list": "bullet"
+          }
+        },
+        {
+          "insert": "middle\nlast"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "border": 1,
+            "list": "bullet"
+          }
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "first"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "border": 1,
+            "list": "bullet"
+          }
+        },
+        {
+          "insert": "middle"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "blockquote": true
+          }
+        },
+        {
+          "insert": "last"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "border": 1,
+            "list": "bullet"
+          }
+        }
+      ],
+      "final": [
+        {
+          "insert": "first"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "border": 1,
+            "list": "bullet"
+          }
+        },
+        {
+          "insert": "middle"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "blockquote": true
+          }
+        },
+        {
+          "insert": "last"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "border": 1,
+            "list": "bullet"
+          }
+        }
+      ],
+      "strip": [
+        {
+          "insert": "first"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "border": 1,
+            "list": "bullet"
+          }
+        },
+        {
+          "insert": "middle\nlast"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "border": 1,
+            "list": "bullet"
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "x",
+          "attributes": {
+            "bold": false,
+            "custom": {
+              "preserve": [
+                1
+              ]
+            }
+          }
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": false
+          }
+        }
+      ],
+      "first": [
+        {
+          "insert": "x",
+          "attributes": {
+            "bold": false,
+            "custom": {
+              "preserve": [
+                1
+              ]
+            }
+          }
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": false
+          }
+        }
+      ],
+      "repair": [
+        {
+          "insert": "x",
+          "attributes": {
+            "bold": false,
+            "custom": {
+              "preserve": [
+                1
+              ]
+            }
+          }
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": false
+          }
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "x",
+          "attributes": {
+            "bold": false,
+            "custom": {
+              "preserve": [
+                1
+              ]
+            }
+          }
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": false
+          }
+        }
+      ],
+      "final": [
+        {
+          "insert": "x",
+          "attributes": {
+            "bold": false,
+            "custom": {
+              "preserve": [
+                1
+              ]
+            }
+          }
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": false
+          }
+        }
+      ],
+      "strip": [
+        {
+          "insert": "x",
+          "attributes": {
+            "bold": false,
+            "custom": {
+              "preserve": [
+                1
+              ]
+            }
+          }
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "code-block": false
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ">>> start\nblock"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "border": 1
+          }
+        },
+        {
+          "insert": "middle\n"
+        },
+        {
+          "insert": ">",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": "_x"
+        }
+      ],
+      "first": [
+        {
+          "insert": ">>> start\nblock"
+        },
+        {
+          "attributes": {
+            "list": "bullet",
+            "border": 1
+          },
+          "insert": "\n"
+        },
+        {
+          "insert": "middle\n"
+        },
+        {
+          "attributes": {
+            "bold": true
+          },
+          "insert": ">"
+        },
+        {
+          "insert": "_x"
+        }
+      ],
+      "repair": [
+        {
+          "insert": ">>> start\nblock"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "border": 1
+          }
+        },
+        {
+          "insert": "middle\n"
+        },
+        {
+          "insert": ">",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": "_x"
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "start"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "blockquote": true
+          }
+        },
+        {
+          "insert": "block"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "border": 1
+          }
+        },
+        {
+          "insert": "middle"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "blockquote": true
+          }
+        },
+        {
+          "insert": ">",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": "_x"
+        }
+      ],
+      "final": [
+        {
+          "insert": "start"
+        },
+        {
+          "attributes": {
+            "blockquote": true
+          },
+          "insert": "\n"
+        },
+        {
+          "insert": "block"
+        },
+        {
+          "attributes": {
+            "list": "bullet",
+            "border": 1
+          },
+          "insert": "\n"
+        },
+        {
+          "insert": "middle"
+        },
+        {
+          "attributes": {
+            "blockquote": true
+          },
+          "insert": "\n"
+        },
+        {
+          "attributes": {
+            "bold": true
+          },
+          "insert": ">"
+        },
+        {
+          "insert": "_x"
+        }
+      ],
+      "strip": [
+        {
+          "insert": ">>> start\nblock"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "border": 1
+          }
+        },
+        {
+          "insert": "middle\n"
+        },
+        {
+          "insert": ">",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": "_x"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ">>> start\nblock"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "border": 1
+          }
+        },
+        {
+          "insert": "middle\n"
+        },
+        {
+          "insert": {
+            "opaque": {
+              "id": "x"
+            }
+          }
+        }
+      ],
+      "first": [
+        {
+          "insert": ">>> start\nblock"
+        },
+        {
+          "attributes": {
+            "list": "bullet",
+            "border": 1
+          },
+          "insert": "\n"
+        },
+        {
+          "insert": "middle\n"
+        },
+        {
+          "insert": {
+            "opaque": {
+              "id": "x"
+            }
+          }
+        }
+      ],
+      "repair": [
+        {
+          "insert": ">>> start\nblock"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "border": 1
+          }
+        },
+        {
+          "insert": "middle\n"
+        },
+        {
+          "insert": {
+            "opaque": {
+              "id": "x"
+            }
+          }
+        }
+      ],
+      "markdown": [
+        {
+          "insert": "start"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "blockquote": true
+          }
+        },
+        {
+          "insert": "block"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "border": 1
+          }
+        },
+        {
+          "insert": "middle\n"
+        },
+        {
+          "insert": {
+            "opaque": {
+              "id": "x"
+            }
+          }
+        }
+      ],
+      "final": [
+        {
+          "insert": "start"
+        },
+        {
+          "attributes": {
+            "blockquote": true
+          },
+          "insert": "\n"
+        },
+        {
+          "insert": "block"
+        },
+        {
+          "attributes": {
+            "list": "bullet",
+            "border": 1
+          },
+          "insert": "\n"
+        },
+        {
+          "insert": "middle\n"
+        },
+        {
+          "insert": {
+            "opaque": {
+              "id": "x"
+            }
+          }
+        }
+      ],
+      "strip": [
+        {
+          "insert": ">>> start\nblock"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "border": 1
+          }
+        },
+        {
+          "insert": "middle\n"
+        },
+        {
+          "insert": {
+            "opaque": {
+              "id": "x"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackopaqueblock": {
+              "block": {
+                "type": "context"
+              }
+            },
+            "toString": null
+          }
+        }
+      ],
+      "first": [
+        {
+          "insert": {
+            "slackopaqueblock": {
+              "block": {
+                "type": "context"
+              }
+            },
+            "toString": null
+          }
+        }
+      ],
+      "repair": [
+        {
+          "insert": {
+            "slackopaqueblock": {
+              "block": {
+                "type": "context"
+              }
+            },
+            "toString": null
+          }
+        }
+      ],
+      "markdown": [
+        {
+          "insert": {
+            "slackopaqueblock": {
+              "block": {
+                "type": "context"
+              }
+            },
+            "toString": null
+          }
+        }
+      ],
+      "final": [
+        {
+          "insert": {
+            "slackopaqueblock": {
+              "block": {
+                "type": "context"
+              }
+            },
+            "toString": null
+          }
+        }
+      ],
+      "strip": [
+        {
+          "insert": {
+            "slackopaqueblock": {
+              "block": {
+                "type": "context"
+              }
+            },
+            "toString": null
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackopaqueblock": {
+              "block": {
+                "type": "context"
+              }
+            },
+            "toString": "not callable"
+          }
+        }
+      ],
+      "first": [
+        {
+          "insert": {
+            "slackopaqueblock": {
+              "block": {
+                "type": "context"
+              }
+            },
+            "toString": "not callable"
+          }
+        }
+      ],
+      "repair": [
+        {
+          "insert": {
+            "slackopaqueblock": {
+              "block": {
+                "type": "context"
+              }
+            },
+            "toString": "not callable"
+          }
+        }
+      ],
+      "markdown": [
+        {
+          "insert": {
+            "slackopaqueblock": {
+              "block": {
+                "type": "context"
+              }
+            },
+            "toString": "not callable"
+          }
+        }
+      ],
+      "final": [
+        {
+          "insert": {
+            "slackopaqueblock": {
+              "block": {
+                "type": "context"
+              }
+            },
+            "toString": "not callable"
+          }
+        }
+      ],
+      "strip": [
+        {
+          "insert": {
+            "slackopaqueblock": {
+              "block": {
+                "type": "context"
+              }
+            },
+            "toString": "not callable"
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": {
+            "slackopaqueblock": {
+              "block": {
+                "type": "context"
+              }
+            },
+            "toString": {}
+          }
+        }
+      ],
+      "first": [
+        {
+          "insert": {
+            "slackopaqueblock": {
+              "block": {
+                "type": "context"
+              }
+            },
+            "toString": {}
+          }
+        }
+      ],
+      "repair": [
+        {
+          "insert": {
+            "slackopaqueblock": {
+              "block": {
+                "type": "context"
+              }
+            },
+            "toString": {}
+          }
+        }
+      ],
+      "markdown": [
+        {
+          "insert": {
+            "slackopaqueblock": {
+              "block": {
+                "type": "context"
+              }
+            },
+            "toString": {}
+          }
+        }
+      ],
+      "final": [
+        {
+          "insert": {
+            "slackopaqueblock": {
+              "block": {
+                "type": "context"
+              }
+            },
+            "toString": {}
+          }
+        }
+      ],
+      "strip": [
+        {
+          "insert": {
+            "slackopaqueblock": {
+              "block": {
+                "type": "context"
+              }
+            },
+            "toString": {}
+          }
+        }
+      ]
+    }
+  ],
+  "composition": [
+    {
+      "input": [
+        {
+          "insert": "abc"
+        }
+      ],
+      "change": [
+        {
+          "retain": 4
+        }
+      ],
+      "output": [
+        {
+          "insert": "abc"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "abc"
+        }
+      ],
+      "change": [
+        {
+          "retain": 4,
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "output": [
+        {
+          "insert": "abc",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "retain": 1,
+          "attributes": {
+            "bold": true
+          }
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "abc"
+        }
+      ],
+      "change": [
+        {
+          "retain": 4
+        },
+        {
+          "insert": "x"
+        }
+      ],
+      "output": [
+        {
+          "insert": "abc"
+        },
+        {
+          "retain": 1
+        },
+        {
+          "insert": "x"
+        }
+      ]
+    }
+  ],
+  "unsupported": [
+    {
+      "input": [
+        {
+          "insert": ">>> start\nblock"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "border": true
+          }
+        },
+        {
+          "insert": "middle\n> last"
+        }
+      ],
+      "source": [
+        {
+          "insert": "start"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "blockquote": true
+          }
+        },
+        {
+          "insert": "block"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "border": true
+          }
+        },
+        {
+          "insert": "middle"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "blockquote": true
+          }
+        },
+        {
+          "insert": "last"
+        },
+        {
+          "attributes": {
+            "blockquote": true,
+            "border": 1
+          },
+          "insert": "\n"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ">>> start\nblock"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "border": "1"
+          }
+        },
+        {
+          "insert": "middle\n> last"
+        }
+      ],
+      "source": [
+        {
+          "insert": "start"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "blockquote": true
+          }
+        },
+        {
+          "insert": "block"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "border": "1"
+          }
+        },
+        {
+          "insert": "middle"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "blockquote": true
+          }
+        },
+        {
+          "insert": "last"
+        },
+        {
+          "attributes": {
+            "blockquote": true,
+            "border": 1
+          },
+          "insert": "\n"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ">>> start\nblock"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "border": [
+              1
+            ]
+          }
+        },
+        {
+          "insert": "middle\n> last"
+        }
+      ],
+      "source": [
+        {
+          "insert": "start"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "blockquote": true
+          }
+        },
+        {
+          "insert": "block"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "border": [
+              1
+            ]
+          }
+        },
+        {
+          "insert": "middle"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "blockquote": true
+          }
+        },
+        {
+          "insert": "last"
+        },
+        {
+          "attributes": {
+            "blockquote": true,
+            "border": 1
+          },
+          "insert": "\n"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": ">>> start\nblock"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "border": {
+              "value": 1
+            }
+          }
+        },
+        {
+          "insert": "middle\n> last"
+        }
+      ],
+      "source": [
+        {
+          "insert": "start"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "blockquote": true
+          }
+        },
+        {
+          "insert": "block"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "border": {
+              "value": 1
+            }
+          }
+        },
+        {
+          "insert": "middle\nlast"
+        },
+        {
+          "attributes": {
+            "blockquote": true,
+            "border": 1
+          },
+          "insert": "\n"
+        }
+      ]
+    },
+    {
+      "input": [
+        {
+          "insert": "label",
+          "attributes": {
+            "code": true,
+            "slackslug": true
+          }
+        }
+      ],
+      "sourceError": "TypeError",
+      "message": "Cannot use 'in' operator to search for 'url' in true"
+    },
+    {
+      "input": [
+        {
+          "insert": "label",
+          "attributes": {
+            "code": true,
+            "slackslug": "slug"
+          }
+        }
+      ],
+      "sourceError": "TypeError",
+      "message": "Cannot use 'in' operator to search for 'url' in slug"
+    },
+    {
+      "input": [
+        {
+          "insert": "label",
+          "attributes": {
+            "code": true,
+            "slackslug": 1
+          }
+        }
+      ],
+      "sourceError": "TypeError",
+      "message": "Cannot use 'in' operator to search for 'url' in 1"
+    },
+    {
+      "input": [
+        {
+          "insert": ">>> start\nblock"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "border": 1
+          }
+        },
+        {
+          "insert": "middle\n"
+        },
+        {
+          "insert": {
+            "toString": null
+          }
+        }
+      ],
+      "sourceError": "TypeError",
+      "message": "Cannot convert object to primitive value"
+    },
+    {
+      "input": [
+        {
+          "insert": ">>> start\nblock"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "border": 1
+          }
+        },
+        {
+          "insert": "middle\n"
+        },
+        {
+          "insert": {
+            "toString": "not callable"
+          }
+        }
+      ],
+      "sourceError": "TypeError",
+      "message": "Cannot convert object to primitive value"
+    },
+    {
+      "input": [
+        {
+          "insert": ">>> start\nblock"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "border": 1
+          }
+        },
+        {
+          "insert": "middle\n"
+        },
+        {
+          "insert": {
+            "toString": {}
+          }
+        }
+      ],
+      "sourceError": "TypeError",
+      "message": "Cannot convert object to primitive value"
+    },
+    {
+      "input": [
+        {
+          "insert": ">>> start\nblock"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "border": 1
+          }
+        },
+        {
+          "insert": "middle\n"
+        },
+        {
+          "insert": {
+            "slackopaqueblock": {
+              "block": {
+                "type": "context"
+              }
+            },
+            "toString": null
+          }
+        }
+      ],
+      "sourceError": "TypeError",
+      "message": "Cannot convert object to primitive value"
+    },
+    {
+      "input": [
+        {
+          "insert": ">>> start\nblock"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "border": 1
+          }
+        },
+        {
+          "insert": "middle\n"
+        },
+        {
+          "insert": {
+            "slackopaqueblock": {
+              "block": {
+                "type": "context"
+              }
+            },
+            "toString": "not callable"
+          }
+        }
+      ],
+      "sourceError": "TypeError",
+      "message": "Cannot convert object to primitive value"
+    },
+    {
+      "input": [
+        {
+          "insert": ">>> start\nblock"
+        },
+        {
+          "insert": "\n",
+          "attributes": {
+            "list": "bullet",
+            "border": 1
+          }
+        },
+        {
+          "insert": "middle\n"
+        },
+        {
+          "insert": {
+            "slackopaqueblock": {
+              "block": {
+                "type": "context"
+              }
+            },
+            "toString": {}
+          }
+        }
+      ],
+      "sourceError": "TypeError",
+      "message": "Cannot convert object to primitive value"
+    }
+  ],
+  "unsupportedIndices": [
+    46
+  ],
+  "modules": [
+    "+EB+",
+    "/0Gg",
+    "/efW",
+    "09IQ",
+    "0gHG",
+    "3MHn",
+    "3qOO",
+    "4x3H",
+    "5+Zh",
+    "5KPz",
+    "67Az",
+    "9UHZ",
+    "9j8p",
+    "9n32",
+    "A8gZ",
+    "AGfT",
+    "AWJv",
+    "AY7U",
+    "AkOy",
+    "CnpR",
+    "CwFm",
+    "EACB",
+    "F5nq",
+    "FheB",
+    "Fks7",
+    "HsCr",
+    "Hu4T",
+    "Ifqe",
+    "IhIt",
+    "JfMk",
+    "LUrm",
+    "M5WD",
+    "MI1U",
+    "MiTi",
+    "N8wa",
+    "NS8g",
+    "NaDL",
+    "OajW",
+    "Ov5q",
+    "P/Dz",
+    "PI3W",
+    "PSzk",
+    "PZPS",
+    "Q+fg",
+    "Q+om",
+    "Q/L7",
+    "R+z5",
+    "RqNB",
+    "SM/6",
+    "Tsnj",
+    "UbfT",
+    "VPjS",
+    "VaYH",
+    "WzJ+",
+    "XCmt",
+    "Xj+n",
+    "Y1wK",
+    "YQeI",
+    "Yeb6",
+    "ZOnG",
+    "bZFu",
+    "blJ7",
+    "bseP",
+    "cHzv",
+    "dVMb",
+    "dndK",
+    "e0ER",
+    "ey+u",
+    "froO",
+    "gYMY",
+    "hB/I",
+    "hSFS",
+    "hVv4",
+    "iL+W",
+    "iRqW",
+    "ivgy",
+    "izwF",
+    "jgxy",
+    "k1tX",
+    "l4EU",
+    "l8g0",
+    "lWGk",
+    "m6Mr",
+    "mM05",
+    "nIb6",
+    "nZYd",
+    "nbro",
+    "nrLU",
+    "nv/P",
+    "owfo",
+    "oyjU",
+    "qBuu",
+    "qV1X",
+    "rC7M",
+    "s+wE",
+    "sdnA",
+    "splE",
+    "t9i2",
+    "uAuK",
+    "v+tG",
+    "vAcU",
+    "vmJG",
+    "vp1n",
+    "vtsO",
+    "xt89"
+  ]
+}

@@ -1,0 +1,2744 @@
+{
+  "results": [
+    {
+      "input": "",
+      "profile": "default",
+      "options": {},
+      "matches": []
+    },
+    {
+      "input": "",
+      "profile": "noPhone",
+      "options": {
+        "ignorePhoneMatches": true
+      },
+      "matches": []
+    },
+    {
+      "input": "",
+      "profile": "noEmail",
+      "options": {
+        "ignoreEmailMatches": true
+      },
+      "matches": []
+    },
+    {
+      "input": "",
+      "profile": "code",
+      "options": {
+        "ignorePhoneMatches": true,
+        "ignoreEmailMatches": true,
+        "ignoreLinksWithoutHttp": true
+      },
+      "matches": []
+    },
+    {
+      "input": "",
+      "profile": "tel",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true
+      },
+      "matches": []
+    },
+    {
+      "input": "",
+      "profile": "parentheses",
+      "options": {
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": []
+    },
+    {
+      "input": "",
+      "profile": "telParentheses",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true,
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": []
+    },
+    {
+      "input": "  https://example.com/a https://second.com/b  ",
+      "profile": "default",
+      "options": {},
+      "matches": [
+        {
+          "type": "url",
+          "offset": 2,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        },
+        {
+          "type": "url",
+          "offset": 24,
+          "text": "https://second.com/b",
+          "url": "https://second.com/b"
+        }
+      ]
+    },
+    {
+      "input": "  https://example.com/a https://second.com/b  ",
+      "profile": "noPhone",
+      "options": {
+        "ignorePhoneMatches": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 2,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        },
+        {
+          "type": "url",
+          "offset": 24,
+          "text": "https://second.com/b",
+          "url": "https://second.com/b"
+        }
+      ]
+    },
+    {
+      "input": "  https://example.com/a https://second.com/b  ",
+      "profile": "noEmail",
+      "options": {
+        "ignoreEmailMatches": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 2,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        },
+        {
+          "type": "url",
+          "offset": 24,
+          "text": "https://second.com/b",
+          "url": "https://second.com/b"
+        }
+      ]
+    },
+    {
+      "input": "  https://example.com/a https://second.com/b  ",
+      "profile": "code",
+      "options": {
+        "ignorePhoneMatches": true,
+        "ignoreEmailMatches": true,
+        "ignoreLinksWithoutHttp": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 2,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        },
+        {
+          "type": "url",
+          "offset": 24,
+          "text": "https://second.com/b",
+          "url": "https://second.com/b"
+        }
+      ]
+    },
+    {
+      "input": "  https://example.com/a https://second.com/b  ",
+      "profile": "tel",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 2,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        },
+        {
+          "type": "url",
+          "offset": 24,
+          "text": "https://second.com/b",
+          "url": "https://second.com/b"
+        }
+      ]
+    },
+    {
+      "input": "  https://example.com/a https://second.com/b  ",
+      "profile": "parentheses",
+      "options": {
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 2,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        },
+        {
+          "type": "url",
+          "offset": 24,
+          "text": "https://second.com/b",
+          "url": "https://second.com/b"
+        }
+      ]
+    },
+    {
+      "input": "  https://example.com/a https://second.com/b  ",
+      "profile": "telParentheses",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true,
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 2,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        },
+        {
+          "type": "url",
+          "offset": 24,
+          "text": "https://second.com/b",
+          "url": "https://second.com/b"
+        }
+      ]
+    },
+    {
+      "input": "😀 example.com user@example.com +1 212-555-0123",
+      "profile": "default",
+      "options": {},
+      "matches": [
+        {
+          "type": "url",
+          "offset": 3,
+          "text": "example.com",
+          "url": "http://example.com"
+        },
+        {
+          "type": "email",
+          "offset": 15,
+          "text": "user@example.com",
+          "url": "mailto:user@example.com"
+        },
+        {
+          "type": "phone",
+          "offset": 32,
+          "text": "+1 212-555-0123",
+          "url": "tel:+12125550123"
+        }
+      ]
+    },
+    {
+      "input": "😀 example.com user@example.com +1 212-555-0123",
+      "profile": "noPhone",
+      "options": {
+        "ignorePhoneMatches": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 3,
+          "text": "example.com",
+          "url": "http://example.com"
+        },
+        {
+          "type": "email",
+          "offset": 15,
+          "text": "user@example.com",
+          "url": "mailto:user@example.com"
+        }
+      ]
+    },
+    {
+      "input": "😀 example.com user@example.com +1 212-555-0123",
+      "profile": "noEmail",
+      "options": {
+        "ignoreEmailMatches": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 3,
+          "text": "example.com",
+          "url": "http://example.com"
+        },
+        {
+          "type": "phone",
+          "offset": 32,
+          "text": "+1 212-555-0123",
+          "url": "tel:+12125550123"
+        }
+      ]
+    },
+    {
+      "input": "😀 example.com user@example.com +1 212-555-0123",
+      "profile": "code",
+      "options": {
+        "ignorePhoneMatches": true,
+        "ignoreEmailMatches": true,
+        "ignoreLinksWithoutHttp": true
+      },
+      "matches": []
+    },
+    {
+      "input": "😀 example.com user@example.com +1 212-555-0123",
+      "profile": "tel",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 3,
+          "text": "example.com",
+          "url": "http://example.com"
+        },
+        {
+          "type": "email",
+          "offset": 15,
+          "text": "user@example.com",
+          "url": "mailto:user@example.com"
+        },
+        {
+          "type": "phone",
+          "offset": 32,
+          "text": "+1 212-555-0123",
+          "url": "tel:12125550123"
+        }
+      ]
+    },
+    {
+      "input": "😀 example.com user@example.com +1 212-555-0123",
+      "profile": "parentheses",
+      "options": {
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 3,
+          "text": "example.com",
+          "url": "http://example.com"
+        },
+        {
+          "type": "email",
+          "offset": 15,
+          "text": "user@example.com",
+          "url": "mailto:user@example.com"
+        },
+        {
+          "type": "phone",
+          "offset": 32,
+          "text": "+1 212-555-0123",
+          "url": "tel:+12125550123"
+        }
+      ]
+    },
+    {
+      "input": "😀 example.com user@example.com +1 212-555-0123",
+      "profile": "telParentheses",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true,
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 3,
+          "text": "example.com",
+          "url": "http://example.com"
+        },
+        {
+          "type": "email",
+          "offset": 15,
+          "text": "user@example.com",
+          "url": "mailto:user@example.com"
+        },
+        {
+          "type": "phone",
+          "offset": 32,
+          "text": "+1 212-555-0123",
+          "url": "tel:12125550123"
+        }
+      ]
+    },
+    {
+      "input": "https://example.com/a)b/c https://second.com/x(y))tail",
+      "profile": "default",
+      "options": {},
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "https://example.com/a)b/c",
+          "url": "https://example.com/a)b/c"
+        },
+        {
+          "type": "url",
+          "offset": 26,
+          "text": "https://second.com/x(y))tail",
+          "url": "https://second.com/x(y))tail"
+        }
+      ]
+    },
+    {
+      "input": "https://example.com/a)b/c https://second.com/x(y))tail",
+      "profile": "noPhone",
+      "options": {
+        "ignorePhoneMatches": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "https://example.com/a)b/c",
+          "url": "https://example.com/a)b/c"
+        },
+        {
+          "type": "url",
+          "offset": 26,
+          "text": "https://second.com/x(y))tail",
+          "url": "https://second.com/x(y))tail"
+        }
+      ]
+    },
+    {
+      "input": "https://example.com/a)b/c https://second.com/x(y))tail",
+      "profile": "noEmail",
+      "options": {
+        "ignoreEmailMatches": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "https://example.com/a)b/c",
+          "url": "https://example.com/a)b/c"
+        },
+        {
+          "type": "url",
+          "offset": 26,
+          "text": "https://second.com/x(y))tail",
+          "url": "https://second.com/x(y))tail"
+        }
+      ]
+    },
+    {
+      "input": "https://example.com/a)b/c https://second.com/x(y))tail",
+      "profile": "code",
+      "options": {
+        "ignorePhoneMatches": true,
+        "ignoreEmailMatches": true,
+        "ignoreLinksWithoutHttp": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "https://example.com/a)b/c",
+          "url": "https://example.com/a)b/c"
+        },
+        {
+          "type": "url",
+          "offset": 26,
+          "text": "https://second.com/x(y))tail",
+          "url": "https://second.com/x(y))tail"
+        }
+      ]
+    },
+    {
+      "input": "https://example.com/a)b/c https://second.com/x(y))tail",
+      "profile": "tel",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "https://example.com/a)b/c",
+          "url": "https://example.com/a)b/c"
+        },
+        {
+          "type": "url",
+          "offset": 26,
+          "text": "https://second.com/x(y))tail",
+          "url": "https://second.com/x(y))tail"
+        }
+      ]
+    },
+    {
+      "input": "https://example.com/a)b/c https://second.com/x(y))tail",
+      "profile": "parentheses",
+      "options": {
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        },
+        {
+          "type": "url",
+          "offset": 26,
+          "text": "https://second.com/x(y)",
+          "url": "https://second.com/x(y)"
+        }
+      ]
+    },
+    {
+      "input": "https://example.com/a)b/c https://second.com/x(y))tail",
+      "profile": "telParentheses",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true,
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        },
+        {
+          "type": "url",
+          "offset": 26,
+          "text": "https://second.com/x(y)",
+          "url": "https://second.com/x(y)"
+        }
+      ]
+    },
+    {
+      "input": "https://example.com/a(b)c https://example.com/a(b))",
+      "profile": "default",
+      "options": {},
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "https://example.com/a(b)c",
+          "url": "https://example.com/a(b)c"
+        },
+        {
+          "type": "url",
+          "offset": 26,
+          "text": "https://example.com/a(b)",
+          "url": "https://example.com/a(b)"
+        }
+      ]
+    },
+    {
+      "input": "https://example.com/a(b)c https://example.com/a(b))",
+      "profile": "noPhone",
+      "options": {
+        "ignorePhoneMatches": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "https://example.com/a(b)c",
+          "url": "https://example.com/a(b)c"
+        },
+        {
+          "type": "url",
+          "offset": 26,
+          "text": "https://example.com/a(b)",
+          "url": "https://example.com/a(b)"
+        }
+      ]
+    },
+    {
+      "input": "https://example.com/a(b)c https://example.com/a(b))",
+      "profile": "noEmail",
+      "options": {
+        "ignoreEmailMatches": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "https://example.com/a(b)c",
+          "url": "https://example.com/a(b)c"
+        },
+        {
+          "type": "url",
+          "offset": 26,
+          "text": "https://example.com/a(b)",
+          "url": "https://example.com/a(b)"
+        }
+      ]
+    },
+    {
+      "input": "https://example.com/a(b)c https://example.com/a(b))",
+      "profile": "code",
+      "options": {
+        "ignorePhoneMatches": true,
+        "ignoreEmailMatches": true,
+        "ignoreLinksWithoutHttp": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "https://example.com/a(b)c",
+          "url": "https://example.com/a(b)c"
+        },
+        {
+          "type": "url",
+          "offset": 26,
+          "text": "https://example.com/a(b)",
+          "url": "https://example.com/a(b)"
+        }
+      ]
+    },
+    {
+      "input": "https://example.com/a(b)c https://example.com/a(b))",
+      "profile": "tel",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "https://example.com/a(b)c",
+          "url": "https://example.com/a(b)c"
+        },
+        {
+          "type": "url",
+          "offset": 26,
+          "text": "https://example.com/a(b)",
+          "url": "https://example.com/a(b)"
+        }
+      ]
+    },
+    {
+      "input": "https://example.com/a(b)c https://example.com/a(b))",
+      "profile": "parentheses",
+      "options": {
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "https://example.com/a(b)c",
+          "url": "https://example.com/a(b)c"
+        },
+        {
+          "type": "url",
+          "offset": 26,
+          "text": "https://example.com/a(b)",
+          "url": "https://example.com/a(b)"
+        }
+      ]
+    },
+    {
+      "input": "https://example.com/a(b)c https://example.com/a(b))",
+      "profile": "telParentheses",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true,
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "https://example.com/a(b)c",
+          "url": "https://example.com/a(b)c"
+        },
+        {
+          "type": "url",
+          "offset": 26,
+          "text": "https://example.com/a(b)",
+          "url": "https://example.com/a(b)"
+        }
+      ]
+    },
+    {
+      "input": "www.example.com //www.example.com example.com ftp://example.com sftp://example.com",
+      "profile": "default",
+      "options": {},
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "www.example.com",
+          "url": "http://www.example.com"
+        },
+        {
+          "type": "url",
+          "offset": 16,
+          "text": "//www.example.com",
+          "url": "//www.example.com"
+        },
+        {
+          "type": "url",
+          "offset": 34,
+          "text": "example.com",
+          "url": "http://example.com"
+        },
+        {
+          "type": "url",
+          "offset": 46,
+          "text": "ftp://example.com",
+          "url": "ftp://example.com"
+        },
+        {
+          "type": "url",
+          "offset": 64,
+          "text": "sftp://example.com",
+          "url": "sftp://example.com"
+        }
+      ]
+    },
+    {
+      "input": "www.example.com //www.example.com example.com ftp://example.com sftp://example.com",
+      "profile": "noPhone",
+      "options": {
+        "ignorePhoneMatches": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "www.example.com",
+          "url": "http://www.example.com"
+        },
+        {
+          "type": "url",
+          "offset": 16,
+          "text": "//www.example.com",
+          "url": "//www.example.com"
+        },
+        {
+          "type": "url",
+          "offset": 34,
+          "text": "example.com",
+          "url": "http://example.com"
+        },
+        {
+          "type": "url",
+          "offset": 46,
+          "text": "ftp://example.com",
+          "url": "ftp://example.com"
+        },
+        {
+          "type": "url",
+          "offset": 64,
+          "text": "sftp://example.com",
+          "url": "sftp://example.com"
+        }
+      ]
+    },
+    {
+      "input": "www.example.com //www.example.com example.com ftp://example.com sftp://example.com",
+      "profile": "noEmail",
+      "options": {
+        "ignoreEmailMatches": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "www.example.com",
+          "url": "http://www.example.com"
+        },
+        {
+          "type": "url",
+          "offset": 16,
+          "text": "//www.example.com",
+          "url": "//www.example.com"
+        },
+        {
+          "type": "url",
+          "offset": 34,
+          "text": "example.com",
+          "url": "http://example.com"
+        },
+        {
+          "type": "url",
+          "offset": 46,
+          "text": "ftp://example.com",
+          "url": "ftp://example.com"
+        },
+        {
+          "type": "url",
+          "offset": 64,
+          "text": "sftp://example.com",
+          "url": "sftp://example.com"
+        }
+      ]
+    },
+    {
+      "input": "www.example.com //www.example.com example.com ftp://example.com sftp://example.com",
+      "profile": "code",
+      "options": {
+        "ignorePhoneMatches": true,
+        "ignoreEmailMatches": true,
+        "ignoreLinksWithoutHttp": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 46,
+          "text": "ftp://example.com",
+          "url": "ftp://example.com"
+        },
+        {
+          "type": "url",
+          "offset": 64,
+          "text": "sftp://example.com",
+          "url": "sftp://example.com"
+        }
+      ]
+    },
+    {
+      "input": "www.example.com //www.example.com example.com ftp://example.com sftp://example.com",
+      "profile": "tel",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "www.example.com",
+          "url": "http://www.example.com"
+        },
+        {
+          "type": "url",
+          "offset": 16,
+          "text": "//www.example.com",
+          "url": "//www.example.com"
+        },
+        {
+          "type": "url",
+          "offset": 34,
+          "text": "example.com",
+          "url": "http://example.com"
+        },
+        {
+          "type": "url",
+          "offset": 46,
+          "text": "ftp://example.com",
+          "url": "ftp://example.com"
+        },
+        {
+          "type": "url",
+          "offset": 64,
+          "text": "sftp://example.com",
+          "url": "sftp://example.com"
+        }
+      ]
+    },
+    {
+      "input": "www.example.com //www.example.com example.com ftp://example.com sftp://example.com",
+      "profile": "parentheses",
+      "options": {
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "www.example.com",
+          "url": "http://www.example.com"
+        },
+        {
+          "type": "url",
+          "offset": 16,
+          "text": "//www.example.com",
+          "url": "//www.example.com"
+        },
+        {
+          "type": "url",
+          "offset": 34,
+          "text": "example.com",
+          "url": "http://example.com"
+        },
+        {
+          "type": "url",
+          "offset": 46,
+          "text": "ftp://example.com",
+          "url": "ftp://example.com"
+        },
+        {
+          "type": "url",
+          "offset": 64,
+          "text": "sftp://example.com",
+          "url": "sftp://example.com"
+        }
+      ]
+    },
+    {
+      "input": "www.example.com //www.example.com example.com ftp://example.com sftp://example.com",
+      "profile": "telParentheses",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true,
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "www.example.com",
+          "url": "http://www.example.com"
+        },
+        {
+          "type": "url",
+          "offset": 16,
+          "text": "//www.example.com",
+          "url": "//www.example.com"
+        },
+        {
+          "type": "url",
+          "offset": 34,
+          "text": "example.com",
+          "url": "http://example.com"
+        },
+        {
+          "type": "url",
+          "offset": 46,
+          "text": "ftp://example.com",
+          "url": "ftp://example.com"
+        },
+        {
+          "type": "url",
+          "offset": 64,
+          "text": "sftp://example.com",
+          "url": "sftp://example.com"
+        }
+      ]
+    },
+    {
+      "input": "user@example.com mailto:user@example.com git@example.com:repo",
+      "profile": "default",
+      "options": {},
+      "matches": [
+        {
+          "type": "email",
+          "offset": 0,
+          "text": "user@example.com",
+          "url": "mailto:user@example.com"
+        },
+        {
+          "type": "email",
+          "offset": 24,
+          "text": "user@example.com",
+          "url": "mailto:user@example.com"
+        }
+      ]
+    },
+    {
+      "input": "user@example.com mailto:user@example.com git@example.com:repo",
+      "profile": "noPhone",
+      "options": {
+        "ignorePhoneMatches": true
+      },
+      "matches": [
+        {
+          "type": "email",
+          "offset": 0,
+          "text": "user@example.com",
+          "url": "mailto:user@example.com"
+        },
+        {
+          "type": "email",
+          "offset": 24,
+          "text": "user@example.com",
+          "url": "mailto:user@example.com"
+        }
+      ]
+    },
+    {
+      "input": "user@example.com mailto:user@example.com git@example.com:repo",
+      "profile": "noEmail",
+      "options": {
+        "ignoreEmailMatches": true
+      },
+      "matches": []
+    },
+    {
+      "input": "user@example.com mailto:user@example.com git@example.com:repo",
+      "profile": "code",
+      "options": {
+        "ignorePhoneMatches": true,
+        "ignoreEmailMatches": true,
+        "ignoreLinksWithoutHttp": true
+      },
+      "matches": []
+    },
+    {
+      "input": "user@example.com mailto:user@example.com git@example.com:repo",
+      "profile": "tel",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true
+      },
+      "matches": [
+        {
+          "type": "email",
+          "offset": 0,
+          "text": "user@example.com",
+          "url": "mailto:user@example.com"
+        },
+        {
+          "type": "email",
+          "offset": 24,
+          "text": "user@example.com",
+          "url": "mailto:user@example.com"
+        }
+      ]
+    },
+    {
+      "input": "user@example.com mailto:user@example.com git@example.com:repo",
+      "profile": "parentheses",
+      "options": {
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "email",
+          "offset": 0,
+          "text": "user@example.com",
+          "url": "mailto:user@example.com"
+        },
+        {
+          "type": "email",
+          "offset": 24,
+          "text": "user@example.com",
+          "url": "mailto:user@example.com"
+        }
+      ]
+    },
+    {
+      "input": "user@example.com mailto:user@example.com git@example.com:repo",
+      "profile": "telParentheses",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true,
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "email",
+          "offset": 0,
+          "text": "user@example.com",
+          "url": "mailto:user@example.com"
+        },
+        {
+          "type": "email",
+          "offset": 24,
+          "text": "user@example.com",
+          "url": "mailto:user@example.com"
+        }
+      ]
+    },
+    {
+      "input": "tel:+1-212-555-0123 +1-212-555-0123",
+      "profile": "default",
+      "options": {},
+      "matches": [
+        {
+          "type": "phone",
+          "offset": 20,
+          "text": "+1-212-555-0123",
+          "url": "tel:+12125550123"
+        }
+      ]
+    },
+    {
+      "input": "tel:+1-212-555-0123 +1-212-555-0123",
+      "profile": "noPhone",
+      "options": {
+        "ignorePhoneMatches": true
+      },
+      "matches": []
+    },
+    {
+      "input": "tel:+1-212-555-0123 +1-212-555-0123",
+      "profile": "noEmail",
+      "options": {
+        "ignoreEmailMatches": true
+      },
+      "matches": [
+        {
+          "type": "phone",
+          "offset": 20,
+          "text": "+1-212-555-0123",
+          "url": "tel:+12125550123"
+        }
+      ]
+    },
+    {
+      "input": "tel:+1-212-555-0123 +1-212-555-0123",
+      "profile": "code",
+      "options": {
+        "ignorePhoneMatches": true,
+        "ignoreEmailMatches": true,
+        "ignoreLinksWithoutHttp": true
+      },
+      "matches": []
+    },
+    {
+      "input": "tel:+1-212-555-0123 +1-212-555-0123",
+      "profile": "tel",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true
+      },
+      "matches": [
+        {
+          "type": "phone",
+          "offset": 0,
+          "text": "tel:+1-212-555-0123",
+          "url": "tel:+1-212-555-0123"
+        },
+        {
+          "type": "phone",
+          "offset": 20,
+          "text": "+1-212-555-0123",
+          "url": "tel:12125550123"
+        }
+      ]
+    },
+    {
+      "input": "tel:+1-212-555-0123 +1-212-555-0123",
+      "profile": "parentheses",
+      "options": {
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "phone",
+          "offset": 20,
+          "text": "+1-212-555-0123",
+          "url": "tel:+12125550123"
+        }
+      ]
+    },
+    {
+      "input": "tel:+1-212-555-0123 +1-212-555-0123",
+      "profile": "telParentheses",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true,
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "phone",
+          "offset": 0,
+          "text": "tel:+1-212-555-0123",
+          "url": "tel:+1-212-555-0123"
+        },
+        {
+          "type": "phone",
+          "offset": 20,
+          "text": "+1-212-555-0123",
+          "url": "tel:12125550123"
+        }
+      ]
+    },
+    {
+      "input": "(212-555-0123 212-555-0123 +44 20 7946 0958",
+      "profile": "default",
+      "options": {},
+      "matches": [
+        {
+          "type": "phone",
+          "offset": 1,
+          "text": "212-555-0123",
+          "url": "tel:2125550123"
+        },
+        {
+          "type": "phone",
+          "offset": 14,
+          "text": "212-555-0123",
+          "url": "tel:2125550123"
+        },
+        {
+          "type": "phone",
+          "offset": 27,
+          "text": "+44 20 7946 0958",
+          "url": "tel:+442079460958"
+        }
+      ]
+    },
+    {
+      "input": "(212-555-0123 212-555-0123 +44 20 7946 0958",
+      "profile": "noPhone",
+      "options": {
+        "ignorePhoneMatches": true
+      },
+      "matches": []
+    },
+    {
+      "input": "(212-555-0123 212-555-0123 +44 20 7946 0958",
+      "profile": "noEmail",
+      "options": {
+        "ignoreEmailMatches": true
+      },
+      "matches": [
+        {
+          "type": "phone",
+          "offset": 1,
+          "text": "212-555-0123",
+          "url": "tel:2125550123"
+        },
+        {
+          "type": "phone",
+          "offset": 14,
+          "text": "212-555-0123",
+          "url": "tel:2125550123"
+        },
+        {
+          "type": "phone",
+          "offset": 27,
+          "text": "+44 20 7946 0958",
+          "url": "tel:+442079460958"
+        }
+      ]
+    },
+    {
+      "input": "(212-555-0123 212-555-0123 +44 20 7946 0958",
+      "profile": "code",
+      "options": {
+        "ignorePhoneMatches": true,
+        "ignoreEmailMatches": true,
+        "ignoreLinksWithoutHttp": true
+      },
+      "matches": []
+    },
+    {
+      "input": "(212-555-0123 212-555-0123 +44 20 7946 0958",
+      "profile": "tel",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true
+      },
+      "matches": [
+        {
+          "type": "phone",
+          "offset": 1,
+          "text": "212-555-0123",
+          "url": "tel:2125550123"
+        },
+        {
+          "type": "phone",
+          "offset": 14,
+          "text": "212-555-0123",
+          "url": "tel:2125550123"
+        },
+        {
+          "type": "phone",
+          "offset": 27,
+          "text": "+44 20 7946 0958",
+          "url": "tel:442079460958"
+        }
+      ]
+    },
+    {
+      "input": "(212-555-0123 212-555-0123 +44 20 7946 0958",
+      "profile": "parentheses",
+      "options": {
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "phone",
+          "offset": 1,
+          "text": "212-555-0123",
+          "url": "tel:2125550123"
+        },
+        {
+          "type": "phone",
+          "offset": 14,
+          "text": "212-555-0123",
+          "url": "tel:2125550123"
+        },
+        {
+          "type": "phone",
+          "offset": 27,
+          "text": "+44 20 7946 0958",
+          "url": "tel:+442079460958"
+        }
+      ]
+    },
+    {
+      "input": "(212-555-0123 212-555-0123 +44 20 7946 0958",
+      "profile": "telParentheses",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true,
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "phone",
+          "offset": 1,
+          "text": "212-555-0123",
+          "url": "tel:2125550123"
+        },
+        {
+          "type": "phone",
+          "offset": 14,
+          "text": "212-555-0123",
+          "url": "tel:2125550123"
+        },
+        {
+          "type": "phone",
+          "offset": 27,
+          "text": "+44 20 7946 0958",
+          "url": "tel:442079460958"
+        }
+      ]
+    },
+    {
+      "input": "atel:2125550123x tel:2125550123 tel:+442079460958",
+      "profile": "default",
+      "options": {},
+      "matches": []
+    },
+    {
+      "input": "atel:2125550123x tel:2125550123 tel:+442079460958",
+      "profile": "noPhone",
+      "options": {
+        "ignorePhoneMatches": true
+      },
+      "matches": []
+    },
+    {
+      "input": "atel:2125550123x tel:2125550123 tel:+442079460958",
+      "profile": "noEmail",
+      "options": {
+        "ignoreEmailMatches": true
+      },
+      "matches": []
+    },
+    {
+      "input": "atel:2125550123x tel:2125550123 tel:+442079460958",
+      "profile": "code",
+      "options": {
+        "ignorePhoneMatches": true,
+        "ignoreEmailMatches": true,
+        "ignoreLinksWithoutHttp": true
+      },
+      "matches": []
+    },
+    {
+      "input": "atel:2125550123x tel:2125550123 tel:+442079460958",
+      "profile": "tel",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true
+      },
+      "matches": [
+        {
+          "type": "phone",
+          "offset": 1,
+          "text": "tel:2125550123",
+          "url": "tel:2125550123"
+        },
+        {
+          "type": "phone",
+          "offset": 17,
+          "text": "tel:2125550123",
+          "url": "tel:2125550123"
+        },
+        {
+          "type": "phone",
+          "offset": 32,
+          "text": "tel:+442079460958",
+          "url": "tel:+442079460958"
+        }
+      ]
+    },
+    {
+      "input": "atel:2125550123x tel:2125550123 tel:+442079460958",
+      "profile": "parentheses",
+      "options": {
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": []
+    },
+    {
+      "input": "atel:2125550123x tel:2125550123 tel:+442079460958",
+      "profile": "telParentheses",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true,
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "phone",
+          "offset": 1,
+          "text": "tel:2125550123",
+          "url": "tel:2125550123"
+        },
+        {
+          "type": "phone",
+          "offset": 17,
+          "text": "tel:2125550123",
+          "url": "tel:2125550123"
+        },
+        {
+          "type": "phone",
+          "offset": 32,
+          "text": "tel:+442079460958",
+          "url": "tel:+442079460958"
+        }
+      ]
+    },
+    {
+      "input": "https://example.com/u/212-555-0123 user@example.com",
+      "profile": "default",
+      "options": {},
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "https://example.com/u/212-555-0123",
+          "url": "https://example.com/u/212-555-0123"
+        },
+        {
+          "type": "email",
+          "offset": 35,
+          "text": "user@example.com",
+          "url": "mailto:user@example.com"
+        }
+      ]
+    },
+    {
+      "input": "https://example.com/u/212-555-0123 user@example.com",
+      "profile": "noPhone",
+      "options": {
+        "ignorePhoneMatches": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "https://example.com/u/212-555-0123",
+          "url": "https://example.com/u/212-555-0123"
+        },
+        {
+          "type": "email",
+          "offset": 35,
+          "text": "user@example.com",
+          "url": "mailto:user@example.com"
+        }
+      ]
+    },
+    {
+      "input": "https://example.com/u/212-555-0123 user@example.com",
+      "profile": "noEmail",
+      "options": {
+        "ignoreEmailMatches": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "https://example.com/u/212-555-0123",
+          "url": "https://example.com/u/212-555-0123"
+        }
+      ]
+    },
+    {
+      "input": "https://example.com/u/212-555-0123 user@example.com",
+      "profile": "code",
+      "options": {
+        "ignorePhoneMatches": true,
+        "ignoreEmailMatches": true,
+        "ignoreLinksWithoutHttp": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "https://example.com/u/212-555-0123",
+          "url": "https://example.com/u/212-555-0123"
+        }
+      ]
+    },
+    {
+      "input": "https://example.com/u/212-555-0123 user@example.com",
+      "profile": "tel",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "https://example.com/u/212-555-0123",
+          "url": "https://example.com/u/212-555-0123"
+        },
+        {
+          "type": "email",
+          "offset": 35,
+          "text": "user@example.com",
+          "url": "mailto:user@example.com"
+        }
+      ]
+    },
+    {
+      "input": "https://example.com/u/212-555-0123 user@example.com",
+      "profile": "parentheses",
+      "options": {
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "https://example.com/u/212-555-0123",
+          "url": "https://example.com/u/212-555-0123"
+        },
+        {
+          "type": "email",
+          "offset": 35,
+          "text": "user@example.com",
+          "url": "mailto:user@example.com"
+        }
+      ]
+    },
+    {
+      "input": "https://example.com/u/212-555-0123 user@example.com",
+      "profile": "telParentheses",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true,
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "https://example.com/u/212-555-0123",
+          "url": "https://example.com/u/212-555-0123"
+        },
+        {
+          "type": "email",
+          "offset": 35,
+          "text": "user@example.com",
+          "url": "mailto:user@example.com"
+        }
+      ]
+    },
+    {
+      "input": "[Mail](mailto:user@example.com) [Call](tel:212-555-0123)",
+      "profile": "default",
+      "options": {},
+      "matches": [
+        {
+          "type": "email",
+          "offset": 14,
+          "text": "user@example.com",
+          "url": "mailto:user@example.com"
+        }
+      ]
+    },
+    {
+      "input": "[Mail](mailto:user@example.com) [Call](tel:212-555-0123)",
+      "profile": "noPhone",
+      "options": {
+        "ignorePhoneMatches": true
+      },
+      "matches": [
+        {
+          "type": "email",
+          "offset": 14,
+          "text": "user@example.com",
+          "url": "mailto:user@example.com"
+        }
+      ]
+    },
+    {
+      "input": "[Mail](mailto:user@example.com) [Call](tel:212-555-0123)",
+      "profile": "noEmail",
+      "options": {
+        "ignoreEmailMatches": true
+      },
+      "matches": []
+    },
+    {
+      "input": "[Mail](mailto:user@example.com) [Call](tel:212-555-0123)",
+      "profile": "code",
+      "options": {
+        "ignorePhoneMatches": true,
+        "ignoreEmailMatches": true,
+        "ignoreLinksWithoutHttp": true
+      },
+      "matches": []
+    },
+    {
+      "input": "[Mail](mailto:user@example.com) [Call](tel:212-555-0123)",
+      "profile": "tel",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true
+      },
+      "matches": [
+        {
+          "type": "email",
+          "offset": 14,
+          "text": "user@example.com",
+          "url": "mailto:user@example.com"
+        },
+        {
+          "type": "phone",
+          "offset": 39,
+          "text": "tel:212-555-0123",
+          "url": "tel:212-555-0123"
+        }
+      ]
+    },
+    {
+      "input": "[Mail](mailto:user@example.com) [Call](tel:212-555-0123)",
+      "profile": "parentheses",
+      "options": {
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "email",
+          "offset": 14,
+          "text": "user@example.com",
+          "url": "mailto:user@example.com"
+        }
+      ]
+    },
+    {
+      "input": "[Mail](mailto:user@example.com) [Call](tel:212-555-0123)",
+      "profile": "telParentheses",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true,
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "email",
+          "offset": 14,
+          "text": "user@example.com",
+          "url": "mailto:user@example.com"
+        },
+        {
+          "type": "phone",
+          "offset": 39,
+          "text": "tel:212-555-0123",
+          "url": "tel:212-555-0123"
+        }
+      ]
+    },
+    {
+      "input": "https://example.com/a] https://example.com/a} https://example.com/a?",
+      "profile": "default",
+      "options": {},
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        },
+        {
+          "type": "url",
+          "offset": 23,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        },
+        {
+          "type": "url",
+          "offset": 46,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        }
+      ]
+    },
+    {
+      "input": "https://example.com/a] https://example.com/a} https://example.com/a?",
+      "profile": "noPhone",
+      "options": {
+        "ignorePhoneMatches": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        },
+        {
+          "type": "url",
+          "offset": 23,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        },
+        {
+          "type": "url",
+          "offset": 46,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        }
+      ]
+    },
+    {
+      "input": "https://example.com/a] https://example.com/a} https://example.com/a?",
+      "profile": "noEmail",
+      "options": {
+        "ignoreEmailMatches": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        },
+        {
+          "type": "url",
+          "offset": 23,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        },
+        {
+          "type": "url",
+          "offset": 46,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        }
+      ]
+    },
+    {
+      "input": "https://example.com/a] https://example.com/a} https://example.com/a?",
+      "profile": "code",
+      "options": {
+        "ignorePhoneMatches": true,
+        "ignoreEmailMatches": true,
+        "ignoreLinksWithoutHttp": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        },
+        {
+          "type": "url",
+          "offset": 23,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        },
+        {
+          "type": "url",
+          "offset": 46,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        }
+      ]
+    },
+    {
+      "input": "https://example.com/a] https://example.com/a} https://example.com/a?",
+      "profile": "tel",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        },
+        {
+          "type": "url",
+          "offset": 23,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        },
+        {
+          "type": "url",
+          "offset": 46,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        }
+      ]
+    },
+    {
+      "input": "https://example.com/a] https://example.com/a} https://example.com/a?",
+      "profile": "parentheses",
+      "options": {
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        },
+        {
+          "type": "url",
+          "offset": 23,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        },
+        {
+          "type": "url",
+          "offset": 46,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        }
+      ]
+    },
+    {
+      "input": "https://example.com/a] https://example.com/a} https://example.com/a?",
+      "profile": "telParentheses",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true,
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        },
+        {
+          "type": "url",
+          "offset": 23,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        },
+        {
+          "type": "url",
+          "offset": 46,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        }
+      ]
+    },
+    {
+      "input": "|https://example.com/a|label| https://example.com/quote' https://example.com/a'b",
+      "profile": "default",
+      "options": {},
+      "matches": [
+        {
+          "type": "url",
+          "offset": 1,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        },
+        {
+          "url": "https://example.com/quote",
+          "text": "https://example.com/quote",
+          "offset": 30,
+          "type": "url"
+        },
+        {
+          "type": "url",
+          "offset": 57,
+          "text": "https://example.com/a'b",
+          "url": "https://example.com/a'b"
+        }
+      ]
+    },
+    {
+      "input": "|https://example.com/a|label| https://example.com/quote' https://example.com/a'b",
+      "profile": "noPhone",
+      "options": {
+        "ignorePhoneMatches": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 1,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        },
+        {
+          "url": "https://example.com/quote",
+          "text": "https://example.com/quote",
+          "offset": 30,
+          "type": "url"
+        },
+        {
+          "type": "url",
+          "offset": 57,
+          "text": "https://example.com/a'b",
+          "url": "https://example.com/a'b"
+        }
+      ]
+    },
+    {
+      "input": "|https://example.com/a|label| https://example.com/quote' https://example.com/a'b",
+      "profile": "noEmail",
+      "options": {
+        "ignoreEmailMatches": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 1,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        },
+        {
+          "url": "https://example.com/quote",
+          "text": "https://example.com/quote",
+          "offset": 30,
+          "type": "url"
+        },
+        {
+          "type": "url",
+          "offset": 57,
+          "text": "https://example.com/a'b",
+          "url": "https://example.com/a'b"
+        }
+      ]
+    },
+    {
+      "input": "|https://example.com/a|label| https://example.com/quote' https://example.com/a'b",
+      "profile": "code",
+      "options": {
+        "ignorePhoneMatches": true,
+        "ignoreEmailMatches": true,
+        "ignoreLinksWithoutHttp": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 1,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        },
+        {
+          "url": "https://example.com/quote",
+          "text": "https://example.com/quote",
+          "offset": 30,
+          "type": "url"
+        },
+        {
+          "type": "url",
+          "offset": 57,
+          "text": "https://example.com/a'b",
+          "url": "https://example.com/a'b"
+        }
+      ]
+    },
+    {
+      "input": "|https://example.com/a|label| https://example.com/quote' https://example.com/a'b",
+      "profile": "tel",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 1,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        },
+        {
+          "url": "https://example.com/quote",
+          "text": "https://example.com/quote",
+          "offset": 30,
+          "type": "url"
+        },
+        {
+          "type": "url",
+          "offset": 57,
+          "text": "https://example.com/a'b",
+          "url": "https://example.com/a'b"
+        }
+      ]
+    },
+    {
+      "input": "|https://example.com/a|label| https://example.com/quote' https://example.com/a'b",
+      "profile": "parentheses",
+      "options": {
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 1,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        },
+        {
+          "url": "https://example.com/quote",
+          "text": "https://example.com/quote",
+          "offset": 30,
+          "type": "url"
+        },
+        {
+          "type": "url",
+          "offset": 57,
+          "text": "https://example.com/a'b",
+          "url": "https://example.com/a'b"
+        }
+      ]
+    },
+    {
+      "input": "|https://example.com/a|label| https://example.com/quote' https://example.com/a'b",
+      "profile": "telParentheses",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true,
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 1,
+          "text": "https://example.com/a",
+          "url": "https://example.com/a"
+        },
+        {
+          "url": "https://example.com/quote",
+          "text": "https://example.com/quote",
+          "offset": 30,
+          "type": "url"
+        },
+        {
+          "type": "url",
+          "offset": 57,
+          "text": "https://example.com/a'b",
+          "url": "https://example.com/a'b"
+        }
+      ]
+    },
+    {
+      "input": "foo.technology http://foo.technology ms.now foo.aero",
+      "profile": "default",
+      "options": {},
+      "matches": [
+        {
+          "type": "url",
+          "offset": 15,
+          "text": "http://foo.technology",
+          "url": "http://foo.technology"
+        },
+        {
+          "type": "url",
+          "offset": 37,
+          "text": "ms.now",
+          "url": "http://ms.now"
+        }
+      ]
+    },
+    {
+      "input": "foo.technology http://foo.technology ms.now foo.aero",
+      "profile": "noPhone",
+      "options": {
+        "ignorePhoneMatches": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 15,
+          "text": "http://foo.technology",
+          "url": "http://foo.technology"
+        },
+        {
+          "type": "url",
+          "offset": 37,
+          "text": "ms.now",
+          "url": "http://ms.now"
+        }
+      ]
+    },
+    {
+      "input": "foo.technology http://foo.technology ms.now foo.aero",
+      "profile": "noEmail",
+      "options": {
+        "ignoreEmailMatches": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 15,
+          "text": "http://foo.technology",
+          "url": "http://foo.technology"
+        },
+        {
+          "type": "url",
+          "offset": 37,
+          "text": "ms.now",
+          "url": "http://ms.now"
+        }
+      ]
+    },
+    {
+      "input": "foo.technology http://foo.technology ms.now foo.aero",
+      "profile": "code",
+      "options": {
+        "ignorePhoneMatches": true,
+        "ignoreEmailMatches": true,
+        "ignoreLinksWithoutHttp": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 15,
+          "text": "http://foo.technology",
+          "url": "http://foo.technology"
+        }
+      ]
+    },
+    {
+      "input": "foo.technology http://foo.technology ms.now foo.aero",
+      "profile": "tel",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 15,
+          "text": "http://foo.technology",
+          "url": "http://foo.technology"
+        },
+        {
+          "type": "url",
+          "offset": 37,
+          "text": "ms.now",
+          "url": "http://ms.now"
+        }
+      ]
+    },
+    {
+      "input": "foo.technology http://foo.technology ms.now foo.aero",
+      "profile": "parentheses",
+      "options": {
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 15,
+          "text": "http://foo.technology",
+          "url": "http://foo.technology"
+        },
+        {
+          "type": "url",
+          "offset": 37,
+          "text": "ms.now",
+          "url": "http://ms.now"
+        }
+      ]
+    },
+    {
+      "input": "foo.technology http://foo.technology ms.now foo.aero",
+      "profile": "telParentheses",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true,
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 15,
+          "text": "http://foo.technology",
+          "url": "http://foo.technology"
+        },
+        {
+          "type": "url",
+          "offset": 37,
+          "text": "ms.now",
+          "url": "http://ms.now"
+        }
+      ]
+    },
+    {
+      "input": "hansoft://example.com/abc daylite://Command=ShowObject&id=12 rdar://123&4 spotify:track:123abc",
+      "profile": "default",
+      "options": {},
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "hansoft://example.com/abc",
+          "url": "hansoft://example.com/abc"
+        },
+        {
+          "type": "url",
+          "offset": 26,
+          "text": "daylite://Command=ShowObject&id=12",
+          "url": "daylite://Command=ShowObject&id=12"
+        },
+        {
+          "type": "url",
+          "offset": 61,
+          "text": "rdar://123&4",
+          "url": "rdar://123&4"
+        },
+        {
+          "type": "url",
+          "offset": 74,
+          "text": "spotify:track:123abc",
+          "url": "spotify:track:123abc"
+        }
+      ]
+    },
+    {
+      "input": "hansoft://example.com/abc daylite://Command=ShowObject&id=12 rdar://123&4 spotify:track:123abc",
+      "profile": "noPhone",
+      "options": {
+        "ignorePhoneMatches": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "hansoft://example.com/abc",
+          "url": "hansoft://example.com/abc"
+        },
+        {
+          "type": "url",
+          "offset": 26,
+          "text": "daylite://Command=ShowObject&id=12",
+          "url": "daylite://Command=ShowObject&id=12"
+        },
+        {
+          "type": "url",
+          "offset": 61,
+          "text": "rdar://123&4",
+          "url": "rdar://123&4"
+        },
+        {
+          "type": "url",
+          "offset": 74,
+          "text": "spotify:track:123abc",
+          "url": "spotify:track:123abc"
+        }
+      ]
+    },
+    {
+      "input": "hansoft://example.com/abc daylite://Command=ShowObject&id=12 rdar://123&4 spotify:track:123abc",
+      "profile": "noEmail",
+      "options": {
+        "ignoreEmailMatches": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "hansoft://example.com/abc",
+          "url": "hansoft://example.com/abc"
+        },
+        {
+          "type": "url",
+          "offset": 26,
+          "text": "daylite://Command=ShowObject&id=12",
+          "url": "daylite://Command=ShowObject&id=12"
+        },
+        {
+          "type": "url",
+          "offset": 61,
+          "text": "rdar://123&4",
+          "url": "rdar://123&4"
+        },
+        {
+          "type": "url",
+          "offset": 74,
+          "text": "spotify:track:123abc",
+          "url": "spotify:track:123abc"
+        }
+      ]
+    },
+    {
+      "input": "hansoft://example.com/abc daylite://Command=ShowObject&id=12 rdar://123&4 spotify:track:123abc",
+      "profile": "code",
+      "options": {
+        "ignorePhoneMatches": true,
+        "ignoreEmailMatches": true,
+        "ignoreLinksWithoutHttp": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "hansoft://example.com/abc",
+          "url": "hansoft://example.com/abc"
+        },
+        {
+          "type": "url",
+          "offset": 26,
+          "text": "daylite://Command=ShowObject&id=12",
+          "url": "daylite://Command=ShowObject&id=12"
+        },
+        {
+          "type": "url",
+          "offset": 61,
+          "text": "rdar://123&4",
+          "url": "rdar://123&4"
+        },
+        {
+          "type": "url",
+          "offset": 74,
+          "text": "spotify:track:123abc",
+          "url": "spotify:track:123abc"
+        }
+      ]
+    },
+    {
+      "input": "hansoft://example.com/abc daylite://Command=ShowObject&id=12 rdar://123&4 spotify:track:123abc",
+      "profile": "tel",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "hansoft://example.com/abc",
+          "url": "hansoft://example.com/abc"
+        },
+        {
+          "type": "url",
+          "offset": 26,
+          "text": "daylite://Command=ShowObject&id=12",
+          "url": "daylite://Command=ShowObject&id=12"
+        },
+        {
+          "type": "url",
+          "offset": 61,
+          "text": "rdar://123&4",
+          "url": "rdar://123&4"
+        },
+        {
+          "type": "url",
+          "offset": 74,
+          "text": "spotify:track:123abc",
+          "url": "spotify:track:123abc"
+        }
+      ]
+    },
+    {
+      "input": "hansoft://example.com/abc daylite://Command=ShowObject&id=12 rdar://123&4 spotify:track:123abc",
+      "profile": "parentheses",
+      "options": {
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "hansoft://example.com/abc",
+          "url": "hansoft://example.com/abc"
+        },
+        {
+          "type": "url",
+          "offset": 26,
+          "text": "daylite://Command=ShowObject&id=12",
+          "url": "daylite://Command=ShowObject&id=12"
+        },
+        {
+          "type": "url",
+          "offset": 61,
+          "text": "rdar://123&4",
+          "url": "rdar://123&4"
+        },
+        {
+          "type": "url",
+          "offset": 74,
+          "text": "spotify:track:123abc",
+          "url": "spotify:track:123abc"
+        }
+      ]
+    },
+    {
+      "input": "hansoft://example.com/abc daylite://Command=ShowObject&id=12 rdar://123&4 spotify:track:123abc",
+      "profile": "telParentheses",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true,
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 0,
+          "text": "hansoft://example.com/abc",
+          "url": "hansoft://example.com/abc"
+        },
+        {
+          "type": "url",
+          "offset": 26,
+          "text": "daylite://Command=ShowObject&id=12",
+          "url": "daylite://Command=ShowObject&id=12"
+        },
+        {
+          "type": "url",
+          "offset": 61,
+          "text": "rdar://123&4",
+          "url": "rdar://123&4"
+        },
+        {
+          "type": "url",
+          "offset": 74,
+          "text": "spotify:track:123abc",
+          "url": "spotify:track:123abc"
+        }
+      ]
+    },
+    {
+      "input": "go/team foo@example.com example.com\nhttps://second.com",
+      "profile": "default",
+      "options": {},
+      "matches": [
+        {
+          "type": "email",
+          "offset": 8,
+          "text": "foo@example.com",
+          "url": "mailto:foo@example.com"
+        },
+        {
+          "type": "url",
+          "offset": 24,
+          "text": "example.com",
+          "url": "http://example.com"
+        },
+        {
+          "type": "url",
+          "offset": 36,
+          "text": "https://second.com",
+          "url": "https://second.com"
+        }
+      ]
+    },
+    {
+      "input": "go/team foo@example.com example.com\nhttps://second.com",
+      "profile": "noPhone",
+      "options": {
+        "ignorePhoneMatches": true
+      },
+      "matches": [
+        {
+          "type": "email",
+          "offset": 8,
+          "text": "foo@example.com",
+          "url": "mailto:foo@example.com"
+        },
+        {
+          "type": "url",
+          "offset": 24,
+          "text": "example.com",
+          "url": "http://example.com"
+        },
+        {
+          "type": "url",
+          "offset": 36,
+          "text": "https://second.com",
+          "url": "https://second.com"
+        }
+      ]
+    },
+    {
+      "input": "go/team foo@example.com example.com\nhttps://second.com",
+      "profile": "noEmail",
+      "options": {
+        "ignoreEmailMatches": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 24,
+          "text": "example.com",
+          "url": "http://example.com"
+        },
+        {
+          "type": "url",
+          "offset": 36,
+          "text": "https://second.com",
+          "url": "https://second.com"
+        }
+      ]
+    },
+    {
+      "input": "go/team foo@example.com example.com\nhttps://second.com",
+      "profile": "code",
+      "options": {
+        "ignorePhoneMatches": true,
+        "ignoreEmailMatches": true,
+        "ignoreLinksWithoutHttp": true
+      },
+      "matches": [
+        {
+          "type": "url",
+          "offset": 36,
+          "text": "https://second.com",
+          "url": "https://second.com"
+        }
+      ]
+    },
+    {
+      "input": "go/team foo@example.com example.com\nhttps://second.com",
+      "profile": "tel",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true
+      },
+      "matches": [
+        {
+          "type": "email",
+          "offset": 8,
+          "text": "foo@example.com",
+          "url": "mailto:foo@example.com"
+        },
+        {
+          "type": "url",
+          "offset": 24,
+          "text": "example.com",
+          "url": "http://example.com"
+        },
+        {
+          "type": "url",
+          "offset": 36,
+          "text": "https://second.com",
+          "url": "https://second.com"
+        }
+      ]
+    },
+    {
+      "input": "go/team foo@example.com example.com\nhttps://second.com",
+      "profile": "parentheses",
+      "options": {
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "email",
+          "offset": 8,
+          "text": "foo@example.com",
+          "url": "mailto:foo@example.com"
+        },
+        {
+          "type": "url",
+          "offset": 24,
+          "text": "example.com",
+          "url": "http://example.com"
+        },
+        {
+          "type": "url",
+          "offset": 36,
+          "text": "https://second.com",
+          "url": "https://second.com"
+        }
+      ]
+    },
+    {
+      "input": "go/team foo@example.com example.com\nhttps://second.com",
+      "profile": "telParentheses",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true,
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "email",
+          "offset": 8,
+          "text": "foo@example.com",
+          "url": "mailto:foo@example.com"
+        },
+        {
+          "type": "url",
+          "offset": 24,
+          "text": "example.com",
+          "url": "http://example.com"
+        },
+        {
+          "type": "url",
+          "offset": 36,
+          "text": "https://second.com",
+          "url": "https://second.com"
+        }
+      ]
+    },
+    {
+      "input": "中example.com文 (user@example.com)\n+81 90-1234-5678",
+      "profile": "default",
+      "options": {},
+      "matches": [
+        {
+          "type": "email",
+          "offset": 15,
+          "text": "user@example.com",
+          "url": "mailto:user@example.com"
+        },
+        {
+          "type": "phone",
+          "offset": 33,
+          "text": "+81 90-1234-5678",
+          "url": "tel:+819012345678"
+        }
+      ]
+    },
+    {
+      "input": "中example.com文 (user@example.com)\n+81 90-1234-5678",
+      "profile": "noPhone",
+      "options": {
+        "ignorePhoneMatches": true
+      },
+      "matches": [
+        {
+          "type": "email",
+          "offset": 15,
+          "text": "user@example.com",
+          "url": "mailto:user@example.com"
+        }
+      ]
+    },
+    {
+      "input": "中example.com文 (user@example.com)\n+81 90-1234-5678",
+      "profile": "noEmail",
+      "options": {
+        "ignoreEmailMatches": true
+      },
+      "matches": [
+        {
+          "type": "phone",
+          "offset": 33,
+          "text": "+81 90-1234-5678",
+          "url": "tel:+819012345678"
+        }
+      ]
+    },
+    {
+      "input": "中example.com文 (user@example.com)\n+81 90-1234-5678",
+      "profile": "code",
+      "options": {
+        "ignorePhoneMatches": true,
+        "ignoreEmailMatches": true,
+        "ignoreLinksWithoutHttp": true
+      },
+      "matches": []
+    },
+    {
+      "input": "中example.com文 (user@example.com)\n+81 90-1234-5678",
+      "profile": "tel",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true
+      },
+      "matches": [
+        {
+          "type": "email",
+          "offset": 15,
+          "text": "user@example.com",
+          "url": "mailto:user@example.com"
+        },
+        {
+          "type": "phone",
+          "offset": 33,
+          "text": "+81 90-1234-5678",
+          "url": "tel:819012345678"
+        }
+      ]
+    },
+    {
+      "input": "中example.com文 (user@example.com)\n+81 90-1234-5678",
+      "profile": "parentheses",
+      "options": {
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "email",
+          "offset": 15,
+          "text": "user@example.com",
+          "url": "mailto:user@example.com"
+        },
+        {
+          "type": "phone",
+          "offset": 33,
+          "text": "+81 90-1234-5678",
+          "url": "tel:+819012345678"
+        }
+      ]
+    },
+    {
+      "input": "中example.com文 (user@example.com)\n+81 90-1234-5678",
+      "profile": "telParentheses",
+      "options": {
+        "includePhoneMatchesWithTelPrefix": true,
+        "ignoreUnbalancedParentheses": true
+      },
+      "matches": [
+        {
+          "type": "email",
+          "offset": 15,
+          "text": "user@example.com",
+          "url": "mailto:user@example.com"
+        },
+        {
+          "type": "phone",
+          "offset": 33,
+          "text": "+81 90-1234-5678",
+          "url": "tel:819012345678"
+        }
+      ]
+    }
+  ],
+  "loaded": [
+    "0gHG",
+    "3MHn",
+    "3qOO",
+    "9j8p",
+    "9n32",
+    "A8gZ",
+    "AGfT",
+    "AWJv",
+    "AY7U",
+    "CwFm",
+    "EACB",
+    "F5nq",
+    "FheB",
+    "HsCr",
+    "Ifqe",
+    "M5WD",
+    "MiTi",
+    "NS8g",
+    "NaDL",
+    "OajW",
+    "P/Dz",
+    "PI3W",
+    "PSzk",
+    "Q+fg",
+    "Q+om",
+    "Q/L7",
+    "R+z5",
+    "RqNB",
+    "SM/6",
+    "UbfT",
+    "VPjS",
+    "XCmt",
+    "YQeI",
+    "Yeb6",
+    "ZOnG",
+    "blJ7",
+    "bseP",
+    "dVMb",
+    "ey+u",
+    "froO",
+    "gYMY",
+    "hSFS",
+    "hVv4",
+    "ivgy",
+    "izwF",
+    "jgxy",
+    "l4EU",
+    "lWGk",
+    "nIb6",
+    "nZYd",
+    "nbro",
+    "oyjU",
+    "qBuu",
+    "rC7M",
+    "s+wE",
+    "v+tG",
+    "vAcU",
+    "vp1n",
+    "vtsO",
+    "xt89"
+  ]
+}

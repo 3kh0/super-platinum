@@ -9,6 +9,7 @@ pub async fn ticks(mut state: Signal<ShellState>) {
     let mut runtime_probe = crate::performance::runtime_probe::heartbeat();
     let mut interval = timing::interval();
     let mut media_sweep = timing::MediaSweep::default();
+    let mut profile_clock = crate::profile::clock::Clock::default();
     let mut draft_save_error = None;
     loop {
         interval.tick().await;
@@ -25,7 +26,9 @@ pub async fn ticks(mut state: Signal<ShellState>) {
         #[cfg(target_os = "macos")]
         crate::notification::attention::maintain(&shell.core);
         let mut connection = crate::connection::Next::Nothing;
-        let mut changed = crate::app_modal::poll(&mut shell);
+        let mut observations_ready = None;
+        let mut changed = profile_clock.poll(&shell);
+        changed |= crate::app_modal::poll(&mut shell);
         changed |= crate::self_status::poll(&mut shell);
         changed |= crate::profile_edit::poll(&mut shell);
         changed |= crate::profile_title::poll(&mut shell);
@@ -71,7 +74,16 @@ pub async fn ticks(mut state: Signal<ShellState>) {
             shell.expire_toast(now);
             changed |= had_toast && shell.toast.is_none();
             let previous_status = shell.connection.status;
+            let had_route_observation = shell.connection.routed_at.is_some();
             connection = crate::connection::evaluate(&mut shell, now);
+            // Boot/socket/Init may all precede the first route observation.
+            // React only to this first observation or an existing recovery
+            // transition, never to ordinary route-check ticks.
+            if (!had_route_observation && shell.connection.routed_at.is_some())
+                || matches!(&connection, crate::connection::Next::Reload)
+            {
+                observations_ready = shell.core.active_team.clone();
+            }
             changed |= previous_status != shell.connection.status;
             changed |= shell
                 .core
@@ -133,6 +145,10 @@ pub async fn ticks(mut state: Signal<ShellState>) {
             crate::slack_lists::lifecycle::now_ms(),
         );
         drop(shell);
+        crate::app_home::about::management::activity::channel_labels::tick(state);
+        if let Some(team) = observations_ready {
+            crate::app_home::autocomplete::startup::schedule(state, &team);
+        }
         for request in list_viewing {
             request.spawn(state);
         }

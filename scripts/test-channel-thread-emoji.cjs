@@ -1,0 +1,30 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const source=fs.readFileSync('src/desktop/channel_thread_emoji/native.js','utf8');
+function sample(mode,mutate=()=>{}){
+ const rect={x:10,y:10,width:80,height:20};
+ const element=(props={})=>({isConnected:true,getBoundingClientRect:()=>rect,contains:()=>false,...props});
+ const a=element({value:'channel',selectionStart:2,selectionEnd:7,selectionDirection:'forward',dataset:{draftScope:'channel',projectionVisit:'1'}});
+ const b=element({value:'thread',selectionStart:1,selectionEnd:6,selectionDirection:'forward',dataset:{draftScope:'thread',projectionVisit:'2'}});
+ const glyph={textContent:'\u{1f44d}\u{1f3fd}',title:':conflicting_original:'},unknown={textContent:'A',title:':unknown_original:'};
+ const pending={textContent:':+1::skin-tone-4:',title:':+1::skin-tone-4:'};
+ const image=element({alt:':+1::skin-tone-4:',title:':+1::skin-tone-4:',complete:true,naturalWidth:16,naturalHeight:16,getAttribute:()=> 'http://super-platinum-media.emoji/a?v=2'});
+ const body=element({textContent:'Known A Invalid ',querySelectorAll:s=>s==='img.emoji-image'?(mode==='ready'?[image]:[]):[...(mode==='ready'?[]:mode==='pending'?[pending]:[glyph]),unknown]});
+ const row=id=>element({dataset:{rowId:id,rowIndex:'0',threadIndex:'0'},querySelector:()=>body});
+ const channel=element({dataset:{timelineScope:'channel',channelProjectionGeneration:'3'},scrollTop:0,querySelectorAll:()=>[row('root')]});
+ const thread=element({dataset:{timelineScope:'thread',threadProjectionGeneration:'4'},scrollTop:0,querySelectorAll:()=>[row('root'),row('reply')]});
+ const saved={channel,thread,a,b};const document={getElementById:id=>({'message-timeline':channel,'thread-body':thread,'channel-composer':a,'thread-composer':b}[id]),elementFromPoint:()=>b};
+ mutate({a,b,channel,thread,saved,glyph,unknown,pending,image,body});
+ return vm.runInNewContext('('+source+')',{window:{__channelThreadEmoji:saved},document,innerWidth:1280,innerHeight:780})('observe',mode);
+}
+let count=0;const test=(name,fn)=>{fn();count++;console.log('PASS '+name);};
+for(const mode of ['unobserved','pending','ready'])test(mode+' both original surfaces',()=>assert.equal(sample(mode).ok,true));
+test('original channel composer required',()=>assert.equal(sample('ready',x=>x.saved.a={}).ok,false));
+test('original thread body required',()=>assert.equal(sample('ready',x=>x.saved.thread={}).ok,false));
+test('channel selection preserved',()=>assert.equal(sample('ready',x=>x.a.selectionStart=0).ok,false));
+test('thread selection preserved',()=>assert.equal(sample('ready',x=>x.b.selectionEnd=0).ok,false));
+test('known fallback cannot fabricate canonical name',()=>assert.equal(sample('unobserved',x=>x.glyph.title=':+1::skin-tone-4:').ok,false));
+test('unknown unicode remains literal',()=>assert.equal(sample('ready',x=>x.unknown.textContent=':unknown:').ok,false));
+test('decoded original image required',()=>assert.equal(sample('ready',x=>x.image.naturalWidth=0).ok,false));
+test('original canonical tooltip required',()=>assert.equal(sample('ready',x=>x.image.title=':wrong_alias:').ok,false));
+test('invalid unicode cannot add node',()=>assert.equal(sample('pending',x=>{const q=x.body.querySelectorAll;x.body.querySelectorAll=s=>s==='img.emoji-image'?q(s):[...q(s),{textContent:'X',title:':invalid_original:'}];}).ok,false));
+console.log(`${count} passed, 0 skipped`);

@@ -78,7 +78,7 @@ fn unobserved_quip_and_semantic_shapes_refuse_even_with_override() {
         json!({"type":"text","text":1}),
         json!({"type":"user","user_id":"U1"}),
         json!({"type":"emoji","name":"wave"}),
-        json!({"type":"link","url":"https://example.test"}),
+        json!({"type":"link","url":17}),
         json!({"type":"date","timestamp":1}),
     ] {
         let mut file = good.clone();

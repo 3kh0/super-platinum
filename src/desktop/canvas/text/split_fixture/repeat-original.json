@@ -1,0 +1,89 @@
+{
+  "provenance": "tmp/canvas-repeat-enter-20261023/reference/initialization-bindings.json; canonical field38 only, missing bootstrap preserved. Host ID and offline lease independently bound.",
+  "seeds": [
+    {
+      "mode": "bootstrap",
+      "corpus": "ascii",
+      "id": "paragraph",
+      "session": null,
+      "vector": 0
+    },
+    {
+      "mode": "bootstrap",
+      "corpus": "unicode",
+      "id": "paragraph",
+      "session": null,
+      "vector": 3
+    },
+    {
+      "mode": "retained-positive",
+      "corpus": "ascii",
+      "id": "paragraph",
+      "session": "CglwYXJhZ3JhcGgQ6AcY6AcqtgGFb0qD7rBt0QCrAQEKq83vASNFAAAAAAF7f2+vFcaF/ICsvBBFLhGOUZC/EHvQuQ4xacuScwKZbwYBAgMCEwIjBkACVgIMAQQCBBEEEwcVECECIwU0AkIFVgdXDIABAn8AfwF/DH+AgL/WBn8AfwcAAgoAAAIKAQADCQAAAn4AAggBfgdkZWxldGVkBHRleHQACgwAfgx1CgECCn4BBAoBfgEACRZ/NktlZXAgdGhpc++7vwwAADJAN2I3ZjZmYWYxNWM2ODVmYzgwYWNiYzEwNDUyZTExOGU1MTkwYmYxMDdiZDBiOTBlMzE2OWNiOTI3MzAyOTk2ZkJAN2I3ZjZmYWYxNWM2ODVmYzgwYWNiYzEwNDUyZTExOGU1MTkwYmYxMDdiZDBiOTBlMzE2OWNiOTI3MzAyOTk2ZlpFCkA3YjdmNmZhZjE1YzY4NWZjODBhY2JjMTA0NTJlMTE4ZTUxOTBiZjEwN2JkMGI5MGUzMTY5Y2I5MjczMDI5OTZmEOgH",
+      "vector": 6
+    },
+    {
+      "mode": "retained-positive",
+      "corpus": "unicode",
+      "id": "paragraph",
+      "session": "CglwYXJhZ3JhcGgQ6AcY6AcqygGFb0qD2gR0nAC/AQEKq83vASNFAAAAAAHH2KiK7FLG3KYkpxzuTgjYRxEhUD0mjYyYsBMIg37HdgYBAgMCEwIjBkACVgIMAQQCBBEEEwcVECECIwU0AkIFVg5XGYABAn8AfwF/EX+AgL/WBn8AfwcAAg8AAAIPAQADDgAAAn4AAg0BfgdkZWxldGVkBHRleHQADxEAfhFwDwECD34BBA8BfgEAAxZ/JgcWAjZ+RjZDYWbDqSAmYW1wOyDml6XmnKzwn5iA77u/EQAAMkBjN2Q4YTg4YWVjNTJjNmRjYTYyNGE3MWNlZTRlMDhkODQ3MTEyMTUwM2QyNjhkOGM5OGIwMTMwODgzN2VjNzc2QkBjN2Q4YTg4YWVjNTJjNmRjYTYyNGE3MWNlZTRlMDhkODQ3MTEyMTUwM2QyNjhkOGM5OGIwMTMwODgzN2VjNzc2WkUKQGM3ZDhhODhhZWM1MmM2ZGNhNjI0YTcxY2VlNGUwOGQ4NDcxMTIxNTAzZDI2OGQ4Yzk4YjAxMzA4ODM3ZWM3NzYQ6Ac=",
+      "vector": 9
+    },
+    {
+      "mode": "retained-zero",
+      "corpus": "ascii",
+      "id": "paragraph",
+      "session": "CglwYXJhZ3JhcGgQABjoByrEAYVvSoNXaXpnALkBAQqrze8BI0UAAAAAAdi5u0niZQ+kQmqCjbMXS/KGZlIqAfdUcRY1nlof5ksoBwECAwITAyMHQANDAlYCDAEEAgQRBhMJFRAhAiMINAJCBVYHVwyAAQICAAIBfgMJfoCAv9YGAH4AAX8AAgcAAgoAAAIKAQADCAAAAQACfgAEBwF/dX4HZGVsZXRlZAR0ZXh0AAoMAH0DfgMIAX92Agp+AQQKAX4BAAkWfzZLZWVwIHRoaXPvu78MAAEyQGQ4YjliYjQ5ZTI2NTBmYTQ0MjZhODI4ZGIzMTc0YmYyODY2NjUyMmEwMWY3NTQ3MTE2MzU5ZTVhMWZlNjRiMjhCQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NaRQpAZDhiOWJiNDllMjY1MGZhNDQyNmE4MjhkYjMxNzRiZjI4NjY2NTIyYTAxZjc1NDcxMTYzNTllNWExZmU2NGIyOBDoBw==",
+      "vector": 12
+    },
+    {
+      "mode": "retained-zero",
+      "corpus": "unicode",
+      "id": "paragraph",
+      "session": "CglwYXJhZ3JhcGgQABjoByrYAYVvSoNS+n7SAM0BAQqrze8BI0UAAAAAAfAuxa8oAWf764Kg7o3DXZ+gpMHd/gtyfarFXlr2J6BkBwECAwITAyMHQANDAlYCDAEEAgQRBhMJFRAhAiMINAJCBVYOVxmAAQICAAIBfgMOfoCAv9YGAH4AAX8AAgcAAg8AAAIPAQADDQAAAQACfgAEDAF/cH4HZGVsZXRlZAR0ZXh0AA8RAH0DfgMNAX9xAg9+AQQPAX4BAAMWfyYHFgI2fkY2Q2Fmw6kgJmFtcDsg5pel5pys8J+YgO+7vxEAATJAZjAyZWM1YWYyODAxNjdmYmViODJhMGVlOGRjMzVkOWZhMGE0YzFkZGZlMGI3MjdkYWFjNTVlNWFmNjI3YTA2NEJAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y1pFCkBmMDJlYzVhZjI4MDE2N2ZiZWI4MmEwZWU4ZGMzNWQ5ZmEwYTRjMWRkZmUwYjcyN2RhYWM1NWU1YWY2MjdhMDY0EOgH",
+      "vector": 15
+    },
+    {
+      "mode": "bootstrap",
+      "corpus": "ascii",
+      "id": "following",
+      "session": null,
+      "vector": 2
+    },
+    {
+      "mode": "bootstrap",
+      "corpus": "unicode",
+      "id": "following",
+      "session": null,
+      "vector": 5
+    },
+    {
+      "mode": "retained-positive",
+      "corpus": "ascii",
+      "id": "following",
+      "session": "Cglmb2xsb3dpbmcQ6AcY6AcqnwGFb0qDwGyrhgCUAQEKq83vASNFAAAAAAGTfiepGKGT7CL/56VVOvevlByZZEmcUkVIRfUY0fLXfAYBAgMCEwIjBkACVgILAQQCBBMEFRAhAiMENAJCBFYEVwOAAQJ/AH8BfwN/gIC/1gZ/AH8HAAJ/AAACfwEAAn8AfgdkZWxldGVkBHRleHQAAQMAfQN+AQIBfQEEAX0BADbvu78DAAAyQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NCQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NaRQpAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3YxDoBw==",
+      "vector": 8
+    },
+    {
+      "mode": "retained-positive",
+      "corpus": "unicode",
+      "id": "following",
+      "session": "Cglmb2xsb3dpbmcQ6AcY6AcqnwGFb0qDwGyrhgCUAQEKq83vASNFAAAAAAGTfiepGKGT7CL/56VVOvevlByZZEmcUkVIRfUY0fLXfAYBAgMCEwIjBkACVgILAQQCBBMEFRAhAiMENAJCBFYEVwOAAQJ/AH8BfwN/gIC/1gZ/AH8HAAJ/AAACfwEAAn8AfgdkZWxldGVkBHRleHQAAQMAfQN+AQIBfQEEAX0BADbvu78DAAAyQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NCQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NaRQpAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3YxDoBw==",
+      "vector": 11
+    },
+    {
+      "mode": "retained-zero",
+      "corpus": "ascii",
+      "id": "following",
+      "session": "Cglmb2xsb3dpbmcQABjoByqfAYVvSoPAbKuGAJQBAQqrze8BI0UAAAAAAZN+J6kYoZPsIv/npVU696+UHJlkSZxSRUhF9RjR8td8BgECAwITAiMGQAJWAgsBBAIEEwQVECECIwQ0AkIEVgRXA4ABAn8AfwF/A3+AgL/WBn8AfwcAAn8AAAJ/AQACfwB+B2RlbGV0ZWQEdGV4dAABAwB9A34BAgF9AQQBfQEANu+7vwMAADJAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y0JAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y1pFCkA5MzdlMjdhOTE4YTE5M2VjMjJmZmU3YTU1NTNhZjdhZjk0MWM5OTY0NDk5YzUyNDU0ODQ1ZjUxOGQxZjJkNzdjEOgH",
+      "vector": 14
+    },
+    {
+      "mode": "retained-zero",
+      "corpus": "unicode",
+      "id": "following",
+      "session": "Cglmb2xsb3dpbmcQABjoByqfAYVvSoPAbKuGAJQBAQqrze8BI0UAAAAAAZN+J6kYoZPsIv/npVU696+UHJlkSZxSRUhF9RjR8td8BgECAwITAiMGQAJWAgsBBAIEEwQVECECIwQ0AkIEVgRXA4ABAn8AfwF/A3+AgL/WBn8AfwcAAn8AAAJ/AQACfwB+B2RlbGV0ZWQEdGV4dAABAwB9A34BAgF9AQQBfQEANu+7vwMAADJAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y0JAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y1pFCkA5MzdlMjdhOTE4YTE5M2VjMjJmZmU3YTU1NTNhZjdhZjk0MWM5OTY0NDk5YzUyNDU0ODQ1ZjUxOGQxZjJkNzdjEOgH",
+      "vector": 17
+    }
+  ]
+}

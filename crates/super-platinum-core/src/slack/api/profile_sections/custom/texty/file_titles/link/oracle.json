@@ -1,0 +1,1372 @@
+{
+  "source": "tmp/profile-link-title-20261022/source/vectors.json",
+  "sourceSha256": "f8dee8db3a72f3d00031304ccd991e818c03896e0aa81b9ddff37c7fe718b8d6",
+  "sourceContractSha256": "b7ec490b70fe9b6bcc1bd9a2e750b4200d13dff7d2807e253fa8794c043657e2",
+  "cases": [
+    {
+      "name": "explicit-label",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "Misleading plain fallback",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "text": "Label &amp; %20",
+                    "url": "https://example.test/%41?a=1&amp;b=2",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "Label &amp; %20",
+      "sourceError": null,
+      "nativeAdmitted": true,
+      "userIds": []
+    },
+    {
+      "name": "empty-text",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "Misleading plain fallback",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "text": "",
+                    "url": "https://example.test/%41?a=1&amp;b=2",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "https://example.test/%41?a=1&amp;b=2",
+      "sourceError": null,
+      "nativeAdmitted": true,
+      "userIds": []
+    },
+    {
+      "name": "missing-text",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "Misleading plain fallback",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "url": "https://example.test/%41?a=1&amp;b=2",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "https://example.test/%41?a=1&amp;b=2",
+      "sourceError": null,
+      "nativeAdmitted": true,
+      "userIds": []
+    },
+    {
+      "name": "null-text",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "Misleading plain fallback",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "text": null,
+                    "url": "https://example.test/x",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "https://example.test/x",
+      "sourceError": null,
+      "nativeAdmitted": true,
+      "userIds": []
+    },
+    {
+      "name": "whitespace-text",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "Misleading plain fallback",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "text": " \t ",
+                    "url": "https://example.test/not-selected",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "Untitled",
+      "sourceError": null,
+      "nativeAdmitted": true,
+      "userIds": []
+    },
+    {
+      "name": "text-no-url",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "Misleading plain fallback",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "text": "Original label",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "Original label",
+      "sourceError": null,
+      "nativeAdmitted": true,
+      "userIds": []
+    },
+    {
+      "name": "text-null-url",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "Misleading plain fallback",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "text": "Original label",
+                    "url": null,
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "Original label",
+      "sourceError": null,
+      "nativeAdmitted": true,
+      "userIds": []
+    },
+    {
+      "name": "text-nonstring-url",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "Misleading plain fallback",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "text": "Original label",
+                    "url": {
+                      "bad": 1
+                    },
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "Original label",
+      "sourceError": null,
+      "nativeAdmitted": false,
+      "userIds": []
+    },
+    {
+      "name": "both-missing",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "Misleading plain fallback",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "Untitled",
+      "sourceError": null,
+      "nativeAdmitted": true,
+      "userIds": []
+    },
+    {
+      "name": "both-empty",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "Misleading plain fallback",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "text": "",
+                    "url": "",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "Untitled",
+      "sourceError": null,
+      "nativeAdmitted": true,
+      "userIds": []
+    },
+    {
+      "name": "null-url",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "Misleading plain fallback",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "url": null,
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "Untitled",
+      "sourceError": null,
+      "nativeAdmitted": true,
+      "userIds": []
+    },
+    {
+      "name": "false-text",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "Misleading plain fallback",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "text": false,
+                    "url": "https://example.test/x",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "https://example.test/x",
+      "sourceError": null,
+      "nativeAdmitted": false,
+      "userIds": []
+    },
+    {
+      "name": "zero-text",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "Misleading plain fallback",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "text": 0,
+                    "url": "https://example.test/x",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "https://example.test/x",
+      "sourceError": null,
+      "nativeAdmitted": false,
+      "userIds": []
+    },
+    {
+      "name": "number-text",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "Misleading plain fallback",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "text": 42,
+                    "url": "https://example.test/x",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "42",
+      "sourceError": null,
+      "nativeAdmitted": false,
+      "userIds": []
+    },
+    {
+      "name": "array-text",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "Misleading plain fallback",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "text": [
+                      "a",
+                      "b"
+                    ],
+                    "url": "https://example.test/x",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "a,b",
+      "sourceError": null,
+      "nativeAdmitted": false,
+      "userIds": []
+    },
+    {
+      "name": "object-text",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "Misleading plain fallback",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "text": {
+                      "value": "bad"
+                    },
+                    "url": "https://example.test/x",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "[object Object]",
+      "sourceError": null,
+      "nativeAdmitted": false,
+      "userIds": []
+    },
+    {
+      "name": "number-url",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "Misleading plain fallback",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "url": 42,
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "42",
+      "sourceError": null,
+      "nativeAdmitted": false,
+      "userIds": []
+    },
+    {
+      "name": "array-url",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "Misleading plain fallback",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "url": [
+                      "a",
+                      "b"
+                    ],
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "a,b",
+      "sourceError": null,
+      "nativeAdmitted": false,
+      "userIds": []
+    },
+    {
+      "name": "object-url",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "Misleading plain fallback",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "url": {
+                      "value": "bad"
+                    },
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "[object Object]",
+      "sourceError": null,
+      "nativeAdmitted": false,
+      "userIds": []
+    },
+    {
+      "name": "false-url",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "Misleading plain fallback",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "url": false,
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "Untitled",
+      "sourceError": null,
+      "nativeAdmitted": false,
+      "userIds": []
+    },
+    {
+      "name": "truncated",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "Misleading plain fallback",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "text": "Short\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a6",
+                    "url": "https://example.test/full",
+                    "truncated": true,
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "Short\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a6",
+      "sourceError": null,
+      "nativeAdmitted": true,
+      "userIds": []
+    },
+    {
+      "name": "mailto",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "Misleading plain fallback",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "url": "mailto:someone@example.test",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "mailto:someone@example.test",
+      "sourceError": null,
+      "nativeAdmitted": true,
+      "userIds": []
+    },
+    {
+      "name": "non-http",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "Misleading plain fallback",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "url": "javascript:literal-not-executed",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "javascript:literal-not-executed",
+      "sourceError": null,
+      "nativeAdmitted": true,
+      "userIds": []
+    },
+    {
+      "name": "markup",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "Misleading plain fallback",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "text": "<b>literal</b> &lt; &#39; &#x41; **bold**",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "<b>literal</b> &lt; &#39; &#x41; **bold**",
+      "sourceError": null,
+      "nativeAdmitted": true,
+      "userIds": []
+    },
+    {
+      "name": "unicode",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "Misleading plain fallback",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "text": "Cafe\u0301 \u4e2d\ud83d\ude42",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "Cafe\u0301 \u4e2d\ud83d\ude42",
+      "sourceError": null,
+      "nativeAdmitted": true,
+      "userIds": []
+    },
+    {
+      "name": "numeric-zero-url",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "Misleading plain fallback",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "url": 0,
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "Untitled",
+      "sourceError": null,
+      "nativeAdmitted": false,
+      "userIds": []
+    },
+    {
+      "name": "true-text",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "Misleading plain fallback",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "text": true,
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "true",
+      "sourceError": null,
+      "nativeAdmitted": false,
+      "userIds": []
+    },
+    {
+      "name": "empty-array-text",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "Misleading plain fallback",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "text": [],
+                    "url": "https://example.test/not-selected",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "Untitled",
+      "sourceError": null,
+      "nativeAdmitted": false,
+      "userIds": []
+    },
+    {
+      "name": "mixed",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "wrong",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "  Before "
+                  },
+                  {
+                    "type": "link",
+                    "text": " Label ",
+                    "url": "https://ignored.test"
+                  },
+                  {
+                    "type": "text",
+                    "text": " After  "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "Before  Label  After",
+      "sourceError": null,
+      "nativeAdmitted": true,
+      "userIds": []
+    },
+    {
+      "name": "duplicate",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "wrong",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "text": "Same",
+                    "url": "a"
+                  },
+                  {
+                    "type": "link",
+                    "text": "Same",
+                    "url": "a"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "SameSame",
+      "sourceError": null,
+      "nativeAdmitted": true,
+      "userIds": []
+    },
+    {
+      "name": "newlines",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "wrong",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "text": " First\nSecond ",
+                    "url": "a"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "First\nSecond",
+      "sourceError": null,
+      "nativeAdmitted": true,
+      "userIds": []
+    },
+    {
+      "name": "multiple-blocks",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "wrong",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "text": "First"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "text": "Second"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "First\n\nSecond",
+      "sourceError": null,
+      "nativeAdmitted": true,
+      "userIds": []
+    },
+    {
+      "name": "multiple-sections",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "wrong",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "text": "First"
+                  }
+                ]
+              },
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "text": "Second"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": "First\nSecond",
+      "sourceError": null,
+      "nativeAdmitted": true,
+      "userIds": []
+    },
+    {
+      "name": "mixed-user-empty",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "wrong",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "text": "Review "
+                  },
+                  {
+                    "type": "user",
+                    "user_id": "ULINKUSER1"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": "",
+      "sourceLabel": "Review @Dana",
+      "sourceError": null,
+      "nativeAdmitted": true,
+      "userIds": [
+        "ULINKUSER1"
+      ]
+    },
+    {
+      "name": "mixed-user-conflicting",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "wrong",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "text": "Review "
+                  },
+                  {
+                    "type": "user",
+                    "user_id": "ULINKUSER1"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": "wrong",
+      "sourceLabel": "Review @Dana",
+      "sourceError": null,
+      "nativeAdmitted": true,
+      "userIds": [
+        "ULINKUSER1"
+      ]
+    },
+    {
+      "name": "malformed-uncoercible-link",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "wrong",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "text": {
+                      "toString": null
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": null,
+      "sourceError": {
+        "name": "TypeError",
+        "message": "Cannot convert object to primitive value"
+      },
+      "nativeAdmitted": false,
+      "userIds": []
+    },
+    {
+      "name": "malformed-uncoercible-link",
+      "file": {
+        "id": "FLINKTITLE1",
+        "mode": "quip",
+        "title": "wrong",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "original",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "url": {
+                      "toString": null
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "quip": null,
+      "sourceLabel": null,
+      "sourceError": {
+        "name": "TypeError",
+        "message": "Cannot convert object to primitive value"
+      },
+      "nativeAdmitted": false,
+      "userIds": []
+    }
+  ]
+}

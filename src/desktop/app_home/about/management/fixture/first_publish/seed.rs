@@ -6,7 +6,9 @@ fn bot_raw() -> Value {
     json!({"id":BOT,"name":"Review requests","real_name":"Review requests","is_bot":true,"profile":{"display_name":"Review requests","real_name":"Review requests"}})
 }
 fn teams() -> Vec<Value> {
-    vec![json!({"id":"TWORKFLOW","name":"Home fixture"})]
+    let mut team = json!({"id":"TWORKFLOW","name":"Home fixture"});
+    super::confirmation::share::posting::seed_team(&mut team);
+    vec![team]
 }
 fn preflight_members(
     account: &str,
@@ -101,7 +103,16 @@ pub(crate) async fn seed(mut state: Signal<ShellState>) -> Result<(), String> {
     if super::confirmation::requested() {
         channels.extend(super::confirmation::raw::channels());
     }
-    let boot = json!({"ok":true,"team":teams[0],"self":self_user,"users":users,"channels":channels,"prefs":{}});
+    super::confirmation::share::dm::seed(&mut users, &mut channels);
+    super::confirmation::share::person::seed(&mut users);
+    super::confirmation::share::multiple::seed(&mut users, &mut channels);
+    super::confirmation::share::search::seed(&mut users);
+    let mut boot = json!({"ok":true,"team":teams[0],"self":self_user,"users":users,"channels":channels,"prefs":{}});
+    if super::confirmation::share::requested() {
+        // Name-policy authority acquires membership from this original Boot
+        // response. The separate canonical Init response cannot supply it.
+        boot["workspaces"] = json!(teams);
+    }
     serde_json::from_value::<super_platinum_core::slack::models::BootData>(boot.clone())
         .map_err(|e| format!("First-Publish Boot shape: {e}"))?;
     {
@@ -219,6 +230,10 @@ pub(crate) async fn seed(mut state: Signal<ShellState>) -> Result<(), String> {
             json!(s.core.session.as_ref().unwrap().unified_user_client_enabled);
     }
     model.0.lock().unwrap().seed = Some(seed);
+    super::confirmation::share::connectivity::install(&mut state.write())?;
     crate::channel_workflows::details::fixture::thread::install(&mut state.write())?;
+    if super::confirmation::share::startup::requested() {
+        crate::app_home::autocomplete::startup::schedule(state, "TWORKFLOW");
+    }
     Ok(())
 }

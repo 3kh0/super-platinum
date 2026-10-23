@@ -26,6 +26,9 @@ pub(crate) fn install_native(
     if !binding.visible_mount(shell) && !binding.retained_mount(shell) {
         return false;
     }
+    if session(shell, binding).is_some_and(|s| !titles::readiness(shell, s).0 || s.finishing) {
+        return false;
+    }
     let Some(s) = session_mut(shell, binding) else {
         return false;
     };
@@ -59,26 +62,64 @@ pub(crate) fn retain_capture(
     composing: bool,
     detached: bool,
 ) -> Result<(), Error> {
+    retain_content(
+        shell,
+        binding,
+        mount,
+        sequence,
+        Content::RichBlocks(blocks),
+        composing,
+        false,
+        detached,
+    )
+}
+
+pub(crate) fn retain_content(
+    shell: &mut ShellState,
+    binding: &Binding,
+    mount: &str,
+    sequence: u64,
+    content: Content,
+    composing: bool,
+    pending: bool,
+    detached: bool,
+) -> Result<(), Error> {
     let visible = binding.visible_mount(shell);
     let s = session_mut(shell, binding).ok_or_else(unavailable)?;
+    let previous = s.content()?;
+    let values = match &content {
+        Content::RichBlocks(blocks) => blocks.as_slice(),
+        Content::PlainDelta(delta) => {
+            delta.validate().map_err(|_| unavailable())?;
+            delta.ops()
+        }
+    };
     if s.native.as_ref().is_none_or(|m| m.mount() != mount)
         || sequence <= s.native_sequence
         || sequence > 9_007_199_254_740_991
-        || serde_json::to_vec(&blocks)
-            .map_err(|_| unavailable())?
-            .len()
-            > 512 * 1024
+        || content.representation() != previous.representation()
+        || serde_json::to_vec(values).map_err(|_| unavailable())?.len() > 512 * 1024
     {
         return Err(unavailable());
     }
-    if s.blocks != blocks && s.busy && (visible || !detached) {
+    if previous != content && s.busy && (visible || !detached) {
         return Err(unavailable());
     }
+    // Validate the next revision before mutating any capture custody.
+    let revision = if previous != content {
+        s.revision.checked_add(1).ok_or_else(unavailable)?
+    } else {
+        s.revision
+    };
     s.native_sequence = sequence;
     s.composing = composing;
-    if s.blocks != blocks {
-        s.blocks = blocks;
-        s.revision = s.revision.checked_add(1).ok_or_else(unavailable)?;
+    s.native_pending = pending;
+    if previous != content {
+        match content {
+            Content::RichBlocks(blocks) => s.blocks = blocks,
+            Content::PlainDelta(delta) => s.plain = Some(delta),
+        }
+        s.revision = revision;
         if !matches!(
             attempt_phase(s),
             Some(Phase::Unknown | Phase::Confirmed | Phase::Observed)
@@ -107,6 +148,7 @@ pub(crate) fn native_done(shell: &mut ShellState, binding: &Binding, mount: &str
     if success {
         s.native = None;
         s.composing = false;
+        s.native_pending = false;
         s.capture_failed = false;
     } else {
         s.capture_failed = true;

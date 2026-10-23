@@ -4,6 +4,11 @@ use crate::profile_edit::sections::rich::search::channel_host::Host;
 use super_platinum_core::slack::PreparedRequest;
 impl Host for Lease {
     const LIST: bool = true;
+    fn canvas_title_locale(
+        &self,
+    ) -> Option<crate::profile_edit::sections::rich::title_locale::CanvasTitle> {
+        Some(crate::profile_edit::sections::rich::title_locale::CanvasTitle::english())
+    }
     fn context(&self, shell: &ShellState) -> Option<Arc<crate::scheduled::Context>> {
         self.current(shell)
             .then(|| crate::scheduled::Context::capture(shell).map(Arc::new))

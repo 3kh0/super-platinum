@@ -6,6 +6,10 @@ use crate::canvas::comments::content;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+mod comparison;
+mod plain;
+use super::edit_seed::mode::EditMode;
+pub use plain::PlainDelta;
 mod policy;
 mod receipt;
 mod seed;
@@ -27,6 +31,8 @@ pub struct OwnEditRecord {
     seed: OwnEditSeed,
     blocks: Vec<Value>,
     text: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    plain_delta: Option<PlainDelta>,
 }
 
 impl OwnEditIntent {
@@ -38,6 +44,9 @@ impl OwnEditIntent {
         now_ms: u64,
     ) -> Result<Self, ListError> {
         seed.validate()?;
+        if seed.mode() != EditMode::Rich {
+            return Err(ListError("Rich capture cannot accept plain Delta content."));
+        }
         policy.admit(
             seed.workspace(),
             seed.user(),
@@ -61,6 +70,7 @@ impl OwnEditIntent {
             seed: seed.clone(),
             blocks,
             text,
+            plain_delta: None,
         };
         record.validate()?;
         Ok(Self { record })
@@ -79,7 +89,12 @@ impl OwnEditRecord {
             .checked_sub(self.seed.preserved().len())
             .ok_or(ListError("The edited content is malformed."))?;
         let rich = &self.blocks[..rich_len];
-        if self.version != 1
+        let mode_valid = match (&self.plain_delta, self.seed.mode(), self.version) {
+            (None, EditMode::Rich, 1) => true,
+            (Some(delta), EditMode::PlainText, 2) => delta.validate().is_ok(),
+            _ => false,
+        };
+        if !mode_valid
             || rich.is_empty()
             || self.blocks[rich_len..] != *self.seed.preserved()
             || content::fallback(rich).ok().as_deref() != Some(self.text.as_str())
@@ -111,6 +126,10 @@ impl OwnEditRecord {
     }
     pub fn blocks(&self) -> &[Value] {
         &self.blocks
+    }
+    /// Original plain editor capture, never outgoing Block Kit blocks.
+    pub fn plain_delta(&self) -> Option<&PlainDelta> {
+        self.plain_delta.as_ref()
     }
     pub fn text(&self) -> &str {
         &self.text

@@ -135,6 +135,7 @@ pub(crate) async fn run_list_members<L: Host>(
                 ids.clone(),
             )
             .await?;
+            let owned_source = interim.source.clone();
             publish(state, search.clone(), interim, false, &on_results)?;
             let group_result = if group_policy.policy().enabled() {
                 group_read::remote(state, &search, &names, &group_policy, &formatted)
@@ -150,7 +151,7 @@ pub(crate) async fn run_list_members<L: Host>(
             let batch = capture(
                 state,
                 &search,
-                acquired.source,
+                owned_source,
                 groups,
                 group_policy,
                 file_policy.clone(),

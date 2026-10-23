@@ -13,7 +13,9 @@ mod comments;
 pub mod replies;
 pub use comments::{CommentBegin, CommentDecision, CommentReceipt, CommentReview};
 mod review;
-pub use review::{LocalDecision, LocalReview};
+pub use review::{
+    EndReview, EndReviewAppend, LocalDecision, LocalReview, SplitReview, StartTypingReview,
+};
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct Receipt {

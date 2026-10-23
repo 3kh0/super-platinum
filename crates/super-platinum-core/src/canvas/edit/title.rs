@@ -42,6 +42,26 @@ impl CanonicalTitle {
         {
             return Err(Error::Unsupported);
         }
+        let (form, rich) = Self::metadata(section)?;
+        Ok(Self {
+            file: snapshot.file_id().to_owned(),
+            document: snapshot.document_id().to_owned(),
+            thread: snapshot.thread_id().to_owned(),
+            section: section.clone(),
+            form,
+            rich,
+        })
+    }
+
+    /// Pure title projection for inert recovery validation; no snapshot, actor
+    /// or write authority is reconstructed.
+    pub(super) fn rich_from_section(section: &Section) -> Result<RawMessage, Error> {
+        Self::metadata(section).map(|(_, rich)| rich)
+    }
+    fn metadata(section: &Section) -> Result<(String, RawMessage), Error> {
+        if section.section_type()? != Some(64) || section.style()? != Some(48) {
+            return Err(Error::Unsupported);
+        }
         let content = section.raw().message(12)?.ok_or(Error::Unsupported)?;
         // A title can also carry the legacy Content.text sibling; Content.title
         // is authoritative for TITLE_TYPE. Neither sibling is rewritten.
@@ -56,7 +76,7 @@ impl CanonicalTitle {
         title.string(3)?;
         title.messages(4)?;
         let source = title.string(1)?.ok_or(Error::Unsupported)?;
-        let normalized = normalize_plain_title(source)?;
+        let normalized = normalize_static_title(source)?;
         let trimmed = normalized.trim_matches(js_trim_space);
         if trimmed.is_empty() {
             // Stock uses the workspace-localized Untitled label. Do not invent it.
@@ -69,14 +89,7 @@ impl CanonicalTitle {
         let group =
             RawMessage::from_fields(&[F::bytes(1, b"rich_text_section")?, F::message(2, &leaf)?])?;
         let rich = RawMessage::from_fields(&[F::bytes(1, b"rich_text")?, F::message(2, &group)?])?;
-        Ok(Self {
-            file: snapshot.file_id().to_owned(),
-            document: snapshot.document_id().to_owned(),
-            thread: snapshot.thread_id().to_owned(),
-            section: section.clone(),
-            form,
-            rich,
-        })
+        Ok((form, rich))
     }
 
     pub(super) fn revalidate(&self, fresh: &CanvasCollabSnapshot) -> Result<(), Error> {
@@ -98,14 +111,22 @@ impl CanonicalTitle {
     }
 }
 
-fn normalize_plain_title(source: &str) -> Result<String, Error> {
-    if source.len() > MAX_TITLE_SOURCE_BYTES || source.contains(['<', '>', '&']) {
+fn normalize_static_title(source: &str) -> Result<String, Error> {
+    if source.len() > MAX_TITLE_SOURCE_BYTES {
         return Err(Error::Unsupported);
     }
-    // Slack's title render enters innerHTML before exporting text. The existing
-    // HTML5 parser handles CRLF and null preprocessing; markup/entities were
-    // rejected above, so this cannot silently flatten formatted title content.
+    let markup = source.contains(['<', '>', '&']);
+    if markup {
+        validate_static_markup(source)?;
+    }
+    // TITLE_TYPE removes ordinary formatting wrappers (8v0o.X0) before export.
+    // Decode once: the exporter escapes &<> and IRZY reparses them, then emits
+    // literal decoded text, not HTML escapes or the original formatting styles.
+    // Retain the accepted plain path's HTML5 CRLF/null preprocessing behavior.
     let parsed = Html::parse_fragment(source);
+    if markup && !parsed.errors.is_empty() {
+        return Err(Error::Unsupported);
+    }
     let text = parsed.root_element().text().collect::<String>();
     let mut normalized = String::with_capacity(text.len());
     for c in text.chars() {
@@ -116,6 +137,53 @@ fn normalize_plain_title(source: &str) -> Result<String, Error> {
         }
     }
     Ok(normalized)
+}
+
+// A lexical admission check prevents HTML repair from silently accepting
+// unmatched formatting, attributes, semantic nodes or unknown source bytes.
+// This is intentionally narrower than the original general title renderer.
+fn validate_static_markup(mut source: &str) -> Result<(), Error> {
+    let mut tags = Vec::new();
+    while let Some(at) = source.find(['<', '&']) {
+        source = &source[at..];
+        if source.starts_with('<') {
+            let end = source.find('>').ok_or(Error::Unsupported)?;
+            let tag = &source[1..end];
+            let name = tag.strip_prefix('/').unwrap_or(tag);
+            if !matches!(name, "b" | "i" | "u" | "del" | "code") {
+                return Err(Error::Unsupported);
+            }
+            if tag.starts_with('/') {
+                if tags.pop() != Some(name) {
+                    return Err(Error::Unsupported);
+                }
+            } else {
+                if tags.len() >= 32 {
+                    return Err(Error::Unsupported);
+                }
+                tags.push(name);
+            }
+            source = &source[end + 1..];
+        } else {
+            let end = source.find(';').ok_or(Error::Unsupported)?;
+            let entity = &source[1..end];
+            let numeric = entity.strip_prefix('#').is_some_and(|digits| {
+                let (digits, radix) = digits
+                    .strip_prefix(['x', 'X'])
+                    .map_or((digits, 10), |hex| (hex, 16));
+                !digits.is_empty() && digits.chars().all(|c| c.is_digit(radix))
+            });
+            if !matches!(entity, "amp" | "lt" | "gt" | "quot" | "nbsp") && !numeric {
+                return Err(Error::Unsupported);
+            }
+            // The HTML parser below validates numeric scalar/range semantics.
+            source = &source[end + 1..];
+        }
+    }
+    if !tags.is_empty() {
+        return Err(Error::Unsupported);
+    }
+    Ok(())
 }
 
 fn js_trim_space(c: char) -> bool {

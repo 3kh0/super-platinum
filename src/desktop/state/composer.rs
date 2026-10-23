@@ -183,6 +183,7 @@ impl ShellState {
             return;
         };
         let scope = self.thread_scope();
+        let standard = crate::app_home::channel_fetches::emoji_standard(self, &team);
         let bag = self
             .core
             .threads
@@ -201,13 +202,14 @@ impl ShellState {
                     self.thread_target.as_deref(),
                     self.thread_at_bottom,
                 );
-                crate::thread_vm::project_window(
+                crate::thread_vm::project_window_with_standard(
                     workspace,
                     bag,
                     &self.thread_history,
                     &root,
                     &self.media,
                     &self.thread_window,
+                    standard.as_ref().map(|observed| observed.standard()),
                 )
             })
             .unwrap_or_default();
@@ -229,6 +231,7 @@ impl ShellState {
         };
         self.thread_window
             .align_viewport(self.thread_target.as_deref(), self.thread_at_bottom);
+        let standard = crate::app_home::channel_fetches::emoji_standard(self, team);
         self.thread_messages = self
             .core
             .workspaces
@@ -239,13 +242,14 @@ impl ShellState {
                     .get(&(team.clone(), channel.clone(), root.clone())),
             )
             .map(|(workspace, bag)| {
-                crate::thread_vm::project_window(
+                crate::thread_vm::project_window_with_standard(
                     workspace,
                     bag,
                     &self.thread_history,
                     root,
                     &self.media,
                     &self.thread_window,
+                    standard.as_ref().map(|observed| observed.standard()),
                 )
             })
             .unwrap_or_default();

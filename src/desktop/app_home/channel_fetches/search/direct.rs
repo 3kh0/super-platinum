@@ -1,7 +1,8 @@
 //! A single requested conversations.info row enters the same actual queue.
+pub(crate) use super::posting::PostingRead;
 use super::*;
 
-pub(crate) struct Read(super::Read);
+pub(crate) struct Read(pub(super) super::Read);
 impl Read {
     pub(crate) fn capture(
         mut state: Signal<ShellState>,

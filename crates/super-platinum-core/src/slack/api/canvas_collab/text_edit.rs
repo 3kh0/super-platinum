@@ -126,6 +126,83 @@ mod tests {
         other.user_id = "Other".into();
         assert!(request(&SlackClient::default(), &other, &snapshot, &prepared, 100).is_err());
     }
+    #[test]
+    fn formatted_canonical_title_is_decoded_in_the_actual_text_request_form() {
+        let snapshot = crate::canvas::edit::text::tests::formatted_title::fixture_with_title(
+            " <b>Plan &amp; Review</b> <i>&lt;draft&gt;</i> ",
+        );
+        let original = snapshot.sections.clone();
+        let prepared = prepared(&snapshot);
+        let result = request(
+            &SlackClient::default(),
+            &workspace(),
+            &snapshot,
+            &prepared,
+            100,
+        )
+        .unwrap();
+        let RequestBody::Form(fields) = result.body else {
+            panic!("form")
+        };
+        let fields = fields
+            .into_iter()
+            .collect::<std::collections::BTreeMap<_, _>>();
+        assert_eq!(fields["title"], "Plan & Review <draft>");
+        assert_eq!(fields["retry_count"], "0");
+        assert_eq!(fields["sequence"], "1");
+        let binary = decode_canvas_base64(&fields["data_binary"]).unwrap();
+        let data = RawMessage::decode(&binary).unwrap();
+        assert_eq!(
+            data.fields().iter().map(|f| f.tag()).collect::<Vec<_>>(),
+            [1, 14]
+        );
+        let updates = data.messages(1).unwrap();
+        assert_eq!(updates.len(), 1);
+        assert_eq!(updates[0].string(1).unwrap(), Some("item"));
+        assert_eq!(
+            updates[0]
+                .message(12)
+                .unwrap()
+                .unwrap()
+                .message(1)
+                .unwrap()
+                .unwrap()
+                .string(1)
+                .unwrap(),
+            Some("Changed <b>paragraph</b>"),
+        );
+        let leaf = RawMessage::from_fields(&[
+            EncodedField::bytes(1, b"text").unwrap(),
+            EncodedField::bytes(2, b" Plan & Review <draft> ").unwrap(),
+        ])
+        .unwrap();
+        let group = RawMessage::from_fields(&[
+            EncodedField::bytes(1, b"rich_text_section").unwrap(),
+            EncodedField::message(2, &leaf).unwrap(),
+        ])
+        .unwrap();
+        let expected = RawMessage::from_fields(&[
+            EncodedField::bytes(1, b"rich_text").unwrap(),
+            EncodedField::message(2, &group).unwrap(),
+        ])
+        .unwrap();
+        assert_eq!(data.message(14).unwrap().unwrap(), expected);
+        assert_eq!(snapshot.sections, original);
+        let replaced = crate::canvas::edit::text::tests::formatted_title::fixture_with_title(
+            " <i>Plan &#38; Review</i> <b>&lt;draft&gt;</b> ",
+        );
+        assert!(
+            request(
+                &SlackClient::default(),
+                &workspace(),
+                &replaced,
+                &prepared,
+                100
+            )
+            .is_err()
+        );
+    }
+
     #[tokio::test]
     async fn known_offline_consumes_text_preparation_without_holding_or_retrying() {
         let snapshot = crate::canvas::edit::text::tests::fixture();

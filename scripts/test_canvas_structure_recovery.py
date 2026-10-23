@@ -16,7 +16,7 @@ def rejects(action):
 with tempfile.TemporaryDirectory() as temp:
     db=Path(temp)/'receipt.sqlite'
     with closing(sqlite3.connect(db)) as c:
-        c.executescript('PRAGMA user_version=2; CREATE TABLE identity(singleton INTEGER,account TEXT); CREATE TABLE receipts(workspace TEXT,user TEXT,file TEXT,operation TEXT,body TEXT);')
+        c.executescript('PRAGMA user_version=5; CREATE TABLE identity(singleton INTEGER,account TEXT); CREATE TABLE receipts(workspace TEXT,user TEXT,file TEXT,operation TEXT,body TEXT);')
         c.execute('INSERT INTO identity VALUES(1,?)',(m.ACCOUNT,))
         c.commit()
     assert m.validate_stage(db,'initial')==[];count+=1
@@ -132,7 +132,7 @@ with tempfile.TemporaryDirectory() as temp:
     database=Path(temp)/'review.sqlite'
     original=[dict(workspace='T1',user='U1',file='Ffixture',operation=str(uuid.uuid4()),body=json.dumps(body))]
     with closing(sqlite3.connect(database)) as c:
-        c.executescript('PRAGMA user_version=2; CREATE TABLE identity(singleton INTEGER,account TEXT); CREATE TABLE receipts(workspace TEXT,user TEXT,file TEXT,operation TEXT,body TEXT); CREATE TABLE local_reviews(workspace TEXT,user TEXT,file TEXT,operation TEXT,body TEXT,observed TEXT,reviewed_at INTEGER,decision TEXT);')
+        c.executescript('PRAGMA user_version=5; CREATE TABLE identity(singleton INTEGER,account TEXT); CREATE TABLE receipts(workspace TEXT,user TEXT,file TEXT,operation TEXT,body TEXT); CREATE TABLE local_reviews(workspace TEXT,user TEXT,file TEXT,operation TEXT,body TEXT,observed TEXT,reviewed_at INTEGER,decision TEXT);')
         c.execute('INSERT INTO identity VALUES(1,?)',(m.ACCOUNT,))
         c.execute('INSERT INTO receipts VALUES(?,?,?,?,?)',tuple(original[0][k] for k in m.COLUMNS));c.commit()
     for name in ('review-unchecked','review-controls-unchecked','review-confirmation'):

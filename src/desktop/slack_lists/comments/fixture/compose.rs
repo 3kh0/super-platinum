@@ -403,7 +403,8 @@ pub(crate) async fn journal_snapshot(state: Signal<ShellState>) -> Result<Value,
         let shell = state.peek();
         if !enabled(&shell)
             || ((shell.core.session.is_some() || shell.core.transport.is_some())
-                && !super::completion::enabled(&shell))
+                && !super::completion::enabled(&shell)
+                && !super::emoji_combined::context_enabled(&shell))
         {
             return Err("Disconnected compose fixture required".into());
         }

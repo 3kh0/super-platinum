@@ -100,6 +100,7 @@ pub(super) fn submit(mut state: Signal<ShellState>, visit: u64, id: u64) {
                 return;
             }
         };
+        let featured = feature::prepare(state, &q, &choice).await;
         if !q.authorized(state).await
             || !choice.current(&state.peek())
             || !stamp.current(&state.peek())
@@ -195,6 +196,9 @@ pub(super) fn submit(mut state: Signal<ShellState>, visit: u64, id: u64) {
         if !added.navigable() {
             finish(state, &q, false).await;
             return;
+        }
+        if let Some(featured) = featured {
+            feature::start(state, &q, choice.clone(), featured);
         }
         let query = q.clone();
         let source = choice.clone();

@@ -112,10 +112,12 @@ pub fn CanvasDialog(
                         Arc::new(
                             CanvasDocument::parse(if links_check::requested() {
                                 links_check::HTML
+                            } else if text::split_fixture::requested() {
+                                text::split_fixture::html()
                             } else if text::structure_fixture::requested() {
                                 text::structure_fixture::HTML
                             } else if text::fixture::requested() {
-                                text::fixture::HTML
+                                text::fixture::html()
                             } else if text::underline_fixture::requested() {
                                 text::underline_fixture::html()
                             } else if text::heading_fixture::requested() {
@@ -190,10 +192,17 @@ pub fn CanvasDialog(
                     &mut state.write(),
                     &mut reader.write(),
                 );
+            } else if text::split_fixture::requested() {
+                text::split_fixture::install(state, reader).await;
             } else if text::structure_fixture::requested() {
-                let mut shell = state.write();
-                text::structure_fixture::install(&mut shell);
-                checklist::reader::update_mapping(&shell, &mut reader.write());
+                {
+                    let mut shell = state.write();
+                    text::structure_fixture::install(&mut shell);
+                    checklist::reader::update_mapping(&shell, &mut reader.write());
+                }
+                if text::split_recovery_fixture::requested() {
+                    text::split_recovery_fixture::reload(state, reader).await;
+                }
             } else if text::underline_fixture::requested() {
                 let mut shell = state.write();
                 text::underline_fixture::install(&mut shell);
@@ -261,13 +270,15 @@ pub fn CanvasDialog(
     use_effect(move || {
         let visit = {
             let shell = state.read();
-            if crate::fixture::is_fixture()
+            let fixture_read = comments::fixture::canonical_files::auto_refresh::enabled(&shell);
+            if (crate::fixture::is_fixture() && !fixture_read)
                 || *event_refreshing.read()
                 || reader.read().loading
                 || rename.read().is_some()
-                || shell.core.transport.as_ref().is_none_or(|transport| {
-                    transport.health() == super_platinum_core::slack::transport::Health::Offline
-                })
+                || (!fixture_read
+                    && shell.core.transport.as_ref().is_none_or(|transport| {
+                        transport.health() == super_platinum_core::slack::transport::Health::Offline
+                    }))
             {
                 None
             } else {
@@ -276,21 +287,31 @@ pub fn CanvasDialog(
         };
         let Some(visit) = visit else { return };
         event_refreshing.set(true);
+        comments::fixture::canonical_files::auto_refresh::scheduled(&state.peek(), visit);
         spawn(async move {
             tokio::time::sleep(std::time::Duration::from_millis(250)).await;
             let read = {
                 let mut shell = state.write();
+                let fixture_read =
+                    comments::fixture::canonical_files::auto_refresh::enabled(&shell);
                 if reader.peek().loading
                     || rename.peek().is_some()
-                    || shell.core.transport.as_ref().is_none_or(|transport| {
-                        transport.health() == super_platinum_core::slack::transport::Health::Offline
-                    })
+                    || (!fixture_read
+                        && shell.core.transport.as_ref().is_none_or(|transport| {
+                            transport.health()
+                                == super_platinum_core::slack::transport::Health::Offline
+                        }))
                 {
                     None
                 } else {
                     checklist::event_reads::claim(&mut shell, visit)
                 }
             };
+            comments::fixture::canonical_files::auto_refresh::claimed(
+                &state.peek(),
+                visit,
+                read.is_some(),
+            );
             if let Some(read) = read {
                 loader::read_pair(state, reader, read).await;
             }
@@ -310,7 +331,10 @@ pub fn CanvasDialog(
                 || !snapshot.text.items.is_empty()
                 || view.operation.is_some()
         })
-        .and_then(checklist::reader::notice);
+        .and_then(checklist::reader::notice)
+        .filter(|notice| {
+            checklist::reader::show_notice(notice, snapshot.error.as_deref(), *comments_open.read())
+        });
     let no_mapping = checklist::reader::Mapping::default();
     let mapped = if canonical.is_some() {
         &snapshot.checklist

@@ -27,6 +27,7 @@ pub(crate) fn snapshot(s: &ShellState, visit: u64) -> Value {
         "followup":a.followup.as_ref().map(|p|json!({"phase":format!("{:?}",p.phase()),"fullySucceeded":p.fully_succeeded(),"stages":p.stages().iter().map(|stage|json!({"slots":stage.slots().iter().map(|s|slot(s,a.follow_reply.as_ref())).collect::<Vec<_>>()})).collect::<Vec<_>>()})),
         "readback":a.readback.as_ref().map(|(e,m)|json!({"workflow":e.raw_workflow(),"trigger":e.trigger(),"matches":m}))
         ,"confirmationAdd":a.confirmation_add.as_ref().map(|v|v.snapshot())
+        ,"confirmationShare":a.confirmation_share.as_ref().map(|v|v.snapshot())
     })).collect();
     json!({"visit":visit,"visible":visible(s,visit),"confirmation":confirmation,"attempts":attempts,"avatarReceipts":book.first_avatar_receipts,
         "document":document(s,visit).map(|d|json!({"id":d.id,"revision":d.revision,"title":d.title,"description":d.description,"pending":d.pending,"editor":d.editor.raw_workflow(),"trigger":d.editor.trigger(),"notice":d.notice,"editable":editable(s,visit)}))})

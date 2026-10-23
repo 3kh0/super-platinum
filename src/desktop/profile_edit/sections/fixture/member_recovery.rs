@@ -30,6 +30,9 @@ pub(crate) fn named() -> bool {
         )
 }
 pub(crate) fn enabled() -> bool {
+    if (super::user_title::named() || super::completion::title_users::named()) {
+        return true;
+    }
     cfg!(any(test, feature = "protected-native-fixture"))
         && (named()
             || super::member_known::named()
@@ -182,7 +185,9 @@ pub(crate) fn release_observed(serial: u64, response: Reply) -> Result<Value, St
             .unwrap();
         row["released"] = json!(true);
         row["outcome"] = json!(outcome);
-        if super::group_recovery::mixed_absent::enabled() {
+        if super::group_recovery::mixed_absent::enabled()
+            || (super::user_title::named() || super::completion::title_users::named())
+        {
             row["response"] = match &response {
                 Ok((raw, disconnected)) => json!({"raw":raw,"disconnected":disconnected}),
                 Err(Error::Offline(_)) => json!({"error":"offline"}),
@@ -194,7 +199,9 @@ pub(crate) fn release_observed(serial: u64, response: Reply) -> Result<Value, St
     let retired = sender.is_closed();
     let delivered = sender.send(response).is_ok();
     let observed = json!({"serial":serial,"receiverRetired":retired,"delivered":delivered});
-    if super::group_recovery::mixed_absent::enabled() {
+    if super::group_recovery::mixed_absent::enabled()
+        || (super::user_title::named() || super::completion::title_users::named())
+    {
         let mut book = ledger().lock().unwrap();
         let row = book
             .requests

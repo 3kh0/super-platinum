@@ -1,6 +1,8 @@
 //! Closed Add-to-channel endpoint. Publication and Add ledgers remain separate.
 use super::*;
+pub(crate) mod feature;
 pub(crate) mod raw;
+pub(crate) mod share;
 mod wire;
 pub(crate) use wire::{mutation, read};
 pub(crate) fn requested() -> bool {
@@ -74,6 +76,8 @@ pub(crate) fn install_identity(s: &mut ShellState) {
 #[derive(Clone)]
 pub(crate) struct Model(Arc<Mutex<Data>>);
 struct Data {
+    feature: feature::Model,
+    share: Option<share::Model>,
     requests: Vec<Value>,
     responses: Vec<Value>,
     settlements: Vec<Value>,
@@ -84,6 +88,8 @@ struct Data {
 impl Model {
     pub(super) fn new() -> Self {
         Self(Arc::new(Mutex::new(Data {
+            feature: feature::Model::new(),
+            share: share::requested().then(share::Model::new),
             requests: vec![],
             responses: vec![],
             settlements: vec![],
@@ -94,8 +100,12 @@ impl Model {
     }
     pub(crate) fn snapshot(&self) -> Value {
         let m = self.0.lock().unwrap();
-        json!({"requests":m.requests,"responses":m.responses,"settlements":m.settlements,"releases":m.releases,
-            "held":m.held.iter().map(|(n,_)|n).collect::<Vec<_>>(),"bookmarks":m.bookmarks,"networkCalls":0})
+        let mut value = json!({"requests":m.requests,"responses":m.responses,"settlements":m.settlements,"releases":m.releases,
+            "held":m.held.iter().map(|(n,_)|n).collect::<Vec<_>>(),"bookmarks":m.bookmarks,"networkCalls":0,"feature":m.feature.snapshot()});
+        if let Some(share) = &m.share {
+            value["share"] = share.snapshot();
+        }
+        value
     }
     pub(crate) fn release(&self, serial: usize) -> Result<Value, String> {
         let mut m = self.0.lock().unwrap();

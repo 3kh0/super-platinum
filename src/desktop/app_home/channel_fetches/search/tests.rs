@@ -4,9 +4,13 @@ use super_platinum_core::state::directory_channels::Store;
 
 const OLD: &str = "CINIT0001";
 const NEW: &str = "CSEARCH01";
-fn prepared() -> (ShellState, Owner) {
+pub(super) fn prepared() -> (ShellState, Owner) {
+    prepared_with(|_| {})
+}
+pub(super) fn prepared_with(before_owner: impl FnOnce(&mut ShellState)) -> (ShellState, Owner) {
     let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
     super::super::fixture::install(&mut shell);
+    before_owner(&mut shell);
     let team = shell.core.active_team.clone().unwrap();
     let ctx = Arc::new(Context::capture(&shell, &team).unwrap());
     let facts = Facts {
@@ -65,7 +69,7 @@ fn prepared() -> (ShellState, Owner) {
     crate::app_home::cfm_lifecycle::initialized(&mut shell, &ctx);
     (shell, owner)
 }
-fn receipt(shell: &mut ShellState, owner: &Owner) -> Receipt {
+pub(super) fn receipt(shell: &mut ShellState, owner: &Owner) -> Receipt {
     Receipt::capture(shell, &owner.context.session.team_id, &|_| true).unwrap()
 }
 fn row() -> Value {
@@ -77,7 +81,7 @@ fn row() -> Value {
 fn staged(shell: &ShellState, owner: &Owner) -> (Store, BTreeMap<String, Channel>) {
     staged_origin(shell, owner, Origin::Directory)
 }
-fn staged_origin(
+pub(super) fn staged_origin(
     shell: &ShellState,
     owner: &Owner,
     origin: Origin,
@@ -89,6 +93,20 @@ fn staged_origin(
         let observed = store
             .observation(&ctx.account, &ctx.session, ctx.epoch, GENERATION, &native)
             .unwrap();
+        if let Some(commit) = store
+            .drain_source_action(
+                &observed,
+                &ctx.account,
+                &ctx.session,
+                ctx.epoch,
+                GENERATION,
+                &native,
+            )
+            .unwrap()
+        {
+            (store, native) = commit.into_parts();
+            continue;
+        }
         let facts = observed.receipt_facts().unwrap().clone();
         let pending = store
             .prepare(
@@ -132,7 +150,7 @@ fn staged_origin(
 fn publish(shell: &mut ShellState, owner: &Owner) {
     publish_origin(shell, owner, Origin::Directory);
 }
-fn publish_origin(shell: &mut ShellState, owner: &Owner, origin: Origin) {
+pub(super) fn publish_origin(shell: &mut ShellState, owner: &Owner, origin: Origin) {
     let observed = observe(shell, &owner.context).unwrap();
     let (store, native) = staged_origin(shell, owner, origin);
     let token = Arc::new(());
@@ -455,4 +473,80 @@ fn unavailable_dm_member_facts_refuse_entire_page_without_dropping_the_dm() {
             .channels
             .contains_key(NEW)
     );
+}
+
+#[test]
+fn share_search_membership_shared_sink_preserves_raw_and_applies_companions_atomically() {
+    let (mut shell, owner) = prepared();
+    let ctx = &owner.context;
+    let before =
+        serde_json::to_value(&shell.core.workspaces[&ctx.session.team_id].channels[OLD]).unwrap();
+    let wire = vec![
+        json!({"id":NEW,"name":"search-returned","is_channel":true,"is_member":false,"opaque":{"kept":true}}),
+    ];
+    let original = wire.clone();
+    let captured = receipt(&mut shell, &owner);
+    captured
+        .accept_with_memberships(
+            &mut shell,
+            &wire,
+            &[NEW.into(), OLD.into(), "CUNKNOWN1".into()],
+            &|_| true,
+        )
+        .unwrap();
+    assert_eq!(wire, original);
+    assert_eq!(
+        serde_json::to_value(&shell.core.workspaces[&ctx.session.team_id].channels[OLD]).unwrap(),
+        before
+    );
+    assert!(
+        !shell.core.workspaces[&ctx.session.team_id]
+            .channels
+            .contains_key(NEW)
+    );
+    assert!(!captured.current(&shell));
+    publish(&mut shell, &owner);
+    let catalog = canonical::capture(&mut shell, &ctx.session.team_id).unwrap();
+    assert_eq!(catalog.row(NEW).unwrap()["is_member"], true);
+    assert_eq!(catalog.row(NEW).unwrap()["opaque"], wire[0]["opaque"]);
+    assert_eq!(catalog.row(OLD).unwrap()["is_member"], true);
+    assert_eq!(catalog.row("CUNKNOWN1").unwrap()["isUnknown"], true);
+    let after =
+        serde_json::to_value(&shell.core.workspaces[&ctx.session.team_id].channels[OLD]).unwrap();
+    for key in [
+        "name",
+        "latest",
+        "last_read",
+        "unread_count",
+        "unread_count_display",
+        "mention_count",
+        "has_unreads",
+    ] {
+        assert_eq!(after.get(key), before.get(key), "{key}");
+    }
+}
+#[test]
+fn share_search_membership_stale_response_does_not_enqueue_any_action_or_rows() {
+    let (mut shell, owner) = prepared();
+    let captured = receipt(&mut shell, &owner);
+    let other = receipt(&mut shell, &owner);
+    other.accept(&mut shell, &[row()], &|_| true).unwrap();
+    let before = observe(&shell, &owner.context).unwrap();
+    assert!(
+        captured
+            .accept_with_memberships(&mut shell, &[row()], &[OLD.into()], &|_| true)
+            .is_err()
+    );
+    assert!(observed_current(&shell, &owner.context, &before));
+}
+#[test]
+fn share_search_membership_empty_rows_still_processes_known_companion() {
+    let (mut shell, owner) = prepared();
+    let captured = receipt(&mut shell, &owner);
+    captured
+        .accept_with_memberships(&mut shell, &[], &[OLD.into()], &|_| true)
+        .unwrap();
+    publish(&mut shell, &owner);
+    let catalog = canonical::capture(&mut shell, &owner.context.session.team_id).unwrap();
+    assert_eq!(catalog.row(OLD).unwrap()["is_member"], true);
 }

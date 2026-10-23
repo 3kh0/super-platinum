@@ -15,8 +15,16 @@ pub(crate) struct MemberBatch {
     witness: Arc<dyn Fn(&ShellState) -> bool + Send + Sync>,
     // Passive capture diagnostic; local/interim choices retain normal authority.
     pub(crate) settled: bool,
+    diagnostic: Arc<dyn Fn(&ShellState) -> Value + Send + Sync>,
+    canvas_fallback: Arc<dyn Fn(&ShellState) -> Value + Send + Sync>,
 }
 impl MemberBatch {
+    pub(crate) fn title_users_proof(&self, s: &ShellState) -> Value {
+        (self.diagnostic)(s)
+    }
+    pub(crate) fn canvas_fallback_proof(&self, s: &ShellState) -> Value {
+        (self.canvas_fallback)(s)
+    }
     pub(crate) fn current(&self, shell: &ShellState) -> bool {
         (self.witness)(shell)
     }
@@ -31,6 +39,7 @@ struct Batch {
     group_policy: Arc<group_policy::Observation>,
     file_policy: Arc<file_policy::Observation>,
     files: Option<Arc<file_source::Snapshot>>,
+    title_users: Option<Arc<file_choice::users::Users>>,
     names: Arc<member_names::Observation>,
     preferences: Arc<ranking::Preferences>,
     renderer: Arc<member_render::Observed>,
@@ -54,6 +63,7 @@ impl Batch {
                 .files
                 .as_ref()
                 .is_none_or(|source| source.current(shell))
+            && self.title_users.as_ref().is_none_or(|u| u.current(shell))
             && self.renderer.current(search, shell)
             && self.policy.current(shell, search)
             && self.input.current(shell, search)
@@ -94,6 +104,51 @@ async fn capture<L: Host>(
     query: &str,
     remote_ids: BTreeSet<String>,
 ) -> Result<Arc<Batch>, Error> {
+    let files = if file_policy.policy().enabled() {
+        let source = file_source::Snapshot::capture(&state.peek(), search.lease.team())?;
+        if !source.unavailable_ids().is_empty() {
+            return Err(unavailable());
+        }
+        Some(source)
+    } else {
+        None
+    };
+    capture_bound(
+        state,
+        search,
+        source,
+        groups,
+        group_policy,
+        file_policy,
+        names,
+        preferences,
+        query,
+        remote_ids,
+        files,
+    )
+    .await
+}
+
+async fn capture_bound<L: Host>(
+    state: Signal<ShellState>,
+    search: &Search<L>,
+    source: Arc<intake::Snapshot>,
+    groups: Option<Arc<group_source::Snapshot>>,
+    group_policy: Arc<group_policy::Observation>,
+    file_policy: Arc<file_policy::Observation>,
+    names: Arc<member_names::Observation>,
+    preferences: Arc<ranking::Preferences>,
+    query: &str,
+    remote_ids: BTreeSet<String>,
+    files: Option<Arc<file_source::Snapshot>>,
+) -> Result<Arc<Batch>, Error> {
+    if !search.current(&state.peek())
+        || !names.current(&state.peek(), search)
+        || !source.current(&state.peek())
+        || files.as_ref().is_some_and(|f| !f.current(&state.peek()))
+    {
+        return Err(unavailable());
+    }
     let context = search
         .lease
         .member_context(&state.peek())?
@@ -104,15 +159,6 @@ async fn capture<L: Host>(
         .map(|r| r.source.clone())
         .collect::<Vec<_>>();
     let policy = Arc::new(member_policy::capture(state, search, &rows, preferences.clone()).await?);
-    let files = if file_policy.policy().enabled() {
-        let source = file_source::Snapshot::capture(&state.peek(), search.lease.team())?;
-        if !source.unavailable_ids().is_empty() {
-            return Err(unavailable());
-        }
-        Some(source)
-    } else {
-        None
-    };
     let renderer = Arc::new(
         member_render::capture_with_files(
             state,
@@ -136,6 +182,46 @@ async fn capture<L: Host>(
         files.clone(),
     )
     .await?;
+    let title_users = if let Some(files) = &files {
+        let matched = file_matching::matches(
+            &renderer.query,
+            files.rows(),
+            renderer.query_has_link().map_err(|_| unavailable())?,
+            input.file_ignore_fuzzy()?,
+            |row| renderer.template_context(row),
+            |row| renderer.file_names(row),
+        )
+        .map_err(|_| unavailable())?;
+        let selected = matched
+            .iter()
+            .map(|row| row.id.to_owned())
+            .collect::<Vec<_>>();
+        let (next, users) =
+            file_choice::users::acquire(state, search, &names, files, source.clone(), &selected)
+                .await?;
+        if !Arc::ptr_eq(&next, &source) {
+            // Only the helper's accepted original election advances this source.
+            // Rebuild names/rank inputs under the same still-current query and
+            // immutable file/policy owners; no remote search is repeated.
+            return Box::pin(capture_bound(
+                state,
+                search,
+                next,
+                groups,
+                group_policy,
+                file_policy,
+                names,
+                preferences,
+                query,
+                remote_ids,
+                Some(files.clone()),
+            ))
+            .await;
+        }
+        users
+    } else {
+        None
+    };
     let label_rows = rows
         .iter()
         .filter_map(|row| match policy.allows(row) {
@@ -183,6 +269,7 @@ async fn capture<L: Host>(
         group_policy,
         file_policy,
         files,
+        title_users,
         names,
         preferences,
         renderer,
@@ -332,12 +419,13 @@ fn publish<L: Host>(
                 let row = matched_files
                     .get(r.original_index - matched.len() - matched_groups.len())
                     .ok_or_else(unavailable)?;
-                let selected = Arc::new(file_choice::capture(
+                let selected = Arc::new(file_choice::capture_with_users(
                     &state.peek(),
                     &search,
                     batch.names.clone(),
                     batch.files.clone().ok_or_else(unavailable)?,
                     row.id,
+                    batch.title_users.clone(),
                 )?);
                 let value = (selected.value().clone(), selected.label().to_owned());
                 file_choices.push(selected);
@@ -345,6 +433,43 @@ fn publish<L: Host>(
             }
         })
         .collect::<Result<Vec<_>, Error>>()?;
+    let diagnostics = file_choices.clone();
+    let diagnostic = Arc::new(move |s: &ShellState| {
+        let values = diagnostics
+            .iter()
+            .filter_map(|c| {
+                c.title_users_proof(s).map(|p| {
+                    (
+                        c.value()["file_id"].as_str().unwrap_or_default().to_owned(),
+                        p,
+                    )
+                })
+            })
+            .collect::<serde_json::Map<String, Value>>();
+        Value::Object(values)
+    });
+    let fallback_choices = file_choices.clone();
+    let fallback_search = search.clone();
+    let canvas_fallback = Arc::new(move |s: &ShellState| {
+        Value::Object(
+            fallback_choices
+                .iter()
+                .filter_map(|choice| {
+                    choice
+                        .canvas_fallback_proof(s, &fallback_search)
+                        .map(|proof| {
+                            (
+                                choice.value()["file_id"]
+                                    .as_str()
+                                    .unwrap_or_default()
+                                    .to_owned(),
+                                proof,
+                            )
+                        })
+                })
+                .collect(),
+        )
+    });
     let witness = Arc::new(move |shell: &ShellState| {
         batch.current(shell, &search)
             && file_choices
@@ -357,6 +482,8 @@ fn publish<L: Host>(
             values,
             witness,
             settled,
+            diagnostic,
+            canvas_fallback,
         },
     )
 }

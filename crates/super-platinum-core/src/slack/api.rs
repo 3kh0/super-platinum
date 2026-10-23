@@ -43,6 +43,7 @@ mod direct_recovery;
 pub use direct_recovery::*;
 mod drafts;
 mod drafts_info;
+pub mod emoji_catalog;
 mod execute;
 mod execute_readbacks;
 mod experiments;

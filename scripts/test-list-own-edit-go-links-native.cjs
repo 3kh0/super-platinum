@@ -1,0 +1,25 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const source=fs.readFileSync('src/desktop/slack_lists/check/compose_comments/own_edit/plain/go_links.js','utf8');
+function scene(){
+ let ops=[{insert:'Happy :)\n'}],composing=false,hits=true,consumed=false,commands=0,last;
+ const node={length:8},rect={left:10,top:10,right:100,bottom:40,width:90,height:30};
+ const input={isConnected:true,isContentEditable:true,scrollIntoView(){},focus(){},getBoundingClientRect:()=>rect,contains:n=>n===node||n===input,querySelectorAll:()=>[],
+  dispatchEvent:e=>{last=e;if(e.type==='compositionstart')composing=true;else if(e.type==='compositionend')composing=false;else if(consumed)e.preventDefault();}};
+ const root={querySelector:()=>input,closest:()=>null},region={dataset:{listCommentsEditScope:'scope'}};
+ const selection={isCollapsed:true,anchorNode:node,focusNode:node,anchorOffset:8,focusOffset:8,toString:()=>'',removeAllRanges(){},addRange(r){this.anchorOffset=r.a;this.focusOffset=r.b;this.isCollapsed=r.a===r.b;this.toString=()=> 'Happy :)'.slice(r.a,r.b)}};
+ const win={__ownEditOriginalEditor:root,__ownEditOriginalInput:input,__ownEditOriginalPlainOwner:{scope:'scope',generation:'7'},superPlatinumCommentDelta:{snapshot:()=>({ops:structuredClone(ops),mode:'PlainText',revision:1,generation:'7',composing,pending:false,attachmentEffects:'none-v1'})}};
+ class Event{constructor(type,args){Object.assign(this,args,{type,isTrusted:false,defaultPrevented:false})}preventDefault(){this.defaultPrevented=true}}
+ const context={window:win,document:{getElementById:id=>id==='slack-list-comment-edit-draft'?root:id==='slack-list-comment-edit'?region:{disabled:false},elementFromPoint:()=>hits?input:null,
+  execCommand:(cmd,_,text)=>{assert.equal(cmd,'insertText');commands++;ops=[{insert:'Happy :)'+text+'\n'}];return true},
+  createTreeWalker:()=>{let once=false;return {nextNode:()=>once?null:(once=true,node)}},createRange:()=>({setStart(n,i){this.a=i},setEnd(n,i){this.b=i}})},
+  getSelection:()=>selection,NodeFilter:{SHOW_TEXT:4},KeyboardEvent:Event,CompositionEvent:Event,innerWidth:800,innerHeight:600};
+ const run=vm.runInNewContext(source,context);return {run:(a,b={})=>JSON.parse(JSON.stringify(run(a,b))),win,input,root,region,selection,context,setHits:v=>hits=v,setConsumed:v=>consumed=v,commands:()=>commands,event:()=>last};
+}
+
+test('Space records original default insertion only once',()=>{const s=scene(),v=s.run('key',{key:'Space'});assert.equal(v.defaultPrevented,false);assert.equal(v.defaultApplied,true);assert.equal(s.commands(),1);s.setConsumed(true);const w=s.run('key',{key:'Space'});assert.equal(w.defaultApplied,false);assert.equal(s.commands(),1)});
+test('Shift Enter uses actual key13 shift modifier without invented default',()=>{const s=scene();s.setConsumed(true);const v=s.run('key',{key:'ShiftEnter'});assert.equal(v.ok,true);assert.equal(v.keyCode,13);assert.equal(v.shiftKey,true);assert.equal(v.ctrlKey,false);assert.equal(v.defaultPrevented,true);assert.equal(v.defaultApplied,false);assert.equal(s.commands(),0)});
+test('Undo and Redo preserve native modifiers',()=>{for(const key of ['Undo','Redo']){const s=scene();s.setConsumed(true);const v=s.run('key',{key});assert.equal(v.keyCode,90);assert.equal(v.ctrlKey,true);assert.equal(v.shiftKey,key==='Redo');assert.equal(s.commands(),0)}});
+test('Continuation uses real insertText with retained original owner',()=>{const s=scene(),v=s.run('insert',{text:'go/team',composing:false});assert.equal(v.inputCommand,'insertText');assert.equal(v.text,'go/team');assert.equal(s.commands(),1);assert.equal(v.scope,'scope')});
+test('Foreign root, scope, queue, input and selection refuse',()=>{for(const k of ['root','scope','pending','input','selection']){const s=scene();if(k==='root')s.win.__ownEditOriginalEditor={};if(k==='input')s.win.__ownEditOriginalInput={};if(k==='scope')s.region.dataset.listCommentsEditScope='other';if(k==='selection')s.selection.anchorNode={};if(k==='pending'){const old=s.win.superPlatinumCommentDelta.snapshot;s.win.superPlatinumCommentDelta.snapshot=()=>({...old(),pending:true})}assert.equal(s.run('key',{key:'Space'}).ok,false);assert.equal(s.commands(),0)}});
+test('Original controls must finish paint and state exposes actual anchors',()=>{const s=scene();assert.deepEqual(s.run('state').anchors,[]);s.input.querySelectorAll=()=>[{textContent:'go/team',getAttribute:()=> 'https://other'}];assert.equal(s.run('state').anchors[0].href,'https://other');const get=s.context.document.getElementById;s.context.document.getElementById=k=>k==='slack-list-comment-edit-save'?{disabled:true}:get(k);assert.equal(s.run('state').ok,false)});
+test('Clipped/read-only and unsupported keys cannot drive native input',()=>{for(const kind of ['hit','readonly','key']){const s=scene();if(kind==='hit')s.setHits(false);if(kind==='readonly')s.input.isContentEditable=false;assert.equal(s.run('key',{key:kind==='key'?'Period':'Space'}).ok,false);assert.equal(s.commands(),0)}});

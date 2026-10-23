@@ -212,6 +212,52 @@ pub(in crate::canvas) async fn reserve_replacement(
 ) -> Result<Ticket, &'static str> {
     reserve_checkpoint(state, attempt, prepared.checkpoint().map_err(|_| FAILED)?).await
 }
+pub(in crate::canvas) async fn reserve_split(
+    state: Signal<ShellState>,
+    attempt: &Attempt,
+    prepared: &super_platinum_core::canvas::edit::structure::PreparedSplitEdit,
+) -> Result<Ticket, &'static str> {
+    reserve_checkpoint(state, attempt, prepared.checkpoint().map_err(|_| FAILED)?).await
+}
+pub(in crate::canvas) async fn reserve_end(
+    state: Signal<ShellState>,
+    attempt: &Attempt,
+    prepared: &super_platinum_core::canvas::edit::structure::PreparedEndEdit,
+) -> Result<Ticket, &'static str> {
+    reserve_checkpoint(state, attempt, prepared.checkpoint().map_err(|_| FAILED)?).await
+}
+pub(in crate::canvas) async fn reserve_start_typing(
+    state: Signal<ShellState>,
+    attempt: &Attempt,
+    prepared: &super_platinum_core::canvas::edit::structure::PreparedStartTypingEdit,
+) -> Result<Ticket, &'static str> {
+    reserve_checkpoint(state, attempt, prepared.checkpoint().map_err(|_| FAILED)?).await
+}
+/// Exact disconnected fixture only: independently read the committed journal
+/// through its normal blocking worker, rather than infer durability from UI state.
+pub(in crate::canvas) async fn split_fixture_journal(
+    state: Signal<ShellState>,
+) -> Result<serde_json::Value, &'static str> {
+    let owner = {
+        let shell = state.peek();
+        if !crate::canvas::text::split_fixture::enabled(&shell) {
+            return Err(FAILED);
+        }
+        let file = shell.canvas.as_ref().ok_or(FAILED)?.id.clone();
+        Owner::capture(&shell, &file).ok_or(FAILED)?
+    };
+    let scope = owner.scope.clone();
+    owner
+        .run(move |journal| {
+            let receipt = journal.get(&scope)?;
+            Ok(
+                serde_json::json!({"scope":scope,"receipt":receipt.map(|receipt|serde_json::json!({
+            "operation":receipt.operation_id(),"checkpoint":receipt.checkpoint()}))}),
+            )
+        })
+        .await
+        .map_err(|_| FAILED)
+}
 async fn reserve_checkpoint(
     mut state: Signal<ShellState>,
     attempt: &Attempt,

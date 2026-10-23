@@ -149,9 +149,11 @@ class NativeFixture:
         self.control("focus-window")
 
     def receipts(self, prefix):
+        # NDJSON is LF-delimited. str.splitlines also splits legal JSON text
+        # at NEL/LS/PS and can silently discard a complete native receipt.
         return [json.loads(line.split(prefix, 1)[1])
-                for line in self.log.read_text(encoding="utf-8", errors="replace").splitlines(keepends=True)
-                if line.endswith("\n") and prefix in line]
+                for line in self.log.read_text(encoding="utf-8", errors="replace").split("\n")[:-1]
+                if prefix in line]
 
     def capture(self, path):
         path = Path(path).resolve()

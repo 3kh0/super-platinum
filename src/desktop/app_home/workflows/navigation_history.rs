@@ -65,6 +65,14 @@ impl Witness {
     }
 }
 fn identity(s: &ShellState) -> Option<String> {
+    // Only the closed Share fixture can map its synthetic account to a fresh
+    // UUID namespace. It retains the real storage reader/writer below; unlike
+    // the older protected fixture path this does not synthesize a missing read.
+    if let Some(owner) = crate::app_home::about::management::fixture::first_publish::confirmation::share::search::ranking::navigation_owner(s)
+        .filter(|id| uuid::Uuid::parse_str(id).is_ok())
+    {
+        return Some(owner);
+    }
     #[cfg(feature = "protected-test-support")]
     if let Some(owner) = fixture::navigation_owner(s) {
         return Some(owner);

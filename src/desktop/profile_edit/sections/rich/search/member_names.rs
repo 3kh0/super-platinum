@@ -10,8 +10,10 @@ use super_platinum_core::{
     slack::{Error, PreparedRequest},
     state::posting_metadata::authority::{Authority, BootRead},
 };
+mod save;
 #[cfg(test)]
 mod tests;
+pub(crate) use save::SaveMemberNames;
 
 fn unavailable() -> Error {
     Error::Api("profile_member_name_policy_unavailable".into())
@@ -26,6 +28,9 @@ pub(super) struct Observation {
     pub(super) default_workspace: Option<String>,
 }
 impl Observation {
+    pub(super) fn title_policy_proof(&self, shell: &ShellState) -> Value {
+        serde_json::json!({"user":self.fence.preferences.user_prefs(),"gantry":self.gantry,"enterprise":self.enterprise,"revision":crate::app_home::autocomplete::preferences_revision(shell)})
+    }
     pub(super) fn current(&self, shell: &ShellState, search: &Search<impl Host>) -> bool {
         self.fence.current(shell, search) && self.authority.current(&shell.core)
     }

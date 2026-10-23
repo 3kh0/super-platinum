@@ -13,10 +13,19 @@ pub(crate) struct FileTarget {
     _title: file_title_source::Observation,
     canonical: CanonicalTitle,
     file: File,
+    display: Option<Arc<FileTitles>>,
 }
 
 impl FileTarget {
     pub(crate) fn capture(shell: &ShellState, team: &str, raw: &Value) -> Result<Self, Error> {
+        Self::capture_with_titles(shell, team, raw, None)
+    }
+    pub(crate) fn capture_with_titles(
+        shell: &ShellState,
+        team: &str,
+        raw: &Value,
+        display: Option<Arc<FileTitles>>,
+    ) -> Result<Self, Error> {
         if shell.core.active_team.as_deref() != Some(team) {
             return Err(unavailable());
         }
@@ -42,7 +51,10 @@ impl FileTarget {
         if title.source() != candidate.source() {
             return Err(unavailable());
         }
-        let canonical = CanonicalTitle::capture(shell, &title, id)?;
+        let canonical = match &display {
+            Some(t) => t.target(shell, team, raw)?,
+            None => CanonicalTitle::capture(shell, &title, id)?,
+        };
         let expected = if canonical.kind == file_titles::Kind::Canvas {
             "canvas"
         } else {
@@ -73,6 +85,7 @@ impl FileTarget {
             _title: title,
             canonical,
             file,
+            display,
         };
         target
             .current(shell)
@@ -86,9 +99,13 @@ impl FileTarget {
         shell.core.active_team.as_deref() == Some(self.team.as_str())
             && self.source.current(shell)
             && self.canonical.current_quip(shell)
+            && self.display.as_ref().is_none_or(|t| t.current(shell))
     }
 
     /// Inert canonical payload; returning it does not revalidate a route.
+    pub(crate) fn label(&self) -> &str {
+        &self.canonical.label
+    }
     pub(crate) fn file(&self) -> File {
         self.file.clone()
     }

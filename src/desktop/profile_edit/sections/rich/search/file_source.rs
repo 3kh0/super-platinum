@@ -221,6 +221,43 @@ impl Snapshot {
         }
         self.store.row(id)
     }
+    /// Existing-token display may retain one original file across an unrelated
+    /// collection publication. This does not grant query/ranking currentness.
+    /// Both candidate and title use the original row identity; original context,
+    /// source namespace, event/socket stamp and same-ID invalidation still fence it.
+    pub(in crate::profile_edit::sections::rich) fn title_current(
+        &self,
+        shell: &ShellState,
+        id: &str,
+    ) -> bool {
+        let Some(row) = self.rows.iter().find(|row| row.id() == id) else {
+            return false;
+        };
+        let Some(stamp) = self.stamps.get(id) else {
+            return false;
+        };
+        let state = &shell.profile_edit.sections.file_search;
+        self.owner.current(shell)
+            && Arc::ptr_eq(&state.identity, &self.state)
+            && state
+                .owner
+                .as_ref()
+                .is_some_and(|o| o.account_current(shell))
+            && state
+                .slots
+                .get(&self.owner.session.team_id)
+                .is_some_and(|slot| {
+                    Arc::ptr_eq(&self.slot, &slot.identity)
+                        && !slot.invalidated.contains(id)
+                        && row.current(&slot.store)
+                        && self
+                            .store
+                            .row(id)
+                            .is_ok_and(|title| title.current(&slot.store))
+                        && stamp.current(shell, id)
+                })
+    }
+
     pub(in crate::profile_edit::sections::rich) fn current(&self, shell: &ShellState) -> bool {
         let state = &shell.profile_edit.sections.file_search;
         self.owner.current(shell)

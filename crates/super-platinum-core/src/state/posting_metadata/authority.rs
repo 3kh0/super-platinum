@@ -10,11 +10,13 @@ use crate::{CoreAppState, config::WorkspaceSession, slack::Transport};
 mod boot;
 mod events;
 mod external;
+mod publication;
 mod stamp;
 pub use super::external::Validation as ExternalValidation;
 pub use boot::BootRead;
 pub use events::{observe_event, retire};
 pub use external::{ExternalTeam, ExternalValidationRead};
+pub use publication::Publication;
 use stamp::Stamp;
 #[cfg(test)]
 mod tests;

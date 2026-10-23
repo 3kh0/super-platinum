@@ -7,10 +7,11 @@ use super::{
 };
 use crate::canvas::comments::content;
 use crate::slack_lists::comments::{
-    OwnEditAccepted, OwnEditRecord, OwnEditSeed, Page, Target, timestamp,
+    OwnEditAccepted, OwnEditRecord, OwnEditSeed, Page, PlainDelta, Target, timestamp,
 };
 use serde::{Deserialize, Serialize};
 
+mod plain;
 mod store;
 use store::{check_bounds, read, read_attempt, write, write_attempt};
 const MAX_ROWS: i64 = 128;
@@ -140,6 +141,8 @@ pub struct EditInventory {
     capture: String,
     seed: Option<OwnEditSeed>,
     blocks: Vec<Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    plain_delta: Option<PlainDelta>,
     attempt: Option<EditAttempt>,
     retry_at: u64,
 }
@@ -162,6 +165,10 @@ impl EditInventory {
     pub fn blocks(&self) -> &[Value] {
         &self.blocks
     }
+    /// Explicit plain draft; blocks() remains empty for this mode.
+    pub fn plain_delta(&self) -> Option<&PlainDelta> {
+        self.plain_delta.as_ref()
+    }
     /// Includes terminal proof until explicit clear or a new committed attempt.
     pub fn attempt(&self) -> Option<&EditAttempt> {
         self.attempt.as_ref()
@@ -178,6 +185,7 @@ impl EditInventory {
             if !self.capture.is_empty()
                 || self.seed.is_some()
                 || !self.blocks.is_empty()
+                || self.plain_delta.is_some()
                 || self.attempt.is_some()
                 || self.retry_at != 0
             {
@@ -192,8 +200,16 @@ impl EditInventory {
                 return Err(invalid());
             }
             // Empty is a valid retained editing draft, never a send/delete.
-            content::fallback(&self.blocks).map_err(|_| invalid())?;
-        } else if !self.blocks.is_empty() || self.attempt.is_some() {
+            match (seed.plain_delta(), &self.plain_delta) {
+                (None, None) => {
+                    content::fallback(&self.blocks).map_err(|_| invalid())?;
+                }
+                (Some(_), Some(delta)) if self.blocks.is_empty() => {
+                    delta.validate().map_err(|_| invalid())?;
+                }
+                _ => return Err(invalid()),
+            }
+        } else if !self.blocks.is_empty() || self.plain_delta.is_some() || self.attempt.is_some() {
             return Err(invalid());
         }
         if let Some(attempt) = &self.attempt {
@@ -296,6 +312,9 @@ impl Journal {
         seed.validate().map_err(|_| invalid())?;
         uuid(capture)?;
         content::fallback(&blocks).map_err(|_| invalid())?;
+        if seed.plain_delta().is_some() || expected.plain_delta.is_some() {
+            return Err(invalid());
+        }
         if scope_for(seed)? != expected.scope || seed.ts() != expected.ts {
             return Err(invalid());
         }
@@ -333,13 +352,20 @@ impl Journal {
             .conn
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
         let mut current = read(&tx, &expected.scope, &expected.ts)?;
-        let mut outgoing = current.blocks.clone();
-        outgoing.extend_from_slice(record.seed().preserved());
+        let content_matches = match (&current.plain_delta, record.plain_delta()) {
+            (Some(delta), Some(original)) => current.blocks.is_empty() && delta == original,
+            (None, None) => {
+                let mut outgoing = current.blocks.clone();
+                outgoing.extend_from_slice(record.seed().preserved());
+                outgoing == record.blocks()
+            }
+            _ => false,
+        };
         if current != *expected
             || current.seed.as_ref() != Some(record.seed())
             || current.attempt.as_ref().is_some_and(|a| a.phase.locked())
             || current.capture.is_empty()
-            || outgoing != record.blocks()
+            || !content_matches
         {
             return Err(invalid());
         }
@@ -373,6 +399,7 @@ impl Journal {
         }
         current.seed = None;
         current.blocks.clear();
+        current.plain_delta = None;
         current.attempt = None;
         current.capture = uuid::Uuid::new_v4().to_string();
         bump(&mut current)?;

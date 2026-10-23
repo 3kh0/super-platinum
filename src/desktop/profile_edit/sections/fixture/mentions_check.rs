@@ -7,6 +7,7 @@ use serde_json::json;
 use std::time::Duration;
 mod files;
 mod groups;
+mod user_title;
 
 pub(super) async fn readiness(name: &str) -> Result<Value, String> {
     let nonce = std::env::var("SUPER_PLATINUM_PROFILE_MENTIONS_NONCE")
@@ -70,6 +71,10 @@ pub(super) async fn readiness(name: &str) -> Result<Value, String> {
 }
 
 pub(crate) fn start(state: Signal<ShellState>, desktop: DesktopContext) {
+    if super::user_title::named() {
+        user_title::start(state, desktop);
+        return;
+    }
     if super::files::named() {
         files::start(state, desktop);
         return;

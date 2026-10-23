@@ -76,17 +76,42 @@ impl Durable {
         seed: &OwnEditSeed,
         blocks: &[Value],
     ) -> Result<Option<OwnEditAccepted>, Error> {
+        self.capture_content(seed, &Content::RichBlocks(blocks.to_vec()))
+            .await
+    }
+    pub(super) async fn capture_content(
+        &self,
+        seed: &OwnEditSeed,
+        content: &Content,
+    ) -> Result<Option<OwnEditAccepted>, Error> {
+        if seed.plain_delta().is_some() != content.plain_delta().is_some() {
+            return Err(unavailable());
+        }
         let mut saved = self.state.lock().await;
         self.settle_pending(&mut saved).await?;
-        if saved.inventory.seed() == Some(seed) && saved.inventory.blocks() == blocks {
+        let same = match content {
+            Content::RichBlocks(blocks) => {
+                saved.inventory.plain_delta().is_none() && saved.inventory.blocks() == blocks
+            }
+            Content::PlainDelta(delta) => saved.inventory.plain_delta() == Some(delta),
+        };
+        if saved.inventory.seed() == Some(seed) && same {
             return Ok(saved.publication.take());
         }
         let expected = saved.inventory.clone();
         let seed = seed.clone();
-        let blocks = blocks.to_vec();
+        let content = content.clone();
         saved.inventory = self
             .disk
-            .work(move |j| j.edit_save(&expected, &seed, &uuid::Uuid::new_v4().to_string(), blocks))
+            .work(move |j| {
+                let capture = uuid::Uuid::new_v4().to_string();
+                match content {
+                    Content::RichBlocks(blocks) => j.edit_save(&expected, &seed, &capture, blocks),
+                    Content::PlainDelta(delta) => {
+                        j.edit_save_plain(&expected, &seed, &capture, delta)
+                    }
+                }
+            })
             .await?;
         Ok(saved.publication.take())
     }
@@ -155,16 +180,16 @@ pub(crate) async fn persist_capture(
     mut state: Signal<ShellState>,
     binding: &Binding,
 ) -> Result<(), Error> {
-    let (disk, seed, blocks) = {
+    let (disk, seed, content) = {
         let shell = state.peek();
         let s = session(&shell, binding).ok_or_else(unavailable)?;
         (
             s.durable.clone().ok_or_else(unavailable)?,
             s.seed.clone(),
-            s.blocks.clone(),
+            s.content()?,
         )
     };
-    let publication = disk.capture(&seed, &blocks).await?;
+    let publication = disk.capture_content(&seed, &content).await?;
     if let Some(accepted) = publication {
         // Publish the original accepted result only after its local retry
         // commits. Existing owner/source guards preserve any newer comment.

@@ -12,6 +12,9 @@ pub(crate) const LIST_LABEL: &str = "Alex List";
 pub(crate) const RESPONSE: &str = include_str!("files-response.json");
 
 pub(crate) fn named() -> bool {
+    if super::title_users::named() || super::empty_canvas::named() {
+        return true;
+    }
     matches!(
         std::env::var("SUPER_PLATINUM_LIST_COMMENTS_COMPOSE_CASE").as_deref(),
         Ok("file-completion"
@@ -33,6 +36,8 @@ pub(super) fn assignments() -> Value {
     if named() {
         raw["assignments"]["texty_autocomplete_files"] = json!({"group":if off(){"off"}else{"on"}});
     }
+    super::super::plain::smart_symbols::apply_assignments(&mut raw);
+    super::super::plain::go_links::apply_assignments(&mut raw);
     raw
 }
 pub(super) fn reply(owner: &WorkspaceSession, mode: Mode) -> Result<Reply, Error> {
@@ -49,7 +54,14 @@ pub(super) fn reply(owner: &WorkspaceSession, mode: Mode) -> Result<Reply, Error
         Mode::Empty => r#"{"ok":true,"files":[]}"#,
         Mode::Success | Mode::Held => RESPONSE,
     };
-    Ok((Value::String(bytes.into()), None))
+    let bytes = if super::empty_canvas::named() && matches!(mode, Mode::Success | Mode::Held) {
+        super::empty_canvas::search_response()
+    } else if super::title_users::named() && matches!(mode, Mode::Success | Mode::Held) {
+        super::title_users::file_response()
+    } else {
+        bytes.into()
+    };
+    Ok((Value::String(bytes), None))
 }
 pub(super) fn plan(
     client: &SlackClient,
@@ -117,7 +129,7 @@ pub(crate) fn snapshot(shell: &ShellState) -> Value {
     let source =
         crate::profile_edit::sections::rich::search::file_source::fixture_completion_proof(shell)
             .unwrap_or_else(|_| json!({"unavailable":true}));
-    json!({"enabled":true,"gate":if off(){"off"}else{"on"},"originalResponse":RESPONSE,"source":source})
+    json!({"enabled":true,"gate":if off(){"off"}else{"on"},"originalResponse":if super::empty_canvas::named(){super::empty_canvas::search_response()}else if super::title_users::named(){super::title_users::file_response()}else{RESPONSE.into()},"source":source})
 }
 
 #[cfg(test)]
