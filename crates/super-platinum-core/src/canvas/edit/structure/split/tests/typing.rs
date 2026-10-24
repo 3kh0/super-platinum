@@ -239,11 +239,54 @@ fn typed_split_child_then_parent_remain_editable_without_fabricated_processed_ta
             lineage
         );
         assert!(
-            !super::super::super::paragraph_actions(&current, &["item"], 100)[0]
+            super::super::super::paragraph_actions(&current, &["item"], 100)[0]
                 .as_ref()
                 .unwrap()
                 .delete
         );
+        let child_before = current.section(p.child_section()).unwrap().clone();
+        let parent_before = current.section("item").unwrap().clone();
+        let deletion =
+            crate::canvas::edit::structure::StructureIntent::delete(&current, "item", 100)
+                .unwrap()
+                .prepare(&current, 100)
+                .unwrap();
+        let update =
+            Section::from_raw(deletion.document_data().message(1).unwrap().unwrap()).unwrap();
+        let seq = parent_before.sequence().unwrap().unwrap() + 1000;
+        let wire = update
+            .crdt()
+            .unwrap()
+            .unwrap()
+            .remove(12)
+            .unwrap()
+            .replace_fields(3, &[n(3, seq)])
+            .unwrap()
+            .replace_fields(4, &[n(4, 1_000_000)])
+            .unwrap();
+        assert_eq!(wire.message(10).unwrap(), lineage);
+        let original_wire = parent_before.crdt().unwrap().unwrap();
+        let original_doc = Automerge::load(original_wire.bytes(5).unwrap().unwrap()).unwrap();
+        let deleted_doc = Automerge::load(wire.bytes(5).unwrap().unwrap()).unwrap();
+        assert_eq!(
+            deleted_doc.get_changes(&[]).len(),
+            original_doc.get_changes(&[]).len() + 1
+        );
+        assert!(
+            original_doc
+                .get_changes(&[])
+                .iter()
+                .all(|c| deleted_doc.get_change_by_hash(&c.hash()).is_some())
+        );
+        let tombstone = change(
+            &change(&parent_before.merge_partial(&update).unwrap(), n(2, seq)),
+            m(38, &wire),
+        );
+        let accepted = deletion.validate_ack(&ack(&[tombstone.clone()])).unwrap();
+        current = readback(&current, &[tombstone]);
+        assert!(accepted.confirms_readback(&current).unwrap());
+        assert_eq!(current.section(p.child_section()), Some(&child_before));
+        assert!(TextIntent::capture(&current, p.child_section(), 100).is_ok());
     }
 }
 

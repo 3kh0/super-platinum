@@ -80,6 +80,23 @@ window.runTimelineAnchorTests = async (attach) => {
   last.style.height='880px';await settle();
   assert(root.scrollHeight-root.scrollTop-root.clientHeight<1,'window blur did not resume bottom anchoring');
   results.push('window blur releases a scrollbar drag and restores resize anchoring');
+  // Date/unread chrome moves from the former first message to the prepended
+  // page. The stable reading identity is the inner message, not its wrapper.
+  root.dataset.scrollPending='true';root.dataset.timelineScope='fixture-annotations';
+  const annotated=(index,prefix=false)=>{
+    const block=document.createElement('div');block.className='message-block';block.dataset.rowId=`message-${index}`;
+    if(prefix){const label=document.createElement('div');label.className='fixture-date-unread';label.style.height='61px';block.append(label);}
+    const message=document.createElement('article');message.dataset.messageId=block.dataset.rowId;message.style.height='47.5px';message.textContent=`Message ${index}`;block.append(message);return block;
+  };
+  root.replaceChildren(...Array.from({length:24},(_,i)=>annotated(i+30,i===0)));root.scrollTop=0;
+  root.dataset.scrollPending='false';await settle();
+  const reading=root.querySelector('[data-message-id="message-30"]');
+  const readingOffset=()=>reading.getBoundingClientRect().top-root.getBoundingClientRect().top;
+  const originalReadingOffset=readingOffset();
+  root.prepend(...Array.from({length:10},(_,i)=>annotated(i+20,i===0)));
+  reading.parentElement.querySelector('.fixture-date-unread').remove();await settle();
+  assert(Math.abs(readingOffset()-originalReadingOffset)<1,`moving date/unread annotations shifted message content by ${readingOffset()-originalReadingOffset}px`);
+  results.push('date and unread annotations moving to older history retain visible message content');
   root.remove();window.superPlatinumTimelineAnchor.check();sheet.remove();window.requestAnimationFrame=raf;
   return results;
 };

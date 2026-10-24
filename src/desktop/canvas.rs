@@ -72,6 +72,7 @@ struct Reader {
     canonical_loading: bool,
     checklist: checklist::reader::Mapping,
     text: text::Mapping,
+    mapping: checklist::reader::worker::State,
 }
 impl Reader {
     fn mapping_needed(&self, owner: Option<(u64, u64)>, loading: bool) -> bool {
@@ -112,6 +113,8 @@ pub fn CanvasDialog(
                         Arc::new(
                             CanvasDocument::parse(if links_check::requested() {
                                 links_check::HTML
+                            } else if text::owner_delete_fixture::requested() {
+                                text::structure_fixture::HTML
                             } else if text::split_fixture::requested() {
                                 text::split_fixture::html()
                             } else if text::structure_fixture::requested() {
@@ -140,6 +143,7 @@ pub fn CanvasDialog(
                 canonical_loading: false,
                 checklist: Default::default(),
                 text: Default::default(),
+                mapping: Default::default(),
             }
         } else {
             Reader::default()
@@ -169,8 +173,19 @@ pub fn CanvasDialog(
         let view = checklist::presentation(&shell);
         let owner = view.as_ref().map(|view| (view.visit, view.read));
         let loading = view.as_ref().is_some_and(|view| view.loading);
-        if reader.peek().mapping_needed(owner, loading) {
+        if reader.peek().mapping_needed(owner, loading)
+            || checklist::reader::worker::needed(&shell, &reader.peek())
+        {
             checklist::reader::update_mapping(&shell, &mut reader.write());
+        }
+    });
+    // This gate outlives a Reader value reset, keeping one blocking job per component.
+    let mapping_busy = use_signal(|| false);
+    use_effect(move || {
+        let busy = *mapping_busy.read();
+        let ready = reader.read().mapping.ready();
+        if ready && !busy {
+            checklist::reader::worker::start(state, reader, mapping_busy);
         }
     });
     use_effect(move || {
@@ -192,6 +207,8 @@ pub fn CanvasDialog(
                     &mut state.write(),
                     &mut reader.write(),
                 );
+            } else if text::owner_delete_fixture::requested() {
+                text::owner_delete_fixture::install(state, reader).await;
             } else if text::split_fixture::requested() {
                 text::split_fixture::install(state, reader).await;
             } else if text::structure_fixture::requested() {

@@ -141,13 +141,14 @@ pub(super) fn parse(capture: Capture, generation: u64, visit: u64) -> Option<Cap
     if witness.sequence.is_some() {
         if witness.generation != generation.to_string()
             || witness.visit != visit.to_string()
-            || witness.revision != 1
             || !witness.before_input_trusted
             || !witness.input_trusted
             || witness.input_type != "insertParagraph"
         {
             return None;
         }
+        // Sequence parsing binds the envelope to the actual first Enter,
+        // which can follow trusted original-paragraph input.
         return sequence::parse(&witness, &capture.blocks);
     }
     if witness.generation != generation.to_string()

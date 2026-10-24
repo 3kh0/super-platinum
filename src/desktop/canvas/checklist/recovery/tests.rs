@@ -1,3 +1,5 @@
+mod end_readback;
+mod split_readback;
 use super::*;
 use crate::canvas::text::structure_fixture;
 use super_platinum_core::canvas::edit::text::TextDraft;

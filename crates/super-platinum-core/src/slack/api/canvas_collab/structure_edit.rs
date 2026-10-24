@@ -31,6 +31,79 @@ pub async fn execute_canvas_structure_edit(
     })
 }
 
+/// Opaque request prepared off the renderer. Caller must recheck current
+/// account/source/attempt after preparation, before marking dispatch.
+pub struct PreparedCanvasStructureRequest {
+    request: PreparedRequest,
+    edit: PreparedStructureEdit,
+}
+impl PreparedCanvasStructureRequest {
+    pub fn edit(&self) -> &PreparedStructureEdit {
+        &self.edit
+    }
+}
+fn clock() -> Result<u64, CanvasEditFailure> {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .ok()
+        .and_then(|t| u64::try_from(t.as_micros()).ok())
+        .ok_or_else(|| CanvasEditFailure::NotSent(Error::Api("invalid_canvas_edit_clock".into())))
+}
+pub async fn prepare_canvas_structure_request(
+    client: SlackClient,
+    workspace: WorkspaceSession,
+    fresh: std::sync::Arc<CanvasCollabSnapshot>,
+    prepared: PreparedStructureEdit,
+) -> Result<PreparedCanvasStructureRequest, CanvasEditFailure> {
+    tokio::task::spawn_blocking(move || {
+        let request = request(&client, &workspace, &fresh, &prepared, clock()?)
+            .map_err(CanvasEditFailure::NotSent)?;
+        Ok(PreparedCanvasStructureRequest {
+            request,
+            edit: prepared,
+        })
+    })
+    .await
+    .map_err(|_| {
+        CanvasEditFailure::NotSent(Error::Api("canvas_edit_preparation_worker_failed".into()))
+    })?
+}
+/// No preparation await can separate the caller's final fence from transport.
+pub async fn execute_prepared_canvas_structure_edit(
+    transport: &Transport,
+    sealed: PreparedCanvasStructureRequest,
+) -> Result<AcceptedStructure, CanvasEditFailure> {
+    sealed
+        .edit
+        .validate_dispatch_expiry(clock()?)
+        .map_err(|_| {
+            CanvasEditFailure::NotSent(Error::Api("canvas_edit_preflight_changed".into()))
+        })?;
+    let bytes = transport.execute_canvas_edit(sealed.request).await?;
+    validate_worker(sealed.edit, bytes).await
+}
+async fn validate_worker(
+    prepared: PreparedStructureEdit,
+    bytes: Vec<u8>,
+) -> Result<AcceptedStructure, CanvasEditFailure> {
+    tokio::task::spawn_blocking(move || {
+        let ack = EditAck::decode(&bytes).map_err(|_| {
+            CanvasEditFailure::Uncertain(Error::Api("invalid_canvas_edit_acknowledgement".into()))
+        })?;
+        prepared.validate_ack(&ack).map_err(|_| {
+            CanvasEditFailure::Uncertain(Error::Api(
+                "unconfirmed_canvas_edit_acknowledgement".into(),
+            ))
+        })
+    })
+    .await
+    .map_err(|_| {
+        CanvasEditFailure::Uncertain(Error::Api(
+            "canvas_edit_acknowledgement_worker_failed".into(),
+        ))
+    })?
+}
+
 fn request(
     client: &SlackClient,
     workspace: &WorkspaceSession,
@@ -136,5 +209,95 @@ mod tests {
             .await,
             Err(CanvasEditFailure::NotSent(Error::Offline(_)))
         ));
+    }
+    #[tokio::test]
+    async fn sealed_structure_request_is_exact_and_offline_is_not_sent() {
+        let snapshot = fixture();
+        let edit = prepare(&snapshot);
+        let expected =
+            request(&SlackClient::default(), &workspace(), &snapshot, &edit, 100).unwrap();
+        let sealed = prepare_canvas_structure_request(
+            SlackClient::default(),
+            workspace(),
+            std::sync::Arc::new(snapshot),
+            edit,
+        )
+        .await
+        .unwrap();
+        assert_eq!(sealed.request, expected);
+        assert_eq!(sealed.edit().sequence(), 1);
+        let transport = Transport::new("fixture-only").unwrap();
+        transport.set_health(crate::slack::transport::Health::Offline);
+        assert!(matches!(
+            execute_prepared_canvas_structure_edit(&transport, sealed).await,
+            Err(CanvasEditFailure::NotSent(Error::Offline(_)))
+        ));
+    }
+    #[tokio::test]
+    async fn structure_request_worker_refuses_changed_account_and_inventory() {
+        for account in [false, true] {
+            let mut snapshot = fixture();
+            let edit = prepare(&snapshot);
+            let mut workspace = workspace();
+            if account {
+                workspace.user_id = "other".into();
+            } else {
+                snapshot.sections.pop();
+            }
+            assert!(matches!(
+                prepare_canvas_structure_request(
+                    SlackClient::default(),
+                    workspace,
+                    std::sync::Arc::new(snapshot),
+                    edit
+                )
+                .await,
+                Err(CanvasEditFailure::NotSent(_))
+            ));
+        }
+    }
+    #[tokio::test]
+    async fn structural_ack_worker_success_and_bad_receipts_keep_delivery_classification() {
+        use crate::canvas::wire::{EncodedField as F, Section};
+        let snapshot = fixture();
+        let edit = prepare(&snapshot);
+        let update = edit.document_data().message(1).unwrap().unwrap();
+        let wire = update
+            .message(38)
+            .unwrap()
+            .unwrap()
+            .remove(12)
+            .unwrap()
+            .replace_fields(3, &[F::uint(3, 1000).unwrap()])
+            .unwrap()
+            .replace_fields(4, &[F::uint(4, 8_000_000_000_000_000_000).unwrap()])
+            .unwrap();
+        let mut row = update.clone();
+        let position = update.string(8).unwrap().unwrap().trim_end_matches(":temp");
+        for f in [
+            F::uint(2, 1000).unwrap(),
+            F::bytes(6, snapshot.thread_id().as_bytes()).unwrap(),
+            F::bytes(7, snapshot.document_id().as_bytes()).unwrap(),
+            F::bytes(8, position.as_bytes()).unwrap(),
+            F::bytes(21, position.as_bytes()).unwrap(),
+            F::message(38, &wire).unwrap(),
+        ] {
+            row = row
+                .merge_partial(&RawMessage::decode(f.raw()).unwrap())
+                .unwrap();
+        }
+        let data = RawMessage::from_fields(&[F::message(1, &row).unwrap()]).unwrap();
+        let ack = RawMessage::from_fields(&[F::uint(1, 1).unwrap(), F::message(2, &data).unwrap()])
+            .unwrap();
+        let result = validate_worker(edit, ack.raw().to_vec()).await.unwrap();
+        assert_eq!(result.section(), &Section::from_raw(row).unwrap());
+        for bytes in [vec![0xff], vec![], ack.raw().to_vec()] {
+            // The valid receipt from another independently generated intent is
+            // still uncertain, just like malformed or empty direct responses.
+            assert!(matches!(
+                validate_worker(prepare(&snapshot), bytes).await,
+                Err(CanvasEditFailure::Uncertain(_))
+            ));
+        }
     }
 }

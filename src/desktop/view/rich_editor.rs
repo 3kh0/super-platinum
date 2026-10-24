@@ -63,6 +63,11 @@ pub(crate) fn RichEditor(
                 dioxus::document::eval(&format!("{EDITOR}\nwindow.superPlatinumRichEditor.mount({id},{blocks},{labels},{autofocus},{generation},{allow_underline});"));
             },
             label {id: "{label_id}", "{label}"}
+            // The DOM editor clones this typed, local icon only for a Canvas
+            // whose canonical title is empty. It contributes no title text.
+            span { class: "rich-editor-canvas-icon", hidden: true,
+                {icon(Icon::Description, "rich-editor-canvas-symbol")}
+            }
             div {class: "format-toolbar", role: "toolbar", "aria-label": "Text formatting",
                 for (name, command, symbol) in [("Bold", "bold", Icon::FormatBold), ("Italic", "italic", Icon::FormatItalic), ("Underline", "underline", Icon::FormatUnderlined), ("Strikethrough", "strikeThrough", Icon::FormatStrike), ("Bulleted list", "insertUnorderedList", Icon::FormatListBulleted), ("Numbered list", "insertOrderedList", Icon::FormatListNumbered)].into_iter().filter(|(_, command, _)| (allow_lists || !matches!(*command, "insertUnorderedList" | "insertOrderedList")) && (allow_underline || *command != "underline")) {
                     button {r#type: "button", class: "composer-icon-btn", title: name, "aria-label": name, disabled,

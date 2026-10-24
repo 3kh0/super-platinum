@@ -16,6 +16,9 @@ pub(in crate::canvas::text) fn layout() -> String {
 pub(in crate::canvas::text) fn cadence() -> String {
     std::env::var("SUPER_PLATINUM_CANVAS_SEQUENCE_CADENCE").unwrap_or_else(|_| "straight".into())
 }
+pub(in crate::canvas::text) fn is_preenter() -> bool {
+    cadence().starts_with("preenter-")
+}
 pub(in crate::canvas::text) fn valid() -> bool {
     if !is_sequence() {
         return ["COUNT", "HISTORY", "LAYOUT", "CADENCE"]
@@ -41,8 +44,21 @@ pub(in crate::canvas::text) fn valid() -> bool {
                 | "erase-before-enter"
                 | "revert-before-enter"
                 | "trailing-empty"
+                | "revisit-correction"
+                | "revisit-erase"
+                | "revisit-revert"
+                | "parent-correction"
+                | "parent-erase"
+                | "parent-revert"
+                | "preenter-correction"
+                | "preenter-erase"
+                | "preenter-revert"
         )
-        && (count() >= 2 || matches!(cadence().as_str(), "straight" | "trailing-empty"))
+        && (count() >= 2
+            || is_preenter()
+            || matches!(cadence().as_str(), "straight" | "trailing-empty"))
+        && (count() >= 3 || !cadence().starts_with("revisit-"))
+        && (count() >= 3 || !cadence().starts_with("parent-"))
         && std::env::var("SUPER_PLATINUM_CANVAS_SEQUENCE_COUNT")
             .map_or(true, |v| (1..=16).any(|n| v == n.to_string()))
         && typing() == "none"
@@ -93,6 +109,20 @@ pub(in crate::canvas::text) fn reports_for(
             if i + 1 == count && cadence == "trailing-empty" {
                 return Vec::new();
             }
+            if i == 0 && cadence.starts_with("revisit-") {
+                let initial = format!("{prefix} paragraph");
+                return match cadence {
+                    "revisit-correction" => vec![
+                        initial.clone(),
+                        format!("{initial} draftx"),
+                        format!("{initial} draft"),
+                        format!("{initial} revised"),
+                    ],
+                    "revisit-erase" => vec![initial, String::new()],
+                    "revisit-revert" => vec![initial.clone(), format!("{initial} draftx"), initial],
+                    _ => unreachable!("validated sequence cadence"),
+                };
+            }
             if i == target {
                 match cadence {
                     "correction-before-enter" => {
@@ -125,6 +155,31 @@ pub(in crate::canvas::text) fn reports_for(
 }
 pub(in crate::canvas::text) fn reports() -> Vec<Vec<String>> {
     reports_for(count(), &cadence(), corpus().name == "unicode")
+}
+pub(in crate::canvas::text) fn parent_reports() -> Vec<String> {
+    let seed = corpus().seed;
+    match cadence().as_str() {
+        "parent-correction" | "preenter-correction" => vec![
+            format!("{seed} draftx"),
+            format!("{seed} draft"),
+            format!("{seed} revised"),
+        ],
+        "parent-erase" | "preenter-erase" => vec![String::new()],
+        "parent-revert" | "preenter-revert" => vec![format!("{seed} draftx"), seed.into()],
+        _ => Vec::new(),
+    }
+}
+pub(in crate::canvas::text) fn parent_updates() -> Vec<TextDraft> {
+    parent_reports()
+        .iter()
+        .map(|s| TextDraft::from_rtml(&typing::escaped(s)).unwrap())
+        .collect()
+}
+pub(in crate::canvas::text) fn parent_final() -> String {
+    parent_reports()
+        .last()
+        .cloned()
+        .unwrap_or_else(|| corpus().seed.into())
 }
 pub(in crate::canvas::text) fn updates() -> Vec<Vec<TextDraft>> {
     reports()
@@ -229,7 +284,26 @@ pub(in crate::canvas::text) fn checkpoint()
     let source = snapshot(&super::super::structure_fixture::snapshot());
     let now = checklist::save::now_usec().unwrap();
     let intent = EndIntent::capture_sequence(&source, parent(), count(), now).unwrap();
-    let witness = EndWitness::sequence(intent.seed(), corpus().offset, &updates()).unwrap();
+    let parent_updates = parent_updates();
+    let witness = if is_preenter() {
+        let live = parent_updates.last().unwrap();
+        EndWitness::sequence_with_pre_enter_updates(
+            intent.seed(),
+            live,
+            parent_final().encode_utf16().count(),
+            &parent_updates,
+            &[],
+            &updates(),
+        )
+    } else {
+        EndWitness::sequence_with_parent_updates(
+            intent.seed(),
+            corpus().offset,
+            &parent_updates,
+            &updates(),
+        )
+    }
+    .unwrap();
     intent
         .prepare(&source, &witness, now)
         .unwrap()
@@ -244,8 +318,19 @@ pub(in crate::canvas::text) fn matches(
     };
     let source = snapshot(&super::super::structure_fixture::snapshot());
     let reports = updates();
-    value["version"] == 14
-        && value["action"]["EndSequence"]["members"]
+    let parent_reports = parent_updates()
+        .iter()
+        .map(|d| d.rtml().unwrap())
+        .collect::<Vec<_>>();
+    let action = if parent_reports.is_empty() {
+        "EndSequence"
+    } else {
+        "EndSequenceParent"
+    };
+    value["version"] == if parent_reports.is_empty() { 14 } else { 15 }
+        && (parent_reports.is_empty()
+            || value["action"][action]["parent_updates"] == json!(parent_reports))
+        && value["action"][action]["members"]
             .as_array()
             .is_some_and(|members| {
                 members.len() == count()

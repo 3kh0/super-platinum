@@ -17,6 +17,8 @@ pub struct EndReview {
     parent_id: String,
     child_id: String,
     original_text: String,
+    parent_text: String,
+    parent_updates: Vec<String>,
     reused: bool,
     child_text: String,
     original_child_rtml: Option<String>,
@@ -36,7 +38,7 @@ impl EndReview {
             | Action::EndTyping { child, reused, .. } => (child, *reused),
             _ => return Ok(None),
         };
-        let text = TextDraft::from_rtml(&checkpoint.draft)
+        let text: String = TextDraft::from_rtml(&checkpoint.draft)
             .map_err(|_| invalid())?
             .runs
             .into_iter()
@@ -108,6 +110,8 @@ impl EndReview {
             empty_typing: checkpoint.is_empty_typing(),
             parent_id: checkpoint.target.clone(),
             child_id: child.clone(),
+            parent_text: text.clone(),
+            parent_updates: Vec::new(),
             original_text: text,
             reused,
             child_text,
@@ -151,7 +155,13 @@ impl EndReview {
         &self.original_text
     }
     pub fn parent_text(&self) -> &str {
-        &self.original_text
+        &self.parent_text
+    }
+    pub fn parent_report_count(&self) -> usize {
+        self.parent_updates.len()
+    }
+    pub fn parent_updates(&self) -> &[String] {
+        &self.parent_updates
     }
     pub fn child_text(&self) -> &str {
         &self.child_text

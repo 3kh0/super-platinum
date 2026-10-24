@@ -4,14 +4,10 @@ use crate::{
     model::RichNode,
     state::ShellState,
 };
-use std::{
-    collections::{BTreeMap, HashMap},
-    sync::Arc,
-};
-use super_platinum_core::{
-    canvas::{CanvasDocument, CanvasKind, CanvasNode, edit::text::TextIntent},
-    slack::api::CanvasCollabSnapshot,
-};
+use std::{collections::BTreeMap, sync::Arc};
+use super_platinum_core::canvas::edit::text::TextIntent;
+#[cfg(test)]
+use super_platinum_core::{canvas::CanvasDocument, slack::api::CanvasCollabSnapshot};
 
 #[derive(Default)]
 pub(in crate::canvas) struct Mapping {
@@ -26,15 +22,16 @@ pub(in crate::canvas) struct Item {
     pub blocks: String,
     pub preview: Vec<RichNode>,
 }
+mod prepare;
+pub(in crate::canvas) use prepare::Prepared;
 impl Mapping {
-    pub fn project(
+    /// Renderer-only preview assembly. Canonical eligibility has already run on
+    /// the blocking pool and remains bound to the worker's exact owner.
+    pub(in crate::canvas) fn assemble(
         shell: &ShellState,
-        document: &CanvasDocument,
-        snapshot: Option<&CanvasCollabSnapshot>,
+        prepared: Prepared,
+        replacement: bool,
     ) -> Self {
-        let Some(snapshot) = snapshot else {
-            return Self::default();
-        };
         let Some(workspace) = shell
             .core
             .active_team
@@ -43,106 +40,48 @@ impl Mapping {
         else {
             return Self::default();
         };
-        let mut ids = HashMap::<&str, usize>::new();
-        let mut targets = Vec::new();
-        let mut nodes: Vec<_> = document.nodes.iter().collect();
-        while let Some(node) = nodes.pop() {
-            let CanvasNode::Element {
-                kind,
-                section,
-                children,
-            } = node
-            else {
-                continue;
-            };
-            if let Some(id) = section.as_deref() {
-                *ids.entry(id).or_default() += 1;
-                let level = match kind {
-                    CanvasKind::Paragraph => Some(None),
-                    CanvasKind::Heading(level @ 1..=3) => Some(Some(*level)),
-                    _ => None,
-                };
-                if let Some(level) = level {
-                    let carriers = children.iter().filter(|child| matches!(child,
-                        CanvasNode::Element { kind: CanvasKind::Inline, section: Some(child_id), .. } if child_id == id
-                    )).count();
-                    targets.push((id, carriers, level));
-                }
-            }
-            nodes.extend(children);
-        }
-        let now = super::checklist::save::now_usec().unwrap_or(u64::MAX);
-        let targets: Vec<_> = targets
+        let items = prepared
+            .items
             .into_iter()
-            .filter_map(|(id, carriers, level)| {
-                (carriers <= 1
-                    && ids.get(id).copied() == Some(1 + carriers)
-                    && snapshot.section(id).is_some_and(|section| {
-                        section
-                            .style()
-                            .is_ok_and(|style| style.unwrap_or(0) == u64::from(level.unwrap_or(0)))
-                    }))
-                .then_some((id, level))
-            })
-            .collect();
-        let ids: Vec<_> = targets.iter().map(|(id, _)| *id).collect();
-        let intents = TextIntent::capture_batch(snapshot, &ids, now);
-        let actions =
-            super_platinum_core::canvas::edit::structure::paragraph_actions(snapshot, &ids, now);
-        let mut annotations: BTreeMap<_, _> =
-            super_platinum_core::canvas::edit::annotation::AnnotationPresentation::ordinary(
-                None, None,
-            )
-            .and_then(|context| {
-                super_platinum_core::canvas::edit::annotation::range_seeds_with_presentation(
-                    snapshot, &context,
+            .map(|(id, item)| {
+                let preview = item
+                    .blocks
+                    .iter()
+                    .flat_map(|block| block_nodes(BlockCtx::new(workspace, &shell.media), block))
+                    .collect();
+                (
+                    id,
+                    Item {
+                        intent: item.intent,
+                        annotation: item.annotation,
+                        structure: item.structure,
+                        replacement: replacement && item.replacement,
+                        blocks: serde_json::to_string(&item.blocks).unwrap(),
+                        preview,
+                    },
                 )
             })
-            .unwrap_or_default()
-            .into_iter()
             .collect();
-        let mut items = BTreeMap::new();
-        for (((id, level), intent), structure) in targets.into_iter().zip(intents).zip(actions) {
-            let intent = intent.ok();
-            let structure = structure.filter(|_| level.is_none());
-            let annotation = annotations.remove(id);
-            let seed = intent
-                .as_ref()
-                .map(TextIntent::seed)
-                .or_else(|| structure.as_ref().map(|action| &action.seed))
-                .or(annotation.as_ref().map(|a| &a.draft));
-            let Some(seed) = seed else {
-                continue;
-            };
-            let blocks = seed.rich_blocks();
-            let preview = blocks
-                .iter()
-                .flat_map(|block| block_nodes(BlockCtx::new(workspace, &shell.media), block))
-                .collect();
-            items.insert(
-                id.into(),
-                Item {
-                    intent: intent.map(Arc::new),
-                    annotation,
-                    replacement: level.is_none()
-                        && super::checklist::presentation(shell).is_some_and(|view| {
-                            !view.loading
-                                && !view.stale
-                                && view
-                                    .snapshot
-                                    .as_ref()
-                                    .is_some_and(|s| s.file_id() == snapshot.file_id())
-                        })
-                        && super_platinum_core::canvas::edit::structure::can_replace_main_canvas(
-                            snapshot, id, now,
-                        ),
-                    structure,
-                    blocks: serde_json::to_string(&blocks).unwrap(),
-                    preview,
-                },
-            );
-        }
         Self { owner: None, items }
+    }
+    #[cfg(test)]
+    pub fn project(
+        shell: &ShellState,
+        document: &CanvasDocument,
+        snapshot: Option<&CanvasCollabSnapshot>,
+    ) -> Self {
+        let Some(snapshot) = snapshot else {
+            return Self::default();
+        };
+        let replacement = super::checklist::presentation(shell).is_some_and(|view| {
+            !view.loading
+                && !view.stale
+                && view
+                    .snapshot
+                    .as_ref()
+                    .is_some_and(|s| s.file_id() == snapshot.file_id())
+        });
+        Self::assemble(shell, Prepared::project(document, snapshot), replacement)
     }
 }
 

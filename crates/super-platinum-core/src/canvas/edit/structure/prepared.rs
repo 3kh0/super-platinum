@@ -7,11 +7,15 @@ pub struct PreparedStructureEdit {
     data: RawMessage,
     outgoing_crdt: RawMessage,
     expiry: Option<u64>,
+    dependent_delete: bool,
+    retained_pair_delete: bool,
 }
 impl PreparedStructureEdit {
     pub(super) fn build(intent: StructureIntent, now: u64) -> Result<Self, Error> {
         let id = intent.operation.id();
         let trace = format!("{}-0", intent.session);
+        let mut dependent_delete = false;
+        let mut retained_pair_delete = false;
         let (fields, wire, expiry) = match &intent.operation {
             Operation::Insert {
                 position, draft, ..
@@ -22,7 +26,33 @@ impl PreparedStructureEdit {
             }
             Operation::Delete { draft, .. } => {
                 let original = intent.inventory.get(id)?;
-                let (wire, expiry) = crdt::delete(original, draft, &intent.session, now)?;
+                let (wire, mut expiry) = crdt::delete(original, draft, &intent.session, now)?;
+                if wire.has(10) {
+                    let child =
+                        owner_delete::live_pair(intent.inventory.sections.values(), original, now)?;
+                    retained_pair_delete = child.deleted()? == Some(true);
+                    let child_expiry = child
+                        .crdt()?
+                        .ok_or(Error::Unsupported)?
+                        .uint(4)?
+                        .ok_or(Error::Expired)?;
+                    expiry = Some(expiry.ok_or(Error::Expired)?.min(child_expiry));
+                }
+                if !wire.has(10) {
+                    if let Some(owner) = split::child_delete_owner(
+                        intent.inventory.sections.values(),
+                        original,
+                        now,
+                    )? {
+                        dependent_delete = true;
+                        let lease = owner
+                            .crdt()?
+                            .ok_or(Error::Unsupported)?
+                            .uint(4)?
+                            .ok_or(Error::Expired)?;
+                        expiry = Some(expiry.ok_or(Error::Expired)?.min(lease));
+                    }
+                }
                 let fields = vec![
                     F::bytes(1, id.as_bytes())?,
                     F::uint(2, original.sequence()?.ok_or(Error::Unsupported)?)?,
@@ -46,6 +76,8 @@ impl PreparedStructureEdit {
             data,
             outgoing_crdt: wire,
             expiry,
+            dependent_delete,
+            retained_pair_delete,
         })
     }
     pub fn workspace_id(&self) -> &str {
@@ -78,13 +110,10 @@ impl PreparedStructureEdit {
     pub fn document_data(&self) -> &RawMessage {
         &self.data
     }
-    pub(crate) fn validate_snapshot(
-        &self,
-        fresh: &CanvasCollabSnapshot,
-        now: u64,
-    ) -> Result<(), Error> {
-        self.intent.inventory.revalidate(fresh)?;
-        self.intent.title.revalidate(fresh)?;
+    pub fn is_split_owner_delete(&self) -> bool {
+        self.intent.operation.deleted() && self.outgoing_crdt.has(10)
+    }
+    pub(crate) fn validate_dispatch_expiry(&self, now: u64) -> Result<(), Error> {
         if self
             .expiry
             .is_some_and(|expires| expires <= now || expires > i64::MAX as u64)
@@ -92,6 +121,15 @@ impl PreparedStructureEdit {
             return Err(Error::Expired);
         }
         Ok(())
+    }
+    pub(crate) fn validate_snapshot(
+        &self,
+        fresh: &CanvasCollabSnapshot,
+        now: u64,
+    ) -> Result<(), Error> {
+        self.intent.inventory.revalidate(fresh)?;
+        self.intent.title.revalidate(fresh)?;
+        self.validate_dispatch_expiry(now)
     }
 
     /// Only the direct response to this consumed request may produce a receipt.
@@ -197,6 +235,40 @@ impl PreparedStructureEdit {
             }
         };
         let wire = section.crdt()?.ok_or(Error::Unconfirmed)?;
+        if self.dependent_delete {
+            let original = self.intent.inventory.get(self.target_section())?;
+            split::child_delete_transition(original, &wire, &canonical)?;
+            let rows = self.intent.inventory.sections.values().map(|r| {
+                if r.id() == canonical.id() {
+                    &canonical
+                } else {
+                    r
+                }
+            });
+            split::child_tombstone(rows, &canonical, 0)?;
+        }
+        if let Operation::Delete { id, draft } = &self.intent.operation {
+            let original = self.intent.inventory.get(id)?;
+            if original.crdt()?.is_some_and(|w| w.has(10)) {
+                if wire.has(12) {
+                    return Err(Error::Unconfirmed);
+                }
+                owner_delete::transition(original, &wire, &canonical, draft)?;
+                if self.retained_pair_delete {
+                    let rows = self.intent.inventory.sections.values().map(|r| {
+                        if r.id() == canonical.id() {
+                            &canonical
+                        } else {
+                            r
+                        }
+                    });
+                    let child = owner_delete::tombstone(rows, &canonical)?;
+                    if child.deleted()? != Some(true) {
+                        return Err(Error::Unconfirmed);
+                    }
+                }
+            }
+        }
         let doc = crdt::validate(
             &wire,
             &canonical,
@@ -246,6 +318,8 @@ impl PreparedStructureEdit {
                 .to_owned(),
             intent: self.intent,
             section: canonical,
+            dependent_delete: self.dependent_delete,
+            retained_pair_delete: self.retained_pair_delete,
         })
     }
 }
@@ -254,6 +328,8 @@ pub struct AcceptedStructure {
     intent: StructureIntent,
     section: Section,
     sent_head: String,
+    dependent_delete: bool,
+    retained_pair_delete: bool,
 }
 impl AcceptedStructure {
     pub fn section(&self) -> &Section {
@@ -278,6 +354,26 @@ impl AcceptedStructure {
         if self.intent.title.revalidate(snapshot).is_err() {
             return Ok(false);
         }
+        if self.dependent_delete {
+            let Some(target) = snapshot.section(self.target_section()) else {
+                return Ok(false);
+            };
+            if target.crdt()? != self.section.crdt()?
+                || split::child_tombstone(&snapshot.sections, target, 0).is_err()
+            {
+                return Ok(false);
+            }
+        }
+        if self.retained_pair_delete {
+            let Some(target) = snapshot.section(self.target_section()) else {
+                return Ok(false);
+            };
+            if target.crdt()? != self.section.crdt()?
+                || owner_delete::tombstone(&snapshot.sections, target).is_err()
+            {
+                return Ok(false);
+            }
+        }
         let mut seen = std::collections::HashSet::new();
         for section in &snapshot.sections {
             if !seen.insert(section.id())
@@ -299,6 +395,16 @@ impl AcceptedStructure {
         }
         for id in self.intent.inventory.sections.keys() {
             if self.intent.operation.deleted() && id == self.target_section() {
+                if self
+                    .intent
+                    .inventory
+                    .get(id)?
+                    .crdt()?
+                    .is_some_and(|w| w.has(10))
+                    && !seen.contains(id.as_str())
+                {
+                    return Ok(false);
+                }
                 continue;
             }
             if !seen.contains(id.as_str()) {
@@ -335,6 +441,11 @@ impl AcceptedStructure {
             return Ok(false);
         };
         let acknowledged = self.section.crdt()?.ok_or(Error::Unconfirmed)?;
+        if acknowledged.has(10)
+            && (wire.has(12) || wire.messages(10)? != acknowledged.messages(10)?)
+        {
+            return Ok(false);
+        }
         let doc = crdt::validate(
             &wire,
             section,

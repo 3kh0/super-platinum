@@ -165,7 +165,7 @@ pub(in crate::canvas::edit::structure) fn build_reports(
     project_session(seed, reused, &bytes, &doc.get_heads()[0].to_string())
 }
 
-fn project_session(
+pub(in crate::canvas::edit::structure) fn project_session(
     seed: &RawMessage,
     reused: bool,
     bytes: &[u8],

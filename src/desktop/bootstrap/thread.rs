@@ -7,16 +7,29 @@ use super_platinum_core::slack::{Transport, api};
 struct Visit {
     scope: String,
     transport: Arc<Transport>,
+    reconnect: Option<super::reconnect::Visit>,
+    request: u64,
 }
 impl Visit {
     fn current(&self, shell: &ShellState) -> bool {
-        shell.thread_scope() == self.scope
+        started_current(shell, &self.scope, self.request, self.reconnect.as_ref())
             && shell
                 .core
                 .transport
                 .as_ref()
                 .is_some_and(|transport| Arc::ptr_eq(transport, &self.transport))
     }
+}
+
+fn started_current(
+    shell: &ShellState,
+    scope: &str,
+    request: u64,
+    reconnect: Option<&super::reconnect::Visit>,
+) -> bool {
+    shell.thread_scope() == scope
+        && shell.reconnect_generation == request
+        && reconnect.is_none_or(|visit| visit.current(shell))
 }
 
 #[cfg(test)]
@@ -66,13 +79,40 @@ pub async fn open_thread_at(
 /// Continue an already-admitted thread open without beginning a second visit.
 /// Check before credentials or fixture mutation, as well as after network awaits.
 pub(crate) async fn load_started_thread(
-    mut state: Signal<ShellState>,
+    state: Signal<ShellState>,
     channel: String,
     root: String,
     target: Option<String>,
     scope: String,
 ) {
+    load_started_thread_owned(state, channel, root, target, scope, None).await;
+}
+
+pub(super) async fn load_started_thread_owned(
+    mut state: Signal<ShellState>,
+    channel: String,
+    root: String,
+    target: Option<String>,
+    scope: String,
+    reconnect: Option<super::reconnect::Visit>,
+) {
+    let request = state.peek().reconnect_generation;
+    if reconnect
+        .as_ref()
+        .is_some_and(|visit| !visit.current(&state.peek()))
+    {
+        return;
+    }
     if state.peek().thread_scope() != scope {
+        return;
+    }
+    if super::reconnect::fixture::enabled(&state.peek()) {
+        let id =
+            super::reconnect::fixture::thread_read(state, target.as_deref(), reconnect.is_some())
+                .await;
+        let mut shell = state.write();
+        let current = started_current(&shell, &scope, request, reconnect.as_ref());
+        super::reconnect::fixture::finish_thread(id, &mut shell, &channel, &root, current);
         return;
     }
     if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
@@ -88,7 +128,12 @@ pub(crate) async fn load_started_thread(
     let Some(session) = sessions.into_iter().find(|session| session.team_id == team) else {
         return;
     };
-    let visit = Visit { scope, transport };
+    let visit = Visit {
+        scope,
+        transport,
+        reconnect,
+        request,
+    };
     let range = super_platinum_core::thread_history::ThreadHistory::initial(
         target.as_deref(),
         super_platinum_core::state::now_secs(),
@@ -251,6 +296,8 @@ pub async fn load_thread_page(
     let visit = Visit {
         scope: state.peek().thread_scope(),
         transport,
+        reconnect: None,
+        request: state.peek().reconnect_generation,
     };
     let request = {
         let mut shell = state.write();
@@ -337,8 +384,13 @@ mod tests {
         let visit = Visit {
             scope: shell.thread_scope(),
             transport: transport.clone(),
+            reconnect: None,
+            request: shell.reconnect_generation,
         };
         assert!(visit.current(&shell));
+        shell.reconnect_generation += 1;
+        assert!(!visit.current(&shell));
+        shell.reconnect_generation -= 1;
         assert!(!shell.thread_at_bottom);
         assert_eq!(shell.thread_target.as_deref(), Some("150.000002"));
         shell.close_thread();
@@ -350,6 +402,8 @@ mod tests {
         let current = Visit {
             scope: shell.thread_scope(),
             transport,
+            reconnect: None,
+            request: shell.reconnect_generation,
         };
         assert!(current.current(&shell));
         shell.core.transport = Some(Arc::new(Transport::new("other-synthetic-cookie").unwrap()));

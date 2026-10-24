@@ -17,8 +17,14 @@ mod split_edit;
 pub use end_edit::execute_canvas_end_edit;
 mod text_edit;
 pub use split_edit::execute_canvas_split_edit;
-pub use structure_edit::execute_canvas_structure_edit;
-pub use text_edit::execute_canvas_text_edit;
+pub use structure_edit::{
+    PreparedCanvasStructureRequest, execute_canvas_structure_edit,
+    execute_prepared_canvas_structure_edit, prepare_canvas_structure_request,
+};
+pub use text_edit::{
+    PreparedCanvasTextRequest, execute_canvas_text_edit, execute_prepared_canvas_text_edit,
+    prepare_canvas_text_request,
+};
 mod encoding;
 pub use edit::execute_canvas_checkbox_edit;
 #[cfg(test)]

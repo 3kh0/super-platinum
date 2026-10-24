@@ -1,0 +1,2810 @@
+{
+  "ok": true,
+  "count": 30,
+  "cases": [
+    {
+      "name": "ordinary",
+      "overrideName": "nullish",
+      "user": false,
+      "only": false,
+      "state": {
+        "team": "TGROUP001",
+        "userGroups": {
+          "SGROUP001": {
+            "id": "SGROUP001",
+            "handle": "design"
+          }
+        },
+        "quipTitle": {},
+        "members": {
+          "UGROUP001": {
+            "id": "UGROUP001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FGROUPTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "usergroup",
+                    "usergroup_id": "SGROUP001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for @design",
+      "directHandle": "@design",
+      "userIds": [],
+      "groupIds": [
+        "SGROUP001"
+      ],
+      "label": "Notes for @design",
+      "finalLabel": "Notes for @design",
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "ordinary",
+      "overrideName": "empty",
+      "user": false,
+      "only": false,
+      "state": {
+        "team": "TGROUP001",
+        "userGroups": {
+          "SGROUP001": {
+            "id": "SGROUP001",
+            "handle": "design"
+          }
+        },
+        "quipTitle": {
+          "FGROUPTITLE1": {
+            "titleString": ""
+          }
+        },
+        "members": {
+          "UGROUP001": {
+            "id": "UGROUP001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FGROUPTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "usergroup",
+                    "usergroup_id": "SGROUP001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for @design",
+      "directHandle": "@design",
+      "userIds": [],
+      "groupIds": [
+        "SGROUP001"
+      ],
+      "label": "",
+      "finalLabel": "",
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "ordinary",
+      "overrideName": "text",
+      "user": false,
+      "only": false,
+      "state": {
+        "team": "TGROUP001",
+        "userGroups": {
+          "SGROUP001": {
+            "id": "SGROUP001",
+            "handle": "design"
+          }
+        },
+        "quipTitle": {
+          "FGROUPTITLE1": {
+            "titleString": "Independent title"
+          }
+        },
+        "members": {
+          "UGROUP001": {
+            "id": "UGROUP001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FGROUPTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "usergroup",
+                    "usergroup_id": "SGROUP001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for @design",
+      "directHandle": "@design",
+      "userIds": [],
+      "groupIds": [
+        "SGROUP001"
+      ],
+      "label": "Independent title",
+      "finalLabel": "Independent title",
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "renamed",
+      "overrideName": "nullish",
+      "user": false,
+      "only": false,
+      "state": {
+        "team": "TGROUP001",
+        "userGroups": {
+          "SGROUP001": {
+            "id": "SGROUP001",
+            "handle": "renamed"
+          }
+        },
+        "quipTitle": {},
+        "members": {
+          "UGROUP001": {
+            "id": "UGROUP001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FGROUPTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "usergroup",
+                    "usergroup_id": "SGROUP001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for @renamed",
+      "directHandle": "@renamed",
+      "userIds": [],
+      "groupIds": [
+        "SGROUP001"
+      ],
+      "label": "Notes for @renamed",
+      "finalLabel": "Notes for @renamed",
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "renamed",
+      "overrideName": "empty",
+      "user": false,
+      "only": false,
+      "state": {
+        "team": "TGROUP001",
+        "userGroups": {
+          "SGROUP001": {
+            "id": "SGROUP001",
+            "handle": "renamed"
+          }
+        },
+        "quipTitle": {
+          "FGROUPTITLE1": {
+            "titleString": ""
+          }
+        },
+        "members": {
+          "UGROUP001": {
+            "id": "UGROUP001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FGROUPTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "usergroup",
+                    "usergroup_id": "SGROUP001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for @renamed",
+      "directHandle": "@renamed",
+      "userIds": [],
+      "groupIds": [
+        "SGROUP001"
+      ],
+      "label": "",
+      "finalLabel": "",
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "renamed",
+      "overrideName": "text",
+      "user": false,
+      "only": false,
+      "state": {
+        "team": "TGROUP001",
+        "userGroups": {
+          "SGROUP001": {
+            "id": "SGROUP001",
+            "handle": "renamed"
+          }
+        },
+        "quipTitle": {
+          "FGROUPTITLE1": {
+            "titleString": "Independent title"
+          }
+        },
+        "members": {
+          "UGROUP001": {
+            "id": "UGROUP001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FGROUPTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "usergroup",
+                    "usergroup_id": "SGROUP001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for @renamed",
+      "directHandle": "@renamed",
+      "userIds": [],
+      "groupIds": [
+        "SGROUP001"
+      ],
+      "label": "Independent title",
+      "finalLabel": "Independent title",
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "one-prefix",
+      "overrideName": "nullish",
+      "user": false,
+      "only": false,
+      "state": {
+        "team": "TGROUP001",
+        "userGroups": {
+          "SGROUP001": {
+            "id": "SGROUP001",
+            "handle": "@design"
+          }
+        },
+        "quipTitle": {},
+        "members": {
+          "UGROUP001": {
+            "id": "UGROUP001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FGROUPTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "usergroup",
+                    "usergroup_id": "SGROUP001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for @design",
+      "directHandle": "@design",
+      "userIds": [],
+      "groupIds": [
+        "SGROUP001"
+      ],
+      "label": "Notes for @design",
+      "finalLabel": "Notes for @design",
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "one-prefix",
+      "overrideName": "empty",
+      "user": false,
+      "only": false,
+      "state": {
+        "team": "TGROUP001",
+        "userGroups": {
+          "SGROUP001": {
+            "id": "SGROUP001",
+            "handle": "@design"
+          }
+        },
+        "quipTitle": {
+          "FGROUPTITLE1": {
+            "titleString": ""
+          }
+        },
+        "members": {
+          "UGROUP001": {
+            "id": "UGROUP001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FGROUPTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "usergroup",
+                    "usergroup_id": "SGROUP001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for @design",
+      "directHandle": "@design",
+      "userIds": [],
+      "groupIds": [
+        "SGROUP001"
+      ],
+      "label": "",
+      "finalLabel": "",
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "one-prefix",
+      "overrideName": "text",
+      "user": false,
+      "only": false,
+      "state": {
+        "team": "TGROUP001",
+        "userGroups": {
+          "SGROUP001": {
+            "id": "SGROUP001",
+            "handle": "@design"
+          }
+        },
+        "quipTitle": {
+          "FGROUPTITLE1": {
+            "titleString": "Independent title"
+          }
+        },
+        "members": {
+          "UGROUP001": {
+            "id": "UGROUP001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FGROUPTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "usergroup",
+                    "usergroup_id": "SGROUP001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for @design",
+      "directHandle": "@design",
+      "userIds": [],
+      "groupIds": [
+        "SGROUP001"
+      ],
+      "label": "Independent title",
+      "finalLabel": "Independent title",
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "two-prefixes",
+      "overrideName": "nullish",
+      "user": false,
+      "only": false,
+      "state": {
+        "team": "TGROUP001",
+        "userGroups": {
+          "SGROUP001": {
+            "id": "SGROUP001",
+            "handle": "@@design"
+          }
+        },
+        "quipTitle": {},
+        "members": {
+          "UGROUP001": {
+            "id": "UGROUP001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FGROUPTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "usergroup",
+                    "usergroup_id": "SGROUP001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for @@design",
+      "directHandle": "@@design",
+      "userIds": [],
+      "groupIds": [
+        "SGROUP001"
+      ],
+      "label": "Notes for @@design",
+      "finalLabel": "Notes for @@design",
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "two-prefixes",
+      "overrideName": "empty",
+      "user": false,
+      "only": false,
+      "state": {
+        "team": "TGROUP001",
+        "userGroups": {
+          "SGROUP001": {
+            "id": "SGROUP001",
+            "handle": "@@design"
+          }
+        },
+        "quipTitle": {
+          "FGROUPTITLE1": {
+            "titleString": ""
+          }
+        },
+        "members": {
+          "UGROUP001": {
+            "id": "UGROUP001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FGROUPTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "usergroup",
+                    "usergroup_id": "SGROUP001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for @@design",
+      "directHandle": "@@design",
+      "userIds": [],
+      "groupIds": [
+        "SGROUP001"
+      ],
+      "label": "",
+      "finalLabel": "",
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "two-prefixes",
+      "overrideName": "text",
+      "user": false,
+      "only": false,
+      "state": {
+        "team": "TGROUP001",
+        "userGroups": {
+          "SGROUP001": {
+            "id": "SGROUP001",
+            "handle": "@@design"
+          }
+        },
+        "quipTitle": {
+          "FGROUPTITLE1": {
+            "titleString": "Independent title"
+          }
+        },
+        "members": {
+          "UGROUP001": {
+            "id": "UGROUP001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FGROUPTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "usergroup",
+                    "usergroup_id": "SGROUP001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for @@design",
+      "directHandle": "@@design",
+      "userIds": [],
+      "groupIds": [
+        "SGROUP001"
+      ],
+      "label": "Independent title",
+      "finalLabel": "Independent title",
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "untrimmed",
+      "overrideName": "nullish",
+      "user": false,
+      "only": false,
+      "state": {
+        "team": "TGROUP001",
+        "userGroups": {
+          "SGROUP001": {
+            "id": "SGROUP001",
+            "handle": " design "
+          }
+        },
+        "quipTitle": {},
+        "members": {
+          "UGROUP001": {
+            "id": "UGROUP001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FGROUPTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "usergroup",
+                    "usergroup_id": "SGROUP001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for @ design",
+      "directHandle": "@ design ",
+      "userIds": [],
+      "groupIds": [
+        "SGROUP001"
+      ],
+      "label": "Notes for @ design",
+      "finalLabel": "Notes for @ design",
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "untrimmed",
+      "overrideName": "empty",
+      "user": false,
+      "only": false,
+      "state": {
+        "team": "TGROUP001",
+        "userGroups": {
+          "SGROUP001": {
+            "id": "SGROUP001",
+            "handle": " design "
+          }
+        },
+        "quipTitle": {
+          "FGROUPTITLE1": {
+            "titleString": ""
+          }
+        },
+        "members": {
+          "UGROUP001": {
+            "id": "UGROUP001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FGROUPTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "usergroup",
+                    "usergroup_id": "SGROUP001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for @ design",
+      "directHandle": "@ design ",
+      "userIds": [],
+      "groupIds": [
+        "SGROUP001"
+      ],
+      "label": "",
+      "finalLabel": "",
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "untrimmed",
+      "overrideName": "text",
+      "user": false,
+      "only": false,
+      "state": {
+        "team": "TGROUP001",
+        "userGroups": {
+          "SGROUP001": {
+            "id": "SGROUP001",
+            "handle": " design "
+          }
+        },
+        "quipTitle": {
+          "FGROUPTITLE1": {
+            "titleString": "Independent title"
+          }
+        },
+        "members": {
+          "UGROUP001": {
+            "id": "UGROUP001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FGROUPTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "usergroup",
+                    "usergroup_id": "SGROUP001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for @ design",
+      "directHandle": "@ design ",
+      "userIds": [],
+      "groupIds": [
+        "SGROUP001"
+      ],
+      "label": "Independent title",
+      "finalLabel": "Independent title",
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "deactivated-hidden",
+      "overrideName": "nullish",
+      "user": false,
+      "only": false,
+      "state": {
+        "team": "TGROUP001",
+        "userGroups": {
+          "SGROUP001": {
+            "id": "SGROUP001",
+            "handle": "design",
+            "date_delete": 1,
+            "is_visible": false
+          }
+        },
+        "quipTitle": {},
+        "members": {
+          "UGROUP001": {
+            "id": "UGROUP001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FGROUPTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "usergroup",
+                    "usergroup_id": "SGROUP001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for @design",
+      "directHandle": "@design",
+      "userIds": [],
+      "groupIds": [
+        "SGROUP001"
+      ],
+      "label": "Notes for @design",
+      "finalLabel": "Notes for @design",
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "deactivated-hidden",
+      "overrideName": "empty",
+      "user": false,
+      "only": false,
+      "state": {
+        "team": "TGROUP001",
+        "userGroups": {
+          "SGROUP001": {
+            "id": "SGROUP001",
+            "handle": "design",
+            "date_delete": 1,
+            "is_visible": false
+          }
+        },
+        "quipTitle": {
+          "FGROUPTITLE1": {
+            "titleString": ""
+          }
+        },
+        "members": {
+          "UGROUP001": {
+            "id": "UGROUP001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FGROUPTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "usergroup",
+                    "usergroup_id": "SGROUP001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for @design",
+      "directHandle": "@design",
+      "userIds": [],
+      "groupIds": [
+        "SGROUP001"
+      ],
+      "label": "",
+      "finalLabel": "",
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "deactivated-hidden",
+      "overrideName": "text",
+      "user": false,
+      "only": false,
+      "state": {
+        "team": "TGROUP001",
+        "userGroups": {
+          "SGROUP001": {
+            "id": "SGROUP001",
+            "handle": "design",
+            "date_delete": 1,
+            "is_visible": false
+          }
+        },
+        "quipTitle": {
+          "FGROUPTITLE1": {
+            "titleString": "Independent title"
+          }
+        },
+        "members": {
+          "UGROUP001": {
+            "id": "UGROUP001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FGROUPTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "usergroup",
+                    "usergroup_id": "SGROUP001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for @design",
+      "directHandle": "@design",
+      "userIds": [],
+      "groupIds": [
+        "SGROUP001"
+      ],
+      "label": "Independent title",
+      "finalLabel": "Independent title",
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "empty-handle",
+      "overrideName": "nullish",
+      "user": false,
+      "only": false,
+      "state": {
+        "team": "TGROUP001",
+        "userGroups": {
+          "SGROUP001": {
+            "id": "SGROUP001",
+            "handle": ""
+          }
+        },
+        "quipTitle": {},
+        "members": {
+          "UGROUP001": {
+            "id": "UGROUP001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FGROUPTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "usergroup",
+                    "usergroup_id": "SGROUP001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for",
+      "directHandle": "",
+      "userIds": [],
+      "groupIds": [
+        "SGROUP001"
+      ],
+      "label": "Notes for",
+      "finalLabel": "Notes for",
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "missing-handle",
+      "overrideName": "nullish",
+      "user": false,
+      "only": false,
+      "state": {
+        "team": "TGROUP001",
+        "userGroups": {
+          "SGROUP001": {
+            "id": "SGROUP001"
+          }
+        },
+        "quipTitle": {},
+        "members": {
+          "UGROUP001": {
+            "id": "UGROUP001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FGROUPTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "usergroup",
+                    "usergroup_id": "SGROUP001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for",
+      "directHandle": "",
+      "userIds": [],
+      "groupIds": [
+        "SGROUP001"
+      ],
+      "label": "Notes for",
+      "finalLabel": "Notes for",
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "unknown",
+      "overrideName": "nullish",
+      "user": false,
+      "only": false,
+      "state": {
+        "team": "TGROUP001",
+        "userGroups": {
+          "SGROUP001": {
+            "id": "SGROUP001",
+            "handle": "secret",
+            "isUnknown": true
+          }
+        },
+        "quipTitle": {},
+        "members": {
+          "UGROUP001": {
+            "id": "UGROUP001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FGROUPTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "usergroup",
+                    "usergroup_id": "SGROUP001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for @unknown-group",
+      "directHandle": "@unknown-group",
+      "userIds": [],
+      "groupIds": [
+        "SGROUP001"
+      ],
+      "label": "Notes for @unknown-group",
+      "finalLabel": "Notes for @unknown-group",
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "nonexistent",
+      "overrideName": "nullish",
+      "user": false,
+      "only": false,
+      "state": {
+        "team": "TGROUP001",
+        "userGroups": {
+          "SGROUP001": {
+            "id": "SGROUP001",
+            "handle": "secret",
+            "isNonExistent": true
+          }
+        },
+        "quipTitle": {},
+        "members": {
+          "UGROUP001": {
+            "id": "UGROUP001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FGROUPTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "usergroup",
+                    "usergroup_id": "SGROUP001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for @unknown-group",
+      "directHandle": "@unknown-group",
+      "userIds": [],
+      "groupIds": [
+        "SGROUP001"
+      ],
+      "label": "Notes for @unknown-group",
+      "finalLabel": "Notes for @unknown-group",
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "truthy-flags",
+      "overrideName": "nullish",
+      "user": false,
+      "only": false,
+      "state": {
+        "team": "TGROUP001",
+        "userGroups": {
+          "SGROUP001": {
+            "id": "SGROUP001",
+            "handle": "secret",
+            "isUnknown": "false"
+          }
+        },
+        "quipTitle": {},
+        "members": {
+          "UGROUP001": {
+            "id": "UGROUP001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FGROUPTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "usergroup",
+                    "usergroup_id": "SGROUP001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for @unknown-group",
+      "directHandle": "@unknown-group",
+      "userIds": [],
+      "groupIds": [
+        "SGROUP001"
+      ],
+      "label": "Notes for @unknown-group",
+      "finalLabel": "Notes for @unknown-group",
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "false-flags",
+      "overrideName": "nullish",
+      "user": false,
+      "only": false,
+      "state": {
+        "team": "TGROUP001",
+        "userGroups": {
+          "SGROUP001": {
+            "id": "SGROUP001",
+            "handle": "design",
+            "isUnknown": 0,
+            "isNonExistent": null
+          }
+        },
+        "quipTitle": {},
+        "members": {
+          "UGROUP001": {
+            "id": "UGROUP001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FGROUPTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "usergroup",
+                    "usergroup_id": "SGROUP001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for @design",
+      "directHandle": "@design",
+      "userIds": [],
+      "groupIds": [
+        "SGROUP001"
+      ],
+      "label": "Notes for @design",
+      "finalLabel": "Notes for @design",
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "group-only",
+      "overrideName": "nullish",
+      "user": false,
+      "only": true,
+      "state": {
+        "team": "TGROUP001",
+        "userGroups": {
+          "SGROUP001": {
+            "id": "SGROUP001",
+            "handle": "design"
+          }
+        },
+        "quipTitle": {},
+        "members": {
+          "UGROUP001": {
+            "id": "UGROUP001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FGROUPTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "usergroup",
+                    "usergroup_id": "SGROUP001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "@design",
+      "directHandle": "@design",
+      "userIds": [],
+      "groupIds": [
+        "SGROUP001"
+      ],
+      "label": "@design",
+      "finalLabel": "@design",
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "actual-user-mixed",
+      "overrideName": "nullish",
+      "user": true,
+      "only": false,
+      "state": {
+        "team": "TGROUP001",
+        "userGroups": {
+          "SGROUP001": {
+            "id": "SGROUP001",
+            "handle": "design"
+          }
+        },
+        "quipTitle": {},
+        "members": {
+          "UGROUP001": {
+            "id": "UGROUP001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FGROUPTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "usergroup",
+                    "usergroup_id": "SGROUP001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " with "
+                  },
+                  {
+                    "type": "user",
+                    "user_id": "UGROUP001"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for @design with @Dana",
+      "directHandle": "@design",
+      "userIds": [
+        "UGROUP001"
+      ],
+      "groupIds": [
+        "SGROUP001"
+      ],
+      "label": "Notes for @design with @Dana",
+      "finalLabel": "Notes for @design with @Dana",
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "group-only",
+      "overrideName": "empty",
+      "user": false,
+      "only": true,
+      "state": {
+        "team": "TGROUP001",
+        "userGroups": {
+          "SGROUP001": {
+            "id": "SGROUP001",
+            "handle": "design"
+          }
+        },
+        "quipTitle": {
+          "FGROUPTITLE1": {
+            "titleString": ""
+          }
+        },
+        "members": {
+          "UGROUP001": {
+            "id": "UGROUP001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FGROUPTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "usergroup",
+                    "usergroup_id": "SGROUP001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "@design",
+      "directHandle": "@design",
+      "userIds": [],
+      "groupIds": [
+        "SGROUP001"
+      ],
+      "label": "",
+      "finalLabel": "",
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "actual-user-mixed",
+      "overrideName": "empty",
+      "user": true,
+      "only": false,
+      "state": {
+        "team": "TGROUP001",
+        "userGroups": {
+          "SGROUP001": {
+            "id": "SGROUP001",
+            "handle": "design"
+          }
+        },
+        "quipTitle": {
+          "FGROUPTITLE1": {
+            "titleString": ""
+          }
+        },
+        "members": {
+          "UGROUP001": {
+            "id": "UGROUP001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FGROUPTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "usergroup",
+                    "usergroup_id": "SGROUP001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " with "
+                  },
+                  {
+                    "type": "user",
+                    "user_id": "UGROUP001"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for @design with @Dana",
+      "directHandle": "@design",
+      "userIds": [
+        "UGROUP001"
+      ],
+      "groupIds": [
+        "SGROUP001"
+      ],
+      "label": "Notes for @design with @Dana",
+      "finalLabel": "Notes for @design with @Dana",
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "group-only",
+      "overrideName": "text",
+      "user": false,
+      "only": true,
+      "state": {
+        "team": "TGROUP001",
+        "userGroups": {
+          "SGROUP001": {
+            "id": "SGROUP001",
+            "handle": "design"
+          }
+        },
+        "quipTitle": {
+          "FGROUPTITLE1": {
+            "titleString": "Independent title"
+          }
+        },
+        "members": {
+          "UGROUP001": {
+            "id": "UGROUP001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FGROUPTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "usergroup",
+                    "usergroup_id": "SGROUP001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "@design",
+      "directHandle": "@design",
+      "userIds": [],
+      "groupIds": [
+        "SGROUP001"
+      ],
+      "label": "Independent title",
+      "finalLabel": "Independent title",
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "actual-user-mixed",
+      "overrideName": "text",
+      "user": true,
+      "only": false,
+      "state": {
+        "team": "TGROUP001",
+        "userGroups": {
+          "SGROUP001": {
+            "id": "SGROUP001",
+            "handle": "design"
+          }
+        },
+        "quipTitle": {
+          "FGROUPTITLE1": {
+            "titleString": "Independent title"
+          }
+        },
+        "members": {
+          "UGROUP001": {
+            "id": "UGROUP001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FGROUPTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "usergroup",
+                    "usergroup_id": "SGROUP001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " with "
+                  },
+                  {
+                    "type": "user",
+                    "user_id": "UGROUP001"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for @design with @Dana",
+      "directHandle": "@design",
+      "userIds": [
+        "UGROUP001"
+      ],
+      "groupIds": [
+        "SGROUP001"
+      ],
+      "label": "Notes for @design with @Dana",
+      "finalLabel": "Notes for @design with @Dana",
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ],
+      "inputUnchanged": true
+    }
+  ],
+  "guards": {
+    "malformedTruthyHandleThrows": true,
+    "emptyIdReturnsFalseWithoutScheduling": true
+  },
+  "host": {
+    "memoization": "identity adapter",
+    "locale": "English key-returning translator; no localization runtime",
+    "source": "synthetic source-backed known userGroups map; actual rLUS selector factory executes with conditional-hit ledger sink",
+    "acquisition": "no unknown fetch manager/network execution",
+    "file": "synthetic known Canvas/Quip and user map",
+    "raw": "full title blocks, style/opaque and canonical rows remain immutable"
+  }
+}

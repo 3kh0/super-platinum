@@ -1,4 +1,4 @@
-"""V14 whole ordered operation is inert retained data, never replay authority."""
+"""V14/v15 whole ordered operation is inert data, never replay authority."""
 import base64
 import math
 import canvas_sequence_wire as W
@@ -15,11 +15,12 @@ def retained_members(checkpoint,original,append_count=1,history='bootstrap',layo
     """Ordered appended IDs, with no transport/replay authority."""
     e=W.config(append_count,history,layout,cadence,corpus);rows=W.inventory(original,e)
     require(isinstance(checkpoint,dict),'Missing sequence checkpoint')
-    action=checkpoint.get('action',{}).get('EndSequence',{});members=action.get('members')
+    action=checkpoint.get('action',{}).get('EndSequenceParent' if e.parent_updates else 'EndSequence',{});members=action.get('members')
     require(isinstance(members,list) and len(members)==e.append_count,'Retained member list missing')
     value=dict(kind='sequence',parent=checkpoint.get('target'),members=[dict(m,finalRtml=W.M.rtml(e.final[i])) for i,m in enumerate(members)],
                session=checkpoint.get('session'),sequence=checkpoint.get('sequence'),formTitle='Fixture title',httpFactoryExecuted=False,clearsChild=False,
-               documentData=base64.b64encode(W.S.byte_vector(checkpoint.get('request'))).decode())
+               documentData=base64.b64encode(W.S.byte_vector(checkpoint.get('request'))).decode(),
+               parentUpdates=action.get('parent_updates',[]),parentFinalRtml=e.parent_wire)
     selected,_=W.write(value,rows,e);W.journal(dict(scope=W.S.SCOPE,receipt=dict(operation='inert-only',checkpoint=checkpoint)),e,value,original)
     return selected
 
@@ -49,7 +50,12 @@ def preview(value,name,viewport,e,selected):
                 and all(value.get(k) is None for k in ('checked','checkboxDisabled','cancelDisabled','submitDisabled','error','warning')),'Closed sequence retained controls');return
     members=[dict(id=identity,index=i,text=e.final[i],reused=e.reused and i==0,sourceText='' if e.reused and i==0 else None,
                   reportCount=len(e.reports[i]),emptyLabel=None if e.final[i] else 'Empty paragraph') for i,identity in enumerate(selected)]
-    require(value.get('sequence')==dict(originalText=e.seed,parentText=e.seed,members=members)
+    sequence=value.get('sequence');expected_sequence=dict(originalText=e.seed,parentText=e.parent_final,members=members)
+    additive=dict(parentReportCount=len(e.parent_reports),parentEmptyLabel=None if e.parent_final else 'Empty paragraph',historyNotice=bool(e.parent_reports or any(e.reports)))
+    has_parent_fields=e.parent_updates or isinstance(sequence,dict) and any(k in sequence for k in additive)
+    if has_parent_fields:expected_sequence.update(additive)
+    require(sequence==expected_sequence
+            and (not has_parent_fields or type(sequence.get('parentReportCount')) is int and type(sequence.get('historyNotice')) is bool)
             and all(type(m.get('index')) is int and type(m.get('reused')) is bool and type(m.get('reportCount')) is int for m in value['sequence']['members']),
             'Sequence whole ordered retained preview changed')
     current=[dict(id='title',deleted=False,text='Fixture title')]+[dict(id=r['id'],deleted=False,text=r['text']) for r in N.reader(e)]
@@ -102,7 +108,7 @@ def validate(phase,stages,terminal,checkpoint,append_count=1,history='bootstrap'
         if archived:require(active is None,'Archived Sequence pair kept active lock')
         else:
             require(isinstance(active,dict) and set(active)=={'operation','checkpoint'} and active.get('checkpoint')==checkpoint
-                    and isinstance(active.get('operation'),str) and active['operation'],'Sequence exact v14 operation lost')
+                    and isinstance(active.get('operation'),str) and active['operation'],'Sequence exact retained operation lost')
             if operation is None:operation=active['operation']
             require(active['operation']==operation,'Sequence review replaced original operation')
     require(terminal.get('canonical')==original==stages[-1]['canonical'] and terminal.get('journal')==stages[-1]['journal'],

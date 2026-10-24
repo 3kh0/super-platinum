@@ -5,6 +5,7 @@ pub struct AcceptedEnd {
     pub(super) parent: Section,
     pub(super) child: Section,
     pub(super) parent_wire: RawMessage,
+    pub(super) parent_draft: TextDraft,
     pub(super) child_wire: RawMessage,
     pub(super) child_draft: TextDraft,
     pub(super) second: Option<Section>,
@@ -23,6 +24,9 @@ impl AcceptedEnd {
     }
     pub fn second_child_section(&self) -> Option<&Section> {
         self.second.as_ref()
+    }
+    pub fn parent_draft(&self) -> &TextDraft {
+        &self.parent_draft
     }
     pub fn parent_section(&self) -> &Section {
         &self.parent

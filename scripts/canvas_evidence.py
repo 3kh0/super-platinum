@@ -98,6 +98,12 @@ to that original exception instead of replacing the actual native failure.
                     # Failed-state capture precedes pointer restoration/process exit.
                     # It is diagnostic only and cannot replace the original error.
                     path = native.log.with_name(native.log.stem + "-failure.png")
+                    if path.exists():
+                        path = native.log.with_name(native.log.stem + "-error.png")
+                        suffix = 2
+                        while path.exists():
+                            path = native.log.with_name(native.log.stem + f"-error-{suffix}.png")
+                            suffix += 1
                     try:
                         audit.capture(path, "failure")
                         evidence["failureScreenshot"] = str(path)

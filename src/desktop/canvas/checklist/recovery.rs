@@ -205,6 +205,26 @@ pub(in crate::canvas) async fn reserve(
 ) -> Result<Ticket, &'static str> {
     reserve_checkpoint(state, attempt, prepared.checkpoint().map_err(|_| FAILED)?).await
 }
+pub(in crate::canvas) async fn reserve_owner_delete(
+    state: Signal<ShellState>,
+    attempt: &Attempt,
+    checkpoint: super_platinum_core::canvas::edit::structure::recovery::Checkpoint,
+) -> Result<Ticket, &'static str> {
+    if !super::structure_ops::preparation_current(&state.peek(), attempt) {
+        return Err(FAILED);
+    }
+    reserve_checkpoint(state, attempt, checkpoint).await
+}
+pub(in crate::canvas) async fn reserve_structure_worker(
+    state: Signal<ShellState>,
+    attempt: &Attempt,
+    checkpoint: super_platinum_core::canvas::edit::structure::recovery::Checkpoint,
+) -> Result<Ticket, &'static str> {
+    if !super::structure_ops::preparation_current(&state.peek(), attempt) {
+        return Err(FAILED);
+    }
+    reserve_checkpoint(state, attempt, checkpoint).await
+}
 pub(in crate::canvas) async fn reserve_replacement(
     state: Signal<ShellState>,
     attempt: &Attempt,
@@ -212,19 +232,46 @@ pub(in crate::canvas) async fn reserve_replacement(
 ) -> Result<Ticket, &'static str> {
     reserve_checkpoint(state, attempt, prepared.checkpoint().map_err(|_| FAILED)?).await
 }
+/// Additional exact-attempt fence for the pure split preparation worker.
+pub(in crate::canvas) fn split_preparation_current(shell: &ShellState, attempt: &Attempt) -> bool {
+    dispatchable(shell, attempt) && shell.canvas_checklist.operations.iter().any(|op| {
+        op.attempt.serial == attempt.serial
+            && op.attempt.scope.current(shell)
+            && op.attempt.visit == attempt.visit
+            && op.attempt.read == attempt.read
+            && op.attempt.revision == attempt.revision
+            && op.attempt.section == attempt.section
+            && Arc::ptr_eq(&op.attempt.snapshot, &attempt.snapshot)
+            && op.stage == Stage::Preparing
+            && op.dispatched.is_none()
+            && op.accepted.is_none()
+            && op.dispatched_after_read == attempt.read
+            && matches!((&op.attempt.mutation, &attempt.mutation),
+                (Mutation::Split { witness: a, child: None, second_child: None },
+                 Mutation::Split { witness: b, child: None, second_child: None }) if Arc::ptr_eq(a,b))
+    })
+}
+
+/// Split preparation supplies the exact checkpoint validated by its worker.
+/// Current attempt/owner checks and journal commit remain the dispatch barrier.
 pub(in crate::canvas) async fn reserve_split(
     state: Signal<ShellState>,
     attempt: &Attempt,
-    prepared: &super_platinum_core::canvas::edit::structure::PreparedSplitEdit,
+    checkpoint: super_platinum_core::canvas::edit::structure::recovery::Checkpoint,
 ) -> Result<Ticket, &'static str> {
-    reserve_checkpoint(state, attempt, prepared.checkpoint().map_err(|_| FAILED)?).await
+    if !split_preparation_current(&state.peek(), attempt) {
+        return Err(FAILED);
+    }
+    reserve_checkpoint(state, attempt, checkpoint).await
 }
+/// End preparation constructs this exact checkpoint on its blocking worker.
+/// Reservation still rechecks the current attempt and owner before any disk work.
 pub(in crate::canvas) async fn reserve_end(
     state: Signal<ShellState>,
     attempt: &Attempt,
-    prepared: &super_platinum_core::canvas::edit::structure::PreparedEndEdit,
+    checkpoint: super_platinum_core::canvas::edit::structure::recovery::Checkpoint,
 ) -> Result<Ticket, &'static str> {
-    reserve_checkpoint(state, attempt, prepared.checkpoint().map_err(|_| FAILED)?).await
+    reserve_checkpoint(state, attempt, checkpoint).await
 }
 pub(in crate::canvas) async fn reserve_start_typing(
     state: Signal<ShellState>,
@@ -335,6 +382,10 @@ fn publish_retirement(shell: &mut ShellState, ticket: &Ticket, fence: Option<u64
     }
 }
 pub(in crate::canvas) async fn settle(mut state: Signal<ShellState>, read: &Read) {
+    super::structure_ops::readback::verify(state, read).await;
+    super::end_ops::readback::verify(state, read).await;
+    super::split_ops::readback::verify(state, read).await;
+    super::text_ops::readback::verify(state, read).await;
     let pending = {
         let mut shell = state.write();
         if !read.current(&shell) {
@@ -377,7 +428,8 @@ fn finish_retirement(shell: &mut ShellState, attempt: &Attempt, done: bool) {
     };
     // A newer canonical read can finish while the disk worker is retiring R1.
     // Use only a read already independently verified by confirm_readback, and
-    // re-run that full proof under its current visit/revision before unlocking.
+    // recheck its current visit/revision before unlocking. End and three-row splits reuse
+    // only the worker proof bound to this exact accepted object and snapshot.
     // An unverified read, stale event, or replacement visit grants no authority.
     let current = shell
         .canvas_checklist

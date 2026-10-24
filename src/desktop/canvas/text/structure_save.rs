@@ -42,6 +42,25 @@ fn submit_inner(
     value: TextDraft,
     start: Option<super::split::Start>,
 ) {
+    if start.is_none()
+        && draft.peek().as_ref().is_some_and(|d| {
+            d.kind.action() == Some(Action::Delete)
+                && super::owner_delete_save::applies(&state.peek(), &d.section)
+        })
+    {
+        super::owner_delete_save::submit(state, reader, draft, generation, value);
+        return;
+    }
+    if start.is_none()
+        && draft
+            .peek()
+            .as_ref()
+            .is_some_and(|d| d.kind.action().is_some())
+        && super::structure_worker::applies(&state.peek())
+    {
+        super::structure_worker::submit(state, reader, draft, generation, value);
+        return;
+    }
     let captured = {
         let mut d = draft.write();
         let Some(d) = d

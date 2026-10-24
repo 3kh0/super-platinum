@@ -243,6 +243,88 @@ class SplitJournalObservation(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             self.store.finish(None)
 
+    def test_parent_sequence_requires_v15_and_preserves_exact_stored_history(self):
+        self.insert()
+        def write(body):
+            with closing(sqlite3.connect(self.store.path)) as db:
+                db.execute("UPDATE receipts SET body=?", (json.dumps(body),))
+                db.commit()
+        for cadence,reports in (("parent-correction",["Keep this draftx","Keep this draft","Keep this revised"]),
+                                ("parent-erase",[""]), ("parent-revert",["Keep this draftx","Keep this"]),
+                                ("preenter-correction",["Keep this draftx","Keep this draft","Keep this revised"]),
+                                ("preenter-erase",[""]), ("preenter-revert",["Keep this draftx","Keep this"])):
+            with self.subTest(cadence=cadence):
+                self.store=SplitStorage.prepare(Path(self.temporary.name),"canvas-structure",{
+                    "SUPER_PLATINUM_CANVAS_SPLIT_MODE":"sequence",
+                    "SUPER_PLATINUM_CANVAS_SEQUENCE_CADENCE":cadence})
+                members=[dict(id=f"temp:member-{i}",position="aaa"+"a"*i,reused=False,updates=[str(i)]) for i in range(3)]
+                legacy=dict(version=14,action={"EndSequence":{"members":members}},request=list(b"pair"))
+                write(legacy)
+                with self.assertRaises(RuntimeError):self.store.before_capture(None,self.stage)
+                body=dict(version=15,draft="Keep this",action={"EndSequenceParent":{"parent_updates":reports,"members":members}},request=list(b"pair"))
+                write(body);self.store.before_capture(None,self.stage);self.store.finish(None)
+                # Same final text does not permit silently discarding retained reports.
+                wrong=json.loads(json.dumps(body));wrong['action']['EndSequenceParent']['parent_updates']=[]
+                write(wrong)
+                with self.assertRaises(RuntimeError):self.store.finish(None)
+                write(body)
+                unchanged=SplitStorage.prepare(Path(self.temporary.name),"canvas-structure",{
+                    "SUPER_PLATINUM_CANVAS_SPLIT_MODE":"sequence",
+                    "SUPER_PLATINUM_CANVAS_SEQUENCE_CADENCE":"revisit-revert"})
+                with self.assertRaises(RuntimeError):unchanged.before_capture(None,self.stage)
+                write(legacy);unchanged.before_capture(None,self.stage)
+
+    def test_middle_parent_requires_v17_and_exact_retained_reports(self):
+        self.insert()
+        for parent in ('correction','erase','revert'):
+            for pre in ('none','correction','revert','retype'):
+                for cadence in ('parent-first','child-first','interleaved'):
+                    self.store=SplitStorage.prepare(Path(self.temporary.name),'canvas-structure',{
+                        'SUPER_PLATINUM_CANVAS_SPLIT_MODE':'middle','SUPER_PLATINUM_CANVAS_SPLIT_PRE_ENTER':pre,
+                        'SUPER_PLATINUM_CANVAS_SPLIT_MIDDLE_PARENT':parent,'SUPER_PLATINUM_CANVAS_SPLIT_MIDDLE_CADENCE':cadence})
+                    body=dict(version=17,draft='Original tail',action={'SplitParent':dict(parent_updates=['Original draftx','Original'],pre_enter_updates=[],child_updates=[])},request=list(b'pair'))
+                    with closing(sqlite3.connect(self.store.path)) as db:
+                        db.execute('UPDATE receipts SET body=?',(json.dumps(body),));db.commit()
+                    self.store.before_capture(None,self.stage);self.store.finish(None)
+                    body['action']['SplitParent']['parent_updates']=[]
+                    with closing(sqlite3.connect(self.store.path)) as db:
+                        db.execute('UPDATE receipts SET body=?',(json.dumps(body),));db.commit()
+                    with self.assertRaises(RuntimeError):self.store.finish(None)
+
+    def test_second_middle_requires_v18_and_both_boundaries(self):
+        self.insert()
+        for target in ('parent','child'):
+            for cadence in ('straight','edited'):
+                self.store=SplitStorage.prepare(Path(self.temporary.name),'canvas-structure',{
+                    'SUPER_PLATINUM_CANVAS_SPLIT_MODE':'middle','SUPER_PLATINUM_CANVAS_SECOND_MIDDLE':target,
+                    'SUPER_PLATINUM_CANVAS_SECOND_MIDDLE_CADENCE':cadence})
+                body=dict(version=18,action={'SplitSequence':dict(child='first',second_child='second',second_enter_draft='Second paragraph',final_updates=[[],[],['paragraph revised']])},request=list(b'pair'))
+                with closing(sqlite3.connect(self.store.path)) as db:
+                    db.execute('UPDATE receipts SET body=?',(json.dumps(body),));db.commit()
+                self.store.before_capture(None,self.stage);self.store.finish(None)
+                for key in ('child','second_child','second_enter_draft','final_updates'):
+                    bad=json.loads(json.dumps(body));bad['action']['SplitSequence'][key]=None
+                    with closing(sqlite3.connect(self.store.path)) as db:
+                        db.execute('UPDATE receipts SET body=?',(json.dumps(bad),));db.commit()
+                    with self.assertRaises(RuntimeError):self.store.finish(None)
+
+    def test_premiddle_custody_requires_v16_and_exact_prelude(self):
+        self.insert()
+        for pre in ('correction','revert','retype'):
+            self.store=SplitStorage.prepare(Path(self.temporary.name),'canvas-structure',{
+                'SUPER_PLATINUM_CANVAS_SPLIT_MODE':'middle','SUPER_PLATINUM_CANVAS_SPLIT_PRE_ENTER':pre})
+            with self.assertRaises(RuntimeError):self.store.before_capture(None,self.stage)
+            body=dict(version=16,draft='Original tail',action={'SplitPreEnter':dict(enter_draft='Original tail',pre_enter_updates=['Original changed tail','Original tail'],child_updates=[])},request=list(b'pair'))
+            with closing(sqlite3.connect(self.store.path)) as db:
+                db.execute('UPDATE receipts SET body=?',(json.dumps(body),));db.commit()
+            self.store.before_capture(None,self.stage);self.store.finish(None)
+            body['action']['SplitPreEnter']['pre_enter_updates']=[]
+            with closing(sqlite3.connect(self.store.path)) as db:
+                db.execute('UPDATE receipts SET body=?',(json.dumps(body),));db.commit()
+            with self.assertRaises(RuntimeError):self.store.finish(None)
+            with closing(sqlite3.connect(self.store.path)) as db:
+                db.execute('UPDATE receipts SET body=?',(json.dumps(dict(version=8,action={'SplitTyping':{}},request=list(b'pair'))),));db.commit()
+
 
 if __name__ == "__main__":
     unittest.main()

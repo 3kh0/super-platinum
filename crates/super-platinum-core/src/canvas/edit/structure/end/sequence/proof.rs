@@ -6,11 +6,16 @@ pub(in crate::canvas::edit::structure) fn validate(
     reused: Option<&Section>,
     session: &str,
     before: &TextDraft,
+    parent_updates: &[TextDraft],
     members: &[Member],
     data: &RawMessage,
 ) -> Result<(), Error> {
     repeat::admit(original, before)?;
-    validate_borrowed_stages(members.iter().map(|m| m.updates.as_slice()))?;
+    validate_borrowed_stages(
+        before,
+        parent_updates,
+        members.iter().map(|m| m.updates.as_slice()),
+    )?;
     if session.len() != 12
         || !session.bytes().all(|b| b.is_ascii_hexdigit())
         || data.fields().iter().any(|f| !matches!(f.tag(), 1 | 14))
@@ -22,7 +27,7 @@ pub(in crate::canvas::edit::structure) fn validate(
         return Err(Error::Changed);
     }
     let parent_wire = rows[0].message(38)?.ok_or(Error::Unsupported)?;
-    validation::validate_parent_session(original, before, session, &parent_wire)?;
+    parent::validate(original, before, session, parent_updates, &rows[0])?;
     let mut seen = std::collections::BTreeSet::from([original.id()]);
     for (i, (member, row)) in members.iter().zip(&rows[1..]).enumerate() {
         if !seen.insert(member.id.as_str())
@@ -87,6 +92,7 @@ pub(in crate::canvas::edit::structure) fn validate(
             reused,
             session,
             &parent_wire,
+            parent_updates.last(),
             members,
             &data.message(14)?.ok_or(Error::Unsupported)?,
         )?

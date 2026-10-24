@@ -8,7 +8,8 @@ pub struct PreparedSplitEdit {
     pub(super) parent_wire: RawMessage,
     pub(super) child_wire: RawMessage,
     pub(super) lineage: RawMessage,
-    expiry: Option<u64>,
+    pub(super) expiry: Option<u64>,
+    pub(super) second: Option<sequence::State>,
 }
 impl PreparedSplitEdit {
     pub(super) fn build(
@@ -16,6 +17,9 @@ impl PreparedSplitEdit {
         witness: SplitWitness,
         now: u64,
     ) -> Result<Self, Error> {
+        if witness.second.is_some() {
+            return sequence::build(intent, witness, now);
+        }
         let seed = match intent.original.crdt()? {
             Some(wire) => wire,
             None => text::crdt::bootstrap(&intent.original, &intent.seed, &intent.session, now)?,
@@ -25,6 +29,13 @@ impl PreparedSplitEdit {
         if heads.len() != 1 || !validation::processed(&seed, &heads[0].to_string())? {
             return Err(Error::Unsupported);
         }
+        let doc = if witness.pre_updates.is_empty() {
+            doc
+        } else {
+            let live = pre_enter::live(&seed, &witness, &intent.session, now)?;
+            text::crdt::validate(&live, &intent.original, witness.enter_draft(), None)?
+        };
+        let heads = doc.get_heads();
         let lineage = RawMessage::from_fields(&[
             F::uint(1, 0)?,
             F::bytes(2, format!("{}00000000", intent.session).as_bytes())?,
@@ -48,29 +59,34 @@ impl PreparedSplitEdit {
             )?,
             F::bytes(7, &doc.save())?,
         ])?;
-        let parent_wire = text::crdt::update(
-            &seed,
-            &intent.original,
-            &intent.seed,
-            &witness.parent,
-            &intent.session,
-            now,
-        )?
-        .replace_fields(10, &[F::message(10, &lineage)?])?;
-        // Original reportChange queues split head + previously processed heads;
-        // FOR_SERVER appends that queue to the existing processed list.
-        let mut fields = Vec::new();
-        for wire in [&parent_wire, &seed] {
-            for f in wire.fields().iter().filter(|f| f.tag() == 6) {
-                fields.push(F::bytes(
-                    6,
-                    RawMessage::decode(wire.encoded_field(f)?)?
-                        .bytes(6)?
-                        .ok_or(Error::Unsupported)?,
-                )?);
+        let parent_wire = if witness.pre_updates.is_empty() && witness.parent_updates.is_empty() {
+            let parent_wire = text::crdt::update(
+                &seed,
+                &intent.original,
+                &intent.seed,
+                &witness.parent,
+                &intent.session,
+                now,
+            )?
+            .replace_fields(10, &[F::message(10, &lineage)?])?;
+            // Original reportChange queues split head + previously processed heads;
+            // FOR_SERVER appends that queue to the existing processed list.
+            let mut fields = Vec::new();
+            for wire in [&parent_wire, &seed] {
+                for f in wire.fields().iter().filter(|f| f.tag() == 6) {
+                    fields.push(F::bytes(
+                        6,
+                        RawMessage::decode(wire.encoded_field(f)?)?
+                            .bytes(6)?
+                            .ok_or(Error::Unsupported)?,
+                    )?);
+                }
             }
-        }
-        let parent_wire = parent_wire.replace_fields(6, &fields)?;
+            parent_wire.replace_fields(6, &fields)?
+        } else {
+            parent_updates::build(&seed, &witness, &intent.session, now)?
+                .replace_fields(10, &[F::message(10, &lineage)?])?
+        };
         let child_seed = crdt::insert(&intent.child, &witness.child, &intent.session, now)?;
         let child_wire = if witness.updates.is_empty() {
             child_seed
@@ -101,6 +117,7 @@ impl PreparedSplitEdit {
             child_wire,
             lineage,
             expiry: seed.uint(4)?,
+            second: None,
         })
     }
     pub fn workspace_id(&self) -> &str {
@@ -136,16 +153,44 @@ impl PreparedSplitEdit {
     pub fn document_data(&self) -> &RawMessage {
         &self.data
     }
+    pub fn initial_parent_draft(&self) -> &TextDraft {
+        self.witness.initial_parent_draft()
+    }
+    pub fn parent_draft(&self) -> &TextDraft {
+        self.witness.parent_draft()
+    }
+    pub fn parent_updates(&self) -> &[TextDraft] {
+        self.witness.parent_updates()
+    }
     pub fn initial_child_draft(&self) -> &TextDraft {
         self.witness.initial_child_draft()
     }
     pub fn child_draft(&self) -> &TextDraft {
         self.witness.child_draft()
     }
+    pub fn pre_enter_updates(&self) -> &[TextDraft] {
+        self.witness.pre_enter_updates()
+    }
+    pub fn enter_draft(&self) -> &TextDraft {
+        self.witness.enter_draft()
+    }
     pub fn child_updates(&self) -> &[TextDraft] {
         self.witness.child_updates()
     }
     pub fn checkpoint(&self) -> Result<recovery::Checkpoint, Error> {
+        if let Some(second) = &self.second {
+            return recovery::Checkpoint::split_sequence(
+                &self.intent.inventory,
+                self.target_section(),
+                self.child_section(),
+                &self.intent.position,
+                &second.child,
+                &second.position,
+                self.session_id(),
+                &self.witness,
+                &self.data,
+            );
+        }
         recovery::Checkpoint::split(
             &self.intent.inventory,
             self.target_section(),
@@ -153,7 +198,10 @@ impl PreparedSplitEdit {
             &self.intent.position,
             self.session_id(),
             &self.witness.before,
+            self.witness.enter_draft(),
+            &self.witness.pre_updates,
             &self.witness.parent,
+            &self.witness.parent_updates,
             &self.witness.child,
             self.witness.offset,
             &self.witness.updates,
@@ -168,6 +216,9 @@ impl PreparedSplitEdit {
         Ok(())
     }
     pub fn validate_ack(&self, received: &EditAck) -> Result<AcceptedSplit, Error> {
+        if self.second.is_some() {
+            return sequence::ack(self, received);
+        }
         // Decode actual response bytes; mutable public projections are not proof.
         let ack = EditAck::decode(received.raw().raw())?;
         if ack.changed != Some(true)
@@ -213,18 +264,22 @@ impl PreparedSplitEdit {
             parent_wire: self.parent_wire.clone(),
             child_wire: self.child_wire.clone(),
             lineage: self.lineage.clone(),
+            second: None,
+            second_section: None,
         })
     }
 }
 
 pub struct AcceptedSplit {
-    intent: Arc<SplitIntent>,
-    witness: SplitWitness,
-    parent: Section,
-    child: Section,
-    parent_wire: RawMessage,
-    child_wire: RawMessage,
-    lineage: RawMessage,
+    pub(super) intent: Arc<SplitIntent>,
+    pub(super) witness: SplitWitness,
+    pub(super) parent: Section,
+    pub(super) child: Section,
+    pub(super) parent_wire: RawMessage,
+    pub(super) child_wire: RawMessage,
+    pub(super) lineage: RawMessage,
+    pub(super) second: Option<sequence::State>,
+    pub(super) second_section: Option<Section>,
 }
 impl AcceptedSplit {
     pub fn parent_section(&self) -> &Section {
@@ -246,6 +301,9 @@ impl AcceptedSplit {
         1
     }
     pub fn confirms_readback(&self, snapshot: &CanvasCollabSnapshot) -> Result<bool, Error> {
+        if self.second.is_some() {
+            return sequence::readback(self, snapshot);
+        }
         if inventory::Owner::capture(snapshot)? != self.intent.inventory.owner
             || super::super::super::eligible_document(snapshot).is_err()
             || self.intent.title.revalidate(snapshot).is_err()
@@ -275,7 +333,7 @@ impl AcceptedSplit {
             let target = if section.id() == self.parent.id() {
                 Some((
                     &self.parent,
-                    &self.witness.parent,
+                    self.witness.parent_draft(),
                     &self.parent_wire,
                     Some(&self.lineage),
                 ))
@@ -339,7 +397,7 @@ pub(super) fn project(
         F::bytes(1, original.id().as_bytes())?,
         F::uint(2, original.sequence()?.ok_or(Error::Unsupported)?)?,
         F::uint(9, 0)?,
-        F::message(12, &text::content(original, &witness.parent)?)?,
+        F::message(12, &text::content(original, witness.parent_draft())?)?,
         F::message(13, &empty)?,
         F::uint(19, 1)?,
         F::uint(20, 1)?,
@@ -371,4 +429,44 @@ pub(super) fn project(
         F::message(14, title)?,
     ])?;
     Ok(data)
+}
+
+impl PreparedSplitEdit {
+    pub fn second_child_section(&self) -> Option<&str> {
+        self.second.as_ref().map(|s| s.child.as_str())
+    }
+    pub fn member_ids(&self) -> Vec<&str> {
+        let mut ids = vec![self.target_section(), self.child_section()];
+        if let Some(id) = self.second_child_section() {
+            ids.push(id);
+        }
+        ids
+    }
+    pub fn member_drafts(&self) -> Vec<&TextDraft> {
+        self.witness.member_drafts()
+    }
+    pub fn visual_order(&self) -> Vec<usize> {
+        self.witness.visual_order()
+    }
+}
+impl AcceptedSplit {
+    pub fn second_child_section(&self) -> Option<&Section> {
+        self.second_section.as_ref()
+    }
+    pub fn second_child_id(&self) -> Option<&str> {
+        self.second_section.as_ref().map(Section::id)
+    }
+    pub fn member_ids(&self) -> Vec<&str> {
+        let mut ids = vec![self.target_section(), self.child_id()];
+        if let Some(id) = self.second_child_id() {
+            ids.push(id);
+        }
+        ids
+    }
+    pub fn member_drafts(&self) -> Vec<&TextDraft> {
+        self.witness.member_drafts()
+    }
+    pub fn visual_order(&self) -> Vec<usize> {
+        self.witness.visual_order()
+    }
 }

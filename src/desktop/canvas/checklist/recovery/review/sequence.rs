@@ -14,8 +14,8 @@ pub(super) fn comparison(review: &LocalReview) -> Element {
     let rows = review.observed_sections().collect::<Vec<_>>();
     rsx! {
         div {"data-review-sequence":"original",strong{"Original paragraph"}div{class:"canvas-review-preview","{end.original_text()}"}}
-        div {"data-review-sequence":"parent",strong{"Intended original paragraph"}div{class:"canvas-review-preview","{end.parent_text()}"}}
-        if members.iter().any(|m|m.report_count()>0){p{"data-review-sequence-history":"true","Edits remain part of this unresolved change, including paragraphs that became empty again."}}
+        div {"data-review-sequence":"parent","data-parent-reports":end.parent_report_count(),strong{"Intended original paragraph"}div{class:"canvas-review-preview","{end.parent_text()}"}if end.parent_text().is_empty(){p{"data-parent-empty":"true","Empty paragraph"}}}
+        if end.parent_report_count()>0 || members.iter().any(|m|m.report_count()>0){p{"data-review-sequence-history":"true","Edits remain part of this unresolved change, including paragraphs that became empty again."}}
         for (index,member) in members.iter().enumerate(){
             {let text=visible(member.intended_rtml());let label=format!("Intended appended paragraph {}",index+1);rsx!{
                 div {"data-review-sequence":"member","data-member-id":member.id(),"data-member-index":index,"data-member-reused":member.reused(),"data-member-reports":member.report_count(),

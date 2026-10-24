@@ -108,6 +108,7 @@ pub struct ShellState {
     /// read mark has moved `last_read` past it.
     pub unread_anchor: Option<(String, String)>,
     pub manual_unread: crate::unread::UnreadState,
+    pub(crate) ordinary_history: crate::bootstrap::ordinary_history::State,
     pub(crate) read_presentation: crate::read_preferences::presentation::Presentation,
     pub(crate) read_settings: crate::read_preferences::settings::State,
     pub(crate) read_shortcuts: crate::read_shortcuts::State,
@@ -120,6 +121,7 @@ pub struct ShellState {
     /// reply, so arriving replies keep the pane pinned to the bottom.
     pub thread_at_bottom: bool,
     pub thread_generation: u64,
+    pub(crate) reconnect_generation: u64,
     pub thread_target: Option<String>,
     pub thread_loading: bool,
     pub thread_error: Option<String>,

@@ -49,7 +49,7 @@ pub(crate) struct UnreadContinuation {
     pub scope: String,
     pub boundary: String,
     pub pages: super::pagination::Pages,
-    pub owner: std::sync::Arc<crate::realtime::activity_counts::CursorOwner>,
+    pub owner: std::sync::Arc<crate::bootstrap::UnreadOwner>,
 }
 
 impl Presentation {

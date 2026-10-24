@@ -38,6 +38,12 @@ pub(super) fn scope() -> Scope {
     }
 }
 pub(in crate::canvas) fn snapshot() -> Arc<CanvasCollabSnapshot> {
+    if super::split_fixture::pre_enter::enabled()
+        || super::split_fixture::parent_edit::enabled()
+        || super::split_fixture::second_middle::enabled()
+    {
+        return super::split_fixture::pre_enter::snapshot(&structure_fixture::snapshot());
+    }
     if super::split_fixture::is_sequence() {
         return super::split_fixture::sequence::snapshot(&super::structure_fixture::snapshot());
     }
@@ -175,7 +181,31 @@ pub(super) fn checkpoint() -> Checkpoint {
             .checkpoint()
             .unwrap();
     }
-    let intent = SplitIntent::capture(&source, "paragraph", now).unwrap();
+    let intent = SplitIntent::capture(&source, super::split_fixture::parent_id(), now).unwrap();
+    if super::split_fixture::second_middle::enabled() {
+        let witness = super::split_fixture::second_middle::witness(intent.seed());
+        return intent
+            .prepare(&source, &witness, now)
+            .unwrap()
+            .checkpoint()
+            .unwrap();
+    }
+    if super::split_fixture::parent_edit::enabled() {
+        let witness = super::split_fixture::parent_edit::witness(intent.seed());
+        return intent
+            .prepare(&source, &witness, now)
+            .unwrap()
+            .checkpoint()
+            .unwrap();
+    }
+    if super::split_fixture::pre_enter::enabled() {
+        let witness = super::split_fixture::pre_enter::witness(intent.seed());
+        return intent
+            .prepare(&source, &witness, now)
+            .unwrap()
+            .checkpoint()
+            .unwrap();
+    }
     let witness = SplitWitness::new(
         intent.seed(),
         super::split_fixture::corpus().offset,
@@ -204,6 +234,15 @@ pub(super) fn checkpoint() -> Checkpoint {
         .unwrap()
 }
 pub(super) fn matches_typing(checkpoint: &Checkpoint) -> bool {
+    if super::split_fixture::second_middle::enabled() {
+        return super::split_fixture::second_middle::matches(checkpoint);
+    }
+    if super::split_fixture::parent_edit::enabled() {
+        return super::split_fixture::parent_edit::matches(checkpoint);
+    }
+    if super::split_fixture::pre_enter::enabled() {
+        return super::split_fixture::pre_enter::matches(checkpoint);
+    }
     if super::split_fixture::is_sequence() {
         return super::split_fixture::sequence::matches(checkpoint);
     }
@@ -387,7 +426,7 @@ pub(super) fn matches_parent_mode(checkpoint: &Checkpoint) -> bool {
     };
     let expected = snapshot();
     let expected = expected
-        .section("paragraph")
+        .section(super::split_fixture::parent_id())
         .unwrap()
         .raw()
         .message(38)
@@ -399,7 +438,7 @@ pub(super) fn matches_parent_mode(checkpoint: &Checkpoint) -> bool {
         let Ok(raw) = RawMessage::decode(&bytes) else {
             return false;
         };
-        raw.string(1).ok().flatten() == Some("paragraph")
+        raw.string(1).ok().flatten() == Some(super::split_fixture::parent_id())
             && raw.message(38).ok() == Some(expected.clone())
     })
 }

@@ -153,7 +153,27 @@ fn owner(shell: &ShellState, ctx: &Context) -> Result<Owner, Error> {
     }
     Ok(owner)
 }
-pub(super) fn hit(mut state: Signal<ShellState>, ctx: Arc<Context>, id: &str) -> Result<(), Error> {
+pub(super) fn hit(state: Signal<ShellState>, ctx: Arc<Context>, id: &str) -> Result<(), Error> {
+    hit_inner(state, ctx, id, None)
+}
+/// Present runtime placeholders are selector hits only with sealed provenance.
+pub(super) fn hit_selected(
+    state: Signal<ShellState>,
+    selected: &unknown::Selection,
+) -> Result<(), Error> {
+    hit_inner(
+        state,
+        selected.context(),
+        selected.lookup().id(),
+        Some(selected),
+    )
+}
+fn hit_inner(
+    mut state: Signal<ShellState>,
+    ctx: Arc<Context>,
+    id: &str,
+    selected: Option<&unknown::Selection>,
+) -> Result<(), Error> {
     if crate::fixture::is_fixture() && !fixture::enabled() {
         return Ok(());
     }
@@ -169,8 +189,18 @@ pub(super) fn hit(mut state: Signal<ShellState>, ctx: Arc<Context>, id: &str) ->
             .find(|r| r["id"] == id)
             .cloned()
             .ok_or_else(unavailable)?;
-        // This milestone admits the existing ordinary-channel consumer only.
-        canonical::ordinary_label(&serde_json::json!({"type":"channel","channel_id":id}), &row)?;
+        // Ordinary calls retain their existing admission. Runtime placeholders
+        // need a current sealed selector capability from the shared manager.
+        if let Some(selected) = selected {
+            if !selected.current(&s) || selected.lookup().is_transient() {
+                return Err(unavailable());
+            }
+        } else {
+            canonical::ordinary_label(
+                &serde_json::json!({"type":"channel","channel_id":id}),
+                &row,
+            )?;
+        }
         let observation = facts(&mut s, &ctx)?;
         ensure(&mut s, ctx.clone())?;
         let now = now(&s)?;

@@ -1,0 +1,6230 @@
+{
+  "contractSha256": "b2d7ce1bff29caa198f46992e9270883718e6d0fe68407608efce2adb793bcf4",
+  "bindingsSha256": "5761e69cda84e4c1baf1c9c2d92666107a8fb85d93c172791ed3f0a6cb9a9b43",
+  "vectors": [
+    {
+      "ordinal": 0,
+      "mode": "retained-positive",
+      "corpus": "ascii",
+      "layout": "no-following",
+      "revisit": "correction",
+      "schedule": "parent-before-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Keep this",
+          "canonicalField38": "CglwYXJhZ3JhcGgQ6AcY6AcqtgGFb0qD7rBt0QCrAQEKq83vASNFAAAAAAF7f2+vFcaF/ICsvBBFLhGOUZC/EHvQuQ4xacuScwKZbwYBAgMCEwIjBkACVgIMAQQCBBEEEwcVECECIwU0AkIFVgdXDIABAn8AfwF/DH+AgL/WBn8AfwcAAgoAAAIKAQADCQAAAn4AAggBfgdkZWxldGVkBHRleHQACgwAfgx1CgECCn4BBAoBfgEACRZ/NktlZXAgdGhpc++7vwwAADJAN2I3ZjZmYWYxNWM2ODVmYzgwYWNiYzEwNDUyZTExOGU1MTkwYmYxMDdiZDBiOTBlMzE2OWNiOTI3MzAyOTk2ZkJAN2I3ZjZmYWYxNWM2ODVmYzgwYWNiYzEwNDUyZTExOGU1MTkwYmYxMDdiZDBiOTBlMzE2OWNiOTI3MzAyOTk2ZlpFCkA3YjdmNmZhZjE1YzY4NWZjODBhY2JjMTA0NTJlMTE4ZTUxOTBiZjEwN2JkMGI5MGUzMTY5Y2I5MjczMDI5OTZmEOgH"
+        }
+      ],
+      "parentReports": [
+        "Keep this draftx",
+        "Keep this draft",
+        "Keep this revised"
+      ],
+      "appendReports": [
+        [
+          "New paragraph"
+        ],
+        [
+          "Next paragraph"
+        ],
+        [
+          "Last paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "Keep this\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Keep this draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Keep this draft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 3,
+          "text": "Keep this revisedraft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 4,
+          "text": "Keep this revised\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 1000,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "7b7f6faf15c685fc80acbc10452e118e5190bf107bd0b90e3169cb927302996f",
+          "45477c1b88140da83dbc8e1d456129cad8c45d070def10e2a53361a004bedb49",
+          "7b7f6faf15c685fc80acbc10452e118e5190bf107bd0b90e3169cb927302996f"
+        ]
+      },
+      "wireSha256": "4dda85e44fe8dd273760f5abdd79c2b962c4eb6584edc63234247e395455c653"
+    },
+    {
+      "ordinal": 1,
+      "mode": "retained-positive",
+      "corpus": "ascii",
+      "layout": "no-following",
+      "revisit": "correction",
+      "schedule": "parent-after-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Keep this",
+          "canonicalField38": "CglwYXJhZ3JhcGgQ6AcY6AcqtgGFb0qD7rBt0QCrAQEKq83vASNFAAAAAAF7f2+vFcaF/ICsvBBFLhGOUZC/EHvQuQ4xacuScwKZbwYBAgMCEwIjBkACVgIMAQQCBBEEEwcVECECIwU0AkIFVgdXDIABAn8AfwF/DH+AgL/WBn8AfwcAAgoAAAIKAQADCQAAAn4AAggBfgdkZWxldGVkBHRleHQACgwAfgx1CgECCn4BBAoBfgEACRZ/NktlZXAgdGhpc++7vwwAADJAN2I3ZjZmYWYxNWM2ODVmYzgwYWNiYzEwNDUyZTExOGU1MTkwYmYxMDdiZDBiOTBlMzE2OWNiOTI3MzAyOTk2ZkJAN2I3ZjZmYWYxNWM2ODVmYzgwYWNiYzEwNDUyZTExOGU1MTkwYmYxMDdiZDBiOTBlMzE2OWNiOTI3MzAyOTk2ZlpFCkA3YjdmNmZhZjE1YzY4NWZjODBhY2JjMTA0NTJlMTE4ZTUxOTBiZjEwN2JkMGI5MGUzMTY5Y2I5MjczMDI5OTZmEOgH"
+        }
+      ],
+      "parentReports": [
+        "Keep this draftx",
+        "Keep this draft",
+        "Keep this revised"
+      ],
+      "appendReports": [
+        [
+          "New paragraph"
+        ],
+        [
+          "Next paragraph"
+        ],
+        [
+          "Last paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "Keep this\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Keep this draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Keep this draft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 3,
+          "text": "Keep this revisedraft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 4,
+          "text": "Keep this revised\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 1000,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "7b7f6faf15c685fc80acbc10452e118e5190bf107bd0b90e3169cb927302996f",
+          "45477c1b88140da83dbc8e1d456129cad8c45d070def10e2a53361a004bedb49",
+          "7b7f6faf15c685fc80acbc10452e118e5190bf107bd0b90e3169cb927302996f"
+        ]
+      },
+      "wireSha256": "4dda85e44fe8dd273760f5abdd79c2b962c4eb6584edc63234247e395455c653"
+    },
+    {
+      "ordinal": 2,
+      "mode": "retained-positive",
+      "corpus": "ascii",
+      "layout": "no-following",
+      "revisit": "erase",
+      "schedule": "parent-before-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Keep this",
+          "canonicalField38": "CglwYXJhZ3JhcGgQ6AcY6AcqtgGFb0qD7rBt0QCrAQEKq83vASNFAAAAAAF7f2+vFcaF/ICsvBBFLhGOUZC/EHvQuQ4xacuScwKZbwYBAgMCEwIjBkACVgIMAQQCBBEEEwcVECECIwU0AkIFVgdXDIABAn8AfwF/DH+AgL/WBn8AfwcAAgoAAAIKAQADCQAAAn4AAggBfgdkZWxldGVkBHRleHQACgwAfgx1CgECCn4BBAoBfgEACRZ/NktlZXAgdGhpc++7vwwAADJAN2I3ZjZmYWYxNWM2ODVmYzgwYWNiYzEwNDUyZTExOGU1MTkwYmYxMDdiZDBiOTBlMzE2OWNiOTI3MzAyOTk2ZkJAN2I3ZjZmYWYxNWM2ODVmYzgwYWNiYzEwNDUyZTExOGU1MTkwYmYxMDdiZDBiOTBlMzE2OWNiOTI3MzAyOTk2ZlpFCkA3YjdmNmZhZjE1YzY4NWZjODBhY2JjMTA0NTJlMTE4ZTUxOTBiZjEwN2JkMGI5MGUzMTY5Y2I5MjczMDI5OTZmEOgH"
+        }
+      ],
+      "parentReports": [
+        ""
+      ],
+      "appendReports": [
+        [
+          "New paragraph"
+        ],
+        [
+          "Next paragraph"
+        ],
+        [
+          "Last paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "Keep this\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 1000,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "7b7f6faf15c685fc80acbc10452e118e5190bf107bd0b90e3169cb927302996f",
+          "4c4e189f1c662e6b126470cf076f3e8f349241d84a48356c22652a83c72d488a",
+          "7b7f6faf15c685fc80acbc10452e118e5190bf107bd0b90e3169cb927302996f"
+        ]
+      },
+      "wireSha256": "5c9464eb582399ec5e4b8755fb7083577d3ed90fa3f2403b8eed0ee7fe9520d5"
+    },
+    {
+      "ordinal": 3,
+      "mode": "retained-positive",
+      "corpus": "ascii",
+      "layout": "no-following",
+      "revisit": "erase",
+      "schedule": "parent-after-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Keep this",
+          "canonicalField38": "CglwYXJhZ3JhcGgQ6AcY6AcqtgGFb0qD7rBt0QCrAQEKq83vASNFAAAAAAF7f2+vFcaF/ICsvBBFLhGOUZC/EHvQuQ4xacuScwKZbwYBAgMCEwIjBkACVgIMAQQCBBEEEwcVECECIwU0AkIFVgdXDIABAn8AfwF/DH+AgL/WBn8AfwcAAgoAAAIKAQADCQAAAn4AAggBfgdkZWxldGVkBHRleHQACgwAfgx1CgECCn4BBAoBfgEACRZ/NktlZXAgdGhpc++7vwwAADJAN2I3ZjZmYWYxNWM2ODVmYzgwYWNiYzEwNDUyZTExOGU1MTkwYmYxMDdiZDBiOTBlMzE2OWNiOTI3MzAyOTk2ZkJAN2I3ZjZmYWYxNWM2ODVmYzgwYWNiYzEwNDUyZTExOGU1MTkwYmYxMDdiZDBiOTBlMzE2OWNiOTI3MzAyOTk2ZlpFCkA3YjdmNmZhZjE1YzY4NWZjODBhY2JjMTA0NTJlMTE4ZTUxOTBiZjEwN2JkMGI5MGUzMTY5Y2I5MjczMDI5OTZmEOgH"
+        }
+      ],
+      "parentReports": [
+        ""
+      ],
+      "appendReports": [
+        [
+          "New paragraph"
+        ],
+        [
+          "Next paragraph"
+        ],
+        [
+          "Last paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "Keep this\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 1000,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "7b7f6faf15c685fc80acbc10452e118e5190bf107bd0b90e3169cb927302996f",
+          "4c4e189f1c662e6b126470cf076f3e8f349241d84a48356c22652a83c72d488a",
+          "7b7f6faf15c685fc80acbc10452e118e5190bf107bd0b90e3169cb927302996f"
+        ]
+      },
+      "wireSha256": "5c9464eb582399ec5e4b8755fb7083577d3ed90fa3f2403b8eed0ee7fe9520d5"
+    },
+    {
+      "ordinal": 4,
+      "mode": "retained-positive",
+      "corpus": "ascii",
+      "layout": "no-following",
+      "revisit": "exact-revert",
+      "schedule": "parent-before-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Keep this",
+          "canonicalField38": "CglwYXJhZ3JhcGgQ6AcY6AcqtgGFb0qD7rBt0QCrAQEKq83vASNFAAAAAAF7f2+vFcaF/ICsvBBFLhGOUZC/EHvQuQ4xacuScwKZbwYBAgMCEwIjBkACVgIMAQQCBBEEEwcVECECIwU0AkIFVgdXDIABAn8AfwF/DH+AgL/WBn8AfwcAAgoAAAIKAQADCQAAAn4AAggBfgdkZWxldGVkBHRleHQACgwAfgx1CgECCn4BBAoBfgEACRZ/NktlZXAgdGhpc++7vwwAADJAN2I3ZjZmYWYxNWM2ODVmYzgwYWNiYzEwNDUyZTExOGU1MTkwYmYxMDdiZDBiOTBlMzE2OWNiOTI3MzAyOTk2ZkJAN2I3ZjZmYWYxNWM2ODVmYzgwYWNiYzEwNDUyZTExOGU1MTkwYmYxMDdiZDBiOTBlMzE2OWNiOTI3MzAyOTk2ZlpFCkA3YjdmNmZhZjE1YzY4NWZjODBhY2JjMTA0NTJlMTE4ZTUxOTBiZjEwN2JkMGI5MGUzMTY5Y2I5MjczMDI5OTZmEOgH"
+        }
+      ],
+      "parentReports": [
+        "Keep this draftx",
+        "Keep this"
+      ],
+      "appendReports": [
+        [
+          "New paragraph"
+        ],
+        [
+          "Next paragraph"
+        ],
+        [
+          "Last paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "Keep this\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Keep this draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Keep this\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 1000,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "7b7f6faf15c685fc80acbc10452e118e5190bf107bd0b90e3169cb927302996f",
+          "2863def0f0adf69d45fe82487955bf5c223f5781b1ed6dbed2df18af42942aa9",
+          "7b7f6faf15c685fc80acbc10452e118e5190bf107bd0b90e3169cb927302996f"
+        ]
+      },
+      "wireSha256": "6a63f522950ed70e91e52e034a83363a9d5bfeceac7ccfbc99ea6834898d7c89"
+    },
+    {
+      "ordinal": 5,
+      "mode": "retained-positive",
+      "corpus": "ascii",
+      "layout": "no-following",
+      "revisit": "exact-revert",
+      "schedule": "parent-after-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Keep this",
+          "canonicalField38": "CglwYXJhZ3JhcGgQ6AcY6AcqtgGFb0qD7rBt0QCrAQEKq83vASNFAAAAAAF7f2+vFcaF/ICsvBBFLhGOUZC/EHvQuQ4xacuScwKZbwYBAgMCEwIjBkACVgIMAQQCBBEEEwcVECECIwU0AkIFVgdXDIABAn8AfwF/DH+AgL/WBn8AfwcAAgoAAAIKAQADCQAAAn4AAggBfgdkZWxldGVkBHRleHQACgwAfgx1CgECCn4BBAoBfgEACRZ/NktlZXAgdGhpc++7vwwAADJAN2I3ZjZmYWYxNWM2ODVmYzgwYWNiYzEwNDUyZTExOGU1MTkwYmYxMDdiZDBiOTBlMzE2OWNiOTI3MzAyOTk2ZkJAN2I3ZjZmYWYxNWM2ODVmYzgwYWNiYzEwNDUyZTExOGU1MTkwYmYxMDdiZDBiOTBlMzE2OWNiOTI3MzAyOTk2ZlpFCkA3YjdmNmZhZjE1YzY4NWZjODBhY2JjMTA0NTJlMTE4ZTUxOTBiZjEwN2JkMGI5MGUzMTY5Y2I5MjczMDI5OTZmEOgH"
+        }
+      ],
+      "parentReports": [
+        "Keep this draftx",
+        "Keep this"
+      ],
+      "appendReports": [
+        [
+          "New paragraph"
+        ],
+        [
+          "Next paragraph"
+        ],
+        [
+          "Last paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "Keep this\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Keep this draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Keep this\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 1000,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "7b7f6faf15c685fc80acbc10452e118e5190bf107bd0b90e3169cb927302996f",
+          "2863def0f0adf69d45fe82487955bf5c223f5781b1ed6dbed2df18af42942aa9",
+          "7b7f6faf15c685fc80acbc10452e118e5190bf107bd0b90e3169cb927302996f"
+        ]
+      },
+      "wireSha256": "6a63f522950ed70e91e52e034a83363a9d5bfeceac7ccfbc99ea6834898d7c89"
+    },
+    {
+      "ordinal": 6,
+      "mode": "retained-positive",
+      "corpus": "ascii",
+      "layout": "empty-final-following",
+      "revisit": "correction",
+      "schedule": "parent-before-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Keep this",
+          "canonicalField38": "CglwYXJhZ3JhcGgQ6AcY6AcqtgGFb0qD7rBt0QCrAQEKq83vASNFAAAAAAF7f2+vFcaF/ICsvBBFLhGOUZC/EHvQuQ4xacuScwKZbwYBAgMCEwIjBkACVgIMAQQCBBEEEwcVECECIwU0AkIFVgdXDIABAn8AfwF/DH+AgL/WBn8AfwcAAgoAAAIKAQADCQAAAn4AAggBfgdkZWxldGVkBHRleHQACgwAfgx1CgECCn4BBAoBfgEACRZ/NktlZXAgdGhpc++7vwwAADJAN2I3ZjZmYWYxNWM2ODVmYzgwYWNiYzEwNDUyZTExOGU1MTkwYmYxMDdiZDBiOTBlMzE2OWNiOTI3MzAyOTk2ZkJAN2I3ZjZmYWYxNWM2ODVmYzgwYWNiYzEwNDUyZTExOGU1MTkwYmYxMDdiZDBiOTBlMzE2OWNiOTI3MzAyOTk2ZlpFCkA3YjdmNmZhZjE1YzY4NWZjODBhY2JjMTA0NTJlMTE4ZTUxOTBiZjEwN2JkMGI5MGUzMTY5Y2I5MjczMDI5OTZmEOgH"
+        },
+        {
+          "id": "following",
+          "rtml": "",
+          "canonicalField38": "Cglmb2xsb3dpbmcQ6AcY6AcqnwGFb0qDwGyrhgCUAQEKq83vASNFAAAAAAGTfiepGKGT7CL/56VVOvevlByZZEmcUkVIRfUY0fLXfAYBAgMCEwIjBkACVgILAQQCBBMEFRAhAiMENAJCBFYEVwOAAQJ/AH8BfwN/gIC/1gZ/AH8HAAJ/AAACfwEAAn8AfgdkZWxldGVkBHRleHQAAQMAfQN+AQIBfQEEAX0BADbvu78DAAAyQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NCQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NaRQpAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3YxDoBw=="
+        }
+      ],
+      "parentReports": [
+        "Keep this draftx",
+        "Keep this draft",
+        "Keep this revised"
+      ],
+      "appendReports": [
+        [
+          "New paragraph"
+        ],
+        [
+          "Next paragraph"
+        ],
+        [
+          "Last paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "Keep this\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Keep this draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Keep this draft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 3,
+          "text": "Keep this revisedraft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 4,
+          "text": "Keep this revised\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 1000,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "7b7f6faf15c685fc80acbc10452e118e5190bf107bd0b90e3169cb927302996f",
+          "45477c1b88140da83dbc8e1d456129cad8c45d070def10e2a53361a004bedb49",
+          "7b7f6faf15c685fc80acbc10452e118e5190bf107bd0b90e3169cb927302996f"
+        ]
+      },
+      "wireSha256": "df35166542bac75946ffc81b5463c3e41e4e03afda32feeeef8f09420cfa357d"
+    },
+    {
+      "ordinal": 7,
+      "mode": "retained-positive",
+      "corpus": "ascii",
+      "layout": "empty-final-following",
+      "revisit": "correction",
+      "schedule": "parent-after-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Keep this",
+          "canonicalField38": "CglwYXJhZ3JhcGgQ6AcY6AcqtgGFb0qD7rBt0QCrAQEKq83vASNFAAAAAAF7f2+vFcaF/ICsvBBFLhGOUZC/EHvQuQ4xacuScwKZbwYBAgMCEwIjBkACVgIMAQQCBBEEEwcVECECIwU0AkIFVgdXDIABAn8AfwF/DH+AgL/WBn8AfwcAAgoAAAIKAQADCQAAAn4AAggBfgdkZWxldGVkBHRleHQACgwAfgx1CgECCn4BBAoBfgEACRZ/NktlZXAgdGhpc++7vwwAADJAN2I3ZjZmYWYxNWM2ODVmYzgwYWNiYzEwNDUyZTExOGU1MTkwYmYxMDdiZDBiOTBlMzE2OWNiOTI3MzAyOTk2ZkJAN2I3ZjZmYWYxNWM2ODVmYzgwYWNiYzEwNDUyZTExOGU1MTkwYmYxMDdiZDBiOTBlMzE2OWNiOTI3MzAyOTk2ZlpFCkA3YjdmNmZhZjE1YzY4NWZjODBhY2JjMTA0NTJlMTE4ZTUxOTBiZjEwN2JkMGI5MGUzMTY5Y2I5MjczMDI5OTZmEOgH"
+        },
+        {
+          "id": "following",
+          "rtml": "",
+          "canonicalField38": "Cglmb2xsb3dpbmcQ6AcY6AcqnwGFb0qDwGyrhgCUAQEKq83vASNFAAAAAAGTfiepGKGT7CL/56VVOvevlByZZEmcUkVIRfUY0fLXfAYBAgMCEwIjBkACVgILAQQCBBMEFRAhAiMENAJCBFYEVwOAAQJ/AH8BfwN/gIC/1gZ/AH8HAAJ/AAACfwEAAn8AfgdkZWxldGVkBHRleHQAAQMAfQN+AQIBfQEEAX0BADbvu78DAAAyQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NCQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NaRQpAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3YxDoBw=="
+        }
+      ],
+      "parentReports": [
+        "Keep this draftx",
+        "Keep this draft",
+        "Keep this revised"
+      ],
+      "appendReports": [
+        [
+          "New paragraph"
+        ],
+        [
+          "Next paragraph"
+        ],
+        [
+          "Last paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "Keep this\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Keep this draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Keep this draft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 3,
+          "text": "Keep this revisedraft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 4,
+          "text": "Keep this revised\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 1000,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "7b7f6faf15c685fc80acbc10452e118e5190bf107bd0b90e3169cb927302996f",
+          "45477c1b88140da83dbc8e1d456129cad8c45d070def10e2a53361a004bedb49",
+          "7b7f6faf15c685fc80acbc10452e118e5190bf107bd0b90e3169cb927302996f"
+        ]
+      },
+      "wireSha256": "df35166542bac75946ffc81b5463c3e41e4e03afda32feeeef8f09420cfa357d"
+    },
+    {
+      "ordinal": 8,
+      "mode": "retained-positive",
+      "corpus": "ascii",
+      "layout": "empty-final-following",
+      "revisit": "erase",
+      "schedule": "parent-before-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Keep this",
+          "canonicalField38": "CglwYXJhZ3JhcGgQ6AcY6AcqtgGFb0qD7rBt0QCrAQEKq83vASNFAAAAAAF7f2+vFcaF/ICsvBBFLhGOUZC/EHvQuQ4xacuScwKZbwYBAgMCEwIjBkACVgIMAQQCBBEEEwcVECECIwU0AkIFVgdXDIABAn8AfwF/DH+AgL/WBn8AfwcAAgoAAAIKAQADCQAAAn4AAggBfgdkZWxldGVkBHRleHQACgwAfgx1CgECCn4BBAoBfgEACRZ/NktlZXAgdGhpc++7vwwAADJAN2I3ZjZmYWYxNWM2ODVmYzgwYWNiYzEwNDUyZTExOGU1MTkwYmYxMDdiZDBiOTBlMzE2OWNiOTI3MzAyOTk2ZkJAN2I3ZjZmYWYxNWM2ODVmYzgwYWNiYzEwNDUyZTExOGU1MTkwYmYxMDdiZDBiOTBlMzE2OWNiOTI3MzAyOTk2ZlpFCkA3YjdmNmZhZjE1YzY4NWZjODBhY2JjMTA0NTJlMTE4ZTUxOTBiZjEwN2JkMGI5MGUzMTY5Y2I5MjczMDI5OTZmEOgH"
+        },
+        {
+          "id": "following",
+          "rtml": "",
+          "canonicalField38": "Cglmb2xsb3dpbmcQ6AcY6AcqnwGFb0qDwGyrhgCUAQEKq83vASNFAAAAAAGTfiepGKGT7CL/56VVOvevlByZZEmcUkVIRfUY0fLXfAYBAgMCEwIjBkACVgILAQQCBBMEFRAhAiMENAJCBFYEVwOAAQJ/AH8BfwN/gIC/1gZ/AH8HAAJ/AAACfwEAAn8AfgdkZWxldGVkBHRleHQAAQMAfQN+AQIBfQEEAX0BADbvu78DAAAyQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NCQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NaRQpAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3YxDoBw=="
+        }
+      ],
+      "parentReports": [
+        ""
+      ],
+      "appendReports": [
+        [
+          "New paragraph"
+        ],
+        [
+          "Next paragraph"
+        ],
+        [
+          "Last paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "Keep this\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 1000,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "7b7f6faf15c685fc80acbc10452e118e5190bf107bd0b90e3169cb927302996f",
+          "4c4e189f1c662e6b126470cf076f3e8f349241d84a48356c22652a83c72d488a",
+          "7b7f6faf15c685fc80acbc10452e118e5190bf107bd0b90e3169cb927302996f"
+        ]
+      },
+      "wireSha256": "31addd6e91cc017355640bbc19eac331821ff4764fb66650f31d1f542165b69c"
+    },
+    {
+      "ordinal": 9,
+      "mode": "retained-positive",
+      "corpus": "ascii",
+      "layout": "empty-final-following",
+      "revisit": "erase",
+      "schedule": "parent-after-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Keep this",
+          "canonicalField38": "CglwYXJhZ3JhcGgQ6AcY6AcqtgGFb0qD7rBt0QCrAQEKq83vASNFAAAAAAF7f2+vFcaF/ICsvBBFLhGOUZC/EHvQuQ4xacuScwKZbwYBAgMCEwIjBkACVgIMAQQCBBEEEwcVECECIwU0AkIFVgdXDIABAn8AfwF/DH+AgL/WBn8AfwcAAgoAAAIKAQADCQAAAn4AAggBfgdkZWxldGVkBHRleHQACgwAfgx1CgECCn4BBAoBfgEACRZ/NktlZXAgdGhpc++7vwwAADJAN2I3ZjZmYWYxNWM2ODVmYzgwYWNiYzEwNDUyZTExOGU1MTkwYmYxMDdiZDBiOTBlMzE2OWNiOTI3MzAyOTk2ZkJAN2I3ZjZmYWYxNWM2ODVmYzgwYWNiYzEwNDUyZTExOGU1MTkwYmYxMDdiZDBiOTBlMzE2OWNiOTI3MzAyOTk2ZlpFCkA3YjdmNmZhZjE1YzY4NWZjODBhY2JjMTA0NTJlMTE4ZTUxOTBiZjEwN2JkMGI5MGUzMTY5Y2I5MjczMDI5OTZmEOgH"
+        },
+        {
+          "id": "following",
+          "rtml": "",
+          "canonicalField38": "Cglmb2xsb3dpbmcQ6AcY6AcqnwGFb0qDwGyrhgCUAQEKq83vASNFAAAAAAGTfiepGKGT7CL/56VVOvevlByZZEmcUkVIRfUY0fLXfAYBAgMCEwIjBkACVgILAQQCBBMEFRAhAiMENAJCBFYEVwOAAQJ/AH8BfwN/gIC/1gZ/AH8HAAJ/AAACfwEAAn8AfgdkZWxldGVkBHRleHQAAQMAfQN+AQIBfQEEAX0BADbvu78DAAAyQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NCQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NaRQpAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3YxDoBw=="
+        }
+      ],
+      "parentReports": [
+        ""
+      ],
+      "appendReports": [
+        [
+          "New paragraph"
+        ],
+        [
+          "Next paragraph"
+        ],
+        [
+          "Last paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "Keep this\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 1000,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "7b7f6faf15c685fc80acbc10452e118e5190bf107bd0b90e3169cb927302996f",
+          "4c4e189f1c662e6b126470cf076f3e8f349241d84a48356c22652a83c72d488a",
+          "7b7f6faf15c685fc80acbc10452e118e5190bf107bd0b90e3169cb927302996f"
+        ]
+      },
+      "wireSha256": "31addd6e91cc017355640bbc19eac331821ff4764fb66650f31d1f542165b69c"
+    },
+    {
+      "ordinal": 10,
+      "mode": "retained-positive",
+      "corpus": "ascii",
+      "layout": "empty-final-following",
+      "revisit": "exact-revert",
+      "schedule": "parent-before-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Keep this",
+          "canonicalField38": "CglwYXJhZ3JhcGgQ6AcY6AcqtgGFb0qD7rBt0QCrAQEKq83vASNFAAAAAAF7f2+vFcaF/ICsvBBFLhGOUZC/EHvQuQ4xacuScwKZbwYBAgMCEwIjBkACVgIMAQQCBBEEEwcVECECIwU0AkIFVgdXDIABAn8AfwF/DH+AgL/WBn8AfwcAAgoAAAIKAQADCQAAAn4AAggBfgdkZWxldGVkBHRleHQACgwAfgx1CgECCn4BBAoBfgEACRZ/NktlZXAgdGhpc++7vwwAADJAN2I3ZjZmYWYxNWM2ODVmYzgwYWNiYzEwNDUyZTExOGU1MTkwYmYxMDdiZDBiOTBlMzE2OWNiOTI3MzAyOTk2ZkJAN2I3ZjZmYWYxNWM2ODVmYzgwYWNiYzEwNDUyZTExOGU1MTkwYmYxMDdiZDBiOTBlMzE2OWNiOTI3MzAyOTk2ZlpFCkA3YjdmNmZhZjE1YzY4NWZjODBhY2JjMTA0NTJlMTE4ZTUxOTBiZjEwN2JkMGI5MGUzMTY5Y2I5MjczMDI5OTZmEOgH"
+        },
+        {
+          "id": "following",
+          "rtml": "",
+          "canonicalField38": "Cglmb2xsb3dpbmcQ6AcY6AcqnwGFb0qDwGyrhgCUAQEKq83vASNFAAAAAAGTfiepGKGT7CL/56VVOvevlByZZEmcUkVIRfUY0fLXfAYBAgMCEwIjBkACVgILAQQCBBMEFRAhAiMENAJCBFYEVwOAAQJ/AH8BfwN/gIC/1gZ/AH8HAAJ/AAACfwEAAn8AfgdkZWxldGVkBHRleHQAAQMAfQN+AQIBfQEEAX0BADbvu78DAAAyQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NCQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NaRQpAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3YxDoBw=="
+        }
+      ],
+      "parentReports": [
+        "Keep this draftx",
+        "Keep this"
+      ],
+      "appendReports": [
+        [
+          "New paragraph"
+        ],
+        [
+          "Next paragraph"
+        ],
+        [
+          "Last paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "Keep this\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Keep this draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Keep this\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 1000,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "7b7f6faf15c685fc80acbc10452e118e5190bf107bd0b90e3169cb927302996f",
+          "2863def0f0adf69d45fe82487955bf5c223f5781b1ed6dbed2df18af42942aa9",
+          "7b7f6faf15c685fc80acbc10452e118e5190bf107bd0b90e3169cb927302996f"
+        ]
+      },
+      "wireSha256": "1bb1546d95323577948ed4291b6f0d752d08b8c22868b5a9c9e8d8588ec1aa01"
+    },
+    {
+      "ordinal": 11,
+      "mode": "retained-positive",
+      "corpus": "ascii",
+      "layout": "empty-final-following",
+      "revisit": "exact-revert",
+      "schedule": "parent-after-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Keep this",
+          "canonicalField38": "CglwYXJhZ3JhcGgQ6AcY6AcqtgGFb0qD7rBt0QCrAQEKq83vASNFAAAAAAF7f2+vFcaF/ICsvBBFLhGOUZC/EHvQuQ4xacuScwKZbwYBAgMCEwIjBkACVgIMAQQCBBEEEwcVECECIwU0AkIFVgdXDIABAn8AfwF/DH+AgL/WBn8AfwcAAgoAAAIKAQADCQAAAn4AAggBfgdkZWxldGVkBHRleHQACgwAfgx1CgECCn4BBAoBfgEACRZ/NktlZXAgdGhpc++7vwwAADJAN2I3ZjZmYWYxNWM2ODVmYzgwYWNiYzEwNDUyZTExOGU1MTkwYmYxMDdiZDBiOTBlMzE2OWNiOTI3MzAyOTk2ZkJAN2I3ZjZmYWYxNWM2ODVmYzgwYWNiYzEwNDUyZTExOGU1MTkwYmYxMDdiZDBiOTBlMzE2OWNiOTI3MzAyOTk2ZlpFCkA3YjdmNmZhZjE1YzY4NWZjODBhY2JjMTA0NTJlMTE4ZTUxOTBiZjEwN2JkMGI5MGUzMTY5Y2I5MjczMDI5OTZmEOgH"
+        },
+        {
+          "id": "following",
+          "rtml": "",
+          "canonicalField38": "Cglmb2xsb3dpbmcQ6AcY6AcqnwGFb0qDwGyrhgCUAQEKq83vASNFAAAAAAGTfiepGKGT7CL/56VVOvevlByZZEmcUkVIRfUY0fLXfAYBAgMCEwIjBkACVgILAQQCBBMEFRAhAiMENAJCBFYEVwOAAQJ/AH8BfwN/gIC/1gZ/AH8HAAJ/AAACfwEAAn8AfgdkZWxldGVkBHRleHQAAQMAfQN+AQIBfQEEAX0BADbvu78DAAAyQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NCQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NaRQpAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3YxDoBw=="
+        }
+      ],
+      "parentReports": [
+        "Keep this draftx",
+        "Keep this"
+      ],
+      "appendReports": [
+        [
+          "New paragraph"
+        ],
+        [
+          "Next paragraph"
+        ],
+        [
+          "Last paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "Keep this\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Keep this draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Keep this\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 1000,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "7b7f6faf15c685fc80acbc10452e118e5190bf107bd0b90e3169cb927302996f",
+          "2863def0f0adf69d45fe82487955bf5c223f5781b1ed6dbed2df18af42942aa9",
+          "7b7f6faf15c685fc80acbc10452e118e5190bf107bd0b90e3169cb927302996f"
+        ]
+      },
+      "wireSha256": "1bb1546d95323577948ed4291b6f0d752d08b8c22868b5a9c9e8d8588ec1aa01"
+    },
+    {
+      "ordinal": 12,
+      "mode": "retained-positive",
+      "corpus": "unicode",
+      "layout": "no-following",
+      "revisit": "correction",
+      "schedule": "parent-before-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00",
+          "canonicalField38": "CglwYXJhZ3JhcGgQ6AcY6AcqygGFb0qD2gR0nAC/AQEKq83vASNFAAAAAAHH2KiK7FLG3KYkpxzuTgjYRxEhUD0mjYyYsBMIg37HdgYBAgMCEwIjBkACVgIMAQQCBBEEEwcVECECIwU0AkIFVg5XGYABAn8AfwF/EX+AgL/WBn8AfwcAAg8AAAIPAQADDgAAAn4AAg0BfgdkZWxldGVkBHRleHQADxEAfhFwDwECD34BBA8BfgEAAxZ/JgcWAjZ+RjZDYWbDqSAmYW1wOyDml6XmnKzwn5iA77u/EQAAMkBjN2Q4YTg4YWVjNTJjNmRjYTYyNGE3MWNlZTRlMDhkODQ3MTEyMTUwM2QyNjhkOGM5OGIwMTMwODgzN2VjNzc2QkBjN2Q4YTg4YWVjNTJjNmRjYTYyNGE3MWNlZTRlMDhkODQ3MTEyMTUwM2QyNjhkOGM5OGIwMTMwODgzN2VjNzc2WkUKQGM3ZDhhODhhZWM1MmM2ZGNhNjI0YTcxY2VlNGUwOGQ4NDcxMTIxNTAzZDI2OGQ4Yzk4YjAxMzA4ODM3ZWM3NzYQ6Ac="
+        }
+      ],
+      "parentReports": [
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx",
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draft",
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 revised"
+      ],
+      "appendReports": [
+        [
+          "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 3,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 revisedraft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 4,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 revised\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 1000,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "c7d8a88aec52c6dca624a71cee4e08d8471121503d268d8c98b01308837ec776",
+          "8b5e7f3b6cc0f9ed800fd2f01897a3c5be2b6d1f88989c6ec8743240841dc828",
+          "c7d8a88aec52c6dca624a71cee4e08d8471121503d268d8c98b01308837ec776"
+        ]
+      },
+      "wireSha256": "49f28c9fdae7d9b48b2ae8b8df8d320ef49f7cd401213eeaf36660113d95f7f4"
+    },
+    {
+      "ordinal": 13,
+      "mode": "retained-positive",
+      "corpus": "unicode",
+      "layout": "no-following",
+      "revisit": "correction",
+      "schedule": "parent-after-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00",
+          "canonicalField38": "CglwYXJhZ3JhcGgQ6AcY6AcqygGFb0qD2gR0nAC/AQEKq83vASNFAAAAAAHH2KiK7FLG3KYkpxzuTgjYRxEhUD0mjYyYsBMIg37HdgYBAgMCEwIjBkACVgIMAQQCBBEEEwcVECECIwU0AkIFVg5XGYABAn8AfwF/EX+AgL/WBn8AfwcAAg8AAAIPAQADDgAAAn4AAg0BfgdkZWxldGVkBHRleHQADxEAfhFwDwECD34BBA8BfgEAAxZ/JgcWAjZ+RjZDYWbDqSAmYW1wOyDml6XmnKzwn5iA77u/EQAAMkBjN2Q4YTg4YWVjNTJjNmRjYTYyNGE3MWNlZTRlMDhkODQ3MTEyMTUwM2QyNjhkOGM5OGIwMTMwODgzN2VjNzc2QkBjN2Q4YTg4YWVjNTJjNmRjYTYyNGE3MWNlZTRlMDhkODQ3MTEyMTUwM2QyNjhkOGM5OGIwMTMwODgzN2VjNzc2WkUKQGM3ZDhhODhhZWM1MmM2ZGNhNjI0YTcxY2VlNGUwOGQ4NDcxMTIxNTAzZDI2OGQ4Yzk4YjAxMzA4ODM3ZWM3NzYQ6Ac="
+        }
+      ],
+      "parentReports": [
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx",
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draft",
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 revised"
+      ],
+      "appendReports": [
+        [
+          "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 3,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 revisedraft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 4,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 revised\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 1000,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "c7d8a88aec52c6dca624a71cee4e08d8471121503d268d8c98b01308837ec776",
+          "8b5e7f3b6cc0f9ed800fd2f01897a3c5be2b6d1f88989c6ec8743240841dc828",
+          "c7d8a88aec52c6dca624a71cee4e08d8471121503d268d8c98b01308837ec776"
+        ]
+      },
+      "wireSha256": "49f28c9fdae7d9b48b2ae8b8df8d320ef49f7cd401213eeaf36660113d95f7f4"
+    },
+    {
+      "ordinal": 14,
+      "mode": "retained-positive",
+      "corpus": "unicode",
+      "layout": "no-following",
+      "revisit": "erase",
+      "schedule": "parent-before-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00",
+          "canonicalField38": "CglwYXJhZ3JhcGgQ6AcY6AcqygGFb0qD2gR0nAC/AQEKq83vASNFAAAAAAHH2KiK7FLG3KYkpxzuTgjYRxEhUD0mjYyYsBMIg37HdgYBAgMCEwIjBkACVgIMAQQCBBEEEwcVECECIwU0AkIFVg5XGYABAn8AfwF/EX+AgL/WBn8AfwcAAg8AAAIPAQADDgAAAn4AAg0BfgdkZWxldGVkBHRleHQADxEAfhFwDwECD34BBA8BfgEAAxZ/JgcWAjZ+RjZDYWbDqSAmYW1wOyDml6XmnKzwn5iA77u/EQAAMkBjN2Q4YTg4YWVjNTJjNmRjYTYyNGE3MWNlZTRlMDhkODQ3MTEyMTUwM2QyNjhkOGM5OGIwMTMwODgzN2VjNzc2QkBjN2Q4YTg4YWVjNTJjNmRjYTYyNGE3MWNlZTRlMDhkODQ3MTEyMTUwM2QyNjhkOGM5OGIwMTMwODgzN2VjNzc2WkUKQGM3ZDhhODhhZWM1MmM2ZGNhNjI0YTcxY2VlNGUwOGQ4NDcxMTIxNTAzZDI2OGQ4Yzk4YjAxMzA4ODM3ZWM3NzYQ6Ac="
+        }
+      ],
+      "parentReports": [
+        ""
+      ],
+      "appendReports": [
+        [
+          "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 1000,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "c7d8a88aec52c6dca624a71cee4e08d8471121503d268d8c98b01308837ec776",
+          "b7d373ac4570f72e192953d60ceebcea08254b5033eca2b4bc5ff16c77fdc3c1",
+          "c7d8a88aec52c6dca624a71cee4e08d8471121503d268d8c98b01308837ec776"
+        ]
+      },
+      "wireSha256": "e33775b92cd1027c8f003356670f555d334c68e858b7db6304c54a1ec7a82af0"
+    },
+    {
+      "ordinal": 15,
+      "mode": "retained-positive",
+      "corpus": "unicode",
+      "layout": "no-following",
+      "revisit": "erase",
+      "schedule": "parent-after-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00",
+          "canonicalField38": "CglwYXJhZ3JhcGgQ6AcY6AcqygGFb0qD2gR0nAC/AQEKq83vASNFAAAAAAHH2KiK7FLG3KYkpxzuTgjYRxEhUD0mjYyYsBMIg37HdgYBAgMCEwIjBkACVgIMAQQCBBEEEwcVECECIwU0AkIFVg5XGYABAn8AfwF/EX+AgL/WBn8AfwcAAg8AAAIPAQADDgAAAn4AAg0BfgdkZWxldGVkBHRleHQADxEAfhFwDwECD34BBA8BfgEAAxZ/JgcWAjZ+RjZDYWbDqSAmYW1wOyDml6XmnKzwn5iA77u/EQAAMkBjN2Q4YTg4YWVjNTJjNmRjYTYyNGE3MWNlZTRlMDhkODQ3MTEyMTUwM2QyNjhkOGM5OGIwMTMwODgzN2VjNzc2QkBjN2Q4YTg4YWVjNTJjNmRjYTYyNGE3MWNlZTRlMDhkODQ3MTEyMTUwM2QyNjhkOGM5OGIwMTMwODgzN2VjNzc2WkUKQGM3ZDhhODhhZWM1MmM2ZGNhNjI0YTcxY2VlNGUwOGQ4NDcxMTIxNTAzZDI2OGQ4Yzk4YjAxMzA4ODM3ZWM3NzYQ6Ac="
+        }
+      ],
+      "parentReports": [
+        ""
+      ],
+      "appendReports": [
+        [
+          "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 1000,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "c7d8a88aec52c6dca624a71cee4e08d8471121503d268d8c98b01308837ec776",
+          "b7d373ac4570f72e192953d60ceebcea08254b5033eca2b4bc5ff16c77fdc3c1",
+          "c7d8a88aec52c6dca624a71cee4e08d8471121503d268d8c98b01308837ec776"
+        ]
+      },
+      "wireSha256": "e33775b92cd1027c8f003356670f555d334c68e858b7db6304c54a1ec7a82af0"
+    },
+    {
+      "ordinal": 16,
+      "mode": "retained-positive",
+      "corpus": "unicode",
+      "layout": "no-following",
+      "revisit": "exact-revert",
+      "schedule": "parent-before-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00",
+          "canonicalField38": "CglwYXJhZ3JhcGgQ6AcY6AcqygGFb0qD2gR0nAC/AQEKq83vASNFAAAAAAHH2KiK7FLG3KYkpxzuTgjYRxEhUD0mjYyYsBMIg37HdgYBAgMCEwIjBkACVgIMAQQCBBEEEwcVECECIwU0AkIFVg5XGYABAn8AfwF/EX+AgL/WBn8AfwcAAg8AAAIPAQADDgAAAn4AAg0BfgdkZWxldGVkBHRleHQADxEAfhFwDwECD34BBA8BfgEAAxZ/JgcWAjZ+RjZDYWbDqSAmYW1wOyDml6XmnKzwn5iA77u/EQAAMkBjN2Q4YTg4YWVjNTJjNmRjYTYyNGE3MWNlZTRlMDhkODQ3MTEyMTUwM2QyNjhkOGM5OGIwMTMwODgzN2VjNzc2QkBjN2Q4YTg4YWVjNTJjNmRjYTYyNGE3MWNlZTRlMDhkODQ3MTEyMTUwM2QyNjhkOGM5OGIwMTMwODgzN2VjNzc2WkUKQGM3ZDhhODhhZWM1MmM2ZGNhNjI0YTcxY2VlNGUwOGQ4NDcxMTIxNTAzZDI2OGQ4Yzk4YjAxMzA4ODM3ZWM3NzYQ6Ac="
+        }
+      ],
+      "parentReports": [
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx",
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00"
+      ],
+      "appendReports": [
+        [
+          "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 1000,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "c7d8a88aec52c6dca624a71cee4e08d8471121503d268d8c98b01308837ec776",
+          "1993ae0ff71b15b6d20079603fed778eca721a54c92bcb9e0b1afc3cb8ac2121",
+          "c7d8a88aec52c6dca624a71cee4e08d8471121503d268d8c98b01308837ec776"
+        ]
+      },
+      "wireSha256": "33d59332acedcdb453583aea77591f41538135cf655bb8ba8bfa34256ae1727e"
+    },
+    {
+      "ordinal": 17,
+      "mode": "retained-positive",
+      "corpus": "unicode",
+      "layout": "no-following",
+      "revisit": "exact-revert",
+      "schedule": "parent-after-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00",
+          "canonicalField38": "CglwYXJhZ3JhcGgQ6AcY6AcqygGFb0qD2gR0nAC/AQEKq83vASNFAAAAAAHH2KiK7FLG3KYkpxzuTgjYRxEhUD0mjYyYsBMIg37HdgYBAgMCEwIjBkACVgIMAQQCBBEEEwcVECECIwU0AkIFVg5XGYABAn8AfwF/EX+AgL/WBn8AfwcAAg8AAAIPAQADDgAAAn4AAg0BfgdkZWxldGVkBHRleHQADxEAfhFwDwECD34BBA8BfgEAAxZ/JgcWAjZ+RjZDYWbDqSAmYW1wOyDml6XmnKzwn5iA77u/EQAAMkBjN2Q4YTg4YWVjNTJjNmRjYTYyNGE3MWNlZTRlMDhkODQ3MTEyMTUwM2QyNjhkOGM5OGIwMTMwODgzN2VjNzc2QkBjN2Q4YTg4YWVjNTJjNmRjYTYyNGE3MWNlZTRlMDhkODQ3MTEyMTUwM2QyNjhkOGM5OGIwMTMwODgzN2VjNzc2WkUKQGM3ZDhhODhhZWM1MmM2ZGNhNjI0YTcxY2VlNGUwOGQ4NDcxMTIxNTAzZDI2OGQ4Yzk4YjAxMzA4ODM3ZWM3NzYQ6Ac="
+        }
+      ],
+      "parentReports": [
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx",
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00"
+      ],
+      "appendReports": [
+        [
+          "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 1000,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "c7d8a88aec52c6dca624a71cee4e08d8471121503d268d8c98b01308837ec776",
+          "1993ae0ff71b15b6d20079603fed778eca721a54c92bcb9e0b1afc3cb8ac2121",
+          "c7d8a88aec52c6dca624a71cee4e08d8471121503d268d8c98b01308837ec776"
+        ]
+      },
+      "wireSha256": "33d59332acedcdb453583aea77591f41538135cf655bb8ba8bfa34256ae1727e"
+    },
+    {
+      "ordinal": 18,
+      "mode": "retained-positive",
+      "corpus": "unicode",
+      "layout": "empty-final-following",
+      "revisit": "correction",
+      "schedule": "parent-before-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00",
+          "canonicalField38": "CglwYXJhZ3JhcGgQ6AcY6AcqygGFb0qD2gR0nAC/AQEKq83vASNFAAAAAAHH2KiK7FLG3KYkpxzuTgjYRxEhUD0mjYyYsBMIg37HdgYBAgMCEwIjBkACVgIMAQQCBBEEEwcVECECIwU0AkIFVg5XGYABAn8AfwF/EX+AgL/WBn8AfwcAAg8AAAIPAQADDgAAAn4AAg0BfgdkZWxldGVkBHRleHQADxEAfhFwDwECD34BBA8BfgEAAxZ/JgcWAjZ+RjZDYWbDqSAmYW1wOyDml6XmnKzwn5iA77u/EQAAMkBjN2Q4YTg4YWVjNTJjNmRjYTYyNGE3MWNlZTRlMDhkODQ3MTEyMTUwM2QyNjhkOGM5OGIwMTMwODgzN2VjNzc2QkBjN2Q4YTg4YWVjNTJjNmRjYTYyNGE3MWNlZTRlMDhkODQ3MTEyMTUwM2QyNjhkOGM5OGIwMTMwODgzN2VjNzc2WkUKQGM3ZDhhODhhZWM1MmM2ZGNhNjI0YTcxY2VlNGUwOGQ4NDcxMTIxNTAzZDI2OGQ4Yzk4YjAxMzA4ODM3ZWM3NzYQ6Ac="
+        },
+        {
+          "id": "following",
+          "rtml": "",
+          "canonicalField38": "Cglmb2xsb3dpbmcQ6AcY6AcqnwGFb0qDwGyrhgCUAQEKq83vASNFAAAAAAGTfiepGKGT7CL/56VVOvevlByZZEmcUkVIRfUY0fLXfAYBAgMCEwIjBkACVgILAQQCBBMEFRAhAiMENAJCBFYEVwOAAQJ/AH8BfwN/gIC/1gZ/AH8HAAJ/AAACfwEAAn8AfgdkZWxldGVkBHRleHQAAQMAfQN+AQIBfQEEAX0BADbvu78DAAAyQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NCQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NaRQpAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3YxDoBw=="
+        }
+      ],
+      "parentReports": [
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx",
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draft",
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 revised"
+      ],
+      "appendReports": [
+        [
+          "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 3,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 revisedraft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 4,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 revised\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 1000,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "c7d8a88aec52c6dca624a71cee4e08d8471121503d268d8c98b01308837ec776",
+          "8b5e7f3b6cc0f9ed800fd2f01897a3c5be2b6d1f88989c6ec8743240841dc828",
+          "c7d8a88aec52c6dca624a71cee4e08d8471121503d268d8c98b01308837ec776"
+        ]
+      },
+      "wireSha256": "59bb0fca9fd285786eeba0f53c8c4a1f7ad0064e87d6c8a7f6a58d1d95c16e08"
+    },
+    {
+      "ordinal": 19,
+      "mode": "retained-positive",
+      "corpus": "unicode",
+      "layout": "empty-final-following",
+      "revisit": "correction",
+      "schedule": "parent-after-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00",
+          "canonicalField38": "CglwYXJhZ3JhcGgQ6AcY6AcqygGFb0qD2gR0nAC/AQEKq83vASNFAAAAAAHH2KiK7FLG3KYkpxzuTgjYRxEhUD0mjYyYsBMIg37HdgYBAgMCEwIjBkACVgIMAQQCBBEEEwcVECECIwU0AkIFVg5XGYABAn8AfwF/EX+AgL/WBn8AfwcAAg8AAAIPAQADDgAAAn4AAg0BfgdkZWxldGVkBHRleHQADxEAfhFwDwECD34BBA8BfgEAAxZ/JgcWAjZ+RjZDYWbDqSAmYW1wOyDml6XmnKzwn5iA77u/EQAAMkBjN2Q4YTg4YWVjNTJjNmRjYTYyNGE3MWNlZTRlMDhkODQ3MTEyMTUwM2QyNjhkOGM5OGIwMTMwODgzN2VjNzc2QkBjN2Q4YTg4YWVjNTJjNmRjYTYyNGE3MWNlZTRlMDhkODQ3MTEyMTUwM2QyNjhkOGM5OGIwMTMwODgzN2VjNzc2WkUKQGM3ZDhhODhhZWM1MmM2ZGNhNjI0YTcxY2VlNGUwOGQ4NDcxMTIxNTAzZDI2OGQ4Yzk4YjAxMzA4ODM3ZWM3NzYQ6Ac="
+        },
+        {
+          "id": "following",
+          "rtml": "",
+          "canonicalField38": "Cglmb2xsb3dpbmcQ6AcY6AcqnwGFb0qDwGyrhgCUAQEKq83vASNFAAAAAAGTfiepGKGT7CL/56VVOvevlByZZEmcUkVIRfUY0fLXfAYBAgMCEwIjBkACVgILAQQCBBMEFRAhAiMENAJCBFYEVwOAAQJ/AH8BfwN/gIC/1gZ/AH8HAAJ/AAACfwEAAn8AfgdkZWxldGVkBHRleHQAAQMAfQN+AQIBfQEEAX0BADbvu78DAAAyQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NCQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NaRQpAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3YxDoBw=="
+        }
+      ],
+      "parentReports": [
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx",
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draft",
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 revised"
+      ],
+      "appendReports": [
+        [
+          "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 3,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 revisedraft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 4,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 revised\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 1000,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "c7d8a88aec52c6dca624a71cee4e08d8471121503d268d8c98b01308837ec776",
+          "8b5e7f3b6cc0f9ed800fd2f01897a3c5be2b6d1f88989c6ec8743240841dc828",
+          "c7d8a88aec52c6dca624a71cee4e08d8471121503d268d8c98b01308837ec776"
+        ]
+      },
+      "wireSha256": "59bb0fca9fd285786eeba0f53c8c4a1f7ad0064e87d6c8a7f6a58d1d95c16e08"
+    },
+    {
+      "ordinal": 20,
+      "mode": "retained-positive",
+      "corpus": "unicode",
+      "layout": "empty-final-following",
+      "revisit": "erase",
+      "schedule": "parent-before-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00",
+          "canonicalField38": "CglwYXJhZ3JhcGgQ6AcY6AcqygGFb0qD2gR0nAC/AQEKq83vASNFAAAAAAHH2KiK7FLG3KYkpxzuTgjYRxEhUD0mjYyYsBMIg37HdgYBAgMCEwIjBkACVgIMAQQCBBEEEwcVECECIwU0AkIFVg5XGYABAn8AfwF/EX+AgL/WBn8AfwcAAg8AAAIPAQADDgAAAn4AAg0BfgdkZWxldGVkBHRleHQADxEAfhFwDwECD34BBA8BfgEAAxZ/JgcWAjZ+RjZDYWbDqSAmYW1wOyDml6XmnKzwn5iA77u/EQAAMkBjN2Q4YTg4YWVjNTJjNmRjYTYyNGE3MWNlZTRlMDhkODQ3MTEyMTUwM2QyNjhkOGM5OGIwMTMwODgzN2VjNzc2QkBjN2Q4YTg4YWVjNTJjNmRjYTYyNGE3MWNlZTRlMDhkODQ3MTEyMTUwM2QyNjhkOGM5OGIwMTMwODgzN2VjNzc2WkUKQGM3ZDhhODhhZWM1MmM2ZGNhNjI0YTcxY2VlNGUwOGQ4NDcxMTIxNTAzZDI2OGQ4Yzk4YjAxMzA4ODM3ZWM3NzYQ6Ac="
+        },
+        {
+          "id": "following",
+          "rtml": "",
+          "canonicalField38": "Cglmb2xsb3dpbmcQ6AcY6AcqnwGFb0qDwGyrhgCUAQEKq83vASNFAAAAAAGTfiepGKGT7CL/56VVOvevlByZZEmcUkVIRfUY0fLXfAYBAgMCEwIjBkACVgILAQQCBBMEFRAhAiMENAJCBFYEVwOAAQJ/AH8BfwN/gIC/1gZ/AH8HAAJ/AAACfwEAAn8AfgdkZWxldGVkBHRleHQAAQMAfQN+AQIBfQEEAX0BADbvu78DAAAyQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NCQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NaRQpAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3YxDoBw=="
+        }
+      ],
+      "parentReports": [
+        ""
+      ],
+      "appendReports": [
+        [
+          "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 1000,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "c7d8a88aec52c6dca624a71cee4e08d8471121503d268d8c98b01308837ec776",
+          "b7d373ac4570f72e192953d60ceebcea08254b5033eca2b4bc5ff16c77fdc3c1",
+          "c7d8a88aec52c6dca624a71cee4e08d8471121503d268d8c98b01308837ec776"
+        ]
+      },
+      "wireSha256": "cf249cbe349a392cb615140aeae0f15efcf4d0571def906431749b7e553bf3b7"
+    },
+    {
+      "ordinal": 21,
+      "mode": "retained-positive",
+      "corpus": "unicode",
+      "layout": "empty-final-following",
+      "revisit": "erase",
+      "schedule": "parent-after-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00",
+          "canonicalField38": "CglwYXJhZ3JhcGgQ6AcY6AcqygGFb0qD2gR0nAC/AQEKq83vASNFAAAAAAHH2KiK7FLG3KYkpxzuTgjYRxEhUD0mjYyYsBMIg37HdgYBAgMCEwIjBkACVgIMAQQCBBEEEwcVECECIwU0AkIFVg5XGYABAn8AfwF/EX+AgL/WBn8AfwcAAg8AAAIPAQADDgAAAn4AAg0BfgdkZWxldGVkBHRleHQADxEAfhFwDwECD34BBA8BfgEAAxZ/JgcWAjZ+RjZDYWbDqSAmYW1wOyDml6XmnKzwn5iA77u/EQAAMkBjN2Q4YTg4YWVjNTJjNmRjYTYyNGE3MWNlZTRlMDhkODQ3MTEyMTUwM2QyNjhkOGM5OGIwMTMwODgzN2VjNzc2QkBjN2Q4YTg4YWVjNTJjNmRjYTYyNGE3MWNlZTRlMDhkODQ3MTEyMTUwM2QyNjhkOGM5OGIwMTMwODgzN2VjNzc2WkUKQGM3ZDhhODhhZWM1MmM2ZGNhNjI0YTcxY2VlNGUwOGQ4NDcxMTIxNTAzZDI2OGQ4Yzk4YjAxMzA4ODM3ZWM3NzYQ6Ac="
+        },
+        {
+          "id": "following",
+          "rtml": "",
+          "canonicalField38": "Cglmb2xsb3dpbmcQ6AcY6AcqnwGFb0qDwGyrhgCUAQEKq83vASNFAAAAAAGTfiepGKGT7CL/56VVOvevlByZZEmcUkVIRfUY0fLXfAYBAgMCEwIjBkACVgILAQQCBBMEFRAhAiMENAJCBFYEVwOAAQJ/AH8BfwN/gIC/1gZ/AH8HAAJ/AAACfwEAAn8AfgdkZWxldGVkBHRleHQAAQMAfQN+AQIBfQEEAX0BADbvu78DAAAyQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NCQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NaRQpAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3YxDoBw=="
+        }
+      ],
+      "parentReports": [
+        ""
+      ],
+      "appendReports": [
+        [
+          "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 1000,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "c7d8a88aec52c6dca624a71cee4e08d8471121503d268d8c98b01308837ec776",
+          "b7d373ac4570f72e192953d60ceebcea08254b5033eca2b4bc5ff16c77fdc3c1",
+          "c7d8a88aec52c6dca624a71cee4e08d8471121503d268d8c98b01308837ec776"
+        ]
+      },
+      "wireSha256": "cf249cbe349a392cb615140aeae0f15efcf4d0571def906431749b7e553bf3b7"
+    },
+    {
+      "ordinal": 22,
+      "mode": "retained-positive",
+      "corpus": "unicode",
+      "layout": "empty-final-following",
+      "revisit": "exact-revert",
+      "schedule": "parent-before-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00",
+          "canonicalField38": "CglwYXJhZ3JhcGgQ6AcY6AcqygGFb0qD2gR0nAC/AQEKq83vASNFAAAAAAHH2KiK7FLG3KYkpxzuTgjYRxEhUD0mjYyYsBMIg37HdgYBAgMCEwIjBkACVgIMAQQCBBEEEwcVECECIwU0AkIFVg5XGYABAn8AfwF/EX+AgL/WBn8AfwcAAg8AAAIPAQADDgAAAn4AAg0BfgdkZWxldGVkBHRleHQADxEAfhFwDwECD34BBA8BfgEAAxZ/JgcWAjZ+RjZDYWbDqSAmYW1wOyDml6XmnKzwn5iA77u/EQAAMkBjN2Q4YTg4YWVjNTJjNmRjYTYyNGE3MWNlZTRlMDhkODQ3MTEyMTUwM2QyNjhkOGM5OGIwMTMwODgzN2VjNzc2QkBjN2Q4YTg4YWVjNTJjNmRjYTYyNGE3MWNlZTRlMDhkODQ3MTEyMTUwM2QyNjhkOGM5OGIwMTMwODgzN2VjNzc2WkUKQGM3ZDhhODhhZWM1MmM2ZGNhNjI0YTcxY2VlNGUwOGQ4NDcxMTIxNTAzZDI2OGQ4Yzk4YjAxMzA4ODM3ZWM3NzYQ6Ac="
+        },
+        {
+          "id": "following",
+          "rtml": "",
+          "canonicalField38": "Cglmb2xsb3dpbmcQ6AcY6AcqnwGFb0qDwGyrhgCUAQEKq83vASNFAAAAAAGTfiepGKGT7CL/56VVOvevlByZZEmcUkVIRfUY0fLXfAYBAgMCEwIjBkACVgILAQQCBBMEFRAhAiMENAJCBFYEVwOAAQJ/AH8BfwN/gIC/1gZ/AH8HAAJ/AAACfwEAAn8AfgdkZWxldGVkBHRleHQAAQMAfQN+AQIBfQEEAX0BADbvu78DAAAyQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NCQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NaRQpAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3YxDoBw=="
+        }
+      ],
+      "parentReports": [
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx",
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00"
+      ],
+      "appendReports": [
+        [
+          "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 1000,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "c7d8a88aec52c6dca624a71cee4e08d8471121503d268d8c98b01308837ec776",
+          "1993ae0ff71b15b6d20079603fed778eca721a54c92bcb9e0b1afc3cb8ac2121",
+          "c7d8a88aec52c6dca624a71cee4e08d8471121503d268d8c98b01308837ec776"
+        ]
+      },
+      "wireSha256": "d17767d311beffc9d096edb8932a52b9c58c91ee4cf09501b879df6f03159de0"
+    },
+    {
+      "ordinal": 23,
+      "mode": "retained-positive",
+      "corpus": "unicode",
+      "layout": "empty-final-following",
+      "revisit": "exact-revert",
+      "schedule": "parent-after-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00",
+          "canonicalField38": "CglwYXJhZ3JhcGgQ6AcY6AcqygGFb0qD2gR0nAC/AQEKq83vASNFAAAAAAHH2KiK7FLG3KYkpxzuTgjYRxEhUD0mjYyYsBMIg37HdgYBAgMCEwIjBkACVgIMAQQCBBEEEwcVECECIwU0AkIFVg5XGYABAn8AfwF/EX+AgL/WBn8AfwcAAg8AAAIPAQADDgAAAn4AAg0BfgdkZWxldGVkBHRleHQADxEAfhFwDwECD34BBA8BfgEAAxZ/JgcWAjZ+RjZDYWbDqSAmYW1wOyDml6XmnKzwn5iA77u/EQAAMkBjN2Q4YTg4YWVjNTJjNmRjYTYyNGE3MWNlZTRlMDhkODQ3MTEyMTUwM2QyNjhkOGM5OGIwMTMwODgzN2VjNzc2QkBjN2Q4YTg4YWVjNTJjNmRjYTYyNGE3MWNlZTRlMDhkODQ3MTEyMTUwM2QyNjhkOGM5OGIwMTMwODgzN2VjNzc2WkUKQGM3ZDhhODhhZWM1MmM2ZGNhNjI0YTcxY2VlNGUwOGQ4NDcxMTIxNTAzZDI2OGQ4Yzk4YjAxMzA4ODM3ZWM3NzYQ6Ac="
+        },
+        {
+          "id": "following",
+          "rtml": "",
+          "canonicalField38": "Cglmb2xsb3dpbmcQ6AcY6AcqnwGFb0qDwGyrhgCUAQEKq83vASNFAAAAAAGTfiepGKGT7CL/56VVOvevlByZZEmcUkVIRfUY0fLXfAYBAgMCEwIjBkACVgILAQQCBBMEFRAhAiMENAJCBFYEVwOAAQJ/AH8BfwN/gIC/1gZ/AH8HAAJ/AAACfwEAAn8AfgdkZWxldGVkBHRleHQAAQMAfQN+AQIBfQEEAX0BADbvu78DAAAyQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NCQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NaRQpAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3YxDoBw=="
+        }
+      ],
+      "parentReports": [
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx",
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00"
+      ],
+      "appendReports": [
+        [
+          "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 1000,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "c7d8a88aec52c6dca624a71cee4e08d8471121503d268d8c98b01308837ec776",
+          "1993ae0ff71b15b6d20079603fed778eca721a54c92bcb9e0b1afc3cb8ac2121",
+          "c7d8a88aec52c6dca624a71cee4e08d8471121503d268d8c98b01308837ec776"
+        ]
+      },
+      "wireSha256": "d17767d311beffc9d096edb8932a52b9c58c91ee4cf09501b879df6f03159de0"
+    },
+    {
+      "ordinal": 24,
+      "mode": "retained-zero",
+      "corpus": "ascii",
+      "layout": "no-following",
+      "revisit": "correction",
+      "schedule": "parent-before-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Keep this",
+          "canonicalField38": "CglwYXJhZ3JhcGgQABjoByrEAYVvSoNXaXpnALkBAQqrze8BI0UAAAAAAdi5u0niZQ+kQmqCjbMXS/KGZlIqAfdUcRY1nlof5ksoBwECAwITAyMHQANDAlYCDAEEAgQRBhMJFRAhAiMINAJCBVYHVwyAAQICAAIBfgMJfoCAv9YGAH4AAX8AAgcAAgoAAAIKAQADCAAAAQACfgAEBwF/dX4HZGVsZXRlZAR0ZXh0AAoMAH0DfgMIAX92Agp+AQQKAX4BAAkWfzZLZWVwIHRoaXPvu78MAAEyQGQ4YjliYjQ5ZTI2NTBmYTQ0MjZhODI4ZGIzMTc0YmYyODY2NjUyMmEwMWY3NTQ3MTE2MzU5ZTVhMWZlNjRiMjhCQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NaRQpAZDhiOWJiNDllMjY1MGZhNDQyNmE4MjhkYjMxNzRiZjI4NjY2NTIyYTAxZjc1NDcxMTYzNTllNWExZmU2NGIyOBDoBw=="
+        }
+      ],
+      "parentReports": [
+        "Keep this draftx",
+        "Keep this draft",
+        "Keep this revised"
+      ],
+      "appendReports": [
+        [
+          "New paragraph"
+        ],
+        [
+          "Next paragraph"
+        ],
+        [
+          "Last paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "\ufeff"
+        },
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 2,
+          "text": "Keep this\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Keep this draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Keep this draft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 3,
+          "text": "Keep this revisedraft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 4,
+          "text": "Keep this revised\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 0,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "d8b9bb49e2650fa4426a828db3174bf28666522a01f7547116359e5a1fe64b28",
+          "b1cbb2b01440d41c43812a8fd992d2391d676c2d27d5a5251a8164303e1b6763",
+          "d8b9bb49e2650fa4426a828db3174bf28666522a01f7547116359e5a1fe64b28"
+        ]
+      },
+      "wireSha256": "ffff347bbeef967e95f9ca0f457ea4eebca6f02b5cf91f077d2ef1f8072c391e"
+    },
+    {
+      "ordinal": 25,
+      "mode": "retained-zero",
+      "corpus": "ascii",
+      "layout": "no-following",
+      "revisit": "correction",
+      "schedule": "parent-after-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Keep this",
+          "canonicalField38": "CglwYXJhZ3JhcGgQABjoByrEAYVvSoNXaXpnALkBAQqrze8BI0UAAAAAAdi5u0niZQ+kQmqCjbMXS/KGZlIqAfdUcRY1nlof5ksoBwECAwITAyMHQANDAlYCDAEEAgQRBhMJFRAhAiMINAJCBVYHVwyAAQICAAIBfgMJfoCAv9YGAH4AAX8AAgcAAgoAAAIKAQADCAAAAQACfgAEBwF/dX4HZGVsZXRlZAR0ZXh0AAoMAH0DfgMIAX92Agp+AQQKAX4BAAkWfzZLZWVwIHRoaXPvu78MAAEyQGQ4YjliYjQ5ZTI2NTBmYTQ0MjZhODI4ZGIzMTc0YmYyODY2NjUyMmEwMWY3NTQ3MTE2MzU5ZTVhMWZlNjRiMjhCQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NaRQpAZDhiOWJiNDllMjY1MGZhNDQyNmE4MjhkYjMxNzRiZjI4NjY2NTIyYTAxZjc1NDcxMTYzNTllNWExZmU2NGIyOBDoBw=="
+        }
+      ],
+      "parentReports": [
+        "Keep this draftx",
+        "Keep this draft",
+        "Keep this revised"
+      ],
+      "appendReports": [
+        [
+          "New paragraph"
+        ],
+        [
+          "Next paragraph"
+        ],
+        [
+          "Last paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "\ufeff"
+        },
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 2,
+          "text": "Keep this\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Keep this draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Keep this draft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 3,
+          "text": "Keep this revisedraft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 4,
+          "text": "Keep this revised\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 0,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "d8b9bb49e2650fa4426a828db3174bf28666522a01f7547116359e5a1fe64b28",
+          "b1cbb2b01440d41c43812a8fd992d2391d676c2d27d5a5251a8164303e1b6763",
+          "d8b9bb49e2650fa4426a828db3174bf28666522a01f7547116359e5a1fe64b28"
+        ]
+      },
+      "wireSha256": "ffff347bbeef967e95f9ca0f457ea4eebca6f02b5cf91f077d2ef1f8072c391e"
+    },
+    {
+      "ordinal": 26,
+      "mode": "retained-zero",
+      "corpus": "ascii",
+      "layout": "no-following",
+      "revisit": "erase",
+      "schedule": "parent-before-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Keep this",
+          "canonicalField38": "CglwYXJhZ3JhcGgQABjoByrEAYVvSoNXaXpnALkBAQqrze8BI0UAAAAAAdi5u0niZQ+kQmqCjbMXS/KGZlIqAfdUcRY1nlof5ksoBwECAwITAyMHQANDAlYCDAEEAgQRBhMJFRAhAiMINAJCBVYHVwyAAQICAAIBfgMJfoCAv9YGAH4AAX8AAgcAAgoAAAIKAQADCAAAAQACfgAEBwF/dX4HZGVsZXRlZAR0ZXh0AAoMAH0DfgMIAX92Agp+AQQKAX4BAAkWfzZLZWVwIHRoaXPvu78MAAEyQGQ4YjliYjQ5ZTI2NTBmYTQ0MjZhODI4ZGIzMTc0YmYyODY2NjUyMmEwMWY3NTQ3MTE2MzU5ZTVhMWZlNjRiMjhCQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NaRQpAZDhiOWJiNDllMjY1MGZhNDQyNmE4MjhkYjMxNzRiZjI4NjY2NTIyYTAxZjc1NDcxMTYzNTllNWExZmU2NGIyOBDoBw=="
+        }
+      ],
+      "parentReports": [
+        ""
+      ],
+      "appendReports": [
+        [
+          "New paragraph"
+        ],
+        [
+          "Next paragraph"
+        ],
+        [
+          "Last paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "\ufeff"
+        },
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 2,
+          "text": "Keep this\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 0,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "d8b9bb49e2650fa4426a828db3174bf28666522a01f7547116359e5a1fe64b28",
+          "28c84854c5f1f552daa2d234d22aea98cac48c39af1a845230458397ab8ecfb3",
+          "d8b9bb49e2650fa4426a828db3174bf28666522a01f7547116359e5a1fe64b28"
+        ]
+      },
+      "wireSha256": "c81b52bd3f4f492b46df9810401f97e70f42a272df3c61db762c6f4542a6bf74"
+    },
+    {
+      "ordinal": 27,
+      "mode": "retained-zero",
+      "corpus": "ascii",
+      "layout": "no-following",
+      "revisit": "erase",
+      "schedule": "parent-after-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Keep this",
+          "canonicalField38": "CglwYXJhZ3JhcGgQABjoByrEAYVvSoNXaXpnALkBAQqrze8BI0UAAAAAAdi5u0niZQ+kQmqCjbMXS/KGZlIqAfdUcRY1nlof5ksoBwECAwITAyMHQANDAlYCDAEEAgQRBhMJFRAhAiMINAJCBVYHVwyAAQICAAIBfgMJfoCAv9YGAH4AAX8AAgcAAgoAAAIKAQADCAAAAQACfgAEBwF/dX4HZGVsZXRlZAR0ZXh0AAoMAH0DfgMIAX92Agp+AQQKAX4BAAkWfzZLZWVwIHRoaXPvu78MAAEyQGQ4YjliYjQ5ZTI2NTBmYTQ0MjZhODI4ZGIzMTc0YmYyODY2NjUyMmEwMWY3NTQ3MTE2MzU5ZTVhMWZlNjRiMjhCQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NaRQpAZDhiOWJiNDllMjY1MGZhNDQyNmE4MjhkYjMxNzRiZjI4NjY2NTIyYTAxZjc1NDcxMTYzNTllNWExZmU2NGIyOBDoBw=="
+        }
+      ],
+      "parentReports": [
+        ""
+      ],
+      "appendReports": [
+        [
+          "New paragraph"
+        ],
+        [
+          "Next paragraph"
+        ],
+        [
+          "Last paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "\ufeff"
+        },
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 2,
+          "text": "Keep this\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 0,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "d8b9bb49e2650fa4426a828db3174bf28666522a01f7547116359e5a1fe64b28",
+          "28c84854c5f1f552daa2d234d22aea98cac48c39af1a845230458397ab8ecfb3",
+          "d8b9bb49e2650fa4426a828db3174bf28666522a01f7547116359e5a1fe64b28"
+        ]
+      },
+      "wireSha256": "c81b52bd3f4f492b46df9810401f97e70f42a272df3c61db762c6f4542a6bf74"
+    },
+    {
+      "ordinal": 28,
+      "mode": "retained-zero",
+      "corpus": "ascii",
+      "layout": "no-following",
+      "revisit": "exact-revert",
+      "schedule": "parent-before-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Keep this",
+          "canonicalField38": "CglwYXJhZ3JhcGgQABjoByrEAYVvSoNXaXpnALkBAQqrze8BI0UAAAAAAdi5u0niZQ+kQmqCjbMXS/KGZlIqAfdUcRY1nlof5ksoBwECAwITAyMHQANDAlYCDAEEAgQRBhMJFRAhAiMINAJCBVYHVwyAAQICAAIBfgMJfoCAv9YGAH4AAX8AAgcAAgoAAAIKAQADCAAAAQACfgAEBwF/dX4HZGVsZXRlZAR0ZXh0AAoMAH0DfgMIAX92Agp+AQQKAX4BAAkWfzZLZWVwIHRoaXPvu78MAAEyQGQ4YjliYjQ5ZTI2NTBmYTQ0MjZhODI4ZGIzMTc0YmYyODY2NjUyMmEwMWY3NTQ3MTE2MzU5ZTVhMWZlNjRiMjhCQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NaRQpAZDhiOWJiNDllMjY1MGZhNDQyNmE4MjhkYjMxNzRiZjI4NjY2NTIyYTAxZjc1NDcxMTYzNTllNWExZmU2NGIyOBDoBw=="
+        }
+      ],
+      "parentReports": [
+        "Keep this draftx",
+        "Keep this"
+      ],
+      "appendReports": [
+        [
+          "New paragraph"
+        ],
+        [
+          "Next paragraph"
+        ],
+        [
+          "Last paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "\ufeff"
+        },
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 2,
+          "text": "Keep this\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Keep this draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Keep this\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 0,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "d8b9bb49e2650fa4426a828db3174bf28666522a01f7547116359e5a1fe64b28",
+          "c1b5e85df9842391c74b00f2d175c985b4378aa40e41b7a496860c0102e323bb",
+          "d8b9bb49e2650fa4426a828db3174bf28666522a01f7547116359e5a1fe64b28"
+        ]
+      },
+      "wireSha256": "48298ffa28236fd45a384dc57deb50d755e951b776be5aa3ee9910b31b6d59bb"
+    },
+    {
+      "ordinal": 29,
+      "mode": "retained-zero",
+      "corpus": "ascii",
+      "layout": "no-following",
+      "revisit": "exact-revert",
+      "schedule": "parent-after-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Keep this",
+          "canonicalField38": "CglwYXJhZ3JhcGgQABjoByrEAYVvSoNXaXpnALkBAQqrze8BI0UAAAAAAdi5u0niZQ+kQmqCjbMXS/KGZlIqAfdUcRY1nlof5ksoBwECAwITAyMHQANDAlYCDAEEAgQRBhMJFRAhAiMINAJCBVYHVwyAAQICAAIBfgMJfoCAv9YGAH4AAX8AAgcAAgoAAAIKAQADCAAAAQACfgAEBwF/dX4HZGVsZXRlZAR0ZXh0AAoMAH0DfgMIAX92Agp+AQQKAX4BAAkWfzZLZWVwIHRoaXPvu78MAAEyQGQ4YjliYjQ5ZTI2NTBmYTQ0MjZhODI4ZGIzMTc0YmYyODY2NjUyMmEwMWY3NTQ3MTE2MzU5ZTVhMWZlNjRiMjhCQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NaRQpAZDhiOWJiNDllMjY1MGZhNDQyNmE4MjhkYjMxNzRiZjI4NjY2NTIyYTAxZjc1NDcxMTYzNTllNWExZmU2NGIyOBDoBw=="
+        }
+      ],
+      "parentReports": [
+        "Keep this draftx",
+        "Keep this"
+      ],
+      "appendReports": [
+        [
+          "New paragraph"
+        ],
+        [
+          "Next paragraph"
+        ],
+        [
+          "Last paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "\ufeff"
+        },
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 2,
+          "text": "Keep this\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Keep this draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Keep this\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 0,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "d8b9bb49e2650fa4426a828db3174bf28666522a01f7547116359e5a1fe64b28",
+          "c1b5e85df9842391c74b00f2d175c985b4378aa40e41b7a496860c0102e323bb",
+          "d8b9bb49e2650fa4426a828db3174bf28666522a01f7547116359e5a1fe64b28"
+        ]
+      },
+      "wireSha256": "48298ffa28236fd45a384dc57deb50d755e951b776be5aa3ee9910b31b6d59bb"
+    },
+    {
+      "ordinal": 30,
+      "mode": "retained-zero",
+      "corpus": "ascii",
+      "layout": "empty-final-following",
+      "revisit": "correction",
+      "schedule": "parent-before-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Keep this",
+          "canonicalField38": "CglwYXJhZ3JhcGgQABjoByrEAYVvSoNXaXpnALkBAQqrze8BI0UAAAAAAdi5u0niZQ+kQmqCjbMXS/KGZlIqAfdUcRY1nlof5ksoBwECAwITAyMHQANDAlYCDAEEAgQRBhMJFRAhAiMINAJCBVYHVwyAAQICAAIBfgMJfoCAv9YGAH4AAX8AAgcAAgoAAAIKAQADCAAAAQACfgAEBwF/dX4HZGVsZXRlZAR0ZXh0AAoMAH0DfgMIAX92Agp+AQQKAX4BAAkWfzZLZWVwIHRoaXPvu78MAAEyQGQ4YjliYjQ5ZTI2NTBmYTQ0MjZhODI4ZGIzMTc0YmYyODY2NjUyMmEwMWY3NTQ3MTE2MzU5ZTVhMWZlNjRiMjhCQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NaRQpAZDhiOWJiNDllMjY1MGZhNDQyNmE4MjhkYjMxNzRiZjI4NjY2NTIyYTAxZjc1NDcxMTYzNTllNWExZmU2NGIyOBDoBw=="
+        },
+        {
+          "id": "following",
+          "rtml": "",
+          "canonicalField38": "Cglmb2xsb3dpbmcQABjoByqfAYVvSoPAbKuGAJQBAQqrze8BI0UAAAAAAZN+J6kYoZPsIv/npVU696+UHJlkSZxSRUhF9RjR8td8BgECAwITAiMGQAJWAgsBBAIEEwQVECECIwQ0AkIEVgRXA4ABAn8AfwF/A3+AgL/WBn8AfwcAAn8AAAJ/AQACfwB+B2RlbGV0ZWQEdGV4dAABAwB9A34BAgF9AQQBfQEANu+7vwMAADJAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y0JAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y1pFCkA5MzdlMjdhOTE4YTE5M2VjMjJmZmU3YTU1NTNhZjdhZjk0MWM5OTY0NDk5YzUyNDU0ODQ1ZjUxOGQxZjJkNzdjEOgH"
+        }
+      ],
+      "parentReports": [
+        "Keep this draftx",
+        "Keep this draft",
+        "Keep this revised"
+      ],
+      "appendReports": [
+        [
+          "New paragraph"
+        ],
+        [
+          "Next paragraph"
+        ],
+        [
+          "Last paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "\ufeff"
+        },
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 2,
+          "text": "Keep this\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Keep this draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Keep this draft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 3,
+          "text": "Keep this revisedraft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 4,
+          "text": "Keep this revised\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 0,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "d8b9bb49e2650fa4426a828db3174bf28666522a01f7547116359e5a1fe64b28",
+          "b1cbb2b01440d41c43812a8fd992d2391d676c2d27d5a5251a8164303e1b6763",
+          "d8b9bb49e2650fa4426a828db3174bf28666522a01f7547116359e5a1fe64b28"
+        ]
+      },
+      "wireSha256": "17a0c2151ee5977f96e723abcb5cb1d64bb3a91ec6baa396e300fe7a8c6bd33b"
+    },
+    {
+      "ordinal": 31,
+      "mode": "retained-zero",
+      "corpus": "ascii",
+      "layout": "empty-final-following",
+      "revisit": "correction",
+      "schedule": "parent-after-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Keep this",
+          "canonicalField38": "CglwYXJhZ3JhcGgQABjoByrEAYVvSoNXaXpnALkBAQqrze8BI0UAAAAAAdi5u0niZQ+kQmqCjbMXS/KGZlIqAfdUcRY1nlof5ksoBwECAwITAyMHQANDAlYCDAEEAgQRBhMJFRAhAiMINAJCBVYHVwyAAQICAAIBfgMJfoCAv9YGAH4AAX8AAgcAAgoAAAIKAQADCAAAAQACfgAEBwF/dX4HZGVsZXRlZAR0ZXh0AAoMAH0DfgMIAX92Agp+AQQKAX4BAAkWfzZLZWVwIHRoaXPvu78MAAEyQGQ4YjliYjQ5ZTI2NTBmYTQ0MjZhODI4ZGIzMTc0YmYyODY2NjUyMmEwMWY3NTQ3MTE2MzU5ZTVhMWZlNjRiMjhCQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NaRQpAZDhiOWJiNDllMjY1MGZhNDQyNmE4MjhkYjMxNzRiZjI4NjY2NTIyYTAxZjc1NDcxMTYzNTllNWExZmU2NGIyOBDoBw=="
+        },
+        {
+          "id": "following",
+          "rtml": "",
+          "canonicalField38": "Cglmb2xsb3dpbmcQABjoByqfAYVvSoPAbKuGAJQBAQqrze8BI0UAAAAAAZN+J6kYoZPsIv/npVU696+UHJlkSZxSRUhF9RjR8td8BgECAwITAiMGQAJWAgsBBAIEEwQVECECIwQ0AkIEVgRXA4ABAn8AfwF/A3+AgL/WBn8AfwcAAn8AAAJ/AQACfwB+B2RlbGV0ZWQEdGV4dAABAwB9A34BAgF9AQQBfQEANu+7vwMAADJAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y0JAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y1pFCkA5MzdlMjdhOTE4YTE5M2VjMjJmZmU3YTU1NTNhZjdhZjk0MWM5OTY0NDk5YzUyNDU0ODQ1ZjUxOGQxZjJkNzdjEOgH"
+        }
+      ],
+      "parentReports": [
+        "Keep this draftx",
+        "Keep this draft",
+        "Keep this revised"
+      ],
+      "appendReports": [
+        [
+          "New paragraph"
+        ],
+        [
+          "Next paragraph"
+        ],
+        [
+          "Last paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "\ufeff"
+        },
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 2,
+          "text": "Keep this\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Keep this draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Keep this draft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 3,
+          "text": "Keep this revisedraft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 4,
+          "text": "Keep this revised\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 0,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "d8b9bb49e2650fa4426a828db3174bf28666522a01f7547116359e5a1fe64b28",
+          "b1cbb2b01440d41c43812a8fd992d2391d676c2d27d5a5251a8164303e1b6763",
+          "d8b9bb49e2650fa4426a828db3174bf28666522a01f7547116359e5a1fe64b28"
+        ]
+      },
+      "wireSha256": "17a0c2151ee5977f96e723abcb5cb1d64bb3a91ec6baa396e300fe7a8c6bd33b"
+    },
+    {
+      "ordinal": 32,
+      "mode": "retained-zero",
+      "corpus": "ascii",
+      "layout": "empty-final-following",
+      "revisit": "erase",
+      "schedule": "parent-before-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Keep this",
+          "canonicalField38": "CglwYXJhZ3JhcGgQABjoByrEAYVvSoNXaXpnALkBAQqrze8BI0UAAAAAAdi5u0niZQ+kQmqCjbMXS/KGZlIqAfdUcRY1nlof5ksoBwECAwITAyMHQANDAlYCDAEEAgQRBhMJFRAhAiMINAJCBVYHVwyAAQICAAIBfgMJfoCAv9YGAH4AAX8AAgcAAgoAAAIKAQADCAAAAQACfgAEBwF/dX4HZGVsZXRlZAR0ZXh0AAoMAH0DfgMIAX92Agp+AQQKAX4BAAkWfzZLZWVwIHRoaXPvu78MAAEyQGQ4YjliYjQ5ZTI2NTBmYTQ0MjZhODI4ZGIzMTc0YmYyODY2NjUyMmEwMWY3NTQ3MTE2MzU5ZTVhMWZlNjRiMjhCQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NaRQpAZDhiOWJiNDllMjY1MGZhNDQyNmE4MjhkYjMxNzRiZjI4NjY2NTIyYTAxZjc1NDcxMTYzNTllNWExZmU2NGIyOBDoBw=="
+        },
+        {
+          "id": "following",
+          "rtml": "",
+          "canonicalField38": "Cglmb2xsb3dpbmcQABjoByqfAYVvSoPAbKuGAJQBAQqrze8BI0UAAAAAAZN+J6kYoZPsIv/npVU696+UHJlkSZxSRUhF9RjR8td8BgECAwITAiMGQAJWAgsBBAIEEwQVECECIwQ0AkIEVgRXA4ABAn8AfwF/A3+AgL/WBn8AfwcAAn8AAAJ/AQACfwB+B2RlbGV0ZWQEdGV4dAABAwB9A34BAgF9AQQBfQEANu+7vwMAADJAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y0JAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y1pFCkA5MzdlMjdhOTE4YTE5M2VjMjJmZmU3YTU1NTNhZjdhZjk0MWM5OTY0NDk5YzUyNDU0ODQ1ZjUxOGQxZjJkNzdjEOgH"
+        }
+      ],
+      "parentReports": [
+        ""
+      ],
+      "appendReports": [
+        [
+          "New paragraph"
+        ],
+        [
+          "Next paragraph"
+        ],
+        [
+          "Last paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "\ufeff"
+        },
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 2,
+          "text": "Keep this\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 0,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "d8b9bb49e2650fa4426a828db3174bf28666522a01f7547116359e5a1fe64b28",
+          "28c84854c5f1f552daa2d234d22aea98cac48c39af1a845230458397ab8ecfb3",
+          "d8b9bb49e2650fa4426a828db3174bf28666522a01f7547116359e5a1fe64b28"
+        ]
+      },
+      "wireSha256": "b33b164e1907b26686a9a789c50199005aa89a997e70f20d908a405874829a53"
+    },
+    {
+      "ordinal": 33,
+      "mode": "retained-zero",
+      "corpus": "ascii",
+      "layout": "empty-final-following",
+      "revisit": "erase",
+      "schedule": "parent-after-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Keep this",
+          "canonicalField38": "CglwYXJhZ3JhcGgQABjoByrEAYVvSoNXaXpnALkBAQqrze8BI0UAAAAAAdi5u0niZQ+kQmqCjbMXS/KGZlIqAfdUcRY1nlof5ksoBwECAwITAyMHQANDAlYCDAEEAgQRBhMJFRAhAiMINAJCBVYHVwyAAQICAAIBfgMJfoCAv9YGAH4AAX8AAgcAAgoAAAIKAQADCAAAAQACfgAEBwF/dX4HZGVsZXRlZAR0ZXh0AAoMAH0DfgMIAX92Agp+AQQKAX4BAAkWfzZLZWVwIHRoaXPvu78MAAEyQGQ4YjliYjQ5ZTI2NTBmYTQ0MjZhODI4ZGIzMTc0YmYyODY2NjUyMmEwMWY3NTQ3MTE2MzU5ZTVhMWZlNjRiMjhCQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NaRQpAZDhiOWJiNDllMjY1MGZhNDQyNmE4MjhkYjMxNzRiZjI4NjY2NTIyYTAxZjc1NDcxMTYzNTllNWExZmU2NGIyOBDoBw=="
+        },
+        {
+          "id": "following",
+          "rtml": "",
+          "canonicalField38": "Cglmb2xsb3dpbmcQABjoByqfAYVvSoPAbKuGAJQBAQqrze8BI0UAAAAAAZN+J6kYoZPsIv/npVU696+UHJlkSZxSRUhF9RjR8td8BgECAwITAiMGQAJWAgsBBAIEEwQVECECIwQ0AkIEVgRXA4ABAn8AfwF/A3+AgL/WBn8AfwcAAn8AAAJ/AQACfwB+B2RlbGV0ZWQEdGV4dAABAwB9A34BAgF9AQQBfQEANu+7vwMAADJAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y0JAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y1pFCkA5MzdlMjdhOTE4YTE5M2VjMjJmZmU3YTU1NTNhZjdhZjk0MWM5OTY0NDk5YzUyNDU0ODQ1ZjUxOGQxZjJkNzdjEOgH"
+        }
+      ],
+      "parentReports": [
+        ""
+      ],
+      "appendReports": [
+        [
+          "New paragraph"
+        ],
+        [
+          "Next paragraph"
+        ],
+        [
+          "Last paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "\ufeff"
+        },
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 2,
+          "text": "Keep this\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 0,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "d8b9bb49e2650fa4426a828db3174bf28666522a01f7547116359e5a1fe64b28",
+          "28c84854c5f1f552daa2d234d22aea98cac48c39af1a845230458397ab8ecfb3",
+          "d8b9bb49e2650fa4426a828db3174bf28666522a01f7547116359e5a1fe64b28"
+        ]
+      },
+      "wireSha256": "b33b164e1907b26686a9a789c50199005aa89a997e70f20d908a405874829a53"
+    },
+    {
+      "ordinal": 34,
+      "mode": "retained-zero",
+      "corpus": "ascii",
+      "layout": "empty-final-following",
+      "revisit": "exact-revert",
+      "schedule": "parent-before-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Keep this",
+          "canonicalField38": "CglwYXJhZ3JhcGgQABjoByrEAYVvSoNXaXpnALkBAQqrze8BI0UAAAAAAdi5u0niZQ+kQmqCjbMXS/KGZlIqAfdUcRY1nlof5ksoBwECAwITAyMHQANDAlYCDAEEAgQRBhMJFRAhAiMINAJCBVYHVwyAAQICAAIBfgMJfoCAv9YGAH4AAX8AAgcAAgoAAAIKAQADCAAAAQACfgAEBwF/dX4HZGVsZXRlZAR0ZXh0AAoMAH0DfgMIAX92Agp+AQQKAX4BAAkWfzZLZWVwIHRoaXPvu78MAAEyQGQ4YjliYjQ5ZTI2NTBmYTQ0MjZhODI4ZGIzMTc0YmYyODY2NjUyMmEwMWY3NTQ3MTE2MzU5ZTVhMWZlNjRiMjhCQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NaRQpAZDhiOWJiNDllMjY1MGZhNDQyNmE4MjhkYjMxNzRiZjI4NjY2NTIyYTAxZjc1NDcxMTYzNTllNWExZmU2NGIyOBDoBw=="
+        },
+        {
+          "id": "following",
+          "rtml": "",
+          "canonicalField38": "Cglmb2xsb3dpbmcQABjoByqfAYVvSoPAbKuGAJQBAQqrze8BI0UAAAAAAZN+J6kYoZPsIv/npVU696+UHJlkSZxSRUhF9RjR8td8BgECAwITAiMGQAJWAgsBBAIEEwQVECECIwQ0AkIEVgRXA4ABAn8AfwF/A3+AgL/WBn8AfwcAAn8AAAJ/AQACfwB+B2RlbGV0ZWQEdGV4dAABAwB9A34BAgF9AQQBfQEANu+7vwMAADJAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y0JAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y1pFCkA5MzdlMjdhOTE4YTE5M2VjMjJmZmU3YTU1NTNhZjdhZjk0MWM5OTY0NDk5YzUyNDU0ODQ1ZjUxOGQxZjJkNzdjEOgH"
+        }
+      ],
+      "parentReports": [
+        "Keep this draftx",
+        "Keep this"
+      ],
+      "appendReports": [
+        [
+          "New paragraph"
+        ],
+        [
+          "Next paragraph"
+        ],
+        [
+          "Last paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "\ufeff"
+        },
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 2,
+          "text": "Keep this\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Keep this draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Keep this\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 0,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "d8b9bb49e2650fa4426a828db3174bf28666522a01f7547116359e5a1fe64b28",
+          "c1b5e85df9842391c74b00f2d175c985b4378aa40e41b7a496860c0102e323bb",
+          "d8b9bb49e2650fa4426a828db3174bf28666522a01f7547116359e5a1fe64b28"
+        ]
+      },
+      "wireSha256": "3b630a345e3cb4baa478ab8a768f5bb23226f86723ae4bc5a6c5f8fe558e9f51"
+    },
+    {
+      "ordinal": 35,
+      "mode": "retained-zero",
+      "corpus": "ascii",
+      "layout": "empty-final-following",
+      "revisit": "exact-revert",
+      "schedule": "parent-after-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Keep this",
+          "canonicalField38": "CglwYXJhZ3JhcGgQABjoByrEAYVvSoNXaXpnALkBAQqrze8BI0UAAAAAAdi5u0niZQ+kQmqCjbMXS/KGZlIqAfdUcRY1nlof5ksoBwECAwITAyMHQANDAlYCDAEEAgQRBhMJFRAhAiMINAJCBVYHVwyAAQICAAIBfgMJfoCAv9YGAH4AAX8AAgcAAgoAAAIKAQADCAAAAQACfgAEBwF/dX4HZGVsZXRlZAR0ZXh0AAoMAH0DfgMIAX92Agp+AQQKAX4BAAkWfzZLZWVwIHRoaXPvu78MAAEyQGQ4YjliYjQ5ZTI2NTBmYTQ0MjZhODI4ZGIzMTc0YmYyODY2NjUyMmEwMWY3NTQ3MTE2MzU5ZTVhMWZlNjRiMjhCQDkzN2UyN2E5MThhMTkzZWMyMmZmZTdhNTU1M2FmN2FmOTQxYzk5NjQ0OTljNTI0NTQ4NDVmNTE4ZDFmMmQ3N2NaRQpAZDhiOWJiNDllMjY1MGZhNDQyNmE4MjhkYjMxNzRiZjI4NjY2NTIyYTAxZjc1NDcxMTYzNTllNWExZmU2NGIyOBDoBw=="
+        },
+        {
+          "id": "following",
+          "rtml": "",
+          "canonicalField38": "Cglmb2xsb3dpbmcQABjoByqfAYVvSoPAbKuGAJQBAQqrze8BI0UAAAAAAZN+J6kYoZPsIv/npVU696+UHJlkSZxSRUhF9RjR8td8BgECAwITAiMGQAJWAgsBBAIEEwQVECECIwQ0AkIEVgRXA4ABAn8AfwF/A3+AgL/WBn8AfwcAAn8AAAJ/AQACfwB+B2RlbGV0ZWQEdGV4dAABAwB9A34BAgF9AQQBfQEANu+7vwMAADJAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y0JAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y1pFCkA5MzdlMjdhOTE4YTE5M2VjMjJmZmU3YTU1NTNhZjdhZjk0MWM5OTY0NDk5YzUyNDU0ODQ1ZjUxOGQxZjJkNzdjEOgH"
+        }
+      ],
+      "parentReports": [
+        "Keep this draftx",
+        "Keep this"
+      ],
+      "appendReports": [
+        [
+          "New paragraph"
+        ],
+        [
+          "Next paragraph"
+        ],
+        [
+          "Last paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "\ufeff"
+        },
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 2,
+          "text": "Keep this\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Keep this draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Keep this\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 0,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "d8b9bb49e2650fa4426a828db3174bf28666522a01f7547116359e5a1fe64b28",
+          "c1b5e85df9842391c74b00f2d175c985b4378aa40e41b7a496860c0102e323bb",
+          "d8b9bb49e2650fa4426a828db3174bf28666522a01f7547116359e5a1fe64b28"
+        ]
+      },
+      "wireSha256": "3b630a345e3cb4baa478ab8a768f5bb23226f86723ae4bc5a6c5f8fe558e9f51"
+    },
+    {
+      "ordinal": 36,
+      "mode": "retained-zero",
+      "corpus": "unicode",
+      "layout": "no-following",
+      "revisit": "correction",
+      "schedule": "parent-before-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00",
+          "canonicalField38": "CglwYXJhZ3JhcGgQABjoByrYAYVvSoNS+n7SAM0BAQqrze8BI0UAAAAAAfAuxa8oAWf764Kg7o3DXZ+gpMHd/gtyfarFXlr2J6BkBwECAwITAyMHQANDAlYCDAEEAgQRBhMJFRAhAiMINAJCBVYOVxmAAQICAAIBfgMOfoCAv9YGAH4AAX8AAgcAAg8AAAIPAQADDQAAAQACfgAEDAF/cH4HZGVsZXRlZAR0ZXh0AA8RAH0DfgMNAX9xAg9+AQQPAX4BAAMWfyYHFgI2fkY2Q2Fmw6kgJmFtcDsg5pel5pys8J+YgO+7vxEAATJAZjAyZWM1YWYyODAxNjdmYmViODJhMGVlOGRjMzVkOWZhMGE0YzFkZGZlMGI3MjdkYWFjNTVlNWFmNjI3YTA2NEJAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y1pFCkBmMDJlYzVhZjI4MDE2N2ZiZWI4MmEwZWU4ZGMzNWQ5ZmEwYTRjMWRkZmUwYjcyN2RhYWM1NWU1YWY2MjdhMDY0EOgH"
+        }
+      ],
+      "parentReports": [
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx",
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draft",
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 revised"
+      ],
+      "appendReports": [
+        [
+          "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "\ufeff"
+        },
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 2,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 3,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 revisedraft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 4,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 revised\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 0,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "f02ec5af280167fbeb82a0ee8dc35d9fa0a4c1ddfe0b727daac55e5af627a064",
+          "d9753003d361def4886aa6b7c47b195127f75b42eb168a78980e5709b06cd87b",
+          "f02ec5af280167fbeb82a0ee8dc35d9fa0a4c1ddfe0b727daac55e5af627a064"
+        ]
+      },
+      "wireSha256": "bbaa7750f4a1b7148a4d2f4fd33d462b25cba8ab6a2cbcd6866a35066ac5d8b2"
+    },
+    {
+      "ordinal": 37,
+      "mode": "retained-zero",
+      "corpus": "unicode",
+      "layout": "no-following",
+      "revisit": "correction",
+      "schedule": "parent-after-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00",
+          "canonicalField38": "CglwYXJhZ3JhcGgQABjoByrYAYVvSoNS+n7SAM0BAQqrze8BI0UAAAAAAfAuxa8oAWf764Kg7o3DXZ+gpMHd/gtyfarFXlr2J6BkBwECAwITAyMHQANDAlYCDAEEAgQRBhMJFRAhAiMINAJCBVYOVxmAAQICAAIBfgMOfoCAv9YGAH4AAX8AAgcAAg8AAAIPAQADDQAAAQACfgAEDAF/cH4HZGVsZXRlZAR0ZXh0AA8RAH0DfgMNAX9xAg9+AQQPAX4BAAMWfyYHFgI2fkY2Q2Fmw6kgJmFtcDsg5pel5pys8J+YgO+7vxEAATJAZjAyZWM1YWYyODAxNjdmYmViODJhMGVlOGRjMzVkOWZhMGE0YzFkZGZlMGI3MjdkYWFjNTVlNWFmNjI3YTA2NEJAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y1pFCkBmMDJlYzVhZjI4MDE2N2ZiZWI4MmEwZWU4ZGMzNWQ5ZmEwYTRjMWRkZmUwYjcyN2RhYWM1NWU1YWY2MjdhMDY0EOgH"
+        }
+      ],
+      "parentReports": [
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx",
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draft",
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 revised"
+      ],
+      "appendReports": [
+        [
+          "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "\ufeff"
+        },
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 2,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 3,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 revisedraft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 4,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 revised\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 0,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "f02ec5af280167fbeb82a0ee8dc35d9fa0a4c1ddfe0b727daac55e5af627a064",
+          "d9753003d361def4886aa6b7c47b195127f75b42eb168a78980e5709b06cd87b",
+          "f02ec5af280167fbeb82a0ee8dc35d9fa0a4c1ddfe0b727daac55e5af627a064"
+        ]
+      },
+      "wireSha256": "bbaa7750f4a1b7148a4d2f4fd33d462b25cba8ab6a2cbcd6866a35066ac5d8b2"
+    },
+    {
+      "ordinal": 38,
+      "mode": "retained-zero",
+      "corpus": "unicode",
+      "layout": "no-following",
+      "revisit": "erase",
+      "schedule": "parent-before-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00",
+          "canonicalField38": "CglwYXJhZ3JhcGgQABjoByrYAYVvSoNS+n7SAM0BAQqrze8BI0UAAAAAAfAuxa8oAWf764Kg7o3DXZ+gpMHd/gtyfarFXlr2J6BkBwECAwITAyMHQANDAlYCDAEEAgQRBhMJFRAhAiMINAJCBVYOVxmAAQICAAIBfgMOfoCAv9YGAH4AAX8AAgcAAg8AAAIPAQADDQAAAQACfgAEDAF/cH4HZGVsZXRlZAR0ZXh0AA8RAH0DfgMNAX9xAg9+AQQPAX4BAAMWfyYHFgI2fkY2Q2Fmw6kgJmFtcDsg5pel5pys8J+YgO+7vxEAATJAZjAyZWM1YWYyODAxNjdmYmViODJhMGVlOGRjMzVkOWZhMGE0YzFkZGZlMGI3MjdkYWFjNTVlNWFmNjI3YTA2NEJAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y1pFCkBmMDJlYzVhZjI4MDE2N2ZiZWI4MmEwZWU4ZGMzNWQ5ZmEwYTRjMWRkZmUwYjcyN2RhYWM1NWU1YWY2MjdhMDY0EOgH"
+        }
+      ],
+      "parentReports": [
+        ""
+      ],
+      "appendReports": [
+        [
+          "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "\ufeff"
+        },
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 2,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 0,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "f02ec5af280167fbeb82a0ee8dc35d9fa0a4c1ddfe0b727daac55e5af627a064",
+          "56397906769d816a32945089b8166ccb5d76335e29de59d2233daec38f859f1f",
+          "f02ec5af280167fbeb82a0ee8dc35d9fa0a4c1ddfe0b727daac55e5af627a064"
+        ]
+      },
+      "wireSha256": "5b91688a91000e7449dd42dc15a1d07155157f50bc081b8b0cf617f7b7d8341b"
+    },
+    {
+      "ordinal": 39,
+      "mode": "retained-zero",
+      "corpus": "unicode",
+      "layout": "no-following",
+      "revisit": "erase",
+      "schedule": "parent-after-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00",
+          "canonicalField38": "CglwYXJhZ3JhcGgQABjoByrYAYVvSoNS+n7SAM0BAQqrze8BI0UAAAAAAfAuxa8oAWf764Kg7o3DXZ+gpMHd/gtyfarFXlr2J6BkBwECAwITAyMHQANDAlYCDAEEAgQRBhMJFRAhAiMINAJCBVYOVxmAAQICAAIBfgMOfoCAv9YGAH4AAX8AAgcAAg8AAAIPAQADDQAAAQACfgAEDAF/cH4HZGVsZXRlZAR0ZXh0AA8RAH0DfgMNAX9xAg9+AQQPAX4BAAMWfyYHFgI2fkY2Q2Fmw6kgJmFtcDsg5pel5pys8J+YgO+7vxEAATJAZjAyZWM1YWYyODAxNjdmYmViODJhMGVlOGRjMzVkOWZhMGE0YzFkZGZlMGI3MjdkYWFjNTVlNWFmNjI3YTA2NEJAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y1pFCkBmMDJlYzVhZjI4MDE2N2ZiZWI4MmEwZWU4ZGMzNWQ5ZmEwYTRjMWRkZmUwYjcyN2RhYWM1NWU1YWY2MjdhMDY0EOgH"
+        }
+      ],
+      "parentReports": [
+        ""
+      ],
+      "appendReports": [
+        [
+          "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "\ufeff"
+        },
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 2,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 0,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "f02ec5af280167fbeb82a0ee8dc35d9fa0a4c1ddfe0b727daac55e5af627a064",
+          "56397906769d816a32945089b8166ccb5d76335e29de59d2233daec38f859f1f",
+          "f02ec5af280167fbeb82a0ee8dc35d9fa0a4c1ddfe0b727daac55e5af627a064"
+        ]
+      },
+      "wireSha256": "5b91688a91000e7449dd42dc15a1d07155157f50bc081b8b0cf617f7b7d8341b"
+    },
+    {
+      "ordinal": 40,
+      "mode": "retained-zero",
+      "corpus": "unicode",
+      "layout": "no-following",
+      "revisit": "exact-revert",
+      "schedule": "parent-before-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00",
+          "canonicalField38": "CglwYXJhZ3JhcGgQABjoByrYAYVvSoNS+n7SAM0BAQqrze8BI0UAAAAAAfAuxa8oAWf764Kg7o3DXZ+gpMHd/gtyfarFXlr2J6BkBwECAwITAyMHQANDAlYCDAEEAgQRBhMJFRAhAiMINAJCBVYOVxmAAQICAAIBfgMOfoCAv9YGAH4AAX8AAgcAAg8AAAIPAQADDQAAAQACfgAEDAF/cH4HZGVsZXRlZAR0ZXh0AA8RAH0DfgMNAX9xAg9+AQQPAX4BAAMWfyYHFgI2fkY2Q2Fmw6kgJmFtcDsg5pel5pys8J+YgO+7vxEAATJAZjAyZWM1YWYyODAxNjdmYmViODJhMGVlOGRjMzVkOWZhMGE0YzFkZGZlMGI3MjdkYWFjNTVlNWFmNjI3YTA2NEJAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y1pFCkBmMDJlYzVhZjI4MDE2N2ZiZWI4MmEwZWU4ZGMzNWQ5ZmEwYTRjMWRkZmUwYjcyN2RhYWM1NWU1YWY2MjdhMDY0EOgH"
+        }
+      ],
+      "parentReports": [
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx",
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00"
+      ],
+      "appendReports": [
+        [
+          "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "\ufeff"
+        },
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 2,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 0,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "f02ec5af280167fbeb82a0ee8dc35d9fa0a4c1ddfe0b727daac55e5af627a064",
+          "2d7ba2d72f890dd74df63043e5311f2ffbf842ba2744808af00a0041fba698b5",
+          "f02ec5af280167fbeb82a0ee8dc35d9fa0a4c1ddfe0b727daac55e5af627a064"
+        ]
+      },
+      "wireSha256": "5a824e9fb928177fe07848c5372feecae23a7b32f6b917ce5a7aff0903ad6010"
+    },
+    {
+      "ordinal": 41,
+      "mode": "retained-zero",
+      "corpus": "unicode",
+      "layout": "no-following",
+      "revisit": "exact-revert",
+      "schedule": "parent-after-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00",
+          "canonicalField38": "CglwYXJhZ3JhcGgQABjoByrYAYVvSoNS+n7SAM0BAQqrze8BI0UAAAAAAfAuxa8oAWf764Kg7o3DXZ+gpMHd/gtyfarFXlr2J6BkBwECAwITAyMHQANDAlYCDAEEAgQRBhMJFRAhAiMINAJCBVYOVxmAAQICAAIBfgMOfoCAv9YGAH4AAX8AAgcAAg8AAAIPAQADDQAAAQACfgAEDAF/cH4HZGVsZXRlZAR0ZXh0AA8RAH0DfgMNAX9xAg9+AQQPAX4BAAMWfyYHFgI2fkY2Q2Fmw6kgJmFtcDsg5pel5pys8J+YgO+7vxEAATJAZjAyZWM1YWYyODAxNjdmYmViODJhMGVlOGRjMzVkOWZhMGE0YzFkZGZlMGI3MjdkYWFjNTVlNWFmNjI3YTA2NEJAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y1pFCkBmMDJlYzVhZjI4MDE2N2ZiZWI4MmEwZWU4ZGMzNWQ5ZmEwYTRjMWRkZmUwYjcyN2RhYWM1NWU1YWY2MjdhMDY0EOgH"
+        }
+      ],
+      "parentReports": [
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx",
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00"
+      ],
+      "appendReports": [
+        [
+          "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "\ufeff"
+        },
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 2,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 0,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "f02ec5af280167fbeb82a0ee8dc35d9fa0a4c1ddfe0b727daac55e5af627a064",
+          "2d7ba2d72f890dd74df63043e5311f2ffbf842ba2744808af00a0041fba698b5",
+          "f02ec5af280167fbeb82a0ee8dc35d9fa0a4c1ddfe0b727daac55e5af627a064"
+        ]
+      },
+      "wireSha256": "5a824e9fb928177fe07848c5372feecae23a7b32f6b917ce5a7aff0903ad6010"
+    },
+    {
+      "ordinal": 42,
+      "mode": "retained-zero",
+      "corpus": "unicode",
+      "layout": "empty-final-following",
+      "revisit": "correction",
+      "schedule": "parent-before-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00",
+          "canonicalField38": "CglwYXJhZ3JhcGgQABjoByrYAYVvSoNS+n7SAM0BAQqrze8BI0UAAAAAAfAuxa8oAWf764Kg7o3DXZ+gpMHd/gtyfarFXlr2J6BkBwECAwITAyMHQANDAlYCDAEEAgQRBhMJFRAhAiMINAJCBVYOVxmAAQICAAIBfgMOfoCAv9YGAH4AAX8AAgcAAg8AAAIPAQADDQAAAQACfgAEDAF/cH4HZGVsZXRlZAR0ZXh0AA8RAH0DfgMNAX9xAg9+AQQPAX4BAAMWfyYHFgI2fkY2Q2Fmw6kgJmFtcDsg5pel5pys8J+YgO+7vxEAATJAZjAyZWM1YWYyODAxNjdmYmViODJhMGVlOGRjMzVkOWZhMGE0YzFkZGZlMGI3MjdkYWFjNTVlNWFmNjI3YTA2NEJAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y1pFCkBmMDJlYzVhZjI4MDE2N2ZiZWI4MmEwZWU4ZGMzNWQ5ZmEwYTRjMWRkZmUwYjcyN2RhYWM1NWU1YWY2MjdhMDY0EOgH"
+        },
+        {
+          "id": "following",
+          "rtml": "",
+          "canonicalField38": "Cglmb2xsb3dpbmcQABjoByqfAYVvSoPAbKuGAJQBAQqrze8BI0UAAAAAAZN+J6kYoZPsIv/npVU696+UHJlkSZxSRUhF9RjR8td8BgECAwITAiMGQAJWAgsBBAIEEwQVECECIwQ0AkIEVgRXA4ABAn8AfwF/A3+AgL/WBn8AfwcAAn8AAAJ/AQACfwB+B2RlbGV0ZWQEdGV4dAABAwB9A34BAgF9AQQBfQEANu+7vwMAADJAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y0JAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y1pFCkA5MzdlMjdhOTE4YTE5M2VjMjJmZmU3YTU1NTNhZjdhZjk0MWM5OTY0NDk5YzUyNDU0ODQ1ZjUxOGQxZjJkNzdjEOgH"
+        }
+      ],
+      "parentReports": [
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx",
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draft",
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 revised"
+      ],
+      "appendReports": [
+        [
+          "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "\ufeff"
+        },
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 2,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 3,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 revisedraft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 4,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 revised\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 0,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "f02ec5af280167fbeb82a0ee8dc35d9fa0a4c1ddfe0b727daac55e5af627a064",
+          "d9753003d361def4886aa6b7c47b195127f75b42eb168a78980e5709b06cd87b",
+          "f02ec5af280167fbeb82a0ee8dc35d9fa0a4c1ddfe0b727daac55e5af627a064"
+        ]
+      },
+      "wireSha256": "265a40c74767b6bc90bb2bd2a498a313faecb355e2a0b0198bf40eba7cd0d167"
+    },
+    {
+      "ordinal": 43,
+      "mode": "retained-zero",
+      "corpus": "unicode",
+      "layout": "empty-final-following",
+      "revisit": "correction",
+      "schedule": "parent-after-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00",
+          "canonicalField38": "CglwYXJhZ3JhcGgQABjoByrYAYVvSoNS+n7SAM0BAQqrze8BI0UAAAAAAfAuxa8oAWf764Kg7o3DXZ+gpMHd/gtyfarFXlr2J6BkBwECAwITAyMHQANDAlYCDAEEAgQRBhMJFRAhAiMINAJCBVYOVxmAAQICAAIBfgMOfoCAv9YGAH4AAX8AAgcAAg8AAAIPAQADDQAAAQACfgAEDAF/cH4HZGVsZXRlZAR0ZXh0AA8RAH0DfgMNAX9xAg9+AQQPAX4BAAMWfyYHFgI2fkY2Q2Fmw6kgJmFtcDsg5pel5pys8J+YgO+7vxEAATJAZjAyZWM1YWYyODAxNjdmYmViODJhMGVlOGRjMzVkOWZhMGE0YzFkZGZlMGI3MjdkYWFjNTVlNWFmNjI3YTA2NEJAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y1pFCkBmMDJlYzVhZjI4MDE2N2ZiZWI4MmEwZWU4ZGMzNWQ5ZmEwYTRjMWRkZmUwYjcyN2RhYWM1NWU1YWY2MjdhMDY0EOgH"
+        },
+        {
+          "id": "following",
+          "rtml": "",
+          "canonicalField38": "Cglmb2xsb3dpbmcQABjoByqfAYVvSoPAbKuGAJQBAQqrze8BI0UAAAAAAZN+J6kYoZPsIv/npVU696+UHJlkSZxSRUhF9RjR8td8BgECAwITAiMGQAJWAgsBBAIEEwQVECECIwQ0AkIEVgRXA4ABAn8AfwF/A3+AgL/WBn8AfwcAAn8AAAJ/AQACfwB+B2RlbGV0ZWQEdGV4dAABAwB9A34BAgF9AQQBfQEANu+7vwMAADJAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y0JAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y1pFCkA5MzdlMjdhOTE4YTE5M2VjMjJmZmU3YTU1NTNhZjdhZjk0MWM5OTY0NDk5YzUyNDU0ODQ1ZjUxOGQxZjJkNzdjEOgH"
+        }
+      ],
+      "parentReports": [
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx",
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draft",
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 revised"
+      ],
+      "appendReports": [
+        [
+          "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "\ufeff"
+        },
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 2,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 3,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 revisedraft\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 4,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 revised\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 0,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "f02ec5af280167fbeb82a0ee8dc35d9fa0a4c1ddfe0b727daac55e5af627a064",
+          "d9753003d361def4886aa6b7c47b195127f75b42eb168a78980e5709b06cd87b",
+          "f02ec5af280167fbeb82a0ee8dc35d9fa0a4c1ddfe0b727daac55e5af627a064"
+        ]
+      },
+      "wireSha256": "265a40c74767b6bc90bb2bd2a498a313faecb355e2a0b0198bf40eba7cd0d167"
+    },
+    {
+      "ordinal": 44,
+      "mode": "retained-zero",
+      "corpus": "unicode",
+      "layout": "empty-final-following",
+      "revisit": "erase",
+      "schedule": "parent-before-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00",
+          "canonicalField38": "CglwYXJhZ3JhcGgQABjoByrYAYVvSoNS+n7SAM0BAQqrze8BI0UAAAAAAfAuxa8oAWf764Kg7o3DXZ+gpMHd/gtyfarFXlr2J6BkBwECAwITAyMHQANDAlYCDAEEAgQRBhMJFRAhAiMINAJCBVYOVxmAAQICAAIBfgMOfoCAv9YGAH4AAX8AAgcAAg8AAAIPAQADDQAAAQACfgAEDAF/cH4HZGVsZXRlZAR0ZXh0AA8RAH0DfgMNAX9xAg9+AQQPAX4BAAMWfyYHFgI2fkY2Q2Fmw6kgJmFtcDsg5pel5pys8J+YgO+7vxEAATJAZjAyZWM1YWYyODAxNjdmYmViODJhMGVlOGRjMzVkOWZhMGE0YzFkZGZlMGI3MjdkYWFjNTVlNWFmNjI3YTA2NEJAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y1pFCkBmMDJlYzVhZjI4MDE2N2ZiZWI4MmEwZWU4ZGMzNWQ5ZmEwYTRjMWRkZmUwYjcyN2RhYWM1NWU1YWY2MjdhMDY0EOgH"
+        },
+        {
+          "id": "following",
+          "rtml": "",
+          "canonicalField38": "Cglmb2xsb3dpbmcQABjoByqfAYVvSoPAbKuGAJQBAQqrze8BI0UAAAAAAZN+J6kYoZPsIv/npVU696+UHJlkSZxSRUhF9RjR8td8BgECAwITAiMGQAJWAgsBBAIEEwQVECECIwQ0AkIEVgRXA4ABAn8AfwF/A3+AgL/WBn8AfwcAAn8AAAJ/AQACfwB+B2RlbGV0ZWQEdGV4dAABAwB9A34BAgF9AQQBfQEANu+7vwMAADJAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y0JAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y1pFCkA5MzdlMjdhOTE4YTE5M2VjMjJmZmU3YTU1NTNhZjdhZjk0MWM5OTY0NDk5YzUyNDU0ODQ1ZjUxOGQxZjJkNzdjEOgH"
+        }
+      ],
+      "parentReports": [
+        ""
+      ],
+      "appendReports": [
+        [
+          "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "\ufeff"
+        },
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 2,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 0,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "f02ec5af280167fbeb82a0ee8dc35d9fa0a4c1ddfe0b727daac55e5af627a064",
+          "56397906769d816a32945089b8166ccb5d76335e29de59d2233daec38f859f1f",
+          "f02ec5af280167fbeb82a0ee8dc35d9fa0a4c1ddfe0b727daac55e5af627a064"
+        ]
+      },
+      "wireSha256": "3454881f084e8c52ceb5b6ce2c507a9210b1aa3b47d7899da426d61ede2618ac"
+    },
+    {
+      "ordinal": 45,
+      "mode": "retained-zero",
+      "corpus": "unicode",
+      "layout": "empty-final-following",
+      "revisit": "erase",
+      "schedule": "parent-after-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00",
+          "canonicalField38": "CglwYXJhZ3JhcGgQABjoByrYAYVvSoNS+n7SAM0BAQqrze8BI0UAAAAAAfAuxa8oAWf764Kg7o3DXZ+gpMHd/gtyfarFXlr2J6BkBwECAwITAyMHQANDAlYCDAEEAgQRBhMJFRAhAiMINAJCBVYOVxmAAQICAAIBfgMOfoCAv9YGAH4AAX8AAgcAAg8AAAIPAQADDQAAAQACfgAEDAF/cH4HZGVsZXRlZAR0ZXh0AA8RAH0DfgMNAX9xAg9+AQQPAX4BAAMWfyYHFgI2fkY2Q2Fmw6kgJmFtcDsg5pel5pys8J+YgO+7vxEAATJAZjAyZWM1YWYyODAxNjdmYmViODJhMGVlOGRjMzVkOWZhMGE0YzFkZGZlMGI3MjdkYWFjNTVlNWFmNjI3YTA2NEJAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y1pFCkBmMDJlYzVhZjI4MDE2N2ZiZWI4MmEwZWU4ZGMzNWQ5ZmEwYTRjMWRkZmUwYjcyN2RhYWM1NWU1YWY2MjdhMDY0EOgH"
+        },
+        {
+          "id": "following",
+          "rtml": "",
+          "canonicalField38": "Cglmb2xsb3dpbmcQABjoByqfAYVvSoPAbKuGAJQBAQqrze8BI0UAAAAAAZN+J6kYoZPsIv/npVU696+UHJlkSZxSRUhF9RjR8td8BgECAwITAiMGQAJWAgsBBAIEEwQVECECIwQ0AkIEVgRXA4ABAn8AfwF/A3+AgL/WBn8AfwcAAn8AAAJ/AQACfwB+B2RlbGV0ZWQEdGV4dAABAwB9A34BAgF9AQQBfQEANu+7vwMAADJAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y0JAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y1pFCkA5MzdlMjdhOTE4YTE5M2VjMjJmZmU3YTU1NTNhZjdhZjk0MWM5OTY0NDk5YzUyNDU0ODQ1ZjUxOGQxZjJkNzdjEOgH"
+        }
+      ],
+      "parentReports": [
+        ""
+      ],
+      "appendReports": [
+        [
+          "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "\ufeff"
+        },
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 2,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 0,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "f02ec5af280167fbeb82a0ee8dc35d9fa0a4c1ddfe0b727daac55e5af627a064",
+          "56397906769d816a32945089b8166ccb5d76335e29de59d2233daec38f859f1f",
+          "f02ec5af280167fbeb82a0ee8dc35d9fa0a4c1ddfe0b727daac55e5af627a064"
+        ]
+      },
+      "wireSha256": "3454881f084e8c52ceb5b6ce2c507a9210b1aa3b47d7899da426d61ede2618ac"
+    },
+    {
+      "ordinal": 46,
+      "mode": "retained-zero",
+      "corpus": "unicode",
+      "layout": "empty-final-following",
+      "revisit": "exact-revert",
+      "schedule": "parent-before-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00",
+          "canonicalField38": "CglwYXJhZ3JhcGgQABjoByrYAYVvSoNS+n7SAM0BAQqrze8BI0UAAAAAAfAuxa8oAWf764Kg7o3DXZ+gpMHd/gtyfarFXlr2J6BkBwECAwITAyMHQANDAlYCDAEEAgQRBhMJFRAhAiMINAJCBVYOVxmAAQICAAIBfgMOfoCAv9YGAH4AAX8AAgcAAg8AAAIPAQADDQAAAQACfgAEDAF/cH4HZGVsZXRlZAR0ZXh0AA8RAH0DfgMNAX9xAg9+AQQPAX4BAAMWfyYHFgI2fkY2Q2Fmw6kgJmFtcDsg5pel5pys8J+YgO+7vxEAATJAZjAyZWM1YWYyODAxNjdmYmViODJhMGVlOGRjMzVkOWZhMGE0YzFkZGZlMGI3MjdkYWFjNTVlNWFmNjI3YTA2NEJAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y1pFCkBmMDJlYzVhZjI4MDE2N2ZiZWI4MmEwZWU4ZGMzNWQ5ZmEwYTRjMWRkZmUwYjcyN2RhYWM1NWU1YWY2MjdhMDY0EOgH"
+        },
+        {
+          "id": "following",
+          "rtml": "",
+          "canonicalField38": "Cglmb2xsb3dpbmcQABjoByqfAYVvSoPAbKuGAJQBAQqrze8BI0UAAAAAAZN+J6kYoZPsIv/npVU696+UHJlkSZxSRUhF9RjR8td8BgECAwITAiMGQAJWAgsBBAIEEwQVECECIwQ0AkIEVgRXA4ABAn8AfwF/A3+AgL/WBn8AfwcAAn8AAAJ/AQACfwB+B2RlbGV0ZWQEdGV4dAABAwB9A34BAgF9AQQBfQEANu+7vwMAADJAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y0JAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y1pFCkA5MzdlMjdhOTE4YTE5M2VjMjJmZmU3YTU1NTNhZjdhZjk0MWM5OTY0NDk5YzUyNDU0ODQ1ZjUxOGQxZjJkNzdjEOgH"
+        }
+      ],
+      "parentReports": [
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx",
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00"
+      ],
+      "appendReports": [
+        [
+          "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "\ufeff"
+        },
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 2,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 0,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "f02ec5af280167fbeb82a0ee8dc35d9fa0a4c1ddfe0b727daac55e5af627a064",
+          "2d7ba2d72f890dd74df63043e5311f2ffbf842ba2744808af00a0041fba698b5",
+          "f02ec5af280167fbeb82a0ee8dc35d9fa0a4c1ddfe0b727daac55e5af627a064"
+        ]
+      },
+      "wireSha256": "99edbb7a78848a8d177de9c0490aab335344a555bc724ddf4c7c93a116e76bfb"
+    },
+    {
+      "ordinal": 47,
+      "mode": "retained-zero",
+      "corpus": "unicode",
+      "layout": "empty-final-following",
+      "revisit": "exact-revert",
+      "schedule": "parent-after-second",
+      "sourceEntities": [
+        {
+          "id": "paragraph",
+          "rtml": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00",
+          "canonicalField38": "CglwYXJhZ3JhcGgQABjoByrYAYVvSoNS+n7SAM0BAQqrze8BI0UAAAAAAfAuxa8oAWf764Kg7o3DXZ+gpMHd/gtyfarFXlr2J6BkBwECAwITAyMHQANDAlYCDAEEAgQRBhMJFRAhAiMINAJCBVYOVxmAAQICAAIBfgMOfoCAv9YGAH4AAX8AAgcAAg8AAAIPAQADDQAAAQACfgAEDAF/cH4HZGVsZXRlZAR0ZXh0AA8RAH0DfgMNAX9xAg9+AQQPAX4BAAMWfyYHFgI2fkY2Q2Fmw6kgJmFtcDsg5pel5pys8J+YgO+7vxEAATJAZjAyZWM1YWYyODAxNjdmYmViODJhMGVlOGRjMzVkOWZhMGE0YzFkZGZlMGI3MjdkYWFjNTVlNWFmNjI3YTA2NEJAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y1pFCkBmMDJlYzVhZjI4MDE2N2ZiZWI4MmEwZWU4ZGMzNWQ5ZmEwYTRjMWRkZmUwYjcyN2RhYWM1NWU1YWY2MjdhMDY0EOgH"
+        },
+        {
+          "id": "following",
+          "rtml": "",
+          "canonicalField38": "Cglmb2xsb3dpbmcQABjoByqfAYVvSoPAbKuGAJQBAQqrze8BI0UAAAAAAZN+J6kYoZPsIv/npVU696+UHJlkSZxSRUhF9RjR8td8BgECAwITAiMGQAJWAgsBBAIEEwQVECECIwQ0AkIEVgRXA4ABAn8AfwF/A3+AgL/WBn8AfwcAAn8AAAJ/AQACfwB+B2RlbGV0ZWQEdGV4dAABAwB9A34BAgF9AQQBfQEANu+7vwMAADJAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y0JAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y1pFCkA5MzdlMjdhOTE4YTE5M2VjMjJmZmU3YTU1NTNhZjdhZjk0MWM5OTY0NDk5YzUyNDU0ODQ1ZjUxOGQxZjJkNzdjEOgH"
+        }
+      ],
+      "parentReports": [
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx",
+        "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00"
+      ],
+      "appendReports": [
+        [
+          "New \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Next \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ],
+        [
+          "Last \u65e5\u672c\ud83d\ude00 &amp; paragraph"
+        ]
+      ],
+      "parentHistory": [
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 1,
+          "text": "\ufeff"
+        },
+        {
+          "actor": "abcdef01234500000000",
+          "seq": 2,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 1,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00 draftx\ufeff"
+        },
+        {
+          "actor": "0123456789ab00000000",
+          "seq": 2,
+          "text": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00\ufeff"
+        }
+      ],
+      "tags": [
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          9,
+          12,
+          13,
+          19,
+          20,
+          33,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ],
+        [
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          16,
+          19,
+          20,
+          21,
+          29,
+          33,
+          35,
+          38
+        ]
+      ],
+      "session": {
+        "baseSequence": 0,
+        "lastSavedSequence": 1000,
+        "processed": [
+          "f02ec5af280167fbeb82a0ee8dc35d9fa0a4c1ddfe0b727daac55e5af627a064",
+          "2d7ba2d72f890dd74df63043e5311f2ffbf842ba2744808af00a0041fba698b5",
+          "f02ec5af280167fbeb82a0ee8dc35d9fa0a4c1ddfe0b727daac55e5af627a064"
+        ]
+      },
+      "wireSha256": "99edbb7a78848a8d177de9c0490aab335344a555bc724ddf4c7c93a116e76bfb"
+    }
+  ]
+}

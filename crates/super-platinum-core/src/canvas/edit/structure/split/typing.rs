@@ -64,7 +64,7 @@ pub(super) fn validate_child(
     Ok(())
 }
 
-fn child_session(
+pub(super) fn child_session(
     child: &str,
     doc: &Automerge,
     base: &str,

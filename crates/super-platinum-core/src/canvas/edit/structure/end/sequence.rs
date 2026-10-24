@@ -1,8 +1,10 @@
-//! One bounded active-last paragraph sequence; no composition of prepared edits.
+//! One bounded paragraph sequence with independent ordered row histories.
 use super::*;
 mod acceptance;
 pub(in crate::canvas::edit::structure) mod budget;
+mod parent;
 mod proof;
+pub(super) mod witness;
 pub(super) use acceptance::{confirms_readback, validate_ack};
 pub(in crate::canvas::edit::structure) use proof::validate;
 
@@ -41,17 +43,34 @@ impl<'a> EndAppend<'a> {
     }
 }
 impl EndWitness {
-    /// Each stage starts with one end Enter and then its ordered CONTENT reports.
-    /// Later stages act on the preceding last row at its collapsed end, including empty.
+    /// Ordered reports per appended row; renderer attests their event chronology.
     pub fn sequence(
         before: &TextDraft,
         offset_utf16: usize,
         reports_by_append: &[Vec<TextDraft>],
     ) -> Result<Self, Error> {
-        validate_stages(reports_by_append)?;
+        Self::sequence_with_parent_updates(before, offset_utf16, &[], reports_by_append)
+    }
+    /// Original-row CONTENT reports after the first End Enter, in per-row order.
+    /// Native selection and cross-row chronology remain renderer-owned.
+    pub fn sequence_with_parent_updates(
+        before: &TextDraft,
+        offset_utf16: usize,
+        parent_updates: &[TextDraft],
+        reports_by_append: &[Vec<TextDraft>],
+    ) -> Result<Self, Error> {
+        validate_borrowed_stages(
+            before,
+            parent_updates,
+            reports_by_append.iter().map(Vec::as_slice),
+        )?;
         let mut result = Self::new(before, offset_utf16, before, &TextDraft::default())?;
         result.sequence_updates = Some(reports_by_append.to_vec());
+        result.parent_updates = parent_updates.to_vec();
         Ok(result)
+    }
+    pub fn parent_updates(&self) -> &[TextDraft] {
+        &self.parent_updates
     }
     pub fn is_sequence(&self) -> bool {
         self.sequence_updates.is_some()
@@ -69,25 +88,37 @@ pub(super) fn validate_witness(w: &EndWitness) -> Result<(), Error> {
     if w.repeat || w.empty_enter || !w.updates.is_empty() || !w.second_updates.is_empty() {
         return Err(Error::Unsupported);
     }
-    EndWitness::new(&w.before, w.offset, &w.before, &TextDraft::default())?;
-    validate_stages(w.sequence_updates().ok_or(Error::Unsupported)?)
-}
-pub(in crate::canvas::edit::structure) fn validate_stages(
-    stages: &[Vec<TextDraft>],
-) -> Result<(), Error> {
-    validate_borrowed_stages(stages.iter().map(Vec::as_slice))
+    witness::validate_boundary(w)?;
+    validate_borrowed_stages(
+        &w.before,
+        &w.parent_updates,
+        w.sequence_updates()
+            .ok_or(Error::Unsupported)?
+            .iter()
+            .map(Vec::as_slice),
+    )
 }
 fn validate_borrowed_stages<'a>(
+    before: &TextDraft,
+    parent_updates: &[TextDraft],
     stages: impl ExactSizeIterator<Item = &'a [TextDraft]> + Clone,
 ) -> Result<(), Error> {
     let appends = stages.len();
-    let mut count = 0usize;
+    let mut count = parent_updates.len();
+    budget::counts(appends, count, 0)?;
     for updates in stages.clone() {
         count = count.checked_add(updates.len()).ok_or(Error::Unsupported)?;
         budget::counts(appends, count, 0)?;
     }
     budget::counts(appends, count, 0)?;
+    typing::validate_updates_from(before, parent_updates)?;
     let mut bytes = 0usize;
+    for draft in parent_updates {
+        bytes = bytes
+            .checked_add(draft.rtml()?.len())
+            .ok_or(Error::Unsupported)?;
+        budget::counts(appends, count, bytes)?;
+    }
     for updates in stages {
         typing::validate_updates(updates)?;
         for d in updates {
@@ -244,7 +275,11 @@ pub(super) fn build(
         Some(w) => w,
         None => text::crdt::bootstrap(&intent.original, &intent.seed, &intent.session, now)?,
     };
-    let parent_wire = validation::project_parent_session(&seed)?;
+    let parent_wire = if witness.parent_updates.is_empty() {
+        validation::project_parent_session(&seed)?
+    } else {
+        typing::build_reports(&seed, true, &witness.parent_updates, &intent.session, now)?
+    };
     let captured_bytes = intent
         .inventory
         .sections
@@ -255,7 +290,12 @@ pub(super) fn build(
     let mut packet = budget::Packet::new(captured_bytes)?;
     packet.push(F::message(
         1,
-        &prepared::metadata(&intent.original, &intent.session, &parent_wire)?,
+        &parent::project(
+            &intent.original,
+            &intent.session,
+            &parent_wire,
+            witness.parent_updates.last(),
+        )?,
     )?)?;
     let title_field = F::message(14, intent.title.rich_text())?;
     let mut expiry = seed.uint(4)?;
@@ -302,6 +342,7 @@ pub(super) fn build(
         intent.reused(),
         &intent.session,
         &intent.seed,
+        &witness.parent_updates,
         &members,
         &data,
     )?;
@@ -324,13 +365,14 @@ pub(super) fn project(
     reused: Option<&Section>,
     session: &str,
     parent_wire: &RawMessage,
+    parent_draft: Option<&TextDraft>,
     members: &[Member],
     title: &RawMessage,
 ) -> Result<RawMessage, Error> {
     let mut packet = budget::Packet::new(0)?;
     packet.push(F::message(
         1,
-        &prepared::metadata(original, session, parent_wire)?,
+        &parent::project(original, session, parent_wire, parent_draft)?,
     )?)?;
     for m in members {
         packet.push(member_field(m, reused, session)?)?;

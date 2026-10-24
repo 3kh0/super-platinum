@@ -22,6 +22,11 @@ pub(super) struct Model {
     hold_drain: bool,
 }
 pub(in crate::app_home) fn enabled() -> bool {
+    if crate::profile_edit::sections::fixture::channel_title::named()
+        || crate::profile_edit::sections::fixture::missing_channel::named()
+    {
+        return true;
+    }
     if crate::slack_lists::comments::fixture::plain_channels::named() {
         return true;
     }

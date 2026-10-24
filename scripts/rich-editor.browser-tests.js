@@ -6,7 +6,7 @@ window.runRichEditorTests = () => {
   window.richEditorTestResults=results;
   const assert = (condition, message) => {if (!condition) throw new Error(message);};
   let serial = 0;
-  function fixture(blocks, autofocus = true, generation = null, allowUnderline = false) {
+  function fixture(blocks, autofocus = true, generation = null, allowUnderline = false, labels = {U1:'@Fixture'}, canvasIcon = false) {
     document.body.replaceChildren();
     const origin=document.createElement('button');origin.textContent='Open';document.body.append(origin);origin.focus();
     const dialog=document.createElement('section');dialog.setAttribute('role','dialog');document.body.append(dialog);
@@ -25,7 +25,8 @@ window.runRichEditorTests = () => {
     for(const [kind,label] of [['apply','Apply link'],['remove','Remove link'],['cancel','Cancel']]){const b=document.createElement('button');b.className='rich-link-'+kind;b.textContent=label;if(kind==='remove')b.hidden=true;panel.append(b);}
     const code=document.createElement('button');code.className='rich-code-toggle';code.textContent='Inline code';owner.prepend(code);
     const status=document.createElement('p');status.className='rich-code-status';status.hidden=true;owner.append(status);
-    api.mount(root.id,blocks,{U1:'@Fixture'},autofocus,generation,allowUnderline);
+    if(canvasIcon){const template=document.createElement('span');template.className='rich-editor-canvas-icon';template.hidden=true;template.innerHTML=window.richEditorTestCanvasIcon;owner.prepend(template);}
+    api.mount(root.id,blocks,labels,autofocus,generation,allowUnderline);
     return {root,origin,first,last,owner,trigger,panel,url,error,action:kind=>panel.querySelector('.rich-link-'+kind),read:()=>api.read(root.id)};
   }
   const text=(value,style)=>({type:'text',text:value,...(style?{style}:{})});
@@ -34,6 +35,46 @@ window.runRichEditorTests = () => {
   const select=node=>{const range=document.createRange();range.selectNodeContents(node);getSelection().removeAllRanges();getSelection().addRange(range);};
   const dirty=root=>root.dispatchEvent(new InputEvent('input',{bubbles:true}));
   const tokens=[{type:'user',user_id:'U1'},{type:'emoji',name:'heart'},{type:'future_inline',payload:{preserve:true}}];
+  if(window.richEditorTestCanvasIcon){
+    const css=document.createElement('style');css.textContent=window.richEditorTestCanvasCss;document.head.append(css);
+    const canvas={type:'canvas',file_id:'FCANVAS1',text:'https://fixture.invalid/canvas',style:{bold:true},opaque:{keep:42}};
+    const other={type:'file',file_id:'FFILE1',opaque:{keep:7}};
+    const named={...canvas,file_id:'FCANVAS2',style:{italic:true}};
+    const labels={[JSON.stringify(canvas)]:'',[JSON.stringify(other)]:'',[JSON.stringify(named)]:'Project plan'};
+    const original=documentBlocks([section([text('Before '),canvas,other,named])]);
+    const f=fixture(original,true,'empty-canvas',false,labels,true);
+    const check=node=>{
+      const r=node.getBoundingClientRect(),svg=node.querySelector(':scope > svg');
+      assert(r.width>0&&r.height>0&&svg?.querySelector('path')?.getAttribute('d'),'empty Canvas has no visible local icon');
+      assert(svg.getAttribute('aria-hidden')==='true'&&node.getAttribute('aria-label')==='Canvas','empty Canvas accessibility/type decoration missing');
+      assert(node.textContent===''&&node.contentEditable==='false','empty Canvas gained label text or became editable');
+    };
+    let atoms=f.root.querySelectorAll('.rich-editor-token');check(atoms[0]);
+    assert(!atoms[1].querySelector('svg')&&!atoms[2].querySelector('svg')&&atoms[2].textContent==='Project plan','other empty token or nonempty Canvas changed');
+    assert(JSON.stringify(f.read())===JSON.stringify(original),'decorated clean read changed raw blocks');
+    assert(api.resolved(f.root).tokens[0].label==='','decorative type became canonical title');
+    f.root.querySelector('.rich-editor-section > span').firstChild.textContent='Edited ';dirty(f.root);
+    const edited=f.read();assert(JSON.stringify(edited[0].elements[0].elements.slice(1))===JSON.stringify(original[0].elements[0].elements.slice(1)),'dirty capture serialized icon or changed raw tokens');
+    assert(api.resolved(f.root).tokens[0].label==='','dirty capture changed empty label');
+    const before=api.snapshot(f.root);assert(api.replace(f.root,before,original,labels),'replacement refused');
+    atoms=f.root.querySelectorAll('.rich-editor-token');check(atoms[0]);
+    assert(JSON.stringify(f.read())===JSON.stringify(original),'replacement changed original tokens');
+    results.push('empty Canvas has typed local icon with exact empty canonical label and unchanged raw clean/dirty/replacement capture');
+    const prefix=documentBlocks([section([canvas,text(' @ca')])]);
+    const p=fixture(prefix,true,'empty-canvas-prefix',false,labels,true);
+    const query=p.root.querySelector('.rich-editor-section > span:last-child').firstChild;
+    const range=document.createRange();range.setStart(query,query.length);range.collapse(true);getSelection().removeAllRanges();getSelection().addRange(range);
+    assert(api.complete(p.root,api.caret(p.root),3,{type:'user',user_id:'U2'},'@Next',''),'completion after empty Canvas refused');
+    check(p.root.querySelector('.rich-editor-token'));
+    const resolved=api.resolved(p.root);assert(resolved.tokens[0].label===''&&JSON.stringify(resolved.tokens[0].value)===JSON.stringify(canvas),'completion prefix lost empty label/raw custody');
+    assert(resolved.tokens[1].label==='@Next','new completion label changed');
+    assert(document.execCommand('undo'),'empty Canvas prefix undo failed');check(p.root.querySelector('.rich-editor-token'));
+    assert(document.execCommand('redo'),'empty Canvas prefix redo failed');check(p.root.querySelector('.rich-editor-token'));
+    assert(api.resolved(p.root).tokens[0].label==='','redo changed canonical label');
+    results.push('empty Canvas prefix completion and native undo/redo retain decoration and exact raw/label identity');
+    css.remove();
+  }
+  if(window.richEditorTestFocus==='empty-canvas')return results;
   {
     const marks={bold:true,italic:true,strike:true,code:true,underline:true};
     const original=documentBlocks([section([

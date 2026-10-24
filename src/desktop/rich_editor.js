@@ -21,6 +21,14 @@
     }
   }
   const blockTags = new Set(['DIV', 'P', 'BLOCKQUOTE', 'PRE', 'UL', 'OL']);
+  function decorateEmptyCanvas(element, value, label, icon) {
+    if (value.type !== 'canvas' || label !== '' || !icon) return;
+    // Presentation only: no text node, raw identity or canonical label changes.
+    element.classList.add('rich-editor-empty-canvas');
+    element.setAttribute('role', 'img');
+    element.setAttribute('aria-label', 'Canvas');
+    element.append(icon.cloneNode(true));
+  }
   function mount(id, blocks, labels = {}, autofocus = true, expectedGeneration = null, allowUnderline = false) {
     const root = document.getElementById(id);
     // Delayed native evals may arrive after a different cell reuses this ID.
@@ -31,7 +39,8 @@
     checkUnderline(blocks, allowUnderline);
     const originals = new WeakMap();
     const initial = clone(blocks);
-    const model = { allowUnderline, originals, tokenLabels: new WeakMap(), completionAtoms: new WeakSet(), initial, dirty: false, revision: 0, composing: false, expectedGeneration, previousFocus: document.activeElement };
+    const canvasIcon = root.closest('.rich-editor')?.querySelector(':scope > .rich-editor-canvas-icon > svg')?.cloneNode(true) || null;
+    const model = { allowUnderline, originals, canvasIcon, tokenLabels: new WeakMap(), completionAtoms: new WeakSet(), initial, dirty: false, revision: 0, composing: false, expectedGeneration, previousFocus: document.activeElement };
     editors.set(root, model);
     const remember = (element, value) => { originals.set(element, clone(value)); return element; };
     function inline(value) {
@@ -57,6 +66,7 @@
           : value.type === 'user' ? `@${value.user_id}` : value.type === 'channel' ? `#${value.channel_id}`
           : value.type === 'broadcast' ? `@${value.range}` : 'Embedded content');
       model.tokenLabels.set(element,element.textContent);
+      decorateEmptyCanvas(element, value, element.textContent, model.canvasIcon);
       return element;
     }
     function block(value) {
@@ -488,6 +498,7 @@
       if(atomic){
         if(source===start)throw new Error('Completion starts inside an opaque token.');
         element.textContent=source.textContent;if((units+=element.textContent.length)>1048576)throw new Error('Completion prefix is too large.');
+        decorateEmptyCanvas(element, original, run.resolvedLabel, model.canvasIcon);
       }else{
         const children=[...source.childNodes],limit=source===start?offset:children.length;
         for(let i=0;i<limit&&!stopped;i++){const child=copy(children[i],original?.type==='text'?original:inheritedSource);if(child)element.append(child);}

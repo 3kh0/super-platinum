@@ -156,6 +156,7 @@ pub(super) fn known_recovery_ids(
         .collect())
 }
 pub(super) enum Hit {
+    MissingChannel(Arc<crate::app_home::channel_fetches::unknown::Selection>),
     Channel {
         source: Arc<canonical::Canonical>,
         id: String,
@@ -171,6 +172,7 @@ impl Hit {
         // Scheduling is the selector's side effect, not new authority for the
         // returned row or a reason to erase an already admitted description.
         match self {
+            Self::MissingChannel(selected) => selected.schedule(state),
             Self::Channel { source, id } => {
                 let _ = canonical::hit(state, &source, &id);
             }
@@ -268,7 +270,7 @@ fn prepare(
             }
         }
     }
-    if automatic_members {
+    {
         let file_ids = tokens
             .iter()
             .filter(|raw| matches!(raw["type"].as_str(), Some("file" | "canvas")))
@@ -276,7 +278,9 @@ fn prepare(
             .collect::<Vec<_>>();
         if !file_ids.is_empty() {
             if let Ok(dependencies) = files::dependencies(shell, &token, &file_ids) {
-                for id in dependencies.ids {
+                hits.extend(files::channel_hits(shell, &token, &dependencies));
+                hits.extend(files::group_hits(shell, &token, &dependencies));
+                for id in dependencies.ids.into_iter().filter(|_| automatic_members) {
                     if let Ok(hit) = crate::directory_member_fetches::automatic::observe(
                         shell,
                         &token.owner.team,
@@ -337,6 +341,7 @@ fn prepare(
                 raw["file_id"].as_str().ok_or_else(unavailable)?,
             )?;
             let label = observed.label(raw)?;
+            catalog.channel_dependencies(observed.channel_ids().cloned());
             labels.insert(raw.to_string(), Value::String(label.clone()));
             catalog.insert(raw, label)?;
             files.push(observed);

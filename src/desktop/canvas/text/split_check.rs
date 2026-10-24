@@ -5,8 +5,14 @@ use super::*;
 use serde_json::{Value, json};
 #[path = "split_check_middle.rs"]
 mod middle;
+#[path = "split_check_parent_edit.rs"]
+mod parent_edit;
+#[path = "split_check_pre_enter.rs"]
+mod pre_enter;
 #[path = "split_check_repeat.rs"]
 mod repeat;
+#[path = "split_check_second_middle.rs"]
+mod second_middle;
 #[path = "split_check_sequence.rs"]
 mod sequence;
 
@@ -42,10 +48,14 @@ async fn run(
         || !fixture::empty_valid()
         || !fixture::repeat_valid()
         || !fixture::sequence::valid()
+        || !fixture::pre_enter::valid()
+        || !fixture::parent_edit::valid()
+        || !fixture::second_middle::valid()
     {
         return Err("Unknown split corpus".into());
     }
-    if fixture::is_sequence() && fixture::sequence::count() < 2 {
+    if fixture::is_sequence() && fixture::sequence::count() < 2 && !fixture::sequence::is_preenter()
+    {
         return Err(
             "Count-one uses the existing production end path; not a native sequence scenario"
                 .into(),
@@ -69,7 +79,11 @@ async fn run(
     stage(
         state,
         desktop,
-        if fixture::is_sequence() {
+        if fixture::second_middle::enabled() {
+            "second-split"
+        } else if fixture::parent_edit::enabled() {
+            "parent-typed"
+        } else if fixture::is_sequence() {
             "sequence"
         } else if fixture::is_repeat() {
             if fixture::typing() == "none" {
@@ -138,9 +152,11 @@ async fn run(
             wait(desktop,r#"({ok:document.querySelector('#canvas-text-save .canvas-text-save-label')?.textContent==='Unconfirmed'})"#).await?;
             stage(state, desktop, "uncertain", 3, &mut stages).await?;
         } else {
-            wait(desktop,&format!(r#"(()=>{{const rows=[...document.querySelectorAll('[data-canvas-text-section] .canvas-paragraph-content')].map(n=>n.textContent);return {{ok:!document.getElementById('canvas-text-editor')&&rows.includes({})&&rows.includes({})}};}})()"#,json!(fixture::parent_text()),json!(if fixture::is_sequence(){fixture::sequence::final_text(0)}else{fixture::child_text().into()}))).await?;
+            wait(desktop,&format!(r#"(()=>{{const rows=[...document.querySelectorAll('[data-canvas-text-section] .canvas-paragraph-content')].map(n=>n.textContent);return {{ok:!document.getElementById('canvas-text-editor')&&rows.includes({})&&rows.includes({})}};}})()"#,json!(if fixture::is_sequence(){fixture::sequence::parent_final()}else{fixture::parent_text().into()}),json!(if fixture::is_sequence(){fixture::sequence::final_text(0)}else{fixture::child_text().into()}))).await?;
             stage(state, desktop, "confirmed", 3, &mut stages).await?;
-            if fixture::is_sequence() {
+            if fixture::second_middle::enabled() {
+                second_middle::continue_members(state, desktop, &mut stages).await?;
+            } else if fixture::is_sequence() {
                 sequence::continue_members(state, desktop, &mut stages).await?;
             } else if fixture::is_repeat() {
                 repeat::continue_three(state, desktop, &mut stages).await?;
@@ -197,7 +213,7 @@ async fn run(
                     tokio::time::sleep(std::time::Duration::from_millis(50)).await;
                 }
                 stage(state, desktop, "continued-saving", 5, &mut stages).await?;
-                if !fixture::complete_text(&mut state.write()) {
+                if !fixture::complete_text(state).await {
                     let proof = fixture::proof(&state.peek());
                     let ack = proof["acknowledgements"]
                         .as_array()
@@ -218,7 +234,7 @@ async fn run(
         .await
         .map_err(str::to_owned)?;
     let layout = checked(desktop, include_str!("split_check.js")).await?;
-    let mut receipt = json!({"ok":true,"noSession":true,"noTransport":true,"scenario":scenario,"corpus":corpus.name,"mode":fixture::mode(),"typing":fixture::typing(),"parentMode":fixture::parent_mode(),"sequenceCount":fixture::sequence::count(),"sequenceHistory":fixture::sequence::history(),"sequenceLayout":fixture::sequence::layout(),"sequenceCadence":fixture::sequence::cadence(),"repeatHistory":fixture::repeat_history(),"repeatLayout":fixture::repeat_layout(),"emptyHistory":fixture::empty_history(),"emptyLayout":fixture::empty_layout(),"reuseBase":fixture::reuse_base(),"reuseContent":fixture::reuse_content(),"reuseChild":fixture::is_reuse().then(fixture::reuse_child),
+    let mut receipt = json!({"ok":true,"noSession":true,"noTransport":true,"scenario":scenario,"corpus":corpus.name,"mode":fixture::mode(),"typing":fixture::typing(),"parentMode":fixture::parent_mode(),"preEnter":fixture::pre_enter::selector(),"middleParent":fixture::parent_edit::selector(),"middleCadence":fixture::parent_edit::cadence(),"secondMiddle":fixture::second_middle::selector(),"secondMiddleCadence":fixture::second_middle::cadence(),"parentId":fixture::parent_id(),"sequenceCount":fixture::sequence::count(),"sequenceHistory":fixture::sequence::history(),"sequenceLayout":fixture::sequence::layout(),"sequenceCadence":fixture::sequence::cadence(),"repeatHistory":fixture::repeat_history(),"repeatLayout":fixture::repeat_layout(),"emptyHistory":fixture::empty_history(),"emptyLayout":fixture::empty_layout(),"reuseBase":fixture::reuse_base(),"reuseContent":fixture::reuse_content(),"reuseChild":fixture::is_reuse().then(fixture::reuse_child),
         "httpFactoryExecuted":false,"trustedNativeEnter":true,"original":original,"initialJournal":initial_journal,"finalJournal":final_journal,
         "cancelledWitness":cancelled_witness,"savedWitness":saved_witness,"duplicate":duplicate,
         "fixture":final_source,"layout":layout});
@@ -252,8 +268,17 @@ async fn enter(desktop: &dioxus::desktop::DesktopContext, ordinal: usize) -> Res
         "canvas-split-enter: {}",
         json!({"ok":true,"nonce":nonce,"ordinal":ordinal,
         "fixture":std::env::var("SUPER_PLATINUM_FIXTURE").unwrap(),"generation":ready["generation"],
-        "visit":ready["visit"],"fieldId":"canvas-text-draft","offset":corpus.offset,"seed":corpus.seed,"corpus":corpus.name,"mode":fixture::mode(),"typing":fixture::typing(),"parentMode":fixture::parent_mode(),"sequenceCount":fixture::sequence::count(),"sequenceHistory":fixture::sequence::history(),"sequenceLayout":fixture::sequence::layout(),"sequenceCadence":fixture::sequence::cadence(),"repeatHistory":fixture::repeat_history(),"repeatLayout":fixture::repeat_layout(),"emptyHistory":fixture::empty_history(),"emptyLayout":fixture::empty_layout(),"revision":0})
+        "visit":ready["visit"],"fieldId":"canvas-text-draft","offset":corpus.offset,"seed":corpus.seed,"corpus":corpus.name,"mode":fixture::mode(),"typing":fixture::typing(),"parentMode":fixture::parent_mode(),"preEnter":fixture::pre_enter::selector(),"middleParent":fixture::parent_edit::selector(),"middleCadence":fixture::parent_edit::cadence(),"secondMiddle":fixture::second_middle::selector(),"secondMiddleCadence":fixture::second_middle::cadence(),"parentId":fixture::parent_id(),"sequenceCount":fixture::sequence::count(),"sequenceHistory":fixture::sequence::history(),"sequenceLayout":fixture::sequence::layout(),"sequenceCadence":fixture::sequence::cadence(),"repeatHistory":fixture::repeat_history(),"repeatLayout":fixture::repeat_layout(),"emptyHistory":fixture::empty_history(),"emptyLayout":fixture::empty_layout(),"revision":0})
     );
+    if fixture::second_middle::enabled() {
+        return second_middle::completed(desktop, &format!("{nonce}:{ordinal}")).await;
+    }
+    if fixture::parent_edit::enabled() {
+        return parent_edit::completed(desktop, &format!("{nonce}:{ordinal}")).await;
+    }
+    if fixture::pre_enter::enabled() {
+        return pre_enter::completed(desktop, &format!("{nonce}:{ordinal}")).await;
+    }
     if fixture::is_sequence() {
         let reports = fixture::sequence::reports();
         let finals = reports
@@ -277,6 +302,54 @@ async fn stage(
     ordinal: usize,
     stages: &mut Vec<Value>,
 ) -> Result<(), String> {
+    stage_with_target(state, desktop, name, ordinal, stages, None).await
+}
+async fn stage_for_section(
+    state: Signal<ShellState>,
+    desktop: &dioxus::desktop::DesktopContext,
+    name: &str,
+    ordinal: usize,
+    stages: &mut Vec<Value>,
+    section: &str,
+    text: &str,
+) -> Result<(), String> {
+    if !(fixture::is_sequence() || fixture::second_middle::enabled())
+        || !name.starts_with("member-")
+        || !name.ends_with("-confirmed")
+    {
+        return Err("A targeted stage requires a confirmed sequence member".into());
+    }
+    stage_with_target(state, desktop, name, ordinal, stages, Some((section, text))).await
+}
+// The first created child is itself a split root only in the child-target
+// second-middle case. Core safe_delete refuses its retained splitInfo lineage.
+fn reader_target_can_delete(source: &Value, id: &str) -> bool {
+    let first = source["writes"][0]["members"][0]["id"].as_str();
+    let second = source["writes"][0]["members"][1]["id"].as_str();
+    let root = source["mode"] == "middle"
+        && source["secondMiddle"] == "child"
+        && source["writes"][0]["members"]
+            .as_array()
+            .is_some_and(|members| members.len() == 2)
+        && first.is_some_and(|first| {
+            !first.is_empty() && first == id && Some(first) == source["writes"][0]["child"].as_str()
+        })
+        && second.is_some_and(|second| {
+            !second.is_empty()
+                && Some(second) != first
+                && Some(second) == source["writes"][0]["secondChild"].as_str()
+        });
+    !root
+}
+
+async fn stage_with_target(
+    state: Signal<ShellState>,
+    desktop: &dioxus::desktop::DesktopContext,
+    name: &str,
+    ordinal: usize,
+    stages: &mut Vec<Value>,
+    target: Option<(&str, &str)>,
+) -> Result<(), String> {
     if !fixture::enabled(&state.peek()) {
         return Err("Split fixture lost disconnected owner".into());
     }
@@ -284,7 +357,16 @@ async fn stage(
     let journal = checklist::recovery::split_fixture_journal(state)
         .await
         .map_err(str::to_owned)?;
-    let geometry = wait(desktop, include_str!("split_check.js")).await?;
+    let script = match target {
+        Some((id, text)) => include_str!("split_check.js").replacen(
+            "/* split-stage-target */null",
+            &json!({"id":id,"text":text,"canDelete":reader_target_can_delete(&source,id)})
+                .to_string(),
+            1,
+        ),
+        None => include_str!("split_check.js").to_owned(),
+    };
+    let geometry = wait(desktop, &script).await?;
     let editor = if geometry["native"].is_object() {
         editor_layout(desktop).await?
     } else {
@@ -324,11 +406,38 @@ async fn stage(
         }
         tokio::time::sleep(std::time::Duration::from_millis(50)).await;
     }
-    if geometry != checked(desktop, include_str!("split_check.js")).await?
-        || source != fixture::proof(&state.peek())
-    {
+    if geometry != checked(desktop, &script).await? || source != fixture::proof(&state.peek()) {
         return Err(format!("Split source/layout changed during {name} capture"));
     }
     stages.push(receipt);
     Ok(())
+}
+
+#[cfg(test)]
+mod target_action_tests {
+    use super::*;
+    #[test]
+    fn only_exact_first_created_child_split_root_requires_delete_absence() {
+        let source = json!({"mode":"middle","secondMiddle":"child","writes":[{"child":"first","secondChild":"second","members":[{"id":"first"},{"id":"second"}]}]});
+        assert!(!reader_target_can_delete(&source, "first"));
+        for id in ["second", "paragraph", "unknown", ""] {
+            assert!(reader_target_can_delete(&source, id));
+        }
+        for defect in 0..7 {
+            let mut bad = source.clone();
+            match defect {
+                0 => bad["secondMiddle"] = json!("parent"),
+                1 => bad["mode"] = json!("sequence"),
+                2 => bad["writes"][0]["child"] = json!("other"),
+                3 => bad["writes"][0]["secondChild"] = json!("other"),
+                4 => bad["writes"][0]["members"][1]["id"] = json!("first"),
+                5 => {
+                    bad["writes"][0]["members"].as_array_mut().unwrap().pop();
+                }
+                6 => bad["writes"][0]["members"][0]["id"] = json!(""),
+                _ => unreachable!(),
+            }
+            assert!(reader_target_can_delete(&bad, "first"), "defect {defect}");
+        }
+    }
 }

@@ -14,9 +14,10 @@ from canvas_evidence import closed_receipts
 HISTORIES = ("bootstrap", "retained-positive", "retained-zero")
 LAYOUTS = ("no-following", "text-following", "empty-final-following", "empty-nonfinal-following")
 
-CADENCES = ("straight", "correction-before-enter", "erase-before-enter", "revert-before-enter", "trailing-empty")
+CADENCES = ("straight", "correction-before-enter", "erase-before-enter", "revert-before-enter", "trailing-empty", "revisit-correction", "revisit-erase", "revisit-revert", "parent-correction", "parent-erase", "parent-revert", "preenter-correction", "preenter-erase", "preenter-revert")
 def validate_request(value, fixture, nonce, ordinal, history="bootstrap", layout="no-following", corpus="ascii", count=2, cadence="straight"):
-    if (history not in HISTORIES or layout not in LAYOUTS or corpus not in ("ascii","unicode") or type(count) is not int or not 2 <= count <= 16 or cadence not in CADENCES
+    if (history not in HISTORIES or layout not in LAYOUTS or corpus not in ("ascii","unicode") or type(count) is not int or not (1 if cadence.startswith("preenter-") else 2) <= count <= 16 or cadence not in CADENCES
+        or (cadence.startswith(("revisit-", "parent-")) and count < 3)
         or value.get("ok") is not True or value.get("fixture") != fixture or value.get("corpus") != corpus or value.get("mode") != "sequence" or value.get("typing") != "none"
         or value.get("sequenceHistory") != history or value.get("sequenceLayout") != layout or type(value.get("sequenceCount")) is not int or value["sequenceCount"] != count or value.get("sequenceCadence") != cadence
         or value.get("nonce") != nonce or type(value.get("ordinal")) is not int or value["ordinal"] != ordinal or ordinal not in (0,1)
@@ -38,12 +39,13 @@ class CanvasSequenceInput:
         result.corpus = checks.get("SUPER_PLATINUM_CANVAS_SPLIT_CORPUS", "ascii")
         result.typing = checks.get("SUPER_PLATINUM_CANVAS_SPLIT_TYPING", "none")
         raw_count = checks.get("SUPER_PLATINUM_CANVAS_SEQUENCE_COUNT", "2")
-        result.count = int(raw_count) if raw_count in tuple(map(str, range(2,17))) else 0
+        result.count = int(raw_count) if raw_count in tuple(map(str, range(1,17))) else 0
         result.cadence = checks.get("SUPER_PLATINUM_CANVAS_SEQUENCE_CADENCE", "straight")
         if (result.history not in HISTORIES or result.layout not in LAYOUTS
                 or checks.get("SUPER_PLATINUM_CANVAS_SPLIT_MODE") != "sequence"
                 or result.corpus not in ("ascii", "unicode")
-                or result.typing != "none" or not 2 <= result.count <= 16 or result.cadence not in CADENCES
+                or (result.cadence.startswith(("revisit-", "parent-")) and result.count < 3)
+                or result.typing != "none" or not (1 if result.cadence.startswith("preenter-") else 2) <= result.count <= 16 or result.cadence not in CADENCES
 ):
             raise RuntimeError("Unknown Canvas sequence cohort")
         result.fixture, result.nonce = fixture, secrets.token_hex(16)

@@ -1,4 +1,4 @@
-// Bounded append-at-end custody. Independent of the legacy witness; fallback only.
+// Bounded end sequence or up to two interior splits. Legacy witness fallback only.
 window.superPlatinumCanvasSequence = ({copy,exact,owned,childRange,scalarText,rtmlBytes,plain}) => {
   const owners=new WeakMap();
   const stable=v=>Array.isArray(v)?v.map(stable):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(k=>[k,stable(v[k])])):v;
@@ -29,10 +29,13 @@ window.superPlatinumCanvasSequence = ({copy,exact,owned,childRange,scalarText,rt
     if(sections.some(s=>!s))return null;
     if(owner.nodes){
       for(let i=0;i<owner.nodes.length;i++){
-        if(nodes[i]!==owner.nodes[i])return null;
-        // Only active last section can change, and only during an admitted edit.
-        if(i<owner.nodes.length-1||owner.pending?.kind==='enter'){
-          if(sections[i].html!==owner.sections[i].html)return null;
+        const split=owner.pending?.kind==='second-middle',target=owner.pending?.activeIndex-1;
+        const index=split&&i>target?i+1:i;
+        if(nodes[index]!==owner.nodes[i])return null;
+        // Retained row identity survives insertion; only the target may change.
+        if(!(owner.pending?.kind==='edit'&&i===owner.pending.activeIndex)
+          &&!(owner.pending?.kind==='middle'&&i===0)&&!(split&&i===target)){
+          if(sections[index].html!==owner.sections[i].html)return null;
         }
       }
     }
@@ -62,6 +65,14 @@ window.superPlatinumCanvasSequence = ({copy,exact,owned,childRange,scalarText,rt
     const after=projection(snapshot.blocks,current.sections);
     if(!after)return false;
     if(!token)return same(snapshot.blocks,o.rawAfter)&&same(after,o.after);
+    // A trusted input must not rewrite another row's semantic representation.
+    const split=token.event.kind==='second-middle';
+    const target=token.event.kind==='edit'?token.event.activeIndex:token.event.kind==='middle'?0:split?token.event.activeIndex-1:-1;
+    for(let i=0;i<o.after[0].elements.length;i++){
+      const index=split&&i>target?i+1:i;
+      if(i!==target&&(!same(after[0].elements[index],o.after[0].elements[i])
+        ||!same(snapshot.blocks[0].elements[index],o.rawAfter[0].elements[i])))return false;
+    }
     const event={...token.event,revision:token.revision,inputTrusted:true,after:copy(after),
       rawAfter:copy(snapshot.blocks),html:current.html,sections:copy(current.sections)};
     const changed=event.kind==='edit'&&event.beforeText!==event.afterText;
@@ -73,6 +84,7 @@ window.superPlatinumCanvasSequence = ({copy,exact,owned,childRange,scalarText,rt
     // Retain exact full-value accounting without serializing the immutable history again.
     const evidence=encoder.encode(JSON.stringify(envelope)).length+o.eventBytes+eventBytes+o.events.length;
     if(o.events.length>=4099||(changed&&o.reports>=4096)||o.bytes+bytes>8*1024*1024||evidence>64*1024*1024)return false;
+    if(changed&&!o.middle)o.preChanged=true;
     o.events.push(event);o.bytes+=bytes;o.eventBytes+=eventBytes;o.evidence=evidence;if(changed)o.reports++;
     Object.assign(o,current,{revision:token.revision,rawAfter:copy(snapshot.blocks),after,settling:null});
     return true;
@@ -90,21 +102,38 @@ window.superPlatinumCanvasSequence = ({copy,exact,owned,childRange,scalarText,rt
         let snapshot;try{snapshot=window.superPlatinumRichEditor.snapshot(field);}catch{invalidate();return;}
         current=dom(field,o,1);
         if(snapshot.revision!==0||snapshot.composing||!current||current.sections[0].text!==o.source
-          ||!same(snapshot.blocks,o.seed)||event.inputType!=='insertParagraph'){invalidate();return;}
+          ||!same(snapshot.blocks,o.seed)){invalidate();return;}
         Object.assign(o,current,{rawAfter:copy(snapshot.blocks),after:copy(snapshot.blocks)});
       }else if(!settle(field,o)){invalidate();return;}
-      const active=o.nodes.length-1,text=o.sections[active].text,selection=getSelection();
-      const selected=selection?.rangeCount===1?childRange(o.nodes[active],selection.getRangeAt(0),text):null;
-      const ranges=event.getTargetRanges?.(),target=ranges?.length===1?childRange(o.nodes[active],ranges[0],text):null;
-      if(!selected||!target){invalidate();return;}
+      const selection=getSelection(),ranges=event.getTargetRanges?.();
+      if(selection?.rangeCount!==1||ranges?.length!==1){invalidate();return;}
+      let active=-1,selected=null,target=null;
+      for(let i=0;i<o.nodes.length;i++){
+        const candidate=childRange(o.nodes[i],selection.getRangeAt(0),o.sections[i].text);
+        if(!candidate)continue;
+        const intended=childRange(o.nodes[i],ranges[0],o.sections[i].text);
+        if(!intended||active!==-1){invalidate();return;}
+        active=i;selected=candidate;target=intended;
+      }
+      if(active<0||!selected||!target){invalidate();return;}
+      const text=o.sections[active].text;
       const base={inputType:event.inputType,data:event.data,beforeRevision:o.revision,beforeInputTrusted:true,
         selectionStart:selected.start,selectionEnd:selected.end,start:target.start,end:target.end,beforeText:text};
       if(event.inputType==='insertParagraph'){
-        if(o.events.length>=4099||event.data!==null||!selection.isCollapsed||selected.start!==text.length
-          ||selected.end!==text.length||target.start!==text.length||target.end!==text.length){invalidate();return;}
-        o.pending={...base,kind:'enter',activeIndex:active+1,afterText:'',caret:0};
+        if(o.events.length>=4099||event.data!==null||!selection.isCollapsed
+          ||selected.start!==selected.end||target.start!==selected.start||target.end!==selected.end){invalidate();return;}
+        const interior=selected.start>0&&selected.start<text.length;
+        if(o.middle){
+          if(o.second||o.preChanged||o.nodes.length!==2||!interior){invalidate();return;}
+          o.pending={...base,kind:'second-middle',activeIndex:active+1,afterText:text.slice(selected.start),caret:0};
+        }else if(o.nodes.length===1&&interior){
+          o.pending={...base,kind:'middle',activeIndex:1,afterText:text.slice(selected.start),caret:0};
+        }else{
+          if(active!==o.nodes.length-1||selected.start!==text.length){invalidate();return;}
+          o.pending={...base,kind:'enter',activeIndex:active+1,afterText:'',caret:0};
+        }
       }else{
-        if(!active||!['insertText','deleteContentBackward','deleteContentForward'].includes(event.inputType)
+        if(!['insertText','deleteContentBackward','deleteContentForward'].includes(event.inputType)
           ||(selected.start!==selected.end&&(target.start!==selected.start||target.end!==selected.end))){invalidate();return;}
         let data='';
         if(event.inputType==='insertText'){
@@ -119,13 +148,17 @@ window.superPlatinumCanvasSequence = ({copy,exact,owned,childRange,scalarText,rt
     field.addEventListener('input',event=>{
       const pending=o.pending;
       if(o.invalid||!pending||!event.isTrusted||event.isComposing||event.inputType!==pending.inputType||event.data!==pending.data){invalidate();return;}
-      const current=dom(field,o,o.nodes.length+(pending.kind==='enter'?1:0));
+      const current=dom(field,o,o.nodes.length+(pending.kind!=='edit'?1:0));
       const active=pending.activeIndex,s=getSelection();
       const range=current&&s?.rangeCount===1&&s.isCollapsed?childRange(current.nodes[active],s.getRangeAt(0),current.sections[active].text):null;
       if(!current||current.sections[active].text!==pending.afterText||!range||range.start!==pending.caret||range.end!==pending.caret
-        ||(pending.kind==='enter'&&!current.sections[active].placeholder)){invalidate();return;}
+        ||(pending.kind==='enter'&&!current.sections[active].placeholder)
+        ||(['middle','second-middle'].includes(pending.kind)&&(current.sections[active-1].text!==pending.beforeText.slice(0,pending.start)
+          ||current.sections[active-1].placeholder||current.sections[active].placeholder))){invalidate();return;}
       const token={event:pending,revision:pending.beforeRevision+1,html:current.html};
       Object.assign(o,current,{pending:null,settling:token});
+      if(pending.kind==='middle')o.middle=true;
+      if(pending.kind==='second-middle')o.second=true;
       setTimeout(()=>{if(o.settling===token&&!settle(field,o))invalidate();},0);
     });
     for(const event of ['compositionstart','paste','drop'])field.addEventListener(event,invalidate);
@@ -133,9 +166,11 @@ window.superPlatinumCanvasSequence = ({copy,exact,owned,childRange,scalarText,rt
   function capture(field,generation,visit){
     const o=owners.get(field);
     if(!o||o.invalid||o.generation!==String(generation)||o.visit!==String(visit)||!o.nodes||!settle(field,o)||!o.events.length)return null;
-    const first=o.events[0];
-    return {kind:'sequence',generation:o.generation,visit:o.visit,before:copy(o.seed),offset:o.source.length,
-      revision:1,after:copy(first.after),rawAfter:copy(first.rawAfter),beforeInputTrusted:true,inputTrusted:true,inputType:'insertParagraph',
+    const first=o.events.find(event=>event.kind==='enter'||event.kind==='middle');
+    // Ordinary typing without Enter stays on the existing single-text Save path.
+    if(!first)return null;
+    return {kind:o.second?'second-middle-sequence':first.kind==='middle'?'middle-sequence':'sequence',generation:o.generation,visit:o.visit,before:copy(o.seed),offset:first.start,
+      revision:first.revision,after:copy(first.after),rawAfter:copy(first.rawAfter),beforeInputTrusted:true,inputTrusted:true,inputType:'insertParagraph',
       sequence:{revision:o.revision,after:copy(o.after),rawAfter:copy(o.rawAfter),html:o.html,events:copy(o.events)}};
   }
   return {mount,capture};

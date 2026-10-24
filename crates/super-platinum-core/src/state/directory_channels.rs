@@ -10,6 +10,7 @@ use std::{
 mod ingress;
 mod lifecycle;
 pub mod opened;
+pub mod unknown;
 pub use ingress::{AcceptedIngress, IngressWitness};
 mod actions;
 pub mod freshness;

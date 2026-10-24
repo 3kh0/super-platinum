@@ -2,6 +2,8 @@
 //! it is neither the typed file browser nor Slack's complete file collection.
 use super::*;
 use std::collections::BTreeMap;
+mod channels;
+mod groups;
 mod users;
 use super_platinum_core::slack::{
     PreparedRequest,
@@ -29,6 +31,9 @@ pub(super) struct Observation {
     socket: u64,
     revision: u64,
     members: Option<users::Members>,
+    channels: Option<channels::Channels>,
+    groups: Option<groups::Groups>,
+    emoji: super::title_locale::EmojiTitle,
 }
 fn socket(shell: &ShellState, token: &Token) -> Option<u64> {
     token
@@ -54,9 +59,11 @@ impl Observation {
         let row = cache.store.row(id).map_err(|_| unavailable())?;
         // File metadata does not establish the independent editor-title state.
         // Only block-title Canvas labels consume that runtime observation.
-        let ids = title_user_ids(row.effective())?;
-        let members = users::Members::capture(shell, token, &ids)?;
-        let quip = if has_canvas_blocks(row.effective()) && ids.is_empty() {
+        let dependencies = title_dependencies(row.effective())?;
+        let members = users::Members::capture(shell, token, &dependencies.users)?;
+        let channels = channels::Channels::capture(shell, token, &dependencies.channels)?;
+        let groups = groups::Groups::capture(shell, token, &dependencies.groups)?;
+        let quip = if has_canvas_blocks(row.effective()) && dependencies.users.is_empty() {
             Some(
                 crate::canvas::quip_titles::Observation::capture(shell, id)
                     .ok_or_else(unavailable)?,
@@ -72,6 +79,9 @@ impl Observation {
             socket: generation,
             revision,
             members,
+            channels,
+            groups,
+            emoji: super::title_locale::EmojiTitle::english(),
         };
         observed
             .current(shell)
@@ -85,6 +95,14 @@ impl Observation {
                 .as_ref()
                 .is_none_or(|m| m.current(shell, &self.token))
             && self.quip.as_ref().is_none_or(|quip| quip.current(shell))
+            && self
+                .channels
+                .as_ref()
+                .is_none_or(|c| c.current(shell, &self.token))
+            && self
+                .groups
+                .as_ref()
+                .is_none_or(|g| g.current(shell, &self.token))
             && !crate::file_events::changed_since(
                 shell,
                 &self.token.owner.team,
@@ -120,7 +138,7 @@ impl Observation {
             Some("file") if list => file_titles::Kind::WholeList,
             _ => return Err(unavailable()),
         };
-        let label = file_titles::label_with_context(
+        let label = file_titles::label_with_group_resolver(
             kind,
             file_titles::Status::Normal,
             effective,
@@ -128,8 +146,21 @@ impl Observation {
                 .as_ref()
                 .map_or(file_titles::QuipTitle::Unavailable, |quip| quip.value()),
             Some(super::title_locale::CanvasTitle::english().value()),
+            Some(self.emoji.context()),
             |id| {
                 self.members
+                    .as_ref()
+                    .ok_or(file_titles::Unavailable::InvalidMetadata)?
+                    .label(id)
+            },
+            |id| {
+                self.channels
+                    .as_ref()
+                    .ok_or(file_titles::Unavailable::InvalidMetadata)?
+                    .label(id)
+            },
+            |id| {
+                self.groups
                     .as_ref()
                     .ok_or(file_titles::Unavailable::InvalidMetadata)?
                     .label(id)
@@ -142,13 +173,27 @@ impl Observation {
         context.file(raw, label.clone())?;
         Ok(label)
     }
+    pub(super) fn channel_ids(&self) -> impl Iterator<Item = &String> {
+        self.channels.iter().flat_map(|channels| channels.ids())
+    }
 }
 
 fn title_user_ids(effective: &Value) -> Result<std::collections::BTreeSet<String>, Error> {
+    Ok(title_dependencies(effective)?.users)
+}
+fn title_dependencies(effective: &Value) -> Result<file_titles::TitleDependencies, Error> {
     if !has_canvas_blocks(effective) {
-        return Ok(Default::default());
+        return Ok(file_titles::TitleDependencies {
+            users: Default::default(),
+            channels: Default::default(),
+            groups: Default::default(),
+        });
     }
-    file_titles::user_ids(effective).map_err(|_| unavailable())
+    file_titles::dependencies_with_groups(
+        effective,
+        Some(super::title_locale::EmojiTitle::english().context()),
+    )
+    .map_err(|_| unavailable())
 }
 fn has_canvas_blocks(effective: &Value) -> bool {
     (effective["mode"] == "quip" || effective["filetype"] == "quip")
@@ -186,10 +231,14 @@ fn metadata_current(shell: &ShellState, token: &Token, id: &str) -> bool {
 }
 fn reuse_metadata(shell: &ShellState, token: &Token, id: &str, force: bool) -> bool {
     metadata_current(shell, token, id)
-        && (!force || dependencies(shell, token, &[id.to_owned()]).is_ok_and(|v| !v.ids.is_empty()))
+        && (!force
+            || dependencies(shell, token, &[id.to_owned()])
+                .is_ok_and(|v| !v.ids.is_empty() || !v.channels.is_empty() || !v.groups.is_empty()))
 }
 pub(super) struct Dependencies {
     pub(super) ids: Vec<String>,
+    pub(super) channels: std::collections::BTreeSet<String>,
+    pub(super) groups: std::collections::BTreeSet<String>,
     rows: Vec<(String, source::Observation, Arc<()>)>,
 }
 impl Dependencies {
@@ -220,20 +269,88 @@ pub(super) fn dependencies(
         .as_ref()
         .ok_or_else(unavailable)?;
     let mut users = std::collections::BTreeSet::new();
+    let mut channels = std::collections::BTreeSet::new();
+    let mut groups = std::collections::BTreeSet::new();
     let mut rows = Vec::new();
     for id in ids {
         if !metadata_current(shell, token, id) {
             return Err(unavailable());
         }
         let row = cache.store.row(id).map_err(|_| unavailable())?;
-        users.extend(title_user_ids(row.effective())?);
+        let needed = title_dependencies(row.effective())?;
+        users.extend(needed.users);
+        channels.extend(needed.channels);
+        groups.extend(needed.groups);
         let stamp = cache.changes.get(id).ok_or_else(unavailable)?.clone();
         rows.push((id.clone(), row, stamp));
     }
     Ok(Dependencies {
         ids: users.into_iter().collect(),
+        channels,
+        groups,
         rows,
     })
+}
+
+/// Schedule each admitted nested selector encounter after releasing the shell
+/// borrow, including when another dependency prevents this opening.
+pub(super) fn channel_hits(
+    shell: &mut ShellState,
+    token: &Token,
+    dependencies: &Dependencies,
+) -> Vec<opening::Hit> {
+    if !dependencies.current(shell, token) || dependencies.channels.is_empty() {
+        return Vec::new();
+    }
+    let Ok(source) = canonical::observed(shell, &token.owner.team) else {
+        return Vec::new();
+    };
+    dependencies
+        .channels
+        .iter()
+        .filter_map(|id| {
+            if source.row(id).is_some_and(|row| {
+                file_titles::known_ordinary_channel_label_with_context(
+                    id,
+                    row,
+                    Some(super::title_locale::ChannelTitle::english().context()),
+                )
+                .is_ok()
+            }) {
+                return Some(opening::Hit::Channel {
+                    source: source.clone(),
+                    id: id.clone(),
+                });
+            }
+            crate::app_home::channel_fetches::unknown::select(shell, &token.owner.team, id)
+                .ok()
+                .map(opening::Hit::MissingChannel)
+        })
+        .collect()
+}
+
+/// Existing shared group history, not a typed cache entry, owns this selector hit.
+pub(super) fn group_hits(
+    shell: &ShellState,
+    token: &Token,
+    dependencies: &Dependencies,
+) -> Vec<opening::Hit> {
+    if !dependencies.current(shell, token) {
+        return vec![];
+    }
+    dependencies
+        .groups
+        .iter()
+        .filter_map(|id| {
+            let observed = groups::Groups::capture(
+                shell,
+                token,
+                &std::collections::BTreeSet::from([id.clone()]),
+            )
+            .ok()??;
+            Some(observed.hit(id))
+        })
+        .collect()
 }
 
 /// Local metadata writes already call this shared invalidation boundary. Keep
@@ -370,6 +487,18 @@ pub(crate) fn fixture_status(shell: &ShellState, id: &str) -> Value {
             if row.effective()["mode"] == "quip" || row.effective()["filetype"] == "quip" {
                 value["canvasFallback"] = super::title_locale::CanvasTitle::english()
                     .proof(Observation::capture(shell, &cache.token, id).is_ok());
+                value["emojiText"] = super::title_locale::EmojiTitle::english()
+                    .proof(Observation::capture(shell, &cache.token, id).is_ok());
+                if let Ok(observed) = Observation::capture(shell, &cache.token, id)
+                    && let Some(channels) = observed.channels.as_ref()
+                {
+                    value["titleChannels"] = channels.snapshot();
+                }
+            }
+            if let Ok(observed) = Observation::capture(shell, &cache.token, id)
+                && let Some(groups) = observed.groups.as_ref()
+            {
+                value["titleGroups"] = groups.snapshot();
             }
             if let Ok(Some(members)) = title_user_ids(row.effective())
                 .and_then(|ids| users::Members::capture(shell, &cache.token, &ids))

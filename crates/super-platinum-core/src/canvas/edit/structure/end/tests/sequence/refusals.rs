@@ -203,6 +203,7 @@ fn sequence_same_final_text_with_different_history_or_report_boundaries_is_not_e
         p.intent.reused(),
         p.session_id(),
         &p.parent_wire,
+        None,
         &p.sequence_rows,
         p.intent.title.rich_text(),
     )

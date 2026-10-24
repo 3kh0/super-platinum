@@ -1,4 +1,6 @@
 mod continuation;
+mod parent_updates;
+mod pre_enter;
 mod typing;
 mod unicode;
 use super::*;
@@ -71,21 +73,11 @@ fn pair(p: &PreparedSplitEdit, s: &CanvasCollabSnapshot) -> Vec<Section> {
                 n(2, seq),
                 t(6, s.thread_id()),
                 t(7, s.document_id()),
-                m(
-                    12,
-                    &body(
-                        &if i == 0 {
-                            p.witness.parent.rtml().unwrap()
-                        } else {
-                            p.witness.child_draft().rtml().unwrap()
-                        },
-                        i == 0,
-                    ),
-                ),
+                m(12, &body(&p.member_drafts()[i].rtml().unwrap(), i == 0)),
             ] {
                 section = change(&section, f);
             }
-            if i == 1 {
+            if i > 0 {
                 let pos = position::base(section.raw().string(8).unwrap().unwrap())
                     .unwrap()
                     .to_owned();
@@ -381,3 +373,5 @@ fn split_readback_must_keep_pair_untouched_inventory_and_response_lineage() {
     absent.sections[i] = change(&absent.sections[i], m(38, &wire));
     assert!(!accepted.confirms_readback(&absent).unwrap());
 }
+
+mod sequence;

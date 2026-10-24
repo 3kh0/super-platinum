@@ -65,7 +65,6 @@ impl Inventory {
                 || section
                     .sequence()?
                     .is_none_or(|seq| seq == 0 || seq > i64::MAX as u64)
-                || (!review_only && section.deleted()? == Some(true))
                 || section.raw().uint(11)?.unwrap_or(0) != 0
                 || section.raw().boolean(29)? == Some(true)
                 || section.raw().has(15)
@@ -88,6 +87,15 @@ impl Inventory {
         }
         for section in sections.values() {
             validate_placement(section, &sections)?;
+            if !review_only && section.deleted()? == Some(true) {
+                if section.crdt()?.is_some_and(|wire| wire.has(10)) {
+                    owner_delete::tombstone(sections.values(), section)?;
+                } else {
+                    if super::split::child_tombstone(sections.values(), section, 0).is_err() {
+                        super::split::gap_tombstone(sections.values(), section)?;
+                    }
+                }
+            }
         }
         Ok(Self {
             owner,
@@ -116,7 +124,8 @@ impl Inventory {
         self.sections.get(id).ok_or(Error::Changed)
     }
     pub fn paragraph(&self, section: &Section, now: u64) -> Result<TextDraft, Error> {
-        if section.section_type()?.unwrap_or(0) != 0
+        if section.deleted()? == Some(true)
+            || section.section_type()?.unwrap_or(0) != 0
             || section.style()?.unwrap_or(0) != 0
             || section.parents()?.is_some_and(|p| !p.fields().is_empty())
             || section.read_only()? == Some(true)
@@ -183,10 +192,14 @@ impl Inventory {
         position::between(before, after)
     }
     pub fn safe_delete(&self, id: &str) -> Result<(), Error> {
-        if self.get(id)?.crdt()?.is_some_and(|w| w.has(10)) {
-            // Parent text continuation is verified; structural deletion still
-            // needs its own lineage-sealed receipt policy before exposure.
+        let target = self.get(id)?;
+        if target.deleted()? == Some(true) {
             return Err(Error::Unsupported);
+        }
+        if target.crdt()?.is_some_and(|w| w.has(10)) {
+            owner_delete::live_pair(self.sections.values(), target, 0)?;
+        } else {
+            super::split::child_delete_owner(self.sections.values(), target, 0)?;
         }
         // Source sibling lookup uses REACHABLE. Only known top-level text and
         // H1-H3 headings witness it here: title/unknown/list-child visibility is
@@ -207,6 +220,23 @@ impl Inventory {
             return Err(Error::Unsupported);
         }
         Ok(())
+    }
+    /// The bounded retained-owner proof depends on a live, unsplit child.
+    /// Text continuation, proved deletion and independent insertion preserve it;
+    /// further splitting that child remains outside the established contract.
+    pub fn is_retained_split_child(&self, id: &str) -> Result<bool, Error> {
+        for row in self.sections.values() {
+            if row.deleted()? == Some(true) {
+                if let Some(wire) = row.crdt()? {
+                    for info in wire.messages(10)? {
+                        if info.string(3)? == Some(id) {
+                            return Ok(true);
+                        }
+                    }
+                }
+            }
+        }
+        Ok(false)
     }
 }
 

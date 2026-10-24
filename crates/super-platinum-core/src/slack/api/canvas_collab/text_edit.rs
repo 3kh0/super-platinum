@@ -31,6 +31,67 @@ pub async fn execute_canvas_text_edit(
     })
 }
 
+/// Request validated on a worker; only this module can manufacture the seal.
+pub struct PreparedCanvasTextRequest {
+    request: PreparedRequest,
+    edit: PreparedTextEdit,
+}
+impl PreparedCanvasTextRequest {
+    pub fn edit(&self) -> &PreparedTextEdit {
+        &self.edit
+    }
+}
+/// Caller must recheck its renderer owner after this await, before consuming.
+pub async fn prepare_canvas_text_request(
+    client: SlackClient,
+    workspace: WorkspaceSession,
+    fresh: std::sync::Arc<CanvasCollabSnapshot>,
+    prepared: PreparedTextEdit,
+) -> Result<PreparedCanvasTextRequest, CanvasEditFailure> {
+    tokio::task::spawn_blocking(move || {
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .ok()
+            .and_then(|t| u64::try_from(t.as_micros()).ok())
+            .ok_or_else(|| {
+                CanvasEditFailure::NotSent(Error::Api("invalid_canvas_edit_clock".into()))
+            })?;
+        let request = request(&client, &workspace, &fresh, &prepared, now)
+            .map_err(CanvasEditFailure::NotSent)?;
+        Ok(PreparedCanvasTextRequest {
+            request,
+            edit: prepared,
+        })
+    })
+    .await
+    .map_err(|_| {
+        CanvasEditFailure::NotSent(Error::Api("canvas_edit_preparation_worker_failed".into()))
+    })?
+}
+/// No serialization await precedes transport. Caller has just checked ownership.
+pub async fn execute_prepared_canvas_text_edit(
+    transport: &Transport,
+    sealed: PreparedCanvasTextRequest,
+) -> Result<AcceptedText, CanvasEditFailure> {
+    let bytes = transport.execute_canvas_edit(sealed.request).await?;
+    tokio::task::spawn_blocking(move || {
+        let ack = EditAck::decode(&bytes).map_err(|_| {
+            CanvasEditFailure::Uncertain(Error::Api("invalid_canvas_edit_acknowledgement".into()))
+        })?;
+        sealed.edit.validate_ack(&ack).map_err(|_| {
+            CanvasEditFailure::Uncertain(Error::Api(
+                "unconfirmed_canvas_edit_acknowledgement".into(),
+            ))
+        })
+    })
+    .await
+    .map_err(|_| {
+        CanvasEditFailure::Uncertain(Error::Api(
+            "canvas_edit_acknowledgement_worker_failed".into(),
+        ))
+    })?
+}
+
 fn request(
     client: &SlackClient,
     workspace: &WorkspaceSession,
@@ -220,5 +281,61 @@ mod tests {
             .await,
             Err(CanvasEditFailure::NotSent(Error::Offline(_)))
         ));
+    }
+    #[tokio::test]
+    async fn worker_sealed_text_request_preserves_exact_form_and_offline_no_send() {
+        let snapshot = crate::canvas::edit::text::tests::fixture();
+        let edit = prepared(&snapshot);
+        let expected =
+            request(&SlackClient::default(), &workspace(), &snapshot, &edit, 100).unwrap();
+        let sealed = prepare_canvas_text_request(
+            SlackClient::default(),
+            workspace(),
+            std::sync::Arc::new(snapshot),
+            edit,
+        )
+        .await
+        .unwrap();
+        assert_eq!(sealed.request, expected);
+        assert_eq!(sealed.edit().sequence(), 1);
+        let transport = Transport::new("fixture-only").unwrap();
+        transport.set_health(crate::slack::transport::Health::Offline);
+        assert!(matches!(
+            execute_prepared_canvas_text_edit(&transport, sealed).await,
+            Err(CanvasEditFailure::NotSent(Error::Offline(_)))
+        ));
+    }
+    #[tokio::test]
+    async fn worker_text_request_refuses_changed_source_and_account_before_transport() {
+        for account in [false, true] {
+            let mut snapshot = crate::canvas::edit::text::tests::fixture();
+            let edit = prepared(&snapshot);
+            let mut owner = workspace();
+            if account {
+                owner.user_id = "other".into();
+            } else {
+                let row = snapshot
+                    .sections
+                    .iter_mut()
+                    .find(|s| s.id() == "item")
+                    .unwrap();
+                *row = Section::from_raw(
+                    row.raw()
+                        .replace_fields(2, &[EncodedField::uint(2, 2000).unwrap()])
+                        .unwrap(),
+                )
+                .unwrap();
+            }
+            assert!(matches!(
+                prepare_canvas_text_request(
+                    SlackClient::default(),
+                    owner,
+                    std::sync::Arc::new(snapshot),
+                    edit
+                )
+                .await,
+                Err(CanvasEditFailure::NotSent(_))
+            ));
+        }
     }
 }

@@ -178,6 +178,17 @@ impl ClassificationState {
             key,
         ))
     }
+    /// EmXR re-reads queued IDs at dispatch and retains only present rows whose
+    /// isUnknown is false. Existing classification alone intentionally folds
+    /// known and runtime-unknown rows together; neither presence nor a joined
+    /// membership action proves that the wrapper returned an object.
+    pub fn is_unknown(&self, key: &str) -> Result<bool, Error> {
+        self.row(key)?;
+        Ok(self
+            .indexes
+            .get(key)
+            .is_some_and(|index| truth(&self.shadow[*index]["isUnknown"])))
+    }
     /// Initial predecessor gaps, not server absence or a request to wait on
     /// renderer IO. An owned earlier receipt shadow/replay is a separate proof.
     pub fn unavailable_ids(&self) -> &BTreeSet<String> {
@@ -218,3 +229,6 @@ mod tests;
 mod dependencies;
 
 mod memberships;
+
+#[cfg(test)]
+mod unknown_tests;

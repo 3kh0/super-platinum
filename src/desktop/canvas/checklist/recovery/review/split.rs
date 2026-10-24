@@ -114,6 +114,12 @@ fn current_invisible(section: &Section) -> Option<(&'static str, String)> {
 }
 
 pub(super) fn comparison(review: &LocalReview) -> Element {
+    if review
+        .split()
+        .is_some_and(|split| split.second_target().is_some())
+    {
+        return super::second_middle::comparison(review);
+    }
     let (parent_id, child_id, original, parent, child) = if let Some(pair) = review.split() {
         (
             pair.parent_id(),
@@ -165,6 +171,13 @@ pub(super) fn comparison(review: &LocalReview) -> Element {
             div {class:"canvas-review-preview","{original}"}
             if empty_enter {p {"data-empty-enter-label":"original","Empty paragraph"}}
         }
+        if let Some(pair) = review.split().filter(|pair| pair.pre_enter_report_count() > 0) {
+            div {"data-review-pre-enter":"true",
+                strong {"Paragraph before the split"}
+                div {class:"canvas-review-preview","{pair.enter_text()}"}
+                p {"Edits made before Enter remain part of this unresolved change, even when the text was changed back."}
+            }
+        }
         if let Some((text, kind, label)) = original_child {
             div {"data-review-original-child":"true","data-content-kind":kind,
                 strong {"Original following paragraph"}
@@ -172,10 +185,18 @@ pub(super) fn comparison(review: &LocalReview) -> Element {
                 p {"data-content-label":"true","{label}"}
             }
         }
+        if let Some(pair) = review.split().filter(|pair| pair.parent_report_count() > 0) {
+            div {"data-review-parent-history":"true",
+                strong {"First paragraph immediately after the split"}
+                div {class:"canvas-review-preview","{pair.initial_parent_text()}"}
+                p {"The first paragraph was edited after Enter. Those edits remain part of this unresolved change, even when the text was changed back."}
+            }
+        }
         div {"data-review-split":"parent",
             strong {"Intended first paragraph"}
             div {class:"canvas-review-preview","{parent}"}
             if empty_enter {p {"data-empty-enter-label":"parent","Empty paragraph"}}
+            if review.split().is_some_and(|pair| pair.parent_report_count() > 0) && parent.is_empty() {p {"data-parent-empty":"true","Empty paragraph"}}
         }
         if let Some(pair) = review.split().filter(|pair| pair.has_child_updates()) {
             div {"data-review-initial-child":"true",

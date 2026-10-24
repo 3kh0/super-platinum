@@ -25,8 +25,9 @@ pub(in crate::canvas) fn Editor(
     let visit = d.visit;
     let section = d.section.clone();
     let mount = format!(
-        "{MOUNT}\nmountCanvasText({generation},{visit},{});",
-        serde_json::to_string(&section).unwrap()
+        "{MOUNT}\nmountCanvasText({generation},{visit},{},{});",
+        serde_json::to_string(&section).unwrap(),
+        matches!(d.kind, Kind::Replacement) || d.kind.action() == Some(Action::Delete)
     );
     let mount = if matches!(d.kind, Kind::Text(_)) && !d.kind.heading() {
         format!(
@@ -130,24 +131,4 @@ pub(in crate::canvas) fn Editor(
     }
 }
 
-// One observer per mounted draft; it disconnects on unmount and never changes
-// focus in a replacement canvas or after the user focused another control.
-const MOUNT: &str = r#"function mountCanvasText(generation,visit,section){
- const editor=document.getElementById('canvas-text-editor');
- if(editor?.dataset.editorGeneration!==String(generation)||editor.dataset.canvasVisit!==String(visit))return;
- const dialog=editor.closest('.canvas-dialog[data-dialog-generation]');
- if(!dialog?.isConnected||dialog.dataset.dialogGeneration!==String(visit))return;
- if(!((dialog.id==='shell-overlay-dialog'&&dialog.getAttribute('role')==='dialog')||
-      (dialog.id==='channel-canvas-panel'&&dialog.getAttribute('role')==='region')))return;
- const observer=new MutationObserver(()=>{
-  if(editor.isConnected)return;observer.disconnect();
-  if(!dialog?.isConnected||dialog.dataset.dialogGeneration!==String(visit)||dialog.querySelector('#canvas-text-editor'))return;
-  const active=document.activeElement;
-  if(active&&active!==document.body&&!editor.contains(active))return;
-  const original=[...dialog.querySelectorAll('[data-canvas-text-section]')].find(e=>e.dataset.canvasTextSection===section);
-  const wanted=original?section:(editor.dataset.replacementTarget||section);
-  const paragraph=[...dialog.querySelectorAll('[data-canvas-text-section]')].find(e=>e.dataset.canvasTextSection===wanted);
-  const target=paragraph?.querySelector('.canvas-text-open:not(:disabled)')||(!editor.dataset.replacementTarget&&dialog.querySelector('.canvas-paragraph-actions button:not(:disabled)'));
-  if(target&&!target.disabled){target.focus({preventScroll:true});target.scrollIntoView({block:'nearest'});}
- });observer.observe(dialog,{childList:true,subtree:true});
-}"#;
+const MOUNT: &str = include_str!("return_focus.js");

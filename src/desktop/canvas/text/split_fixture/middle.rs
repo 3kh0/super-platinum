@@ -9,17 +9,32 @@ pub(super) const UNICODE_TYPED: Corpus = Corpus {
     ..UNICODE
 };
 pub(in crate::canvas::text) fn is_typed() -> bool {
-    !is_end() && !is_start() && typing() != "none"
+    !is_end()
+        && !is_start()
+        && (typing() != "none"
+            || pre_enter::enabled()
+            || parent_edit::enabled()
+            || second_middle::enabled())
 }
 pub(in crate::canvas::text) fn parent_mode() -> &'static str {
     match std::env::var("SUPER_PLATINUM_CANVAS_SPLIT_PARENT").as_deref() {
         Ok("retained") => "retained",
+        Ok("retained-zero")
+            if pre_enter::enabled() || parent_edit::enabled() || second_middle::enabled() =>
+        {
+            "retained-zero"
+        }
         _ => "bootstrap",
     }
 }
 pub(in crate::canvas::text) fn parent_valid() -> bool {
     match std::env::var("SUPER_PLATINUM_CANVAS_SPLIT_PARENT") {
-        Ok(value) => value == "bootstrap" || (!is_end() && value == "retained"),
+        Ok(value) => {
+            value == "bootstrap"
+                || (!is_end() && value == "retained")
+                || ((pre_enter::enabled() || parent_edit::enabled() || second_middle::enabled())
+                    && value == "retained-zero")
+        }
         Err(std::env::VarError::NotPresent) => true,
         Err(_) => false,
     }

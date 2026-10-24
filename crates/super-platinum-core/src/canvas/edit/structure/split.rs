@@ -4,18 +4,27 @@ use super::*;
 use std::sync::Arc;
 
 mod checkpoint;
+pub(in crate::canvas::edit::structure) mod sequence;
+pub use sequence::SplitSequenceTarget;
+mod parent_updates;
+mod pre_enter;
 mod prepared;
 mod typing;
 pub(in crate::canvas::edit::structure) use checkpoint::validate_checkpoint_split;
 mod lineage;
+pub(in crate::canvas::edit::structure) use lineage::gap_tombstone;
+pub(in crate::canvas::edit::structure) use lineage::retained_owner_child;
+pub(in crate::canvas::edit::structure) use lineage::{
+    child_delete_owner, child_delete_transition, child_tombstone,
+};
 pub(super) mod validation;
 pub(in crate::canvas::edit) use lineage::{
-    associated_child as split_child, parent_history as split_parent_history,
+    associated_sections as split_child, parent_history as split_parent_history,
     same_lineage as same_split_lineage,
 };
 pub use prepared::{AcceptedSplit, PreparedSplitEdit};
 
-/// Logical agreement of an unchanged source and one middle split. Constructing
+/// Logical agreement of an immutable source and one middle split. Constructing
 /// this value does not attest that Enter occurred; the renderer owns that fact.
 #[derive(Clone)]
 pub struct SplitWitness {
@@ -24,6 +33,9 @@ pub struct SplitWitness {
     child: TextDraft,
     offset: usize,
     updates: Vec<TextDraft>,
+    pre_updates: Vec<TextDraft>,
+    parent_updates: Vec<TextDraft>,
+    second: Option<sequence::Second>,
 }
 impl SplitWitness {
     pub fn new(
@@ -49,11 +61,18 @@ impl SplitWitness {
             child: child.clone(),
             offset: offset_utf16,
             updates: Vec::new(),
+            pre_updates: Vec::new(),
+            parent_updates: Vec::new(),
+            second: None,
         })
     }
     /// Logical CONTENT report boundaries; native event authority stays with the renderer.
     pub fn with_child_updates(mut self, updates: &[TextDraft]) -> Result<Self, Error> {
+        if self.second.is_some() {
+            return Err(Error::Unsupported);
+        }
         super::end::typing::validate_updates_from(&self.child, updates)?;
+        pre_enter::budget(&self.pre_updates, &self.parent_updates, updates)?;
         self.updates = updates.to_vec();
         Ok(self)
     }
@@ -61,7 +80,8 @@ impl SplitWitness {
         &self.child
     }
     pub fn child_draft(&self) -> &TextDraft {
-        self.updates.last().unwrap_or(&self.child)
+        self.sequence_final(1)
+            .unwrap_or_else(|| self.updates.last().unwrap_or(&self.child))
     }
     pub fn child_updates(&self) -> &[TextDraft] {
         &self.updates
@@ -116,7 +136,9 @@ impl SplitIntent {
     pub fn capture(snapshot: &CanvasCollabSnapshot, target: &str, now: u64) -> Result<Self, Error> {
         let inventory = Inventory::capture(snapshot)?;
         let original = inventory.get(target)?.clone();
-        if original.crdt()?.is_some_and(|wire| wire.has(10)) {
+        if original.crdt()?.is_some_and(|wire| wire.has(10))
+            || inventory.is_retained_split_child(target)?
+        {
             return Err(Error::Unsupported);
         }
         let seed = inventory.paragraph(&original, now)?;
@@ -162,13 +184,7 @@ impl SplitIntent {
         now: u64,
     ) -> Result<PreparedSplitEdit, Error> {
         self.revalidate(fresh, now)?;
-        let checked = SplitWitness::new(
-            &witness.before,
-            witness.offset,
-            &witness.parent,
-            &witness.child,
-        )?
-        .with_child_updates(&witness.updates)?;
+        let checked = witness.checked()?;
         if checked.before != self.seed {
             return Err(Error::Changed);
         }

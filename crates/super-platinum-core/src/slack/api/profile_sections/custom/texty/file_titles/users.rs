@@ -16,43 +16,15 @@ pub(super) fn id(leaf: &Value) -> Result<&str, Unavailable> {
 /// Dependencies only for the bounded rich_text/section/text-user-link grammar.
 /// No flattening unsupported semantic leaves or plain-title fallback.
 pub fn user_ids(effective: &Value) -> Result<BTreeSet<String>, Unavailable> {
-    let mut ids = BTreeSet::new();
-    let blocks = match effective.get("title_blocks") {
-        None | Some(Value::Null) => return Ok(ids),
-        Some(Value::Array(v)) => v,
-        _ => return Err(Unavailable::UnsupportedTitle),
-    };
-    for block in blocks {
-        if block["type"] != "rich_text" {
-            return Err(Unavailable::UnsupportedTitle);
-        }
-        for section in block["elements"]
-            .as_array()
-            .ok_or(Unavailable::UnsupportedTitle)?
-        {
-            if section["type"] != "rich_text_section" {
-                return Err(Unavailable::UnsupportedTitle);
-            }
-            for leaf in section["elements"]
-                .as_array()
-                .ok_or(Unavailable::UnsupportedTitle)?
-            {
-                match leaf["type"].as_str() {
-                    Some("text") if leaf["text"].is_string() => (),
-                    Some("user") => {
-                        ids.insert(id(leaf)?.to_owned());
-                    }
-                    Some("link") => {
-                        // Use the same bounded field admission as extraction.
-                        // A link contributes no nested member dependency.
-                        super::link::text(leaf)?;
-                    }
-                    _ => return Err(Unavailable::UnsupportedTitle),
-                }
-            }
-        }
-    }
-    Ok(ids)
+    user_ids_with_emoji_context(effective, None)
+}
+
+/// The same explicit emoji admission used by extraction; emojis add no users.
+pub fn user_ids_with_emoji_context(
+    effective: &Value,
+    emoji: Option<super::EmojiText>,
+) -> Result<BTreeSet<String>, Unavailable> {
+    super::dependencies::scan(effective, emoji, false, false).map(|v| v.users)
 }
 
 /// hWCs.Gt is mention spelling, independent of display-real-name preference.

@@ -13,6 +13,12 @@ use serde_json::{Value, json};
 use std::sync::atomic::{AtomicBool, Ordering};
 use super_platinum_core::canvas::edit::structure::recovery::journal::{Begin, Journal, Receipt};
 static STARTED: AtomicBool = AtomicBool::new(false);
+#[path = "split_recovery_parent_edit.rs"]
+mod parent_edit;
+#[path = "split_recovery_pre_enter.rs"]
+mod pre_enter;
+#[path = "split_recovery_second_middle.rs"]
+mod second_middle;
 pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::DesktopContext) {
     if !fixture::requested() || STARTED.swap(true, Ordering::Relaxed) {
         return;
@@ -77,6 +83,9 @@ async fn controls(
 }
 const OPEN: &str = r#"(()=>{const b=[...document.querySelectorAll('.canvas-toolbar button')].find(b=>b.textContent==='Review saved change');if(!b||b.disabled)return {ok:false};b.id='split-review-open';return {ok:true};})()"#;
 fn ready() -> String {
+    if super::split_fixture::second_middle::enabled() {
+        return second_middle::ready();
+    }
     let corpus = super::split_fixture::corpus();
     if super::split_fixture::is_sequence() {
         let finals = (0..super::split_fixture::sequence::count())
@@ -85,7 +94,7 @@ fn ready() -> String {
         return format!(
             r#"(()=>{{const p=document.querySelector('.canvas-local-review'),c=p?.querySelector('input');return {{ok:!!c&&!c.checked&&!c.disabled&&p.querySelector('[data-review-sequence=original] .canvas-review-preview')?.textContent==={}&&p.querySelector('[data-review-sequence=parent] .canvas-review-preview')?.textContent==={}&&JSON.stringify([...p.querySelectorAll('[data-review-sequence=member] > .canvas-review-preview')].map(n=>n.textContent))===JSON.stringify({})&&p.querySelectorAll('[data-review-current]').length==={}}};}})()"#,
             json!(corpus.seed),
-            json!(corpus.seed),
+            json!(super::split_fixture::sequence::parent_final()),
             json!(finals),
             fixture::snapshot().sections.len()
         );
@@ -107,7 +116,7 @@ fn ready() -> String {
     format!(
         r#"(()=>{{const p=document.querySelector('.canvas-local-review'),c=p?.querySelector('input');return {{ok:!!c&&!c.checked&&!c.disabled&&p.querySelector('[data-review-split=original] .canvas-review-preview')?.textContent==={}&&p.querySelector('[data-review-split=parent] .canvas-review-preview')?.textContent==={}&&p.querySelector('[data-review-split=child] .canvas-review-preview')?.textContent==={}&&p.querySelectorAll('[data-review-current]').length==={}&&(!{}||p.querySelector('[data-review-split=secondChild] .canvas-review-preview')?.textContent==={})}};}})()"#,
         json!(corpus.seed),
-        json!(corpus.left),
+        json!(super::split_fixture::parent_text()),
         json!(super::split_fixture::child_text()),
         if super::split_fixture::is_empty() || super::split_fixture::is_repeat() {
             fixture::snapshot().sections.len()
@@ -120,7 +129,7 @@ fn ready() -> String {
         json!(super::split_fixture::second_child_text())
     )
 }
-const PREVIEW: &str = r#"(()=>{const p=document.querySelector('.canvas-local-review'),c=p?.querySelector('input'),buttons=[...(p?.querySelectorAll('button')||[])],cancel=buttons.find(b=>b.textContent==='Cancel'),remove=buttons.find(b=>b.textContent==='Remove local edit lock'),scroll=p?.closest('.canvas-scroll');return {ok:!!document.querySelector('.canvas-dialog')&&!document.getElementById('canvas-text-editor'),panel:!!p,reviewActionPresent:[...document.querySelectorAll('.canvas-toolbar button')].some(b=>b.textContent==='Review saved change'),editorAbsent:!document.getElementById('canvas-text-editor'),startTyping:(()=>{const n=p?.querySelector('[data-review-start-typing]');return n?{originalBeforeText:n.querySelector('[data-review-start-before] .canvas-review-preview')?.textContent??null,originalAfterText:n.querySelector('[data-review-start-after] .canvas-review-preview')?.textContent??null,newText:n.querySelector('[data-review-start-new] .canvas-review-preview')?.textContent??null,emptyLabel:n.querySelector('[data-empty-paragraph]')?.textContent??null,currentText:n.querySelector('[data-review-start-current] .canvas-review-preview')?.textContent??null}:null})(),insertion:(()=>{const n=p?.querySelector("[data-review-insertion]");return n?{anchor:n.dataset.anchor,side:n.dataset.side,draftText:n.querySelector("[data-review-insert-draft] .canvas-review-preview")?.textContent??null,emptyLabel:n.querySelector("[data-empty-paragraph]")?.textContent??null,currentText:n.querySelector("[data-review-insert-current] .canvas-review-preview")?.textContent??null}:null})(),initialTail:(()=>{const n=p?.querySelector('[data-review-initial-child]');return n?{text:n.querySelector('.canvas-review-preview').textContent}:null})(),originalChild:(()=>{const n=p?.querySelector('[data-review-original-child]');return n?{text:n.querySelector('.canvas-review-preview').textContent,kind:n.dataset.contentKind,label:n.querySelector('[data-content-label]').textContent}:null})(),emptyLabels:[...(p?.querySelectorAll('[data-empty-enter-label]')||[])].map(n=>({kind:n.dataset.emptyEnterLabel,text:n.textContent})),sequence:p?.querySelector('[data-review-sequence="original"]')?{originalText:p.querySelector('[data-review-sequence="original"] .canvas-review-preview').textContent,parentText:p.querySelector('[data-review-sequence="parent"] .canvas-review-preview').textContent,members:[...p.querySelectorAll('[data-review-sequence="member"]')].map(n=>({id:n.dataset.memberId,index:Number(n.dataset.memberIndex),text:n.querySelector(':scope > .canvas-review-preview').textContent,reused:n.dataset.memberReused==='true',sourceText:n.querySelector('.canvas-review-source')?.textContent??null,reportCount:Number(n.dataset.memberReports),emptyLabel:n.querySelector('[data-member-empty]')?.textContent??null}))}:null,split:[...(p?.querySelectorAll('[data-review-split]')||[])].map(n=>({kind:n.dataset.reviewSplit,text:n.querySelector('.canvas-review-preview').textContent})),current:[...(p?.querySelectorAll('[data-review-current]')||[])].map(n=>({id:n.dataset.reviewCurrent,deleted:n.dataset.reviewDeleted==='true',text:n.querySelector('.canvas-review-preview').textContent,...(n.querySelector('[data-content-label]')?{contentKind:n.querySelector('[data-content-label]').dataset.contentKind,contentLabel:n.querySelector('[data-content-label]').textContent}:{})})),missing:[...(p?.querySelectorAll('[data-review-missing]')||[])].map(n=>n.dataset.reviewMissing),warning:p?.textContent??null,checked:c?.checked??null,checkboxDisabled:c?.disabled??null,cancelDisabled:cancel?.disabled??null,submitDisabled:remove?.disabled??null,error:p?.querySelector('[role=alert]')?.textContent??null,scroll:scroll?.scrollTop??null,viewport:[innerWidth,innerHeight]};})()"#;
+const PREVIEW: &str = r#"(()=>{const p=document.querySelector('.canvas-local-review'),c=p?.querySelector('input'),buttons=[...(p?.querySelectorAll('button')||[])],cancel=buttons.find(b=>b.textContent==='Cancel'),remove=buttons.find(b=>b.textContent==='Remove local edit lock'),scroll=p?.closest('.canvas-scroll');return {ok:!!document.querySelector('.canvas-dialog')&&!document.getElementById('canvas-text-editor'),panel:!!p,reviewActionPresent:[...document.querySelectorAll('.canvas-toolbar button')].some(b=>b.textContent==='Review saved change'),editorAbsent:!document.getElementById('canvas-text-editor'),startTyping:(()=>{const n=p?.querySelector('[data-review-start-typing]');return n?{originalBeforeText:n.querySelector('[data-review-start-before] .canvas-review-preview')?.textContent??null,originalAfterText:n.querySelector('[data-review-start-after] .canvas-review-preview')?.textContent??null,newText:n.querySelector('[data-review-start-new] .canvas-review-preview')?.textContent??null,emptyLabel:n.querySelector('[data-empty-paragraph]')?.textContent??null,currentText:n.querySelector('[data-review-start-current] .canvas-review-preview')?.textContent??null}:null})(),insertion:(()=>{const n=p?.querySelector("[data-review-insertion]");return n?{anchor:n.dataset.anchor,side:n.dataset.side,draftText:n.querySelector("[data-review-insert-draft] .canvas-review-preview")?.textContent??null,emptyLabel:n.querySelector("[data-empty-paragraph]")?.textContent??null,currentText:n.querySelector("[data-review-insert-current] .canvas-review-preview")?.textContent??null}:null})(),secondMiddle:(()=>{const n=p?.querySelector('[data-review-second-middle]');return n?{target:n.dataset.target,before:n.querySelector('[data-second-before] .canvas-review-preview').textContent,left:n.querySelector('[data-second-left] .canvas-review-preview').textContent,right:n.querySelector('[data-second-right] .canvas-review-preview').textContent,creation:[...p.querySelectorAll('[data-second-member]')].sort((a,b)=>Number(a.dataset.creationIndex)-Number(b.dataset.creationIndex)).map(n=>({kind:n.dataset.secondMember,text:n.querySelector('.canvas-review-preview').textContent,emptyLabel:n.querySelector('[data-member-empty]')?.textContent??null})),visualOrder:[...p.querySelectorAll('[data-second-member]')].map(n=>n.dataset.secondMember),historyNotice:n.querySelector('[data-second-history]').textContent}:null})(),parentHistory:(()=>{const n=p?.querySelector('[data-review-parent-history]');return n?{text:n.querySelector('.canvas-review-preview').textContent,historyNotice:n.querySelector('p').textContent,emptyLabel:p.querySelector('[data-parent-empty]')?.textContent??null}:null})(),preEnter:(()=>{const n=p?.querySelector('[data-review-pre-enter]');return n?{text:n.querySelector('.canvas-review-preview').textContent,historyNotice:n.querySelector('p').textContent}:null})(),initialTail:(()=>{const n=p?.querySelector('[data-review-initial-child]');return n?{text:n.querySelector('.canvas-review-preview').textContent}:null})(),originalChild:(()=>{const n=p?.querySelector('[data-review-original-child]');return n?{text:n.querySelector('.canvas-review-preview').textContent,kind:n.dataset.contentKind,label:n.querySelector('[data-content-label]').textContent}:null})(),emptyLabels:[...(p?.querySelectorAll('[data-empty-enter-label]')||[])].map(n=>({kind:n.dataset.emptyEnterLabel,text:n.textContent})),sequence:p?.querySelector('[data-review-sequence="original"]')?{originalText:p.querySelector('[data-review-sequence="original"] .canvas-review-preview').textContent,parentText:p.querySelector('[data-review-sequence="parent"] .canvas-review-preview').textContent,parentReportCount:Number(p.querySelector('[data-review-sequence="parent"]').dataset.parentReports),parentEmptyLabel:p.querySelector('[data-parent-empty]')?.textContent??null,historyNotice:!!p.querySelector('[data-review-sequence-history]'),members:[...p.querySelectorAll('[data-review-sequence="member"]')].map(n=>({id:n.dataset.memberId,index:Number(n.dataset.memberIndex),text:n.querySelector(':scope > .canvas-review-preview').textContent,reused:n.dataset.memberReused==='true',sourceText:n.querySelector('.canvas-review-source')?.textContent??null,reportCount:Number(n.dataset.memberReports),emptyLabel:n.querySelector('[data-member-empty]')?.textContent??null}))}:null,split:[...(p?.querySelectorAll('[data-review-split]')||[])].map(n=>({kind:n.dataset.reviewSplit,text:n.querySelector('.canvas-review-preview').textContent})),current:[...(p?.querySelectorAll('[data-review-current]')||[])].map(n=>({id:n.dataset.reviewCurrent,deleted:n.dataset.reviewDeleted==='true',text:n.querySelector('.canvas-review-preview').textContent,...(n.querySelector('[data-content-label]')?{contentKind:n.querySelector('[data-content-label]').dataset.contentKind,contentLabel:n.querySelector('[data-content-label]').textContent}:{})})),missing:[...(p?.querySelectorAll('[data-review-missing]')||[])].map(n=>n.dataset.reviewMissing),warning:p?.textContent??null,checked:c?.checked??null,checkboxDisabled:c?.disabled??null,cancelDisabled:cancel?.disabled??null,submitDisabled:remove?.disabled??null,error:p?.querySelector('[role=alert]')?.textContent??null,scroll:scroll?.scrollTop??null,viewport:[innerWidth,innerHeight]};})()"#;
 async fn open(desktop: &dioxus::desktop::DesktopContext) -> Result<(), String> {
     wait(desktop, OPEN)
         .await
@@ -245,7 +254,7 @@ async fn capture(
     tokio::time::sleep(std::time::Duration::from_millis(200)).await;
     eprintln!(
         "canvas-split-recovery-stage: {}",
-        json!({"ok":true,"mode":mode,"corpus":super::split_fixture::corpus().name,"splitMode":super::split_fixture::mode(),"sequenceCount":super::split_fixture::sequence::count(),"sequenceHistory":super::split_fixture::sequence::history(),"sequenceLayout":super::split_fixture::sequence::layout(),"sequenceCadence":super::split_fixture::sequence::cadence(),"repeatHistory":super::split_fixture::repeat_history(),"repeatLayout":super::split_fixture::repeat_layout(),"emptyHistory":super::split_fixture::empty_history(),"emptyLayout":super::split_fixture::empty_layout(),"typing":super::split_fixture::typing(),"parentMode":super::split_fixture::parent_mode(),"reuseBase":super::split_fixture::reuse_base(),"reuseContent":super::split_fixture::reuse_content(),"reuseChild":super::split_fixture::is_reuse().then(super::split_fixture::reuse_child),"stage":name,"ordinal":ordinal,"noSession":true,"noTransport":true,"dispatches":dispatches,"journal":journal,"canonical":canonical,"ownerValid":owner_valid,"owner":owner,"preview":preview,"reviewGeometry":geometry})
+        json!({"ok":true,"mode":mode,"corpus":super::split_fixture::corpus().name,"splitMode":super::split_fixture::mode(),"sequenceCount":super::split_fixture::sequence::count(),"sequenceHistory":super::split_fixture::sequence::history(),"sequenceLayout":super::split_fixture::sequence::layout(),"sequenceCadence":super::split_fixture::sequence::cadence(),"repeatHistory":super::split_fixture::repeat_history(),"repeatLayout":super::split_fixture::repeat_layout(),"emptyHistory":super::split_fixture::empty_history(),"emptyLayout":super::split_fixture::empty_layout(),"typing":super::split_fixture::typing(),"parentMode":super::split_fixture::parent_mode(),"preEnter":super::split_fixture::pre_enter::selector(),"middleParent":super::split_fixture::parent_edit::selector(),"middleCadence":super::split_fixture::parent_edit::cadence(),"secondMiddle":super::split_fixture::second_middle::selector(),"secondMiddleCadence":super::split_fixture::second_middle::cadence(),"parentId":super::split_fixture::parent_id(),"reuseBase":super::split_fixture::reuse_base(),"reuseContent":super::split_fixture::reuse_content(),"reuseChild":super::split_fixture::is_reuse().then(super::split_fixture::reuse_child),"stage":name,"ordinal":ordinal,"noSession":true,"noTransport":true,"dispatches":dispatches,"journal":journal,"canonical":canonical,"ownerValid":owner_valid,"owner":owner,"preview":preview,"reviewGeometry":geometry})
     );
     let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(30);
     loop {
@@ -273,6 +282,9 @@ async fn run(
         || !super::split_fixture::mode_valid()
         || !super::split_fixture::typing_valid()
         || !super::split_fixture::parent_valid()
+        || !super::split_fixture::pre_enter::valid()
+        || !super::split_fixture::parent_edit::valid()
+        || !super::split_fixture::second_middle::valid()
         || !super::split_fixture::empty_valid()
         || !super::split_fixture::repeat_valid()
         || !super::split_fixture::sequence::valid()
@@ -363,8 +375,73 @@ async fn run(
         return terminal(state, desktop, &mode, Some(&before), true, Value::Null).await;
     }
     open(desktop).await?;
-    capture(state, desktop, &mode, "review-pair", 0, Some(&before), None).await?;
-    let mut ordinal = 1;
+    let mut ordinal = 0;
+    if super::split_fixture::second_middle::enabled() {
+        // A scrollable review can exceed a short viewport. Inspect every bounded
+        // semantic section separately, without weakening its visibility bounds.
+        let canonical = state
+            .peek()
+            .canvas_checklist
+            .structure_fixture
+            .as_ref()
+            .and_then(|f| f.canonical.clone())
+            .ok_or("Missing review canonical source")?;
+        for (index, (name, _, _, _)) in second_middle::STAGES.iter().enumerate() {
+            retained(&before).await?;
+            let geometry = second_middle::reveal(desktop, index).await?;
+            if state
+                .peek()
+                .canvas_checklist
+                .structure_fixture
+                .as_ref()
+                .and_then(|f| f.canonical.as_ref())
+                .is_none_or(|current| !std::sync::Arc::ptr_eq(current, &canonical))
+            {
+                return Err("Second-middle review canonical source changed".into());
+            }
+            capture(
+                state,
+                desktop,
+                &mode,
+                name,
+                ordinal,
+                Some(&before),
+                Some(geometry),
+            )
+            .await?;
+            retained(&before).await?;
+            if state
+                .peek()
+                .canvas_checklist
+                .structure_fixture
+                .as_ref()
+                .and_then(|f| f.canonical.as_ref())
+                .is_none_or(|current| !std::sync::Arc::ptr_eq(current, &canonical))
+            {
+                return Err("Second-middle review canonical source changed during capture".into());
+            }
+            ordinal += 1;
+        }
+    } else {
+        let pre_enter_geometry = if super::split_fixture::parent_edit::enabled() {
+            Some(parent_edit::reveal(desktop).await?)
+        } else if super::split_fixture::pre_enter::enabled() {
+            Some(pre_enter::reveal(desktop).await?)
+        } else {
+            None
+        };
+        capture(
+            state,
+            desktop,
+            &mode,
+            "review-pair",
+            ordinal,
+            Some(&before),
+            pre_enter_geometry,
+        )
+        .await?;
+        ordinal += 1;
+    }
     if mode == "review" {
         reveal_review_controls(desktop).await?;
         let geometry = checked(desktop, &review_controls_script("inspect", false)).await?;
@@ -590,6 +667,6 @@ async fn terminal(
         return Err("Review changed canonical data or created an operation".into());
     }
     Ok(
-        json!({"ok":true,"mode":mode,"corpus":super::split_fixture::corpus().name,"splitMode":super::split_fixture::mode(),"sequenceCount":super::split_fixture::sequence::count(),"sequenceHistory":super::split_fixture::sequence::history(),"sequenceLayout":super::split_fixture::sequence::layout(),"sequenceCadence":super::split_fixture::sequence::cadence(),"repeatHistory":super::split_fixture::repeat_history(),"repeatLayout":super::split_fixture::repeat_layout(),"emptyHistory":super::split_fixture::empty_history(),"emptyLayout":super::split_fixture::empty_layout(),"typing":super::split_fixture::typing(),"parentMode":super::split_fixture::parent_mode(),"reuseBase":super::split_fixture::reuse_base(),"reuseContent":super::split_fixture::reuse_content(),"reuseChild":super::split_fixture::is_reuse().then(super::split_fixture::reuse_child),"noSession":true,"noTransport":true,"noReplay":true,"outcomeUnknown":true,"canonicalUnchanged":true,"accountGuard":account_guard,"dispatches":f.attempts+f.text_attempts,"reservations":usize::from(mode=="seed"),"retirements":0,"journal":journal,"canonical":super::split_fixture::inventory(canonical),"layout":layout}),
+        json!({"ok":true,"mode":mode,"corpus":super::split_fixture::corpus().name,"splitMode":super::split_fixture::mode(),"sequenceCount":super::split_fixture::sequence::count(),"sequenceHistory":super::split_fixture::sequence::history(),"sequenceLayout":super::split_fixture::sequence::layout(),"sequenceCadence":super::split_fixture::sequence::cadence(),"repeatHistory":super::split_fixture::repeat_history(),"repeatLayout":super::split_fixture::repeat_layout(),"emptyHistory":super::split_fixture::empty_history(),"emptyLayout":super::split_fixture::empty_layout(),"typing":super::split_fixture::typing(),"parentMode":super::split_fixture::parent_mode(),"preEnter":super::split_fixture::pre_enter::selector(),"middleParent":super::split_fixture::parent_edit::selector(),"middleCadence":super::split_fixture::parent_edit::cadence(),"secondMiddle":super::split_fixture::second_middle::selector(),"secondMiddleCadence":super::split_fixture::second_middle::cadence(),"parentId":super::split_fixture::parent_id(),"reuseBase":super::split_fixture::reuse_base(),"reuseContent":super::split_fixture::reuse_content(),"reuseChild":super::split_fixture::is_reuse().then(super::split_fixture::reuse_child),"noSession":true,"noTransport":true,"noReplay":true,"outcomeUnknown":true,"canonicalUnchanged":true,"accountGuard":account_guard,"dispatches":f.attempts+f.text_attempts,"reservations":usize::from(mode=="seed"),"retirements":0,"journal":journal,"canonical":super::split_fixture::inventory(canonical),"layout":layout}),
     )
 }

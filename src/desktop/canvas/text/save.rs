@@ -1,5 +1,6 @@
 //! Canonical preflight, one dispatch, and retained text receipt settlement.
 use super::*;
+pub(super) mod multi_peer;
 use super_platinum_core::{
     canvas::edit::text::TextDraft,
     slack::{api, transport::CanvasEditFailure},
@@ -71,6 +72,20 @@ pub(super) fn submit(
     };
     if let Some(d) = draft.write().as_mut() {
         d.pending = Some(attempt.clone());
+    }
+    if super::owner_delete_fixture::enabled(&state.peek()) {
+        dioxus::core::spawn_forever(async move {
+            if let Err(reason) =
+                super::owner_delete_fixture::dispatch_text(state, &attempt, captured.3).await
+            {
+                reject(state, draft, generation, &attempt, reason);
+            }
+        });
+        return;
+    }
+    if captured.3.associated_peer_count() > 0 {
+        multi_peer::submit(state, reader, draft, generation, attempt, captured.3);
+        return;
     }
     if super::split_fixture::enabled(&state.peek()) {
         if !super::split_fixture::dispatch_text(&mut state.write(), &attempt, captured.3) {

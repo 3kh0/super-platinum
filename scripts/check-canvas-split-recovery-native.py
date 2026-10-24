@@ -17,10 +17,24 @@ FLAG = "SUPER_PLATINUM_CANVAS_SPLIT_RECOVERY_CHECK"
 FIXTURES = ("canvas-local-review", "canvas-local-review-narrow")
 
 
-def phase(fixture, mode, binary, captures, storage, corpus="ascii", split_mode="middle", typing="none", reuse_base="positive", reuse_content="empty", parent_mode="bootstrap", empty_history="bootstrap", empty_layout="no-following", repeat_history="bootstrap", repeat_layout="no-following", sequence_count=2, sequence_history="bootstrap", sequence_layout="no-following", sequence_cadence="straight"):
+def phase(fixture, mode, binary, captures, storage, corpus="ascii", split_mode="middle", typing="none", reuse_base="positive", reuse_content="empty", parent_mode="bootstrap", empty_history="bootstrap", empty_layout="no-following", repeat_history="bootstrap", repeat_layout="no-following", sequence_count=2, sequence_history="bootstrap", sequence_layout="no-following", sequence_cadence="straight", pre_enter="none", middle_parent="none", middle_cadence="parent-first", second_middle="none", second_middle_cadence="straight"):
+    phase_stages=STAGES
+    if second_middle != "none":
+        from canvas_second_middle_recovery_oracle import STAGES as phase_stages
     if split_mode not in ("sequence", "repeat", "empty", "start", "middle", "end", "reuse"):
         raise RuntimeError("Unknown Canvas recovery split mode")
-    if split_mode == "sequence":
+    if second_middle != "none":
+        from canvas_second_middle_recovery_oracle import validate as validate_second
+        validate_operation = lambda phase, stages, terminal, checkpoint, corpus: validate_second(phase, stages, terminal, checkpoint, corpus, parent_mode, second_middle, second_middle_cadence)
+    elif middle_parent != "none":
+        from canvas_middle_parent_recovery_oracle import validate as validate_parent
+        validate_operation = lambda phase, stages, terminal, checkpoint, corpus: validate_parent(
+            phase, stages, terminal, checkpoint, corpus=corpus, typing=typing, parent_mode=parent_mode, pre_enter=pre_enter, middle_parent=middle_parent,middle_cadence=middle_cadence)
+    elif pre_enter != "none":
+        from canvas_premiddle_recovery_oracle import validate as validate_premiddle
+        validate_operation = lambda phase, stages, terminal, checkpoint, corpus: validate_premiddle(
+            phase, stages, terminal, checkpoint, corpus=corpus, typing=typing, parent_mode=parent_mode, pre_enter=pre_enter)
+    elif split_mode == "sequence":
         from canvas_sequence_recovery_oracle import validate as validate_sequence
         validate_operation = lambda phase, stages, terminal, checkpoint, corpus: validate_sequence(
             phase, stages, terminal, checkpoint, append_count=sequence_count, history=sequence_history,
@@ -76,13 +90,13 @@ def phase(fixture, mode, binary, captures, storage, corpus="ascii", split_mode="
     label = f"{fixture}-{mode}"
     path = captures / f"{label}.json"
     evidence = {"fixture": fixture, "mode": mode, "splitMode": split_mode, "corpus": corpus,
-                "typing": typing, "reuseBase": reuse_base, "reuseContent": reuse_content,
+                "secondMiddle": second_middle,"secondMiddleCadence":second_middle_cadence,"typing": typing, "preEnter": pre_enter, "middleParent": middle_parent, "middleCadence": middle_cadence, "reuseBase": reuse_base, "reuseContent": reuse_content,
                 "parentMode": parent_mode, "emptyHistory": empty_history,
                 "emptyLayout": empty_layout, "repeatHistory": repeat_history,
                 "repeatLayout": repeat_layout, "sequenceCount": sequence_count, "sequenceHistory": sequence_history,
                 "sequenceLayout": sequence_layout, "sequenceCadence": sequence_cadence, "ok": False, "stages": []}
     spec = CanvasCheck(PREFIX, FLAG, ("noReplay", "outcomeUnknown", "canonicalUnchanged"),
-                       dict(dispatches=0, reservations=int(mode == "seed"), retirements=0), STAGES[mode])
+                       dict(dispatches=0, reservations=int(mode == "seed"), retirements=0), phase_stages[mode])
     native = None
     packets = []
     try:
@@ -93,6 +107,11 @@ def phase(fixture, mode, binary, captures, storage, corpus="ascii", split_mode="
                 "SUPER_PLATINUM_CANVAS_SPLIT_CORPUS": corpus,
                 "SUPER_PLATINUM_CANVAS_SPLIT_MODE": split_mode,
                 "SUPER_PLATINUM_CANVAS_SPLIT_TYPING": typing,
+                "SUPER_PLATINUM_CANVAS_SECOND_MIDDLE": second_middle,
+                "SUPER_PLATINUM_CANVAS_SECOND_MIDDLE_CADENCE": second_middle_cadence,
+                "SUPER_PLATINUM_CANVAS_SPLIT_PRE_ENTER": pre_enter,
+                "SUPER_PLATINUM_CANVAS_SPLIT_MIDDLE_PARENT": middle_parent,
+                "SUPER_PLATINUM_CANVAS_SPLIT_MIDDLE_CADENCE": middle_cadence,
                 "SUPER_PLATINUM_CANVAS_SPLIT_PARENT": parent_mode,
                 **({"SUPER_PLATINUM_CANVAS_SEQUENCE_COUNT": str(sequence_count),
                     "SUPER_PLATINUM_CANVAS_SEQUENCE_HISTORY": sequence_history,
@@ -115,7 +134,7 @@ def phase(fixture, mode, binary, captures, storage, corpus="ascii", split_mode="
                         sampled = time.monotonic()
                     for stage in native.receipts(PREFIX + "-stage: ")[len(packets):]:
                         ordinal = len(packets)
-                        require(ordinal < len(STAGES[mode]) and stage.get("stage") == STAGES[mode][ordinal]
+                        require(ordinal < len(phase_stages[mode]) and stage.get("stage") == phase_stages[mode][ordinal]
                                 and stage.get("mode") == mode, "Unexpected split recovery stage")
                         packets.append(stage)
                         database = storage.observe(stage)
@@ -131,7 +150,7 @@ def phase(fixture, mode, binary, captures, storage, corpus="ascii", split_mode="
                         terminal = receipts[0]
                         evidence["native"] = terminal
                         require(terminal.get("ok") is True, "Native split recovery failed: " + str(terminal.get("error")))
-                        require(len(packets) == len(STAGES[mode]) and terminal.get("mode") == mode,
+                        require(len(packets) == len(phase_stages[mode]) and terminal.get("mode") == mode,
                                 "Split recovery ended before all captures")
                         validate(spec, fixture, terminal)
                         evidence["database"] = storage.observe(packets[-1])
@@ -178,22 +197,42 @@ def main():
     parser.add_argument("--empty-history", choices=("bootstrap", "retained-positive", "retained-zero"), default="bootstrap")
     parser.add_argument("--empty-layout", choices=("no-following", "text-following-ascii", "text-following-unicode", "empty-final-following", "empty-nonfinal-following"), default="no-following")
     parser.add_argument("--typing", choices=("none", "correction", "erase", "restore"), default="none")
-    parser.add_argument("--parent-mode", choices=("bootstrap", "retained"), default="bootstrap")
+    parser.add_argument("--parent-mode", choices=("bootstrap", "retained", "retained-zero"), default="bootstrap")
+    parser.add_argument("--pre-enter", choices=("none", "correction", "revert", "retype"), default="none")
+    parser.add_argument("--middle-parent", choices=("none", "correction", "erase", "revert"), default="none")
+    parser.add_argument("--middle-cadence", choices=("parent-first", "child-first", "interleaved"), default="parent-first")
     parser.add_argument("--reuse-base", choices=("positive", "zero"), default="positive")
     parser.add_argument("--reuse-content", choices=("empty", "spaces", "nbsp", "br", "mixed", "mixed-br", "separators", "feff-leading", "feff-interior", "feff-post-br"), default="empty")
-    parser.add_argument("--sequence-count", type=int, choices=range(2, 17), default=2)
+    parser.add_argument("--sequence-count", type=int, choices=range(1, 17), default=2)
     parser.add_argument("--sequence-history", choices=("bootstrap", "retained-positive", "retained-zero"), default="bootstrap")
     parser.add_argument("--sequence-layout", choices=("no-following", "text-following", "empty-final-following", "empty-nonfinal-following"), default="no-following")
-    parser.add_argument("--sequence-cadence", choices=("straight", "correction-before-enter", "erase-before-enter", "revert-before-enter", "trailing-empty"), default="straight")
+    parser.add_argument("--sequence-cadence", choices=("straight", "correction-before-enter", "erase-before-enter", "revert-before-enter", "trailing-empty", "revisit-correction", "revisit-erase", "revisit-revert", "parent-correction", "parent-erase", "parent-revert", "preenter-correction", "preenter-erase", "preenter-revert"), default="straight")
+    parser.add_argument("--second-middle", choices=("none", "parent", "child"), default="none")
+    parser.add_argument("--second-middle-cadence", choices=("straight", "edited"), default="straight")
     args = parser.parse_args()
+    from canvas_second_middle_wire import selectors
+    try: selectors(args.mode,args.typing,args.pre_enter,args.middle_parent,args.middle_cadence,args.second_middle,args.second_middle_cadence)
+    except RuntimeError as error: parser.error(str(error))
+    if args.middle_parent != "none" and args.mode != "middle":
+        parser.error("Parent-after-middle input requires --mode middle")
+    if args.middle_parent == "none" and args.middle_cadence != "parent-first":
+        parser.error("Middle cadence requires --middle-parent")
+    if args.pre_enter != "none" and args.mode != "middle":
+        parser.error("Pre-Enter input requires middle mode")
+    if args.parent_mode == "retained-zero" and (args.mode != "middle" or (args.pre_enter == "none" and args.middle_parent == "none" and args.second_middle == "none")):
+        parser.error("Zero-base parent requires pre-middle input")
     if args.mode != "sequence" and (args.sequence_count != 2 or args.sequence_history != "bootstrap"
             or args.sequence_layout != "no-following" or args.sequence_cadence != "straight"):
         parser.error("Sequence selectors require sequence mode")
     if args.mode == "sequence" and args.typing != "none":
         parser.error("Sequence input uses sequence cadence, not legacy typing selectors")
-    if (args.mode == "sequence" and args.sequence_cadence not in ("straight", "trailing-empty")
+    if (args.mode == "sequence" and args.sequence_cadence in ("correction-before-enter", "erase-before-enter", "revert-before-enter")
             and args.sequence_count not in (2, 3, 8, 16)):
         parser.error("Sequence correction cadence requires a pinned 2, 3, 8 or 16 append cohort")
+    if args.mode == "sequence" and args.sequence_count < 2 and not args.sequence_cadence.startswith("preenter-"):
+        parser.error("Existing sequence routes require at least two appended members")
+    if args.mode == "sequence" and args.sequence_cadence.startswith(("revisit-", "parent-")) and args.sequence_count < 3:
+        parser.error("Sequence revisit cadence requires at least 3 appends")
     if args.mode != "repeat" and (args.repeat_history != "bootstrap" or args.repeat_layout != "no-following"):
         parser.error("Repeat source selectors require repeat mode")
     if args.mode == "empty" and args.typing == "none" and args.corpus != "ascii":
@@ -210,10 +249,10 @@ def main():
         parser.error("Clearing existing content requires reuse mode")
     binary, captures = Path(args.binary).resolve(), args.captures.resolve()
     captures.mkdir(parents=True, exist_ok=False)
-    storage = SplitReviewStorage(captures, args.mode, args.typing, args.reuse_content)
+    storage = SplitReviewStorage(captures, args.mode, args.typing, args.reuse_content, args.sequence_cadence, args.pre_enter, args.middle_parent, args.middle_cadence, args.second_middle, args.second_middle_cadence)
     digest = hashlib.sha256(binary.read_bytes()).hexdigest()
     result = dict(ok=False, fixture=args.fixture, scenario=args.scenario, corpus=args.corpus,
-                  splitMode=args.mode, typing=args.typing, reuseBase=args.reuse_base, parentMode=args.parent_mode,
+                  secondMiddle=args.second_middle,secondMiddleCadence=args.second_middle_cadence,splitMode=args.mode, typing=args.typing, preEnter=args.pre_enter, middleParent=args.middle_parent,middleCadence=args.middle_cadence,reuseBase=args.reuse_base, parentMode=args.parent_mode,
                   reuseContent=args.reuse_content, emptyHistory=args.empty_history,
                   emptyLayout=args.empty_layout, repeatHistory=args.repeat_history,
                   repeatLayout=args.repeat_layout, sequenceCount=args.sequence_count, sequenceHistory=args.sequence_history,
@@ -222,7 +261,7 @@ def main():
     identities = set()
     try:
         for mode in ("seed", "restart", args.scenario, "reviewed"):
-            value = phase(args.fixture, mode, binary, captures, storage, args.corpus, args.mode, args.typing, args.reuse_base, args.reuse_content, args.parent_mode, args.empty_history, args.empty_layout, args.repeat_history, args.repeat_layout, args.sequence_count, args.sequence_history, args.sequence_layout, args.sequence_cadence)
+            value = phase(args.fixture, mode, binary, captures, storage, args.corpus, args.mode, args.typing, args.reuse_base, args.reuse_content, args.parent_mode, args.empty_history, args.empty_layout, args.repeat_history, args.repeat_layout, args.sequence_count, args.sequence_history, args.sequence_layout, args.sequence_cadence, args.pre_enter, args.middle_parent, args.middle_cadence, args.second_middle, args.second_middle_cadence)
             identity = (value["pid"], value.get("processCreationFiletime"))
             require(identity not in identities, "Recovery did not restart the owned native process")
             identities.add(identity)

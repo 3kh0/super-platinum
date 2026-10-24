@@ -18,6 +18,7 @@ pub(super) mod recovery;
 pub(super) mod replacement_ops;
 pub(super) mod save;
 pub(in crate::canvas) mod scope;
+pub(in crate::canvas) mod session_worker;
 pub(super) mod split_ops;
 pub(super) mod start_typing_ops;
 pub(super) mod structure_ops;
@@ -50,7 +51,8 @@ pub(crate) struct State {
 }
 struct OwnedSession {
     scope: Scope,
-    session: EditSession,
+    session: Option<EditSession>,
+    claim: Option<Arc<()>>,
 }
 struct Visit {
     scope: Scope,
@@ -100,6 +102,7 @@ enum Mutation {
     Split {
         witness: Arc<super_platinum_core::canvas::edit::structure::SplitWitness>,
         child: Option<String>,
+        second_child: Option<String>,
     },
     Replacement {
         replacement: String,
@@ -110,12 +113,15 @@ enum Mutation {
 }
 enum Accepted {
     StartTyping(super_platinum_core::canvas::edit::structure::AcceptedStartTyping),
-    End(super_platinum_core::canvas::edit::structure::AcceptedEnd),
+    End(end_ops::readback::AcceptedState),
     Split(super_platinum_core::canvas::edit::structure::AcceptedSplit),
+    SplitSequence(split_ops::readback::AcceptedState),
     Replacement(super_platinum_core::canvas::edit::structure::AcceptedReplacement),
     Checkbox(AcceptedCheckbox),
     Structure(super_platinum_core::canvas::edit::structure::AcceptedStructure),
+    StructureWorker(structure_ops::readback::AcceptedState),
     Text(super_platinum_core::canvas::edit::text::AcceptedText),
+    TextSequence(text_ops::readback::AcceptedState),
 }
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub(super) enum Stage {
@@ -568,7 +574,8 @@ pub(super) fn finish(shell: &mut ShellState, attempt: &Attempt, outcome: Outcome
                 if let Some(owned) = owned {
                     let _ = shell.canvas_checklist.sessions[owned]
                         .session
-                        .remember_accepted(&accepted);
+                        .as_mut()
+                        .map(|session| session.remember_accepted(&accepted));
                 }
             }
             let operation = &mut shell.canvas_checklist.operations[index];
@@ -661,7 +668,31 @@ pub(super) fn confirm_readback(shell: &mut ShellState, attempt: &Attempt, read: 
         return true;
     }
     if let Accepted::End(accepted) = accepted {
-        if !accepted.confirms_readback(snapshot).unwrap_or(false) {
+        if !accepted.confirms(
+            shell,
+            snapshot,
+            attempt,
+            read,
+            &shell.canvas_checklist.operations[index],
+        ) {
+            return false;
+        }
+        if shell.canvas_checklist.operations[index].durable.is_some() {
+            shell.canvas_checklist.operations[index].durable_verified = Some(read.serial);
+            return false;
+        }
+        shell.canvas_checklist.view.as_mut().unwrap().settled_text = Some(attempt.serial);
+        shell.canvas_checklist.operations.remove(index);
+        return true;
+    }
+    if let Accepted::SplitSequence(accepted) = accepted {
+        if !accepted.confirms(
+            shell,
+            snapshot,
+            attempt,
+            read,
+            &shell.canvas_checklist.operations[index],
+        ) {
             return false;
         }
         if shell.canvas_checklist.operations[index].durable.is_some() {
@@ -696,6 +727,24 @@ pub(super) fn confirm_readback(shell: &mut ShellState, attempt: &Attempt, read: 
         shell.canvas_checklist.operations.remove(index);
         return true;
     }
+    if let Accepted::StructureWorker(accepted) = accepted {
+        if !accepted.confirms(
+            shell,
+            snapshot,
+            attempt,
+            read,
+            &shell.canvas_checklist.operations[index],
+        ) {
+            return false;
+        }
+        if shell.canvas_checklist.operations[index].durable.is_some() {
+            shell.canvas_checklist.operations[index].durable_verified = Some(read.serial);
+            return false;
+        }
+        shell.canvas_checklist.view.as_mut().unwrap().settled_text = Some(attempt.serial);
+        shell.canvas_checklist.operations.remove(index);
+        return true;
+    }
     if let Accepted::Structure(accepted) = accepted {
         if !accepted.confirms_readback(snapshot).unwrap_or(false) {
             return false;
@@ -704,6 +753,20 @@ pub(super) fn confirm_readback(shell: &mut ShellState, attempt: &Attempt, read: 
         // removed. Only recovery::settle consumes this exact verified read.
         if shell.canvas_checklist.operations[index].durable.is_some() {
             shell.canvas_checklist.operations[index].durable_verified = Some(read.serial);
+            return false;
+        }
+        shell.canvas_checklist.view.as_mut().unwrap().settled_text = Some(attempt.serial);
+        shell.canvas_checklist.operations.remove(index);
+        return true;
+    }
+    if let Accepted::TextSequence(accepted) = accepted {
+        if !accepted.confirms(
+            shell,
+            snapshot,
+            attempt,
+            read,
+            &shell.canvas_checklist.operations[index],
+        ) {
             return false;
         }
         shell.canvas_checklist.view.as_mut().unwrap().settled_text = Some(attempt.serial);
@@ -765,11 +828,15 @@ pub(super) fn with_edit_session<T>(
     let index = index.unwrap_or_else(|| {
         shell.canvas_checklist.sessions.push(OwnedSession {
             scope: attempt.scope.clone(),
-            session: EditSession::new(),
+            session: Some(EditSession::new()),
+            claim: None,
         });
         shell.canvas_checklist.sessions.len() - 1
     });
-    Some(prepare(&mut shell.canvas_checklist.sessions[index].session))
+    shell.canvas_checklist.sessions[index]
+        .session
+        .as_mut()
+        .map(prepare)
 }
 
 /// Shared file-wide custody; comments cannot overlap a document edit.

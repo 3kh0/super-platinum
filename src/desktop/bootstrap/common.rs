@@ -1,5 +1,4 @@
-use dioxus::prelude::{ReadableExt, Signal, WritableExt};
-use super_platinum_core::slack::api::{self, HistoryArgs};
+use dioxus::prelude::{ReadableExt, Signal};
 use super_platinum_core::slack::models::ChannelId;
 
 use crate::state::ShellState;
@@ -55,86 +54,38 @@ pub(super) async fn refresh_history_at(
     channel: ChannelId,
     latest: Option<String>,
 ) {
-    let generation = state.read().channel_generation;
-    let file_read = state.write().core.begin_file_display_read(team);
-    let result = api::fetch_history(
+    refresh_history_at_owned(
+        state,
         transport,
         client,
         workspace_session,
-        HistoryArgs {
-            channel: channel.clone(),
-            inclusive: latest.is_some(),
-            latest,
-            limit: Some(100),
-            ..Default::default()
-        },
+        team,
+        channel,
+        latest,
+        None,
     )
     .await;
-    // Account reloads replace the transport; a late response belongs to the
-    // old account even when the new account has the same team/channel ids.
-    if state
-        .read()
-        .core
-        .transport
-        .as_ref()
-        .is_none_or(|current| !std::ptr::eq(current.as_ref(), transport))
-    {
-        return;
+}
+
+pub(super) async fn refresh_history_at_owned(
+    state: &mut Signal<ShellState>,
+    transport: &super_platinum_core::slack::Transport,
+    client: &super_platinum_core::slack::SlackClient,
+    workspace_session: &super_platinum_core::config::WorkspaceSession,
+    team: &str,
+    channel: ChannelId,
+    latest: Option<String>,
+    reconnect: Option<&super::reconnect::Visit>,
+) -> Option<u64> {
+    let context =
+        super::ordinary_history::Context::live(&state.peek(), transport, client, workspace_session);
+    if let Some(context) = context {
+        return super::ordinary_history::refresh(
+            *state, context, team, &channel, latest, false, reconnect,
+        )
+        .await;
     }
-    let result = result.and_then(|page| {
-        state
-            .read()
-            .core
-            .finish_file_display_read(team, file_read)
-            .map(|files| (page, files))
-            .map_err(|reason| super_platinum_core::slack::Error::Api(reason.into()))
-    });
-    match result {
-        Ok((page, files)) => {
-            let mut shell = state.write();
-            let upload_ids =
-                crate::messaging::upload_recovery::incoming(&shell, team, &channel, &page.messages);
-            if let Some(workspace) = shell.core.workspaces.get_mut(team) {
-                let messages = workspace.messages.entry(channel.clone()).or_default();
-                for message in page.messages {
-                    let message = files.message(message);
-                    if super_platinum_core::state::is_channel_timeline_visible(&message) {
-                        messages.upsert(message);
-                    }
-                }
-                messages.loaded = true;
-                messages.history_failed = false;
-                messages.history_refreshing = false;
-                messages.has_more_older = page.has_more;
-            }
-            crate::messaging::upload_recovery::reconcile(
-                &mut shell,
-                team,
-                &channel,
-                Some(&upload_ids),
-            );
-            shell.refresh_from_core();
-            drop(shell);
-            dioxus::prelude::spawn(crate::performance::mark_history_painted(
-                *state,
-                team.to_owned(),
-                channel,
-                generation,
-            ));
-        }
-        Err(error) => {
-            let mut shell = state.write();
-            if let Some(workspace) = shell.core.workspaces.get_mut(team)
-                && let Some(messages) = workspace.messages.get_mut(&channel)
-            {
-                messages.history_failed = true;
-                messages.history_refreshing = false;
-            }
-            // Silent while offline: the rail already says so, and the cached
-            // transcript the reader is looking at is still the right one.
-            shell.report_failure(&error, "", || format!("History refresh failed: {error}"));
-        }
-    }
+    None
 }
 
 pub(crate) fn persist_workspace(state: &Signal<ShellState>, team: &str) {
@@ -340,40 +291,5 @@ mod persistence_tests {
             jobs.iter()
                 .any(|(account, ws)| account == "other" && ws.team_id() == "T")
         );
-    }
-}
-
-/// Re-drives whatever the reader is looking at, after the link comes back.
-///
-/// Every load that fired during an outage failed, and nothing else would ever
-/// ask again: the channel keeps whatever the cache held, the thread pane keeps
-/// saying "Loading replies…", and the reader is left with a screen that quietly
-/// stopped being true. Only reached on the transition back to connected, so
-/// this costs one round of the same calls the surface makes on arrival.
-pub async fn reload_after_outage(mut state: Signal<ShellState>) {
-    crate::slack_lists::invalidate_visible_for_reconnect(&mut state.write());
-    crate::slack_lists::refresh(state);
-    let resources_visible = {
-        let shell = state.peek();
-        shell.detail_open() && shell.channel_tab != crate::state::ChannelTab::Messages
-    };
-    if resources_visible {
-        crate::channel_resources::refresh(state).await;
-        return;
-    }
-    let (view, thread) = {
-        let shell = state.read();
-        (
-            shell.main_view,
-            shell
-                .thread_root
-                .clone()
-                .zip(shell.core.active_channel.clone()),
-        )
-    };
-    super::load_main_view(state, view).await;
-    super::refresh_selected_channel(state).await;
-    if let Some((root, channel)) = thread {
-        super::open_thread(state, channel, root).await;
     }
 }

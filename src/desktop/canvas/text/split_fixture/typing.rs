@@ -66,7 +66,13 @@ pub(super) fn updates() -> Vec<TextDraft> {
         .collect()
 }
 pub(super) fn continued() -> &'static str {
-    if is_empty() || is_repeat() {
+    if pre_enter::enabled() || parent_edit::enabled() {
+        if corpus().name == "unicode" {
+            "Continued \u{65e5}\u{672c}\u{1f600} paragraph"
+        } else {
+            "Continued paragraph"
+        }
+    } else if is_empty() || is_repeat() {
         "Continued paragraph"
     } else if selector() == "none" && !is_start() {
         corpus().edited

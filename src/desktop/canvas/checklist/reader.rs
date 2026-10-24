@@ -1,5 +1,6 @@
 //! Read-only canonical hydration and exact export-section mapping. No write API.
 use super::*;
+pub(in crate::canvas) mod worker;
 use dioxus::prelude::*;
 use std::collections::{BTreeMap, HashMap};
 use super_platinum_core::canvas::{CanvasDocument, CanvasKind, CanvasNode};
@@ -118,21 +119,12 @@ pub(in crate::canvas) fn update_mapping(shell: &ShellState, reader: &mut super::
     let view = presentation(shell);
     reader.canonical_loading = view.as_ref().is_some_and(|view| view.loading);
     let owner = view.as_ref().map(|view| (view.visit, view.read));
-    reader.checklist = match (reader.document.as_deref(), view.and_then(|v| v.snapshot)) {
-        (Some(document), snapshot) => Mapping::project(document, snapshot.as_deref()),
-        _ => Mapping::default(),
-    };
+    // Never retain old edit authority while a fresh canonical proof is pending.
+    reader.checklist = Mapping::default();
     reader.checklist.owner = owner;
-    reader.text = match (
-        reader.document.as_deref(),
-        presentation(shell).and_then(|v| v.snapshot),
-    ) {
-        (Some(document), snapshot) => {
-            super::super::text::Mapping::project(shell, document, snapshot.as_deref())
-        }
-        _ => Default::default(),
-    };
+    reader.text = Default::default();
     reader.text.owner = owner;
+    worker::queue(shell, reader);
 }
 
 pub(in crate::canvas) async fn load(

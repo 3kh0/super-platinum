@@ -113,14 +113,66 @@ fn observed_sample_matches(seen: &super::presentation::Observation, sample: &Val
         .is_ok_and(|sample| &sample == seen)
 }
 async fn navigate(state: Signal<ShellState>) -> Result<(), String> {
-    frames().await?;
+    let (account, epoch, scope, pending) = {
+        let shell = state.peek();
+        (
+            shell.core.active_account.clone(),
+            shell.core.account_epoch,
+            shell.timeline_scope(),
+            shell.core.pending_scroll_to.clone(),
+        )
+    };
+    ensure(pending.is_some(), "Opening target missing")?;
+    let owned = |shell: &ShellState| {
+        fixture::owner(shell)
+            && shell.core.active_account == account
+            && shell.core.account_epoch == epoch
+            && shell.timeline_scope() == scope
+            && (shell.core.pending_scroll_to == pending || shell.core.pending_scroll_to.is_none())
+    };
+    let expected = serde_json::to_string(&scope).map_err(|e| e.to_string())?;
+    let mut mounted = false;
+    for _ in 0..150 {
+        ensure(
+            owned(&state.peek()),
+            "Opening owner or target replaced before mount",
+        )?;
+        let sample = eval(format!(
+            "const root=document.getElementById('message-timeline');dioxus.send({{ok:true,ready:root?.dataset.timelineScope==={expected}&&typeof window.superPlatinumTimelineAnchor?.inputGeneration==='function',scope:root?.dataset.timelineScope??null}});await dioxus.recv();"
+        )).await?;
+        ensure(
+            owned(&state.peek()),
+            "Opening owner or target replaced during mount",
+        )?;
+        if sample["ready"] == true {
+            mounted = true;
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(20)).await;
+    }
+    ensure(mounted, "Current timeline anchor service did not mount")?;
+    // Refresh once. The independent production timeline effect may finish the
+    // same navigation after refresh returns; only its real consumption counts.
     crate::bootstrap::refresh_selected_channel(state).await;
-    ensure(
-        state.peek().core.pending_scroll_to.is_none(),
-        "Production opening did not spend its anchor",
-    )?;
-    settle(state).await?;
-    Ok(())
+    for _ in 0..150 {
+        ensure(
+            owned(&state.peek()),
+            "Opening owner or target replaced during settlement",
+        )?;
+        if state.peek().core.pending_scroll_to.is_none() {
+            settle(state).await?;
+            ensure(
+                owned(&state.peek()),
+                "Opening owner retired during observation",
+            )?;
+            return Ok(());
+        }
+        tokio::time::sleep(Duration::from_millis(20)).await;
+    }
+    Err(format!(
+        "Production opening did not spend its anchor: scope={scope}, expected={pending:?}, current={:?}",
+        state.peek().core.pending_scroll_to
+    ))
 }
 async fn admission(
     state: Signal<ShellState>,

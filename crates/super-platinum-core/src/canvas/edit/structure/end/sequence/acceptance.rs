@@ -38,7 +38,21 @@ pub(in crate::canvas::edit::structure::end) fn validate_ack(
         .get(p.target_section())
         .copied()
         .ok_or(Error::Unconfirmed)?;
-    validation::parent(p, parent)?;
+    if p.parent_updates().is_empty() {
+        validation::parent(p, parent)?;
+    } else {
+        // CONTENT is required even for empty/exact-revert final text.
+        if !parent.raw().has(12) {
+            return Err(Error::Unconfirmed);
+        }
+        validation::existing(
+            p,
+            parent,
+            &p.intent.original,
+            p.parent_draft(),
+            &p.parent_wire,
+        )?;
+    }
     let mut sections = Vec::new();
     for member in &p.sequence_rows {
         let row = by_id
@@ -62,6 +76,7 @@ pub(in crate::canvas::edit::structure::end) fn validate_ack(
         parent: p.intent.original.merge_partial(parent)?,
         child: sections[0].clone(),
         parent_wire: p.parent_wire.clone(),
+        parent_draft: p.parent_draft().clone(),
         child_wire: p.child_wire.clone(),
         child_draft: p.child_draft().clone(),
         second: None,
@@ -111,7 +126,7 @@ pub(in crate::canvas::edit::structure::end) fn confirms_readback(
             return Ok(false);
         }
         let expected = if section.id() == a.parent.id() {
-            Some((&a.parent, &a.intent.seed, &a.parent_wire))
+            Some((&a.parent, &a.parent_draft, &a.parent_wire))
         } else {
             by_id
                 .get(section.id())

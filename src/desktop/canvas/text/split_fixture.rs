@@ -11,6 +11,12 @@ use super_platinum_core::{
     slack::api::CanvasCollabSnapshot,
 };
 
+mod completion;
+mod preparation;
+mod text_completion;
+mod text_preparation;
+pub(super) use text_completion::complete_text;
+pub(super) use text_preparation::dispatch as dispatch_text_multi;
 mod empty;
 mod repeat;
 pub(super) mod sequence;
@@ -34,7 +40,11 @@ pub(super) fn is_empty() -> bool {
     mode() == "empty"
 }
 pub(super) fn parent_id() -> &'static str {
-    if is_sequence() {
+    if (pre_enter::enabled() || parent_edit::enabled() || second_middle::enabled())
+        && parent_mode() == "retained-zero"
+    {
+        "temp:C:Dte0000000000000000000000001"
+    } else if is_sequence() {
         sequence::parent()
     } else if is_repeat() {
         repeat::parent()
@@ -48,6 +58,9 @@ pub(super) fn empty_snapshot(snapshot: &CanvasCollabSnapshot) -> Arc<CanvasColla
     empty::snapshot(snapshot)
 }
 mod middle;
+pub(super) mod parent_edit;
+pub(super) mod pre_enter;
+pub(super) mod second_middle;
 mod start;
 mod start_typing;
 pub(super) use start::dispatch as dispatch_start;
@@ -75,7 +88,13 @@ pub(super) fn is_start_typing() -> bool {
     is_start() && typing() != "none"
 }
 pub(super) fn parent_text() -> &'static str {
-    if is_start_typing() {
+    if second_middle::enabled() {
+        second_middle::final_text(0)
+    } else if parent_edit::enabled() {
+        parent_edit::final_text()
+    } else if pre_enter::enabled() {
+        pre_enter::parent_text()
+    } else if is_start_typing() {
         typing_reports().last().copied().unwrap()
     } else {
         corpus().left
@@ -94,7 +113,11 @@ pub(super) fn second_child_text() -> &'static str {
     typing_reports().last().copied().unwrap_or("")
 }
 pub(super) fn child_text() -> &'static str {
-    typing::child()
+    if second_middle::enabled() {
+        second_middle::final_text(1)
+    } else {
+        typing::child()
+    }
 }
 pub(super) fn continued_text() -> &'static str {
     typing::continued()
@@ -271,7 +294,9 @@ pub(in crate::canvas) struct State {
     pending_text: Option<(
         checklist::Attempt,
         super_platinum_core::canvas::edit::text::PreparedTextEdit,
+        Option<checklist::session_worker::Lease>,
     )>,
+    text_completing: Option<Arc<()>>,
     preflights: Vec<Value>,
     writes: Vec<Value>,
     acknowledgements: Vec<Value>,
@@ -330,6 +355,9 @@ fn rebuild(previous: &CanvasCollabSnapshot, rows: Vec<RawMessage>) -> Arc<Canvas
     )
 }
 pub(super) fn parent_source(raw: &RawMessage) -> RawMessage {
+    if pre_enter::enabled() || parent_edit::enabled() || second_middle::enabled() {
+        return pre_enter::parent_source(raw);
+    }
     if is_start_typing() {
         return start_typing::parent_source(raw);
     }
@@ -341,6 +369,9 @@ pub(super) fn parent_source(raw: &RawMessage) -> RawMessage {
     }
 }
 fn initial() -> Arc<CanvasCollabSnapshot> {
+    if pre_enter::enabled() || parent_edit::enabled() || second_middle::enabled() {
+        return pre_enter::snapshot(&super::structure_fixture::snapshot());
+    }
     if is_sequence() {
         return sequence::snapshot(&super::structure_fixture::snapshot());
     }
@@ -429,27 +460,45 @@ pub(super) async fn dispatch(
         .canonical
         .clone()
         .unwrap();
-    let prepared = intent.prepare(
-        &fresh,
-        checklist::split_ops::witness(attempt).unwrap(),
-        checklist::save::now_usec().unwrap(),
-    );
-    state.write().canvas_checklist.split_fixture.as_mut().unwrap().preflights.push(json!({
-        "source":inventory(&attempt.snapshot),"fresh":inventory(&fresh),
-        "outcome":match &prepared {Ok(_)=>"prepared".to_owned(),Err(error)=>format!("{error:?}")}}));
-    let prepared =
+    if !preparation::current(&state.peek(), attempt, &fresh) {
+        return Err("This canvas view changed before the edit was sent.");
+    }
+    let now = checklist::save::now_usec().ok_or("Could not check the canvas clock.")?;
+    let (prepared, preflight, write) = preparation::prepare(
+        intent,
+        fresh.clone(),
+        attempt.snapshot.clone(),
+        checklist::split_ops::witness(attempt).unwrap().clone(),
+        now,
+        second_middle::enabled(),
+    )
+    .await?;
+    if !enabled(&state.peek()) || !preparation::current(&state.peek(), attempt, &fresh) {
+        return Err("This canvas view changed before the edit was sent.");
+    }
+    state
+        .write()
+        .canvas_checklist
+        .split_fixture
+        .as_mut()
+        .unwrap()
+        .preflights
+        .push(preflight);
+    let (prepared, checkpoint) =
         prepared.map_err(|_| "This paragraph or your access changed. Cancel and refresh.")?;
-    let ticket = checklist::recovery::reserve_split(state, attempt, &prepared).await?;
-    if !checklist::split_ops::mark_dispatched(&mut state.write(), attempt, &prepared) {
+    let write = write.ok_or("The disconnected split evidence is unavailable.")?;
+    let ticket = checklist::recovery::reserve_split(state, attempt, checkpoint).await?;
+    if !enabled(&state.peek())
+        || !preparation::current(&state.peek(), attempt, &fresh)
+        || !checklist::split_ops::mark_dispatched(&mut state.write(), attempt, &prepared)
+    {
         let _ = checklist::recovery::complete(state, &ticket).await;
         return Err("This canvas view changed before the edit was sent.");
     }
     let mut shell = state.write();
     let f = shell.canvas_checklist.split_fixture.as_mut().unwrap();
     f.reservations += 1;
-    f.writes.push(json!({"kind":"split","documentData":STANDARD.encode(prepared.document_data().raw()),
-        "formTitle":prepared.form_title(),"session":prepared.session_id(),"sequence":prepared.sequence(),
-        "parent":prepared.target_section(),"child":prepared.child_section(),"httpFactoryExecuted":false}));
+    f.writes.push(write);
     f.pending = Some((attempt.clone(), PreparedPair::Middle(prepared)));
     Ok(())
 }
@@ -470,15 +519,23 @@ pub(super) async fn dispatch_end(
         .canonical
         .clone()
         .unwrap();
-    let prepared = intent.prepare(
-        &fresh,
-        checklist::end_ops::witness(attempt).unwrap(),
+    if !checklist::dispatchable(&state.peek(), attempt) {
+        return Err("This canvas view changed before the edit was sent.");
+    }
+    let prepared = super::end_save::prepare(
+        intent,
+        fresh.clone(),
+        checklist::end_ops::witness(attempt).unwrap().clone(),
         checklist::save::now_usec().unwrap(),
-    );
+    )
+    .await;
+    if !enabled(&state.peek()) || !checklist::dispatchable(&state.peek(), attempt) {
+        return Err("This canvas view changed before the edit was sent.");
+    }
     state.write().canvas_checklist.split_fixture.as_mut().unwrap().preflights.push(json!({
         "source":inventory(&attempt.snapshot),"fresh":inventory(&fresh),
         "outcome":match &prepared {Ok(_)=>"prepared".to_owned(),Err(error)=>format!("{error:?}")}}));
-    let prepared =
+    let (prepared, checkpoint) =
         prepared.map_err(|_| "This paragraph or your access changed. Cancel and refresh.")?;
     if prepared.clears_child() != (is_reuse() && reuse_content() != "empty")
         || prepared.reuses_child() != is_reuse()
@@ -486,7 +543,7 @@ pub(super) async fn dispatch_end(
     {
         return Err("The disconnected reuse fixture selected an unexpected child.");
     }
-    let ticket = checklist::recovery::reserve_end(state, attempt, &prepared).await?;
+    let ticket = checklist::recovery::reserve_end(state, attempt, checkpoint).await?;
     if !checklist::end_ops::mark_dispatched(&mut state.write(), attempt, &prepared) {
         let _ = checklist::recovery::complete(state, &ticket).await;
         return Err("This canvas view changed before the edit was sent.");
@@ -496,7 +553,7 @@ pub(super) async fn dispatch_end(
     f.reservations += 1;
     f.writes.push(json!({"kind":if is_sequence(){"sequence"}else if is_repeat(){"repeat"}else if is_empty(){"empty"}else if is_reuse(){"reuse"}else{"end"},"documentData":STANDARD.encode(prepared.document_data().raw()),
         "formTitle":prepared.form_title(),"session":prepared.session_id(),"sequence":prepared.sequence(),
-        "parent":prepared.target_section(),"child":prepared.child_section(),"secondChild":prepared.second_child_section(),"members":if prepared.is_sequence(){prepared.appended_members().map(|m|json!({"id":m.id(),"position":m.position(),"reused":m.reused(),"updates":m.updates().iter().map(|d|d.rtml().unwrap()).collect::<Vec<_>>(),"finalRtml":m.draft().rtml().unwrap()})).collect::<Vec<_>>()}else{Vec::new()},"clearsChild":prepared.clears_child(),"httpFactoryExecuted":false}));
+        "parent":prepared.target_section(),"parentUpdates":prepared.parent_updates().iter().map(|d|d.rtml().unwrap()).collect::<Vec<_>>(),"parentFinalRtml":prepared.parent_draft().rtml().unwrap(),"child":prepared.child_section(),"secondChild":prepared.second_child_section(),"members":if prepared.is_sequence(){prepared.appended_members().map(|m|json!({"id":m.id(),"position":m.position(),"reused":m.reused(),"updates":m.updates().iter().map(|d|d.rtml().unwrap()).collect::<Vec<_>>(),"finalRtml":m.draft().rtml().unwrap()})).collect::<Vec<_>>()}else{Vec::new()},"clearsChild":prepared.clears_child(),"httpFactoryExecuted":false}));
     f.pending = Some((attempt.clone(), PreparedPair::End(prepared)));
     Ok(())
 }
@@ -552,8 +609,19 @@ fn authored_rows(prepared: &PreparedPair, previous: &CanvasCollabSnapshot) -> Ve
                     &[n(4, checklist::save::now_usec().unwrap() + 60_000_000)],
                 )
                 .unwrap();
-            let content = if parent {
-                corpus().left_rtml.to_owned()
+            let content = if let PreparedPair::Middle(middle) = prepared {
+                let ids = middle.member_ids();
+                let index = ids
+                    .iter()
+                    .position(|id| Some(*id) == raw.string(1).unwrap())
+                    .unwrap();
+                middle.member_drafts()[index].rtml().unwrap()
+            } else if parent {
+                if let PreparedPair::End(end) = prepared {
+                    end.parent_draft().rtml().unwrap()
+                } else {
+                    typing::escaped(parent_text())
+                }
             } else if let PreparedPair::End(end) = prepared {
                 if end.is_sequence() {
                     end.appended_members()
@@ -622,6 +690,9 @@ pub(super) async fn complete(mut state: Signal<ShellState>) -> bool {
         .canonical
         .clone()
         .unwrap();
+    if matches!(&prepared, PreparedPair::End(_)) || second_middle::enabled() {
+        return completion::end(state, attempt, prepared, previous).await;
+    }
     let rows = authored_rows(&prepared, &previous);
     let partial = scenario() == "partial";
     let ack_rows = if partial { &rows[..1] } else { &rows[..] };
@@ -722,7 +793,7 @@ pub(super) fn change_preflight(mut state: Signal<ShellState>) -> bool {
 pub(super) fn proof(shell: &ShellState) -> Value {
     let f = shell.canvas_checklist.split_fixture.as_ref().unwrap();
     let view = checklist::presentation(shell).unwrap();
-    json!({"scenario":scenario(),"corpus":corpus().name,"mode":mode(),"typing":typing(),"parentMode":parent_mode(),"sequenceCount":sequence::count(),"sequenceHistory":sequence::history(),"sequenceLayout":sequence::layout(),"sequenceCadence":sequence::cadence(),"repeatHistory":repeat_history(),"repeatLayout":repeat_layout(),"emptyHistory":empty_history(),"emptyLayout":empty_layout(),"reuseBase":reuse_base(),"reuseContent":reuse_content(),"reuseChild":is_reuse().then(reuse_child),"pending":f.pending.is_some()||f.pending_start.is_some()||f.pending_start_typing.is_some()||f.pending_text.is_some(),"preflights":f.preflights,
+    json!({"scenario":scenario(),"corpus":corpus().name,"mode":mode(),"typing":typing(),"parentMode":parent_mode(),"preEnter":pre_enter::selector(),"middleParent":parent_edit::selector(),"middleCadence":parent_edit::cadence(),"secondMiddle":second_middle::selector(),"secondMiddleCadence":second_middle::cadence(),"parentId":parent_id(),"sequenceCount":sequence::count(),"sequenceHistory":sequence::history(),"sequenceLayout":sequence::layout(),"sequenceCadence":sequence::cadence(),"repeatHistory":repeat_history(),"repeatLayout":repeat_layout(),"emptyHistory":empty_history(),"emptyLayout":empty_layout(),"reuseBase":reuse_base(),"reuseContent":reuse_content(),"reuseChild":is_reuse().then(reuse_child),"pending":f.pending.is_some()||f.pending_start.is_some()||f.pending_start_typing.is_some()||f.pending_text.is_some()||f.text_completing.is_some(),"preflights":f.preflights,
         "writes":f.writes,"acknowledgements":f.acknowledgements,"readbacks":f.readbacks,"reservations":f.reservations,
         "fresh":inventory(f.canonical.as_ref().unwrap()),"visible":view.snapshot.as_ref().map(|s|inventory(s)),
         "visit":view.visit,"read":view.read,"stale":view.stale,"loading":view.loading,"capacityReason":view.capacity_reason,
@@ -740,6 +811,7 @@ pub(super) fn dispatch_text(
     let f = shell.canvas_checklist.split_fixture.as_ref().unwrap();
     if !(f.writes.len() == 1
         || ((is_middle_typing() || is_start() || is_empty()) && f.writes.len() == 2)
+        || (second_middle::enabled() && (1..=3).contains(&f.writes.len()))
         || (is_repeat() && (1..=3).contains(&f.writes.len()))
         || (is_sequence() && (1..=sequence::count() + 1).contains(&f.writes.len())))
         || f.pending.is_some()
@@ -775,159 +847,8 @@ pub(super) fn dispatch_text(
     f.writes.push(json!({"kind":"text","parent":prepared.section_id(),"session":prepared.session_id(),
         "sequence":prepared.sequence(),"formTitle":prepared.form_title(),
         "documentData":STANDARD.encode(prepared.document_data().raw()),"httpFactoryExecuted":false}));
-    f.pending_text = Some((attempt.clone(), prepared));
+    f.pending_text = Some((attempt.clone(), prepared, None));
     true
-}
-
-pub(super) fn complete_text(shell: &mut ShellState) -> bool {
-    if !enabled(shell) {
-        return false;
-    }
-    let Some((attempt, prepared)) = shell
-        .canvas_checklist
-        .split_fixture
-        .as_mut()
-        .unwrap()
-        .pending_text
-        .take()
-    else {
-        return false;
-    };
-    let previous = shell
-        .canvas_checklist
-        .split_fixture
-        .as_ref()
-        .unwrap()
-        .canonical
-        .clone()
-        .unwrap();
-    let target = prepared.section_id().to_owned();
-    let sent = prepared.document_data().message(1).unwrap().unwrap();
-    let wire = sent
-        .message(38)
-        .unwrap()
-        .unwrap()
-        .remove(12)
-        .unwrap()
-        .replace_fields(3, &[n(3, 3000)])
-        .unwrap()
-        .replace_fields(
-            4,
-            &[n(4, checklist::save::now_usec().unwrap() + 60_000_000)],
-        )
-        .unwrap();
-    let sequence_replacement = if is_sequence() {
-        shell
-            .canvas_checklist
-            .split_fixture
-            .as_ref()
-            .unwrap()
-            .writes[0]["members"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .position(|m| m["id"] == target)
-            .map(sequence::edited)
-            .unwrap_or_default()
-    } else {
-        String::new()
-    };
-    let row = previous
-        .section(&target)
-        .unwrap()
-        .raw()
-        .replace_fields(2, &[n(2, 3000)])
-        .unwrap()
-        .replace_fields(
-            12,
-            &[m(
-                12,
-                &body(
-                    &typing::escaped(
-                        if (is_middle_typing()
-                            || is_start()
-                            || is_empty()
-                            || is_repeat()
-                            || is_sequence())
-                            && target == parent_id()
-                        {
-                            corpus().edited
-                        } else if is_sequence() {
-                            // Bound to the actual request target, not positional DOM inference.
-                            // The owned value below lives through this body call.
-                            sequence_replacement.as_str()
-                        } else if is_repeat()
-                            && shell
-                                .canvas_checklist
-                                .split_fixture
-                                .as_ref()
-                                .unwrap()
-                                .writes[0]["secondChild"]
-                                .as_str()
-                                == Some(target.as_str())
-                        {
-                            "Second paragraph edited"
-                        } else {
-                            continued_text()
-                        },
-                    ),
-                    target == parent_id(),
-                ),
-            )],
-        )
-        .unwrap()
-        // Correlate this ACK with the new text attempt, not the preceding split.
-        .replace_fields(20, &[n(20, sent.uint(20).unwrap().unwrap())])
-        .unwrap()
-        .replace_fields(33, &[t(33, sent.string(33).unwrap().unwrap())])
-        .unwrap()
-        .replace_fields(38, &[m(38, &wire)])
-        .unwrap();
-    let ack_bytes = msg(&[
-        n(1, 1),
-        m(2, &msg(&[t(15, previous.document_id()), m(1, &row)])),
-    ]);
-    let ack = EditAck::decode(ack_bytes.raw()).unwrap();
-    let accepted = prepared.validate_ack(&ack);
-    shell
-        .canvas_checklist
-        .split_fixture
-        .as_mut()
-        .unwrap()
-        .acknowledgements
-        .push(json!({
-        "kind":"text","raw":STANDARD.encode(ack_bytes.raw()),"accepted":accepted.is_ok(),
-        "error":accepted.as_ref().err().map(|e|format!("{e:?}")),"partial":false}));
-    let Ok(accepted) = accepted else { return false };
-    let fresh = rebuild(
-        &previous,
-        previous
-            .sections
-            .iter()
-            .map(|s| {
-                if s.id() == target {
-                    row.clone()
-                } else {
-                    s.raw().clone()
-                }
-            })
-            .collect(),
-    );
-    if !accepted.confirms_readback(&fresh).unwrap_or(false) {
-        return false;
-    }
-    let f = shell.canvas_checklist.split_fixture.as_mut().unwrap();
-    f.readbacks.push(inventory(&fresh));
-    f.canonical = Some(fresh.clone());
-    if !checklist::text_ops::finish_text(shell, &attempt, accepted) {
-        return false;
-    }
-    let Some(read) = checklist::begin_read(shell) else {
-        return false;
-    };
-    checklist::finish_read(shell, &read, Ok(fresh));
-    checklist::confirm_readback(shell, &attempt, &read);
-    checklist::text_ops::settled(shell, &attempt)
 }
 
 #[cfg(test)]

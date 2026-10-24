@@ -1,0 +1,2827 @@
+{
+  "ok": true,
+  "count": 27,
+  "cases": [
+    {
+      "name": "public",
+      "overrideName": "nullish",
+      "state": {
+        "team": "TCHANNEL001",
+        "channels": {
+          "CCHANNEL001": {
+            "id": "CCHANNEL001",
+            "is_channel": true,
+            "is_member": true,
+            "name": "project-old"
+          }
+        },
+        "quipTitle": {},
+        "members": {
+          "UCHANNEL001": {
+            "id": "UCHANNEL001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FCHANNELTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "channel",
+                    "channel_id": "CCHANNEL001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for #project-old",
+      "userIds": [],
+      "label": "Notes for #project-old",
+      "finalLabel": "Notes for #project-old",
+      "calls": [
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "public",
+      "overrideName": "empty",
+      "state": {
+        "team": "TCHANNEL001",
+        "channels": {
+          "CCHANNEL001": {
+            "id": "CCHANNEL001",
+            "is_channel": true,
+            "is_member": true,
+            "name": "project-old"
+          }
+        },
+        "quipTitle": {
+          "FCHANNELTITLE1": {
+            "titleString": ""
+          }
+        },
+        "members": {
+          "UCHANNEL001": {
+            "id": "UCHANNEL001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FCHANNELTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "channel",
+                    "channel_id": "CCHANNEL001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for #project-old",
+      "userIds": [],
+      "label": "",
+      "finalLabel": "",
+      "calls": [
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "public",
+      "overrideName": "text",
+      "state": {
+        "team": "TCHANNEL001",
+        "channels": {
+          "CCHANNEL001": {
+            "id": "CCHANNEL001",
+            "is_channel": true,
+            "is_member": true,
+            "name": "project-old"
+          }
+        },
+        "quipTitle": {
+          "FCHANNELTITLE1": {
+            "titleString": "Independent title"
+          }
+        },
+        "members": {
+          "UCHANNEL001": {
+            "id": "UCHANNEL001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FCHANNELTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "channel",
+                    "channel_id": "CCHANNEL001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for #project-old",
+      "userIds": [],
+      "label": "Independent title",
+      "finalLabel": "Independent title",
+      "calls": [
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "renamed",
+      "overrideName": "nullish",
+      "state": {
+        "team": "TCHANNEL001",
+        "channels": {
+          "CCHANNEL001": {
+            "id": "CCHANNEL001",
+            "is_channel": true,
+            "is_member": true,
+            "name": "project-renamed"
+          }
+        },
+        "quipTitle": {},
+        "members": {
+          "UCHANNEL001": {
+            "id": "UCHANNEL001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FCHANNELTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "channel",
+                    "channel_id": "CCHANNEL001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for #project-renamed",
+      "userIds": [],
+      "label": "Notes for #project-renamed",
+      "finalLabel": "Notes for #project-renamed",
+      "calls": [
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "renamed",
+      "overrideName": "empty",
+      "state": {
+        "team": "TCHANNEL001",
+        "channels": {
+          "CCHANNEL001": {
+            "id": "CCHANNEL001",
+            "is_channel": true,
+            "is_member": true,
+            "name": "project-renamed"
+          }
+        },
+        "quipTitle": {
+          "FCHANNELTITLE1": {
+            "titleString": ""
+          }
+        },
+        "members": {
+          "UCHANNEL001": {
+            "id": "UCHANNEL001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FCHANNELTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "channel",
+                    "channel_id": "CCHANNEL001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for #project-renamed",
+      "userIds": [],
+      "label": "",
+      "finalLabel": "",
+      "calls": [
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "renamed",
+      "overrideName": "text",
+      "state": {
+        "team": "TCHANNEL001",
+        "channels": {
+          "CCHANNEL001": {
+            "id": "CCHANNEL001",
+            "is_channel": true,
+            "is_member": true,
+            "name": "project-renamed"
+          }
+        },
+        "quipTitle": {
+          "FCHANNELTITLE1": {
+            "titleString": "Independent title"
+          }
+        },
+        "members": {
+          "UCHANNEL001": {
+            "id": "UCHANNEL001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FCHANNELTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "channel",
+                    "channel_id": "CCHANNEL001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for #project-renamed",
+      "userIds": [],
+      "label": "Independent title",
+      "finalLabel": "Independent title",
+      "calls": [
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "private-member",
+      "overrideName": "nullish",
+      "state": {
+        "team": "TCHANNEL001",
+        "channels": {
+          "CCHANNEL001": {
+            "id": "CCHANNEL001",
+            "is_channel": true,
+            "is_member": true,
+            "name": "private-project",
+            "is_private": true
+          }
+        },
+        "quipTitle": {},
+        "members": {
+          "UCHANNEL001": {
+            "id": "UCHANNEL001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FCHANNELTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "channel",
+                    "channel_id": "CCHANNEL001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for #private-project",
+      "userIds": [],
+      "label": "Notes for #private-project",
+      "finalLabel": "Notes for #private-project",
+      "calls": [
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "private-member",
+      "overrideName": "empty",
+      "state": {
+        "team": "TCHANNEL001",
+        "channels": {
+          "CCHANNEL001": {
+            "id": "CCHANNEL001",
+            "is_channel": true,
+            "is_member": true,
+            "name": "private-project",
+            "is_private": true
+          }
+        },
+        "quipTitle": {
+          "FCHANNELTITLE1": {
+            "titleString": ""
+          }
+        },
+        "members": {
+          "UCHANNEL001": {
+            "id": "UCHANNEL001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FCHANNELTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "channel",
+                    "channel_id": "CCHANNEL001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for #private-project",
+      "userIds": [],
+      "label": "",
+      "finalLabel": "",
+      "calls": [
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "private-member",
+      "overrideName": "text",
+      "state": {
+        "team": "TCHANNEL001",
+        "channels": {
+          "CCHANNEL001": {
+            "id": "CCHANNEL001",
+            "is_channel": true,
+            "is_member": true,
+            "name": "private-project",
+            "is_private": true
+          }
+        },
+        "quipTitle": {
+          "FCHANNELTITLE1": {
+            "titleString": "Independent title"
+          }
+        },
+        "members": {
+          "UCHANNEL001": {
+            "id": "UCHANNEL001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FCHANNELTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "channel",
+                    "channel_id": "CCHANNEL001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for #private-project",
+      "userIds": [],
+      "label": "Independent title",
+      "finalLabel": "Independent title",
+      "calls": [
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "private-nonmember",
+      "overrideName": "nullish",
+      "state": {
+        "team": "TCHANNEL001",
+        "channels": {
+          "CCHANNEL001": {
+            "id": "CCHANNEL001",
+            "is_channel": true,
+            "is_member": false,
+            "name": "must-not-leak",
+            "is_private": true
+          }
+        },
+        "quipTitle": {},
+        "members": {
+          "UCHANNEL001": {
+            "id": "UCHANNEL001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FCHANNELTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "channel",
+                    "channel_id": "CCHANNEL001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for #private-channel",
+      "userIds": [],
+      "label": "Notes for #private-channel",
+      "finalLabel": "Notes for #private-channel",
+      "calls": [
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "private-nonmember",
+      "overrideName": "empty",
+      "state": {
+        "team": "TCHANNEL001",
+        "channels": {
+          "CCHANNEL001": {
+            "id": "CCHANNEL001",
+            "is_channel": true,
+            "is_member": false,
+            "name": "must-not-leak",
+            "is_private": true
+          }
+        },
+        "quipTitle": {
+          "FCHANNELTITLE1": {
+            "titleString": ""
+          }
+        },
+        "members": {
+          "UCHANNEL001": {
+            "id": "UCHANNEL001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FCHANNELTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "channel",
+                    "channel_id": "CCHANNEL001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for #private-channel",
+      "userIds": [],
+      "label": "",
+      "finalLabel": "",
+      "calls": [
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "private-nonmember",
+      "overrideName": "text",
+      "state": {
+        "team": "TCHANNEL001",
+        "channels": {
+          "CCHANNEL001": {
+            "id": "CCHANNEL001",
+            "is_channel": true,
+            "is_member": false,
+            "name": "must-not-leak",
+            "is_private": true
+          }
+        },
+        "quipTitle": {
+          "FCHANNELTITLE1": {
+            "titleString": "Independent title"
+          }
+        },
+        "members": {
+          "UCHANNEL001": {
+            "id": "UCHANNEL001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FCHANNELTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "channel",
+                    "channel_id": "CCHANNEL001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for #private-channel",
+      "userIds": [],
+      "label": "Independent title",
+      "finalLabel": "Independent title",
+      "calls": [
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "unknown",
+      "overrideName": "nullish",
+      "state": {
+        "team": "TCHANNEL001",
+        "channels": {
+          "CCHANNEL001": {
+            "id": "CCHANNEL001",
+            "isUnknown": true
+          }
+        },
+        "quipTitle": {},
+        "members": {
+          "UCHANNEL001": {
+            "id": "UCHANNEL001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FCHANNELTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "channel",
+                    "channel_id": "CCHANNEL001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for #unknown-channel",
+      "userIds": [],
+      "label": "Notes for #unknown-channel",
+      "finalLabel": "Notes for #unknown-channel",
+      "calls": [
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "unknown",
+      "overrideName": "empty",
+      "state": {
+        "team": "TCHANNEL001",
+        "channels": {
+          "CCHANNEL001": {
+            "id": "CCHANNEL001",
+            "isUnknown": true
+          }
+        },
+        "quipTitle": {
+          "FCHANNELTITLE1": {
+            "titleString": ""
+          }
+        },
+        "members": {
+          "UCHANNEL001": {
+            "id": "UCHANNEL001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FCHANNELTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "channel",
+                    "channel_id": "CCHANNEL001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for #unknown-channel",
+      "userIds": [],
+      "label": "",
+      "finalLabel": "",
+      "calls": [
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "unknown",
+      "overrideName": "text",
+      "state": {
+        "team": "TCHANNEL001",
+        "channels": {
+          "CCHANNEL001": {
+            "id": "CCHANNEL001",
+            "isUnknown": true
+          }
+        },
+        "quipTitle": {
+          "FCHANNELTITLE1": {
+            "titleString": "Independent title"
+          }
+        },
+        "members": {
+          "UCHANNEL001": {
+            "id": "UCHANNEL001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FCHANNELTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "channel",
+                    "channel_id": "CCHANNEL001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for #unknown-channel",
+      "userIds": [],
+      "label": "Independent title",
+      "finalLabel": "Independent title",
+      "calls": [
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "nonexistent",
+      "overrideName": "nullish",
+      "state": {
+        "team": "TCHANNEL001",
+        "channels": {
+          "CCHANNEL001": {
+            "id": "CCHANNEL001",
+            "isNonExistent": true
+          }
+        },
+        "quipTitle": {},
+        "members": {
+          "UCHANNEL001": {
+            "id": "UCHANNEL001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FCHANNELTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "channel",
+                    "channel_id": "CCHANNEL001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for #private-channel",
+      "userIds": [],
+      "label": "Notes for #private-channel",
+      "finalLabel": "Notes for #private-channel",
+      "calls": [
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "nonexistent",
+      "overrideName": "empty",
+      "state": {
+        "team": "TCHANNEL001",
+        "channels": {
+          "CCHANNEL001": {
+            "id": "CCHANNEL001",
+            "isNonExistent": true
+          }
+        },
+        "quipTitle": {
+          "FCHANNELTITLE1": {
+            "titleString": ""
+          }
+        },
+        "members": {
+          "UCHANNEL001": {
+            "id": "UCHANNEL001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FCHANNELTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "channel",
+                    "channel_id": "CCHANNEL001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for #private-channel",
+      "userIds": [],
+      "label": "",
+      "finalLabel": "",
+      "calls": [
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "nonexistent",
+      "overrideName": "text",
+      "state": {
+        "team": "TCHANNEL001",
+        "channels": {
+          "CCHANNEL001": {
+            "id": "CCHANNEL001",
+            "isNonExistent": true
+          }
+        },
+        "quipTitle": {
+          "FCHANNELTITLE1": {
+            "titleString": "Independent title"
+          }
+        },
+        "members": {
+          "UCHANNEL001": {
+            "id": "UCHANNEL001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FCHANNELTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "channel",
+                    "channel_id": "CCHANNEL001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for #private-channel",
+      "userIds": [],
+      "label": "Independent title",
+      "finalLabel": "Independent title",
+      "calls": [
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "absent",
+      "overrideName": "nullish",
+      "state": {
+        "team": "TCHANNEL001",
+        "channels": {},
+        "quipTitle": {},
+        "members": {
+          "UCHANNEL001": {
+            "id": "UCHANNEL001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FCHANNELTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "channel",
+                    "channel_id": "CCHANNEL001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for #unknown-channel",
+      "userIds": [],
+      "label": "Notes for #unknown-channel",
+      "finalLabel": "Notes for #unknown-channel",
+      "calls": [
+        {
+          "kind": "miss",
+          "team": "TCHANNEL001"
+        },
+        {
+          "kind": "unknown-fetch",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "miss",
+          "team": "TCHANNEL001"
+        },
+        {
+          "kind": "unknown-fetch",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "miss",
+          "team": "TCHANNEL001"
+        },
+        {
+          "kind": "unknown-fetch",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "absent",
+      "overrideName": "empty",
+      "state": {
+        "team": "TCHANNEL001",
+        "channels": {},
+        "quipTitle": {
+          "FCHANNELTITLE1": {
+            "titleString": ""
+          }
+        },
+        "members": {
+          "UCHANNEL001": {
+            "id": "UCHANNEL001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FCHANNELTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "channel",
+                    "channel_id": "CCHANNEL001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for #unknown-channel",
+      "userIds": [],
+      "label": "",
+      "finalLabel": "",
+      "calls": [
+        {
+          "kind": "miss",
+          "team": "TCHANNEL001"
+        },
+        {
+          "kind": "unknown-fetch",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "miss",
+          "team": "TCHANNEL001"
+        },
+        {
+          "kind": "unknown-fetch",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "miss",
+          "team": "TCHANNEL001"
+        },
+        {
+          "kind": "unknown-fetch",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "absent",
+      "overrideName": "text",
+      "state": {
+        "team": "TCHANNEL001",
+        "channels": {},
+        "quipTitle": {
+          "FCHANNELTITLE1": {
+            "titleString": "Independent title"
+          }
+        },
+        "members": {
+          "UCHANNEL001": {
+            "id": "UCHANNEL001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FCHANNELTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "channel",
+                    "channel_id": "CCHANNEL001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for #unknown-channel",
+      "userIds": [],
+      "label": "Independent title",
+      "finalLabel": "Independent title",
+      "calls": [
+        {
+          "kind": "miss",
+          "team": "TCHANNEL001"
+        },
+        {
+          "kind": "unknown-fetch",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "miss",
+          "team": "TCHANNEL001"
+        },
+        {
+          "kind": "unknown-fetch",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "miss",
+          "team": "TCHANNEL001"
+        },
+        {
+          "kind": "unknown-fetch",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "archived",
+      "overrideName": "nullish",
+      "state": {
+        "team": "TCHANNEL001",
+        "channels": {
+          "CCHANNEL001": {
+            "id": "CCHANNEL001",
+            "is_channel": true,
+            "is_member": true,
+            "name": "project-old",
+            "is_archived": true
+          }
+        },
+        "quipTitle": {},
+        "members": {
+          "UCHANNEL001": {
+            "id": "UCHANNEL001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FCHANNELTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "channel",
+                    "channel_id": "CCHANNEL001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for #project-old",
+      "userIds": [],
+      "label": "Notes for #project-old",
+      "finalLabel": "Notes for #project-old",
+      "calls": [
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "archived",
+      "overrideName": "empty",
+      "state": {
+        "team": "TCHANNEL001",
+        "channels": {
+          "CCHANNEL001": {
+            "id": "CCHANNEL001",
+            "is_channel": true,
+            "is_member": true,
+            "name": "project-old",
+            "is_archived": true
+          }
+        },
+        "quipTitle": {
+          "FCHANNELTITLE1": {
+            "titleString": ""
+          }
+        },
+        "members": {
+          "UCHANNEL001": {
+            "id": "UCHANNEL001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FCHANNELTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "channel",
+                    "channel_id": "CCHANNEL001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for #project-old",
+      "userIds": [],
+      "label": "",
+      "finalLabel": "",
+      "calls": [
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "archived",
+      "overrideName": "text",
+      "state": {
+        "team": "TCHANNEL001",
+        "channels": {
+          "CCHANNEL001": {
+            "id": "CCHANNEL001",
+            "is_channel": true,
+            "is_member": true,
+            "name": "project-old",
+            "is_archived": true
+          }
+        },
+        "quipTitle": {
+          "FCHANNELTITLE1": {
+            "titleString": "Independent title"
+          }
+        },
+        "members": {
+          "UCHANNEL001": {
+            "id": "UCHANNEL001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FCHANNELTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "channel",
+                    "channel_id": "CCHANNEL001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for #project-old",
+      "userIds": [],
+      "label": "Independent title",
+      "finalLabel": "Independent title",
+      "calls": [
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "mixed-user",
+      "overrideName": "nullish",
+      "state": {
+        "team": "TCHANNEL001",
+        "channels": {
+          "CCHANNEL001": {
+            "id": "CCHANNEL001",
+            "is_channel": true,
+            "is_member": true,
+            "name": "project-old"
+          }
+        },
+        "quipTitle": {},
+        "members": {
+          "UCHANNEL001": {
+            "id": "UCHANNEL001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FCHANNELTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "channel",
+                    "channel_id": "CCHANNEL001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " with "
+                  },
+                  {
+                    "type": "user",
+                    "user_id": "UCHANNEL001"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for #project-old with @Dana",
+      "userIds": [
+        "UCHANNEL001"
+      ],
+      "label": "Notes for #project-old with @Dana",
+      "finalLabel": "Notes for #project-old with @Dana",
+      "calls": [
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "mixed-user",
+      "overrideName": "empty",
+      "state": {
+        "team": "TCHANNEL001",
+        "channels": {
+          "CCHANNEL001": {
+            "id": "CCHANNEL001",
+            "is_channel": true,
+            "is_member": true,
+            "name": "project-old"
+          }
+        },
+        "quipTitle": {
+          "FCHANNELTITLE1": {
+            "titleString": ""
+          }
+        },
+        "members": {
+          "UCHANNEL001": {
+            "id": "UCHANNEL001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FCHANNELTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "channel",
+                    "channel_id": "CCHANNEL001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " with "
+                  },
+                  {
+                    "type": "user",
+                    "user_id": "UCHANNEL001"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for #project-old with @Dana",
+      "userIds": [
+        "UCHANNEL001"
+      ],
+      "label": "Notes for #project-old with @Dana",
+      "finalLabel": "Notes for #project-old with @Dana",
+      "calls": [
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "mixed-user",
+      "overrideName": "text",
+      "state": {
+        "team": "TCHANNEL001",
+        "channels": {
+          "CCHANNEL001": {
+            "id": "CCHANNEL001",
+            "is_channel": true,
+            "is_member": true,
+            "name": "project-old"
+          }
+        },
+        "quipTitle": {
+          "FCHANNELTITLE1": {
+            "titleString": "Independent title"
+          }
+        },
+        "members": {
+          "UCHANNEL001": {
+            "id": "UCHANNEL001",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "file": {
+        "id": "FCHANNELTITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "opaque": {
+              "keep": 1
+            },
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Notes for "
+                  },
+                  {
+                    "type": "channel",
+                    "channel_id": "CCHANNEL001",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 2
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " with "
+                  },
+                  {
+                    "type": "user",
+                    "user_id": "UCHANNEL001"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "Notes for #project-old with @Dana",
+      "userIds": [
+        "UCHANNEL001"
+      ],
+      "label": "Notes for #project-old with @Dana",
+      "finalLabel": "Notes for #project-old with @Dana",
+      "calls": [
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TCHANNEL001",
+          "id": "CCHANNEL001"
+        }
+      ],
+      "inputUnchanged": true
+    }
+  ],
+  "selectorBoundaries": [
+    {
+      "name": "cache-only-miss",
+      "id": "CCHANNEL001",
+      "fetch": false,
+      "result": null,
+      "calls": []
+    },
+    {
+      "name": "invalid-id",
+      "id": "bad",
+      "fetch": true,
+      "result": null,
+      "calls": []
+    }
+  ],
+  "host": {
+    "memoization": "identity host adapter, no claim about cache invalidation",
+    "channelSelector": "exact extracted EmXR getChannelByIdSelector body, synthetic state/team and ledger hit/miss/fetch sinks",
+    "unknownFetch": "returns synthetic original-shaped {id,isUnknown:true}; no unknown manager execution",
+    "predicates": "0mwJ predicate exports bound to original Tac1 exports",
+    "locale": "English translation keys; locale infrastructure unexecuted",
+    "file": "synthetic known Canvas status, explicit Quip state",
+    "freshness": "only selector delegation observed; xsBi/Tst9 inspected statically, not executed"
+  }
+}

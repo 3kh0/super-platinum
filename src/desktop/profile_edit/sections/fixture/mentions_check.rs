@@ -5,8 +5,11 @@ use crate::slack_links_check::wait_dom as native_wait_dom;
 use dioxus::desktop::DesktopContext;
 use serde_json::json;
 use std::time::Duration;
+mod channel_title;
 mod files;
+mod group_title;
 mod groups;
+mod missing_channel;
 mod user_title;
 
 pub(super) async fn readiness(name: &str) -> Result<Value, String> {
@@ -71,6 +74,18 @@ pub(super) async fn readiness(name: &str) -> Result<Value, String> {
 }
 
 pub(crate) fn start(state: Signal<ShellState>, desktop: DesktopContext) {
+    if super::group_title::named() {
+        group_title::start(state, desktop);
+        return;
+    }
+    if super::missing_channel::named() {
+        missing_channel::start(state, desktop);
+        return;
+    }
+    if super::channel_title::named() {
+        channel_title::start(state, desktop);
+        return;
+    }
     if super::user_title::named() {
         user_title::start(state, desktop);
         return;

@@ -7,9 +7,22 @@
 use serde_json::Value;
 
 mod blocks;
+mod channels;
+mod dependencies;
+mod emoji;
+mod groups;
 mod link;
 mod users;
-pub use users::{member_label, user_ids};
+pub use channels::{
+    ChannelText, PrivateChannelText, known_ordinary_channel_label,
+    known_ordinary_channel_label_with_context, observed_channel_label, public_channel_label,
+};
+pub use dependencies::{
+    TitleDependencies, dependencies_with_emoji_context, dependencies_with_groups,
+};
+pub use emoji::EmojiText;
+pub use groups::known_group_label;
+pub use users::{member_label, user_ids, user_ids_with_emoji_context};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Kind {
@@ -93,7 +106,80 @@ pub fn label_with_context(
     effective: &Value,
     quip: QuipTitle<'_>,
     canvas_fallback: Option<&str>,
+    user: impl FnMut(&str) -> Result<String, Unavailable>,
+) -> Result<String, Unavailable> {
+    label_with_emoji_context(kind, status, effective, quip, canvas_fallback, None, user)
+}
+
+/// Emoji presentation is independent of the localized empty-title fallback.
+/// No context means no emoji admission. The caller retains display-context and
+/// file/member/Quip ownership; this does not observe a Slack translation map.
+pub fn label_with_emoji_context(
+    kind: Kind,
+    status: Status,
+    effective: &Value,
+    quip: QuipTitle<'_>,
+    canvas_fallback: Option<&str>,
+    emoji: Option<EmojiText>,
+    user: impl FnMut(&str) -> Result<String, Unavailable>,
+) -> Result<String, Unavailable> {
+    label_with_resolvers(
+        kind,
+        status,
+        effective,
+        quip,
+        canvas_fallback,
+        emoji,
+        user,
+        |_| Err(Unavailable::UnsupportedTitle),
+    )
+}
+
+/// Resolve explicit, independently owned user and channel observations. A channel
+/// resolver must admit only current known ordinary rows (see
+/// `known_ordinary_channel_label` or the public-only `public_channel_label`).
+/// Explicit placeholder presentation is independently supplied through
+/// `known_ordinary_channel_label_with_context`; no context is inferred here.
+/// Only actual user leaves bypass Quip; nested channel resolution still runs
+/// before a Quip override. This grants no source freshness
+/// or account authority, and does not alter the original title/token payload.
+pub fn label_with_resolvers(
+    kind: Kind,
+    status: Status,
+    effective: &Value,
+    quip: QuipTitle<'_>,
+    canvas_fallback: Option<&str>,
+    emoji: Option<EmojiText>,
+    user: impl FnMut(&str) -> Result<String, Unavailable>,
+    channel: impl FnMut(&str) -> Result<String, Unavailable>,
+) -> Result<String, Unavailable> {
+    label_with_group_resolver(
+        kind,
+        status,
+        effective,
+        quip,
+        canvas_fallback,
+        emoji,
+        user,
+        channel,
+        |_| Err(Unavailable::UnsupportedTitle),
+    )
+}
+
+/// Additionally resolves known usergroup observations held by the caller. Groups
+/// are separate dependencies and never grant actual-user Quip bypass. A callback
+/// must retain shared source/history and account/team ownership until mount;
+/// `known_group_label` establishes spelling, not freshness or acquisition.
+pub fn label_with_group_resolver(
+    kind: Kind,
+    status: Status,
+    effective: &Value,
+    quip: QuipTitle<'_>,
+    canvas_fallback: Option<&str>,
+    emoji: Option<EmojiText>,
     mut user: impl FnMut(&str) -> Result<String, Unavailable>,
+    mut channel: impl FnMut(&str) -> Result<String, Unavailable>,
+    mut group: impl FnMut(&str) -> Result<String, Unavailable>,
 ) -> Result<String, Unavailable> {
     if status != Status::Normal {
         return Err(Unavailable::Status);
@@ -121,8 +207,16 @@ pub fn label_with_context(
                 Value::Null => {}
                 Value::Array(blocks) if blocks.is_empty() => {}
                 Value::Array(items) => {
-                    return blocks::label_with_context(items, quip, canvas_fallback, &mut user)
-                        .map(|v| sanitize(&v));
+                    return blocks::label_with_group_resolver(
+                        items,
+                        quip,
+                        canvas_fallback,
+                        emoji,
+                        &mut user,
+                        &mut channel,
+                        &mut group,
+                    )
+                    .map(|v| sanitize(&v));
                 }
                 _ => return Err(Unavailable::UnsupportedTitle),
             }

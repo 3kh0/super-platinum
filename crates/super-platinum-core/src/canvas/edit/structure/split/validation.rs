@@ -69,13 +69,27 @@ pub(super) fn history(
     sent: &RawMessage,
     lineage: Option<&RawMessage>,
 ) -> Result<(), Error> {
+    history_many(
+        section,
+        draft,
+        sent,
+        &lineage.into_iter().collect::<Vec<_>>(),
+    )
+}
+pub(super) fn history_many(
+    section: &Section,
+    draft: &TextDraft,
+    sent: &RawMessage,
+    lineages: &[&RawMessage],
+) -> Result<(), Error> {
     let wire = section.crdt()?.ok_or(Error::Unconfirmed)?;
-    if let Some(expected) = lineage {
-        let infos = wire.messages(10)?;
-        if infos.len() != 1 || !lineage_matches(&infos[0], expected)? {
-            return Err(Error::Unconfirmed);
-        }
-    } else if wire.has(10) {
+    let infos = wire.messages(10)?;
+    if infos.len() != lineages.len()
+        || infos
+            .iter()
+            .zip(lineages)
+            .any(|(a, e)| !lineage_matches(a, e).unwrap_or(false))
+    {
         return Err(Error::Unconfirmed);
     }
     // Remove only the exact separately validated lineage. No new acceptance is
@@ -100,7 +114,11 @@ pub(super) fn history(
     }
     Ok(())
 }
-fn common(prepared: &PreparedSplitEdit, section: &Section, base: u64) -> Result<(), Error> {
+pub(super) fn common(
+    prepared: &PreparedSplitEdit,
+    section: &Section,
+    base: u64,
+) -> Result<(), Error> {
     if section.document_id()? != Some(prepared.document_id())
         || section.thread_id()? != Some(prepared.thread_id())
         || section
@@ -128,14 +146,16 @@ pub(super) fn parent(prepared: &PreparedSplitEdit, section: &Section) -> Result<
         section,
         original.sequence()?.ok_or(Error::Unconfirmed)?,
     )?;
-    if !content_equal(section, &text::content(original, &prepared.witness.parent)?)?
-        || stable_parent(&original.merge_partial(section)?)? != stable_parent(original)?
+    if !content_equal(
+        section,
+        &text::content(original, prepared.witness.parent_draft())?,
+    )? || stable_parent(&original.merge_partial(section)?)? != stable_parent(original)?
     {
         return Err(Error::Unconfirmed);
     }
     history(
         section,
-        &prepared.witness.parent,
+        prepared.witness.parent_draft(),
         &prepared.parent_wire,
         Some(&prepared.lineage),
     )

@@ -1,7 +1,7 @@
-//! Ordered, bounded end-Enter and active-last plain input evidence.
-use super::{Captured, EndWitness, EventWitness, TextDraft, Value};
+//! Bounded end sequences and interior splits with exact per-row input evidence.
+use super::{Captured, EndWitness, EventWitness, SplitWitness, TextDraft, Value};
 use serde::{Deserialize, Serialize};
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(super) struct Sequence {
     pub(super) revision: u64,
@@ -10,7 +10,7 @@ pub(super) struct Sequence {
     html: String,
     events: Vec<Event>,
 }
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct Event {
     kind: String,
@@ -33,14 +33,14 @@ struct Event {
     html: String,
     sections: Vec<Section>,
 }
-#[derive(Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct Section {
     html: String,
     text: String,
     placeholder: Option<Empty>,
 }
-#[derive(Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct Empty {
     html: String,
@@ -95,7 +95,7 @@ fn plain_html(html: &str, expected: &str) -> bool {
         })
 }
 fn snapshot(event: &Event) -> Option<Vec<TextDraft>> {
-    if event.sections.len() < 2
+    if event.sections.is_empty()
         || event.sections.len() > 4100
         || event.raw_after.len() != 1
         || event.after.len() != 1
@@ -151,9 +151,62 @@ fn snapshot(event: &Event) -> Option<Vec<TextDraft>> {
     html.push_str("</div>");
     (html == event.html && projected == event.after).then_some(drafts)
 }
+fn edit_proof(event: &Event, prior_text: &str) -> Option<()> {
+    if event.selection_start > event.selection_end || event.start > event.end {
+        return None;
+    }
+    offset(prior_text, event.selection_start)?;
+    offset(prior_text, event.selection_end)?;
+    let start = offset(prior_text, event.start)?;
+    let end = offset(prior_text, event.end)?;
+    let selected = event.selection_start != event.selection_end;
+    if selected && (event.start != event.selection_start || event.end != event.selection_end) {
+        return None;
+    }
+    let inserted = match event.input_type.as_str() {
+        "insertText" => {
+            let s = event.data.as_deref()?;
+            if s.is_empty()
+                || !scalar(s)
+                || event.start != event.selection_start
+                || event.end != event.selection_end
+            {
+                return None;
+            }
+            s
+        }
+        "deleteContentBackward" | "deleteContentForward" => {
+            if event.data.is_some()
+                || start == end
+                || (!selected
+                    && if event.input_type == "deleteContentBackward" {
+                        event.end != event.selection_start
+                    } else {
+                        event.start != event.selection_start
+                    })
+            {
+                return None;
+            }
+            ""
+        }
+        _ => return None,
+    };
+    if event.after_text != format!("{}{inserted}{}", &prior_text[..start], &prior_text[end..])
+        || event.caret != event.start + inserted.encode_utf16().count()
+    {
+        return None;
+    }
+    Some(())
+}
+#[path = "split_sequence_second.rs"]
+mod second;
 pub(super) fn parse(w: &EventWitness, blocks: &[Value]) -> Option<Captured> {
+    if w.kind.as_deref() == Some("second-middle-sequence") {
+        return second::parse(w, blocks);
+    }
     let value = w.sequence.as_ref()?;
-    if w.kind.as_deref() != Some("sequence")
+    let middle = w.kind.as_deref() == Some("middle-sequence");
+    if (!middle && w.kind.as_deref() != Some("sequence"))
         || w.repeat.is_some()
         || w.typing.is_some()
         || w.empty_proof.is_some()
@@ -169,10 +222,14 @@ pub(super) fn parse(w: &EventWitness, blocks: &[Value]) -> Option<Captured> {
     }
     let before = TextDraft::from_rich_blocks(&w.before).ok()?;
     let original = text(&before);
-    if original.is_empty() || !scalar(&original) || w.offset != original.encode_utf16().count() {
+    if original.is_empty() || !scalar(&original) {
         return None;
     }
     let mut updates: Vec<Vec<TextDraft>> = Vec::new();
+    let mut parent_updates = Vec::new();
+    let mut pre_updates = Vec::new();
+    let mut enter_draft = None;
+    let mut first_enter = None;
     let mut previous: Option<&Event> = None;
     let mut bytes = 0usize;
     let mut reports = 0usize;
@@ -185,13 +242,23 @@ pub(super) fn parse(w: &EventWitness, blocks: &[Value]) -> Option<Captured> {
             return None;
         }
         let drafts = snapshot(event)?;
-        if drafts.first() != Some(&before) {
+        // The first edit starts from the immutable mounted source; a direct
+        // first Enter must preserve it. Later Enter preserves the prior rows.
+        if previous.is_none() && event.kind == "enter" && drafts.first() != Some(&before) {
             return None;
         }
-        let active = updates.len();
-        let prior_text = previous.map_or(original.as_str(), |e| {
-            e.sections.last().unwrap().text.as_str()
-        });
+        let active = if event.kind == "middle" {
+            0
+        } else if event.kind == "enter" {
+            updates.len()
+        } else {
+            event.active_index
+        };
+        let prior_text = if let Some(prior) = previous {
+            prior.sections.get(active)?.text.as_str()
+        } else {
+            original.as_str()
+        };
         if event.before_text != prior_text
             || event.selection_start > event.selection_end
             || event.start > event.end
@@ -202,7 +269,41 @@ pub(super) fn parse(w: &EventWitness, blocks: &[Value]) -> Option<Captured> {
         offset(prior_text, event.selection_end)?;
         let start = offset(prior_text, event.start)?;
         let end = offset(prior_text, event.end)?;
-        if event.kind == "enter" {
+        if event.kind == "middle" {
+            // Exactly one live interior split, anchored to original or prelude.
+            if !middle
+                || first_enter.is_some()
+                || !updates.is_empty()
+                || event.input_type != "insertParagraph"
+                || event.data.is_some()
+                || event.active_index != 1
+                || start == 0
+                || start == prior_text.len()
+                || start != end
+                || event.selection_start != event.start
+                || event.selection_end != event.end
+                || event.caret != 0
+                || event.sections.len() != 2
+                || event.sections.iter().any(|s| s.placeholder.is_some())
+                || event.sections[0].text != prior_text[..start]
+                || event.after_text != prior_text[start..]
+            {
+                return None;
+            }
+            enter_draft = if let Some(prior) = previous {
+                if prior.sections.len() != 1 {
+                    return None;
+                }
+                snapshot(prior)?.into_iter().next()
+            } else {
+                Some(before.clone())
+            };
+            first_enter = Some(event);
+            updates.push(Vec::new());
+        } else if event.kind == "enter" {
+            if middle {
+                return None;
+            }
             let len = prior_text.encode_utf16().count();
             if event.input_type != "insertParagraph"
                 || event.data.is_some()
@@ -228,80 +329,66 @@ pub(super) fn parse(w: &EventWitness, blocks: &[Value]) -> Option<Captured> {
                     return None;
                 }
             }
+            if first_enter.is_none() {
+                first_enter = Some(event);
+                enter_draft = drafts.first().cloned();
+            }
             updates.push(Vec::new());
         } else if event.kind == "edit" {
-            let prior = previous?;
-            if active == 0
-                || event.active_index != active
-                || event.sections.len() != active + 1
-                || event.sections[..active] != prior.sections[..active]
-                || event.after[0]["elements"].as_array()?[..active]
-                    != prior.after[0]["elements"].as_array()?[..active]
-                || event.raw_after[0]["elements"].as_array()?[..active]
-                    != prior.raw_after[0]["elements"].as_array()?[..active]
-            {
+            if active > updates.len() || event.sections.len() != updates.len() + 1 {
                 return None;
             }
-            let selected = event.selection_start != event.selection_end;
-            if selected
-                && (event.start != event.selection_start || event.end != event.selection_end)
-            {
-                return None;
-            }
-            let inserted = match event.input_type.as_str() {
-                "insertText" => {
-                    let s = event.data.as_deref()?;
-                    if s.is_empty()
-                        || !scalar(s)
-                        || event.start != event.selection_start
-                        || event.end != event.selection_end
+            if let Some(prior) = previous {
+                if event.sections.len() != prior.sections.len() {
+                    return None;
+                }
+                let after = event.after[0]["elements"].as_array()?;
+                let prior_after = prior.after[0]["elements"].as_array()?;
+                let raw_after = event.raw_after[0]["elements"].as_array()?;
+                let prior_raw = prior.raw_after[0]["elements"].as_array()?;
+                for (index, section) in event.sections.iter().enumerate() {
+                    if index != active
+                        && (section != &prior.sections[index]
+                            || after.get(index) != prior_after.get(index)
+                            || raw_after.get(index) != prior_raw.get(index))
                     {
                         return None;
                     }
-                    s
                 }
-                "deleteContentBackward" | "deleteContentForward" => {
-                    if event.data.is_some()
-                        || start == end
-                        || (!selected
-                            && if event.input_type == "deleteContentBackward" {
-                                event.end != event.selection_start
-                            } else {
-                                event.start != event.selection_start
-                            })
-                    {
-                        return None;
-                    }
-                    ""
-                }
-                _ => return None,
-            };
-            if event.after_text
-                != format!("{}{inserted}{}", &prior_text[..start], &prior_text[end..])
-                || event.caret != event.start + inserted.encode_utf16().count()
-            {
+            } else if active != 0 {
                 return None;
             }
+            edit_proof(event, prior_text)?;
             if event.after_text != prior_text {
-                let draft = drafts.last()?.clone();
+                let draft = drafts.get(active)?.clone();
                 bytes = bytes.checked_add(draft.rtml().ok()?.len())?;
                 reports += 1;
                 if bytes > 8 * 1024 * 1024 || reports > 4096 {
                     return None;
                 }
-                updates.last_mut()?.push(draft);
+                if active == 0 {
+                    if first_enter.is_none() {
+                        pre_updates.push(draft);
+                    } else {
+                        parent_updates.push(draft);
+                    }
+                } else {
+                    updates.get_mut(active - 1)?.push(draft);
+                }
             }
         } else {
             return None;
         }
-        if event.sections.last()?.text != event.after_text {
+        if event.sections.get(event.active_index)?.text != event.after_text {
             return None;
         }
         previous = Some(event);
     }
-    let first = value.events.first()?;
+    let first = first_enter?;
     let last = previous?;
-    if w.after != first.after
+    if w.offset != first.start
+        || w.revision != first.revision
+        || w.after != first.after
         || w.raw_after.as_ref() != Some(&first.raw_after)
         || value.after != blocks
         || value.after != last.after
@@ -311,15 +398,151 @@ pub(super) fn parse(w: &EventWitness, blocks: &[Value]) -> Option<Captured> {
     {
         return None;
     }
-    EndWitness::sequence(&before, w.offset, &updates)
-        .ok()
-        .map(Captured::End)
+    let enter_draft = enter_draft?;
+    if middle {
+        let initial = snapshot(first)?;
+        let witness = if pre_updates.is_empty() {
+            if enter_draft != before {
+                return None;
+            }
+            SplitWitness::new(&before, w.offset, &initial[0], &initial[1])
+        } else {
+            SplitWitness::new_with_pre_enter_updates(
+                &before,
+                &enter_draft,
+                w.offset,
+                &initial[0],
+                &initial[1],
+                &pre_updates,
+            )
+        };
+        return witness
+            .ok()?
+            .with_parent_updates(&parent_updates)
+            .ok()?
+            .with_child_updates(updates.first()?)
+            .ok()
+            .map(Captured::Split);
+    }
+    let witness = if pre_updates.is_empty() {
+        // Actual no-op inputs still advance renderer revisions. They do not
+        // introduce a new core parent history or change legacy custody.
+        if enter_draft != before {
+            return None;
+        }
+        EndWitness::sequence_with_parent_updates(&before, w.offset, &parent_updates, &updates)
+    } else {
+        EndWitness::sequence_with_pre_enter_updates(
+            &before,
+            &enter_draft,
+            w.offset,
+            &pre_updates,
+            &parent_updates,
+            &updates,
+        )
+    };
+    witness.ok().map(Captured::End)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use serde_json::json;
+    #[test]
+    fn browser_pre_enter_input_preserves_original_and_ordered_reports() {
+        let cases: Vec<Value> =
+            serde_json::from_str(include_str!("split_fixture/sequence-preenter-native.json"))
+                .unwrap();
+        assert_eq!(cases.len(), 5);
+        for case in cases {
+            let capture = case["capture"].clone();
+            let Some(Captured::End(witness)) =
+                super::super::parse(serde_json::from_value(capture).unwrap(), 1, 0)
+            else {
+                panic!("pre-Enter capture refused: {}", case["name"]);
+            };
+            let expected_parent: Vec<String> =
+                serde_json::from_value(case["expectedParentReports"].clone()).unwrap();
+            assert_eq!(
+                witness
+                    .parent_updates()
+                    .iter()
+                    .map(text)
+                    .collect::<Vec<_>>(),
+                expected_parent,
+                "{}",
+                case["name"]
+            );
+            let expected_members: Vec<Vec<String>> =
+                serde_json::from_value(case["expectedReports"].clone()).unwrap();
+            assert!(witness.is_sequence());
+            assert_eq!(witness.append_count(), expected_members.len());
+            assert_eq!(
+                witness
+                    .sequence_updates()
+                    .unwrap()
+                    .iter()
+                    .map(|reports| reports.iter().map(text).collect::<Vec<_>>())
+                    .collect::<Vec<_>>(),
+                expected_members,
+                "{}",
+                case["name"]
+            );
+            if case["name"] == "actual-pre-enter-no-op" {
+                assert!(witness.parent_updates().is_empty());
+                assert_eq!(case["capture"]["split"]["revision"], 2);
+            }
+        }
+    }
+
+    #[test]
+    fn pre_enter_parser_refuses_forged_boundary_and_chronology() {
+        let cases: Vec<Value> =
+            serde_json::from_str(include_str!("split_fixture/sequence-preenter-native.json"))
+                .unwrap();
+        for case in cases {
+            for defect in 0..7 {
+                let mut capture = case["capture"].clone();
+                match defect {
+                    0 => capture["split"]["revision"] = json!(1),
+                    1 => {
+                        let offset = capture["split"]["offset"].as_u64().unwrap();
+                        capture["split"]["offset"] = json!(offset + 1);
+                    }
+                    2 => {
+                        capture["split"]["sequence"]["events"][0]["beforeText"] =
+                            json!("Unreported original");
+                    }
+                    3 => {
+                        capture["split"]["sequence"]["events"][0]["beforeInputTrusted"] =
+                            json!(false);
+                    }
+                    4 => {
+                        capture["split"]["sequence"]["events"][1]["beforeRevision"] = json!(9);
+                    }
+                    5 => {
+                        let events = capture["split"]["sequence"]["events"]
+                            .as_array_mut()
+                            .unwrap();
+                        let first = events.iter_mut().find(|e| e["kind"] == "enter").unwrap();
+                        first["beforeText"] = json!("Unreported live boundary");
+                    }
+                    _ => {
+                        capture["split"]["sequence"]["events"]
+                            .as_array_mut()
+                            .unwrap()
+                            .retain(|e| e["kind"] != "enter");
+                    }
+                }
+                assert!(
+                    super::super::parse(serde_json::from_value(capture).unwrap(), 1, 0).is_none(),
+                    "{} defect {defect}",
+                    case["name"]
+                );
+            }
+        }
+    }
+
     #[test]
     fn actual_native_sequence_captures_bind_reports_and_refuse_drift() {
         let mut cases: Vec<Value> =
@@ -380,4 +603,166 @@ mod tests {
         events.resize(4100, last);
         assert!(super::super::parse(serde_json::from_value(capture).unwrap(), 1, 0).is_none());
     }
+
+    #[test]
+    fn browser_revisits_preserve_each_members_ordered_reports() {
+        let cases: Vec<Value> =
+            serde_json::from_str(include_str!("split_fixture/sequence-revisit-native.json"))
+                .unwrap();
+        assert_eq!(cases.len(), 4);
+        for case in cases {
+            let Some(Captured::End(witness)) = super::super::parse(
+                serde_json::from_value(case["capture"].clone()).unwrap(),
+                1,
+                0,
+            ) else {
+                panic!("revisit capture refused: {}", case["name"])
+            };
+            let actual: Vec<Vec<String>> = witness
+                .sequence_updates()
+                .unwrap()
+                .iter()
+                .map(|reports| reports.iter().map(text).collect())
+                .collect();
+            let expected: Vec<Vec<String>> =
+                serde_json::from_value(case["expectedReports"].clone()).unwrap();
+            assert_eq!(actual, expected, "{}", case["name"]);
+        }
+    }
+
+    #[test]
+    fn browser_parent_revisits_preserve_parent_and_member_reports() {
+        let cases: Vec<Value> =
+            serde_json::from_str(include_str!("split_fixture/sequence-parent-native.json"))
+                .unwrap();
+        assert_eq!(cases.len(), 4);
+        for case in cases {
+            let Some(Captured::End(witness)) = super::super::parse(
+                serde_json::from_value(case["capture"].clone()).unwrap(),
+                1,
+                0,
+            ) else {
+                panic!("parent revisit refused: {}", case["name"])
+            };
+            let parent: Vec<String> = witness.parent_updates().iter().map(text).collect();
+            let expected_parent: Vec<String> =
+                serde_json::from_value(case["expectedParentReports"].clone()).unwrap();
+            assert_eq!(parent, expected_parent, "{}", case["name"]);
+            let members: Vec<Vec<String>> = witness
+                .sequence_updates()
+                .unwrap()
+                .iter()
+                .map(|reports| reports.iter().map(text).collect())
+                .collect();
+            let expected_members: Vec<Vec<String>> =
+                serde_json::from_value(case["expectedReports"].clone()).unwrap();
+            assert_eq!(members, expected_members, "{}", case["name"]);
+        }
+    }
+
+    #[test]
+    fn parent_revisit_refuses_unreported_rows_and_initial_seed_changes() {
+        fn change_row(event: &mut Value, index: usize) {
+            event["sections"][index] = json!({
+                "html": "Unreported", "text": "Unreported", "placeholder": null
+            });
+            let changed = json!({
+                "type": "rich_text_section", "elements": [{"type":"text","text":"Unreported"}]
+            });
+            event["after"][0]["elements"][index] = changed.clone();
+            event["rawAfter"][0]["elements"][index] = changed;
+            let mut html = String::from("<div class=\"rich-editor-block\">");
+            for section in event["sections"].as_array().unwrap() {
+                html.push_str("<div class=\"rich-editor-section\">");
+                html.push_str(section["html"].as_str().unwrap());
+                html.push_str("</div>");
+            }
+            html.push_str("</div>");
+            event["html"] = json!(html);
+        }
+        let cases: Vec<Value> =
+            serde_json::from_str(include_str!("split_fixture/sequence-parent-native.json"))
+                .unwrap();
+        for case in cases {
+            for victim in [0, 1] {
+                let mut capture = case["capture"].clone();
+                let sequence = &mut capture["split"]["sequence"];
+                let event = sequence["events"]
+                    .as_array_mut()
+                    .unwrap()
+                    .last_mut()
+                    .unwrap();
+                assert_eq!(event["kind"], "edit");
+                assert!(event["activeIndex"].as_u64().unwrap() > 1);
+                change_row(event, victim);
+                let final_event = event.clone();
+                for key in ["after", "rawAfter", "html"] {
+                    sequence[key] = final_event[key].clone();
+                }
+                capture["blocks"] = final_event["after"].clone();
+                assert!(
+                    super::super::parse(serde_json::from_value(capture).unwrap(), 1, 0).is_none()
+                );
+            }
+            // A later parent report does not authorize changing the seed during
+            // the initial Enter, even when all first-event representations agree.
+            let mut capture = case["capture"].clone();
+            let event = &mut capture["split"]["sequence"]["events"][0];
+            change_row(event, 0);
+            let first_event = event.clone();
+            capture["split"]["after"] = first_event["after"].clone();
+            capture["split"]["rawAfter"] = first_event["rawAfter"].clone();
+            assert!(super::super::parse(serde_json::from_value(capture).unwrap(), 1, 0).is_none());
+        }
+    }
+
+    #[test]
+    fn revisit_refuses_a_consistent_but_unreported_change_to_another_member() {
+        let cases: Vec<Value> =
+            serde_json::from_str(include_str!("split_fixture/sequence-revisit-native.json"))
+                .unwrap();
+        for case in cases {
+            let mut capture = case["capture"].clone();
+            let sequence = &mut capture["split"]["sequence"];
+            let event = sequence["events"]
+                .as_array_mut()
+                .unwrap()
+                .last_mut()
+                .unwrap();
+            assert_eq!(event["kind"], "edit");
+            assert_eq!(event["activeIndex"], 4);
+            // Keep all final representations consistent: only the missing input
+            // history for member 1 distinguishes this forged final snapshot.
+            event["sections"][1] = json!({
+                "html": "Unobserved", "text": "Unobserved", "placeholder": null
+            });
+            let changed = json!({
+                "type": "rich_text_section", "elements": [{"type":"text","text":"Unobserved"}]
+            });
+            event["after"][0]["elements"][1] = changed.clone();
+            event["rawAfter"][0]["elements"][1] = changed;
+            let mut html = String::from("<div class=\"rich-editor-block\">");
+            for section in event["sections"].as_array().unwrap() {
+                html.push_str("<div class=\"rich-editor-section\">");
+                html.push_str(section["html"].as_str().unwrap());
+                html.push_str("</div>");
+            }
+            html.push_str("</div>");
+            event["html"] = json!(html);
+            let final_event = event.clone();
+            for key in ["after", "rawAfter", "html"] {
+                sequence[key] = final_event[key].clone();
+            }
+            capture["blocks"] = final_event["after"].clone();
+            assert!(
+                super::super::parse(serde_json::from_value(capture).unwrap(), 1, 0).is_none(),
+                "{}",
+                case["name"]
+            );
+        }
+    }
 }
+
+#[cfg(test)]
+#[path = "split_sequence_middle_tests.rs"]
+mod middle_tests;

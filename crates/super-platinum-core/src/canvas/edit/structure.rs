@@ -8,6 +8,7 @@ mod end;
 pub(super) use crdt::canonical_zero_base_history;
 pub use end::{AcceptedEnd, EndAppend, EndIntent, EndWitness, PreparedEndEdit};
 mod inventory;
+mod owner_delete;
 pub(super) mod position;
 mod prepared;
 pub mod recovery;
@@ -19,7 +20,7 @@ pub use prepared::{AcceptedStructure, PreparedStructureEdit};
 pub use replacement::{
     AcceptedReplacement, PreparedReplacement, ReplacementIntent, can_replace_main_canvas,
 };
-pub use split::{AcceptedSplit, PreparedSplitEdit, SplitIntent, SplitWitness};
+pub use split::{AcceptedSplit, PreparedSplitEdit, SplitIntent, SplitSequenceTarget, SplitWitness};
 pub(super) use split::{same_split_lineage, split_child, split_parent_history};
 pub use start_typing::{
     AcceptedStartTyping, PreparedStartTypingEdit, StartTypingIntent, StartTypingWitness,

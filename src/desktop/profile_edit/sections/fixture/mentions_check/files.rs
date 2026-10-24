@@ -109,6 +109,9 @@ async fn shot(
     if super::super::link_title::named() {
         proof["linkTitle"] = super::super::link_title::snapshot();
     }
+    if super::super::emoji_title::named() {
+        proof["emojiTitle"] = super::super::emoji_title::snapshot();
+    }
     capture(state, desktop, name, stage, proof, stages, captures).await
 }
 async fn run(
@@ -315,6 +318,9 @@ async fn run(
     }
     if super::super::link_title::named() {
         result["linkTitle"] = super::super::link_title::snapshot();
+    }
+    if super::super::emoji_title::named() {
+        result["emojiTitle"] = super::super::emoji_title::snapshot();
     }
     Ok(result)
 }

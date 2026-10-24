@@ -126,6 +126,9 @@ fn prepare(
     fresh: &CanvasCollabSnapshot,
     now: Option<u64>,
 ) -> Result<PreparedCheckboxEdit, &'static str> {
+    if let Some(reason) = super::session_worker::reason(shell) {
+        return Err(reason);
+    }
     let now = now.ok_or("Check your system clock before editing this canvas.")?;
     with_edit_session(shell, attempt, |session| {
         intent.prepare(fresh, session, now)

@@ -42,8 +42,13 @@ impl EndReview {
     }
 }
 pub(super) fn capture(c: &Checkpoint) -> Result<EndReview, AppError> {
-    let Action::EndSequence { members } = &c.action else {
-        return Err(invalid());
+    let (parent_updates, members) = match &c.action {
+        Action::EndSequence { members } => (&[][..], members),
+        Action::EndSequenceParent {
+            parent_updates,
+            members,
+        } => (parent_updates.as_slice(), members),
+        _ => return Err(invalid()),
     };
     let source = c
         .sections
@@ -89,6 +94,13 @@ pub(super) fn capture(c: &Checkpoint) -> Result<EndReview, AppError> {
         parent_id: c.target.clone(),
         child_id: first.id.clone(),
         original_text: visible(&c.draft)?,
+        parent_text: visible(
+            parent_updates
+                .last()
+                .map(String::as_str)
+                .unwrap_or(&c.draft),
+        )?,
+        parent_updates: parent_updates.to_vec(),
         reused: first.reused,
         child_text: visible(first.updates.last().map(String::as_str).unwrap_or(""))?,
         original_child_rtml: None,

@@ -139,7 +139,8 @@ pub(super) fn begin(shell: &mut ShellState, wake: &Wake) -> Result<Admission, Er
     let ctx = owner.context.clone();
     let slot = &shell.app_home.channel_fetches.slots[&ctx.key()];
     let changes = slot.changes.subscribe();
-    if slot.initial.is_some()
+    if unknown::busy(shell, &ctx.key())
+        || slot.initial.is_some()
         || slot.drain.is_some()
         || shell.core.workspaces[&ctx.session.team_id]
             .directory_channels

@@ -30,6 +30,7 @@ pub struct LocalReview {
     split: Option<SplitReview>,
     end: Option<EndReview>,
     start_typing: Option<StartTypingReview>,
+    split_owner_child: Option<crate::canvas::wire::Section>,
 }
 impl LocalReview {
     pub fn operation_id(&self) -> &str {
@@ -66,6 +67,11 @@ impl LocalReview {
     }
     pub fn is_delete(&self) -> bool {
         self.receipt.checkpoint.is_delete()
+    }
+    /// Exact original surviving child, derived from inert V1 source/request.
+    /// Current rows are separately exposed by observed_sections; neither is ACK authority.
+    pub fn split_owner_child(&self) -> Option<&crate::canvas::wire::Section> {
+        self.split_owner_child.as_ref()
     }
     /// Placement of the retained insertion request, not proof of its outcome.
     /// Text from observed_sections belongs to the current comparison, not the
@@ -138,6 +144,15 @@ impl Journal {
             || receipt.checkpoint.is_split()
             || receipt.checkpoint.is_end()
             || receipt.checkpoint.is_start_typing()
+            || receipt
+                .checkpoint
+                .is_dependent_child_delete()
+                .map_err(|_| invalid())?
+            || receipt
+                .checkpoint
+                .split_owner_child()
+                .map_err(|_| invalid())?
+                .is_some()
         {
             Inventory::capture_for_local_review(snapshot)
         } else {
@@ -188,6 +203,10 @@ impl Journal {
             split: SplitReview::capture(&receipt.checkpoint)?,
             end: EndReview::capture(&receipt.checkpoint)?,
             start_typing: StartTypingReview::capture(&receipt.checkpoint)?,
+            split_owner_child: receipt
+                .checkpoint
+                .split_owner_child()
+                .map_err(|_| invalid())?,
         })
     }
 

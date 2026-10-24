@@ -25,6 +25,13 @@
   let disposed = false;
   const observed = new Set();
   const blocks = () => [...root.querySelectorAll('[data-row-id]')];
+  // Date/unread annotations belong to the wrapper, but can move to a newly
+  // prepended predecessor. Preserve the message the reader sees, not that
+  // mutable prefix. Non-message rows retain their wrapper-based position.
+  const readingElement = row => {
+    const message = row.querySelector('[data-message-id]');
+    return message?.dataset.messageId === row.dataset.rowId ? message : row;
+  };
 
   function capture(hold = false) {
     record("capture-start");
@@ -33,7 +40,7 @@
       return;
     }
     const bounds = root.getBoundingClientRect();
-    const rows = blocks().map(row => ({id: row.dataset.rowId, rect: row.getBoundingClientRect()}));
+    const rows = blocks().map(row => ({id: row.dataset.rowId, rect: readingElement(row).getBoundingClientRect()}));
     anchor = {
       height: root.scrollHeight,
       bottom: !hold && root.scrollHeight - root.scrollTop - root.clientHeight <= 2,
@@ -57,7 +64,7 @@
     for (const saved of anchor.rows) {
       const row = current.get(saved.id);
       if (!row) continue;
-      const delta = row.getBoundingClientRect().top - root.getBoundingClientRect().top - saved.offset;
+      const delta = readingElement(row).getBoundingClientRect().top - root.getBoundingClientRect().top - saved.offset;
       if (Math.abs(delta) > 0.5) root.scrollTop += delta;
       return;
     }

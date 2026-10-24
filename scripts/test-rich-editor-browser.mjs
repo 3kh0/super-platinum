@@ -10,6 +10,14 @@ import {fileURLToPath} from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const browser=process.env.RICH_EDITOR_TEST_BROWSER || 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const profile=await mkdtemp(path.join(tmpdir(),'super-platinum-editor-browser-'));
+// Exact local Material helper data and product sizing for the empty-Canvas
+// regression, without copying an icon path or fetching any external resource.
+const icons=await readFile(path.join(root,'src/desktop/icons.rs'),'utf8');
+const canvasPath=icons.match(/Self::Description\s*=>\s*\{\s*"([^"]+)"/)?.[1];
+const canvasCss=(await readFile(path.join(root,'src/desktop/styles/later.css'),'utf8'))
+  .split(/\r?\n/).find(line=>line.startsWith('.rich-editor-empty-canvas >'));
+if(!canvasPath||!canvasCss)throw new Error('Missing source-owned empty Canvas icon/sizing.');
+const canvasIcon=`<svg class="material-icon rich-editor-canvas-symbol" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="${canvasPath}"></path></svg>`;
 const files=new Map(await Promise.all([
   ['/editor.js',process.env.RICH_EDITOR_TEST_SOURCE || 'src/desktop/rich_editor.js'],
   ['/tests.js',process.env.RICH_EDITOR_TEST_SUITE || 'scripts/rich-editor.browser-tests.js'],
@@ -23,7 +31,7 @@ const server=createServer((req,res)=>{
   if(req.url==='/'){
     res.setHeader('Content-Type','text/html; charset=utf-8');
     res.end(`<!doctype html><meta charset="utf-8"><script src="/editor.js"></script><script src="/tests.js"></script><body><script>
-      (async()=>{let result;try{window.richEditorTestFocus=${JSON.stringify(process.env.RICH_EDITOR_TEST_FOCUS || '')};result={ok:true,tests:runRichEditorTests()};}catch(error){result={ok:false,error:String(error),stack:error.stack,completed:window.richEditorTestResults||[]};}
+      (async()=>{let result;try{window.richEditorTestFocus=${JSON.stringify(process.env.RICH_EDITOR_TEST_FOCUS || '')};window.richEditorTestCanvasIcon=${JSON.stringify(canvasIcon)};window.richEditorTestCanvasCss=${JSON.stringify(canvasCss)};result={ok:true,tests:runRichEditorTests()};}catch(error){result={ok:false,error:String(error),stack:error.stack,completed:window.richEditorTestResults||[]};}
       await fetch('/result',{method:'POST',body:JSON.stringify(result)});})();
     </script>`);return;
   }

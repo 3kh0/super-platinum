@@ -19,6 +19,7 @@ pub mod file_preview;
 pub mod file_sharing;
 pub mod files;
 pub mod forwarding;
+pub mod history_pagination;
 pub mod huddle;
 pub mod later;
 pub mod links;

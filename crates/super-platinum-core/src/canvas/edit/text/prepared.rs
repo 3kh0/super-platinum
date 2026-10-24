@@ -12,7 +12,7 @@ pub struct PreparedTextEdit {
     pub(super) sequence: u64,
     pub(super) data: RawMessage,
     pub(super) expiry: Option<u64>,
-    pub(super) split_child: Option<Section>,
+    pub(super) split_child: Vec<Section>,
 }
 impl PreparedTextEdit {
     pub fn file_id(&self) -> &str {
@@ -113,7 +113,7 @@ impl PreparedTextEdit {
         if !super::super::structure::same_split_lineage(&wire, &outgoing)? {
             return Err(Error::Unconfirmed);
         }
-        if self.split_child.is_some() {
+        if !self.split_child.is_empty() {
             if !processed_contains(&wire, outgoing.string(12)?.ok_or(Error::Unconfirmed)?)?
                 || section.raw().uint(20)? != update.uint(20)?
                 || section.raw().string(33)? != update.string(33)?
@@ -196,7 +196,7 @@ impl PreparedTextEdit {
 }
 
 pub struct AcceptedText {
-    split_child: Option<Section>,
+    split_child: Vec<Section>,
     // Sealed outgoing head; a descendant alone cannot confirm this save.
     zero_sent_head: Option<String>,
     pub(super) key: retained::Key,
@@ -207,6 +207,11 @@ pub struct AcceptedText {
     pub(super) sequence: u64,
 }
 impl AcceptedText {
+    /// Number of sealed associated rows whose exact state this receipt retains.
+    /// This is routing metadata, not a substitute for confirms_readback.
+    pub fn associated_peer_count(&self) -> usize {
+        self.split_child.len()
+    }
     pub fn section(&self) -> &Section {
         &self.section
     }
@@ -231,8 +236,8 @@ impl AcceptedText {
         {
             return Ok(false);
         }
-        if let Some(child) = self.split_child.as_ref() {
-            return self.confirms_split_readback(snapshot, section, child);
+        if !self.split_child.is_empty() {
+            return self.confirms_split_readback(snapshot, section, &self.split_child);
         }
         // Even a later revision cannot confirm this text-only operation across
         // a heading conversion or structural change. Paragraph policy is intact.
@@ -269,10 +274,12 @@ impl AcceptedText {
         &self,
         snapshot: &CanvasCollabSnapshot,
         section: &Section,
-        child: &Section,
+        children: &[Section],
     ) -> Result<bool, Error> {
         if section.sequence()? != self.section.sequence()?
-            || snapshot.section(child.id()) != Some(child)
+            || children
+                .iter()
+                .any(|child| snapshot.section(child.id()) != Some(child))
             || readback_association(section)? != readback_association(&self.baseline)?
         {
             return Ok(false);
@@ -280,8 +287,8 @@ impl AcceptedText {
         let wire = section.crdt()?.ok_or(Error::Unconfirmed)?;
         let acknowledged = self.section.crdt()?.ok_or(Error::Unconfirmed)?;
         if !super::super::structure::same_split_lineage(&wire, &acknowledged)?
-            || super::super::structure::split_child(&snapshot.sections, section, 0)?.as_ref()
-                != Some(child)
+            || super::super::structure::split_child(&snapshot.sections, section, 0)?.as_slice()
+                != children
             || wire.uint(2)? != acknowledged.uint(2)?
             || wire.uint(3)? != section.sequence()?
             || wire.string(8)? != acknowledged.string(8)?

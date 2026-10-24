@@ -1,4 +1,4 @@
-"""Finite ordinary paragraph sequence: independent source, histories and v14 wire."""
+"""Finite paragraph sequence: independent histories and explicit v14/v15 wire."""
 import base64
 from dataclasses import dataclass
 import re
@@ -9,7 +9,7 @@ import canvas_end_typing_oracle as T
 import canvas_middle_typing_wire as M
 from canvas_heading import require, wire, decoded, field, text
 
-CADENCES=('straight','correction-before-enter','erase-before-enter','revert-before-enter','trailing-empty')
+CADENCES=('straight','correction-before-enter','erase-before-enter','revert-before-enter','trailing-empty','revisit-correction','revisit-erase','revisit-revert','parent-correction','parent-erase','parent-revert','preenter-correction','preenter-erase','preenter-revert')
 
 
 @dataclass(frozen=True)
@@ -19,11 +19,18 @@ class Config(A.Config):
     updates:tuple=()
     reports:tuple=()
     target_index:int=0
+    parent_updates:tuple=()
 
     @property
     def base(self):return 0 if self.history=='retained-zero' else 1000
     @property
     def final(self):return tuple(u[-1] if u else '' for u in self.updates)
+    @property
+    def parent_final(self):return self.parent_updates[-1] if self.parent_updates else self.seed
+    @property
+    def parent_reports(self):return tuple(map(M.rtml,self.parent_updates))
+    @property
+    def parent_wire(self):return M.rtml(self.parent_final)
 
 
 def config(append_count=1,history='bootstrap',layout='no-following',cadence='straight',corpus='ascii'):
@@ -32,6 +39,7 @@ def config(append_count=1,history='bootstrap',layout='no-following',cadence='str
     require(type(append_count) is int and 1<=append_count<=16 and cadence in CADENCES,'Unpinned sequence count/cadence')
     require(cadence not in CADENCES[1:4] or append_count>=2,'Before-Enter cadence needs later Enter')
     require(cadence not in CADENCES[1:4] or append_count<=3 or append_count in (8,16),'Unpinned late cadence cohort')
+    require(not cadence.startswith(('revisit-','parent-')) or append_count>=3,'Revisit cadence needs two members and later Enter')
     target=(5 if append_count==8 else 14 if append_count==16 else 0) if cadence in CADENCES[1:4] else 0
     suffix='' if corpus=='ascii' else ' \u65e5\u672c\U0001f600 &'
     prefixes=[(('New','Next','Last')[i] if i<3 else f'Row {i+1}')+suffix for i in range(append_count)]
@@ -41,7 +49,14 @@ def config(append_count=1,history='bootstrap',layout='no-following',cadence='str
         prefix=prefixes[target]
         updates[target]=((prefix,prefix+' draftx',prefix+' draft',prefix+' paragraph') if cadence=='correction-before-enter'
                          else (prefix,'') if cadence=='erase-before-enter' else (prefix,prefix+' draftx',prefix,''))
-    return Config(**vars(old),append_count=append_count,cadence=cadence,updates=tuple(updates),reports=tuple(tuple(map(M.rtml,u)) for u in updates),target_index=target)
+    elif cadence.startswith('revisit-'):
+        initial=updates[0][0]
+        updates[0]=((initial,initial+' draftx',initial+' draft',initial+' revised') if cadence=='revisit-correction'
+                    else (initial,'') if cadence=='revisit-erase' else (initial,initial+' draftx',initial))
+    parent=(() if not cadence.startswith(('parent-','preenter-')) else
+            (old.seed+' draftx',old.seed+' draft',old.seed+' revised') if cadence.endswith('-correction') else
+            ('',) if cadence.endswith('-erase') else (old.seed+' draftx',old.seed))
+    return Config(**vars(old),append_count=append_count,cadence=cadence,updates=tuple(updates),reports=tuple(tuple(map(M.rtml,u)) for u in updates),target_index=target,parent_updates=parent)
 
 
 def labels(value,e,recovery=False):
@@ -71,6 +86,7 @@ def later(e,selected):
 def contents(e,selected=None,completed=0):
     values={e.original:e.seed,e.following:e.neighbor,'last-text':'Last paragraph'}
     if selected:
+        values[e.original]=e.parent_final
         values.update(zip(selected,e.final));values.update(later(e,selected)[:completed])
     return values
 
@@ -99,6 +115,12 @@ def inventory(value,e,original=None,selected=None,completed=0,stale=False):
 def patch_groups(e,index):
     reports=e.reports[index]
     if not reports:return []
+    if index==0 and e.cadence.startswith('revisit-'):
+        p=M.patch;n=T.utf16(reports[0]);result=[[p('splice',0,reports[0])]]
+        if e.cadence=='revisit-erase':return result+[[p('del',0,length=n)]]
+        result.append([p('splice',n,' draftx')])
+        if e.cadence=='revisit-revert':return result+[[p('del',n,length=7)]]
+        return result+[[p('del',n+6)],[p('splice',n+1,'revise'),p('del',n+8,length=4)]]
     if index==e.target_index and e.cadence in CADENCES[1:4]:
         # Original live-patch order; index units are serialized RTML UTF-16.
         # Expected prefix comes from caller-pinned literals, never sent content.
@@ -110,8 +132,16 @@ def patch_groups(e,index):
     return [[M.patch('splice',0,reports[0])]]
 
 
-def member_history(row,source,e,index,session):
-    now=wire(field(row,38,2));identity=text(row,1);actor=session+'00000000';reused=e.reused and index==0
+def parent_patch_groups(e):
+    p=M.patch;n=T.utf16(e.wire_seed)
+    if e.cadence.endswith('-erase'):return [[p('del',0,length=n)]]
+    groups=[[p('splice',n,' draftx')]]
+    if e.cadence.endswith('-revert'):return groups+[[p('del',n,length=7)]]
+    return groups+[[p('del',n+6)],[p('splice',n+1,'revise'),p('del',n+8,length=4)]]
+
+
+def member_history(row,source,e,index,session,parent=False):
+    now=wire(field(row,38,2));identity=text(row,1);actor=session+'00000000';reused=parent or e.reused and index==0
     require(text(now,1)==identity and field(now,2,0)==(e.base if reused else 0) and field(now,3,0)==(1000 if reused else 0)
             and all(f[0] in (1,2,3,5,6,8,11,12) for f in now)
             and all(sum(f[0]==k for f in now)==1 for k in (1,2,3,5,8,12)),'Sequence typed history metadata changed')
@@ -122,19 +152,46 @@ def member_history(row,source,e,index,session):
         current,prior=T.decode_history(field(now,5,2),field(before[0],5,2));prefix=prior['changes'];heads=[f[2] for f in before[0] if f[0]==6]
     else:
         require(T.tags(now)==([1,2,3,5,6,6,6,8,12] if reused else [1,2,3,5,6,8,12]),'Sequence new/bootstrap session shape changed')
-        current=T.decode_history(field(now,5,2))[0];prefix=current['changes'][:1];M.chain(prefix,[],actor)
-        require(prefix[0]['text']=='\ufeff' and prefix[0]['hash']==text(now,8),'Sequence bootstrap not genuine empty')
+        current=T.decode_history(field(now,5,2))[0];prefix=current['changes'][:1]
+        if parent:
+            first=prefix[0]
+            require(first['actor']==actor and first['seq']==1 and first['deps']==[] and first['keys']==['deleted','text']
+                    and first['deleted'] is False and first['marks']==[] and first['text']==e.wire_seed+'\ufeff'
+                    and first['ops'][0]==dict(action='makeText',obj='_root',key='text',pred=[])
+                    and first['ops'][-1]==dict(action='set',obj='_root',key='deleted',value=False,pred=[])
+                    and all(op.get('action')=='set' and op.get('obj')=='1@'+actor and op.get('insert') is True for op in first['ops'][1:-1]),
+                    'Sequence original bootstrap content/history changed')
+        else:
+            M.chain(prefix,[],actor);require(prefix[0]['text']=='\ufeff','Sequence bootstrap not genuine empty')
+        require(prefix[0]['hash']==text(now,8),'Sequence bootstrap base head changed')
         heads=[prefix[0]['hash'].encode()] if reused else []
     M.chain(current['changes'],prefix,actor);changes=current['changes'][len(prefix):]
-    groups=patch_groups(e,index);patches=[p for g in groups for p in g];state='\ufeff';states=[]
+    groups=parent_patch_groups(e) if parent else patch_groups(e,index)
+    reports=e.parent_reports if parent else e.reports[index]
+    patches=[p for g in groups for p in g];state=(e.wire_seed if parent else '')+'\ufeff';states=[]
     for p in patches:state=M.apply_patch(state,p);states.append(state)
     require([c['text'] for c in changes]==states and [c['patches'] for c in changes]==[[p] for p in patches],
             'Sequence lost, squashed, reordered or fabricated intermediate mutations')
     cursor=0
-    for group,report in zip(groups,e.reports[index]):
+    for group,report in zip(groups,reports):
         cursor+=len(group);require(changes[cursor-1]['text']==report+'\ufeff','Sequence report endpoint changed')
     final=field(now,12,2)
     require(current['heads']==[text(now,12)] and [f[2] for f in now if f[0]==6]==(heads+[final]+heads if reused else [final]),'Sequence final processed-head order changed')
+
+
+def parent_content(row,source,value,e):
+    before=wire(field(source,12,2));content=wire(field(row,12,2))
+    require(T.tags(before)==T.tags(content)==[1],'Sequence parent text content variant changed')
+    prior=wire(field(before,1,2));current=wire(field(content,1,2))
+    require(T.tags(prior) in ([1],[1,2]) and T.tags(current)==T.tags(prior)
+            and text(prior,1)==e.wire_seed and S.stable(current,(1,))==S.stable(prior,(1,))
+            and (T.tags(prior)==[1] or text(prior,2)=='en'),
+            'Sequence parent source language/body metadata changed')
+    require(T.tags(row)==[1,2,9,12,13,19,20,33,38] and text(row,1)==e.original and field(row,2,0)==1000
+            and text(current,1)==e.parent_wire and field(row,9,0)==0 and field(row,13,2)==b''
+            and field(row,19,0)==field(row,20,0)==1 and text(row,33)==value['session']+'-0',
+            'Sequence original CONTENT/trace changed')
+    member_history(row,source,e,0,value['session'],parent=True)
 
 
 def member(row,identity,source,value,e,index):
@@ -162,7 +219,13 @@ def write(value,original,e):
         require(identity==e.following if e.reused and i==0 else isinstance(identity,str) and re.fullmatch('temp:C:xyz[0-9a-f]{25}',identity) and identity not in original,'Sequence selected identity changed')
     data=decoded(value.get('documentData'));require(T.tags(data)==[1]*(e.append_count+1)+[14],'Sequence Save lost complete ordered operation');S.rich_title(data)
     rows=S.messages(data,1);require([text(r,1) for r in rows]==[e.original]+selected,'Sequence request member order changed')
-    A.status(rows[0],original[e.original],value,e)
+    if e.parent_updates:
+        require(value.get('parentUpdates')==list(e.parent_reports) and value.get('parentFinalRtml')==e.parent_wire,
+                'Sequence parent ledger lost intended history')
+        parent_content(rows[0],original[e.original],value,e)
+    else:
+        require(value.get('parentUpdates',[])==[] and value.get('parentFinalRtml',e.wire_seed)==e.wire_seed,'Legacy sequence acquired parent edits')
+        A.status(rows[0],original[e.original],value,e)
     for i,(identity,row) in enumerate(zip(selected,rows[1:])):
         reused=e.reused and i==0
         require(members[i]==dict(id=identity,position='aae' if reused else text(row,8),reused=reused,updates=list(e.reports[i]),finalRtml=M.rtml(e.final[i]))
@@ -181,10 +244,11 @@ def journal(value,e,write_value=None,original=None):
     c=receipt['checkpoint'];require(isinstance(c,dict) and set(c)=={'version','scope','thread','document','target','session','sequence','action','draft','sections','request'},'Sequence checkpoint fields changed')
     rows=S.messages(decoded(write_value['documentData']),1)[1:]
     members=[dict(id=m['id'],position=m['position'],reused=m['reused'],updates=m['updates']) for m in write_value['members']]
-    require(type(c['version']) is int and c['version']==14 and c['scope']==S.SCOPE and c['thread']=='thread' and c['document']=='document'
+    action={'EndSequenceParent':{'parent_updates':list(e.parent_reports),'members':members}} if e.parent_updates else {'EndSequence':{'members':members}}
+    require(type(c['version']) is int and c['version']==(15 if e.parent_updates else 14) and c['scope']==S.SCOPE and c['thread']=='thread' and c['document']=='document'
             and c['target']==e.original and c['session']==write_value['session'] and type(c['sequence']) is int and c['sequence']==1
-            and c['draft']==e.wire_seed and c['action']=={'EndSequence':{'members':members}}
-            and all(type(m.get('reused')) is bool for m in c['action']['EndSequence']['members']),'Sequence durable ordered members/reports changed')
+            and c['draft']==e.wire_seed and c['action']==action
+            and all(type(m.get('reused')) is bool for m in members),'Sequence durable ordered members/reports changed')
     require(S.byte_vector(c['request'])==base64.b64decode(write_value['documentData'],validate=True),'Sequence retained request changed')
     expected={r['id']:base64.b64decode(r['raw'],validate=True) for r in original['sections']};sections=c['sections']
     require(isinstance(sections,list) and len(sections)==len(expected) and {text(wire(S.byte_vector(r)),1):S.byte_vector(r) for r in sections}==expected,'Sequence whole original inventory lost')

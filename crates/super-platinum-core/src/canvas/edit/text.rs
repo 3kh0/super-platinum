@@ -20,9 +20,14 @@ pub struct TextIntent {
     section: Section,
     title: Arc<CanonicalTitle>,
     seed: TextDraft,
-    split_child: Option<Section>,
+    split_child: Vec<Section>,
 }
 impl TextIntent {
+    /// Sealed associated rows, for routing expensive work without revalidation.
+    pub fn associated_peer_count(&self) -> usize {
+        self.split_child.len()
+    }
+
     pub fn capture(
         snapshot: &CanvasCollabSnapshot,
         section: &str,
@@ -160,7 +165,7 @@ fn eligible(
     snapshot: &CanvasCollabSnapshot,
     section: &Section,
     now: u64,
-) -> Result<Option<Section>, Error> {
+) -> Result<Vec<Section>, Error> {
     if section.section_type()?.unwrap_or(0) != 0
         || section.style()?.unwrap_or(0) > 3
         || section.deleted()? == Some(true)

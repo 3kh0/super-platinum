@@ -1,4 +1,6 @@
 //! Existing canonical text drafts. HTML export supplies only an exact anchor.
+pub(crate) mod owner_delete_fixture;
+mod owner_delete_save;
 use super::{Reader, checklist};
 use crate::state::ShellState;
 use dioxus::prelude::*;
@@ -36,13 +38,14 @@ pub(crate) mod structure_recovery_check;
 mod structure_save;
 #[cfg(test)]
 mod structure_tests;
+mod structure_worker;
 pub(crate) mod underline_check;
 pub(super) mod underline_fixture;
 use checklist::structure_ops::Action;
 #[cfg(test)]
 mod tests;
 mod view;
-pub(super) use mapping::Mapping;
+pub(super) use mapping::{Mapping, Prepared};
 pub(super) use view::Editor;
 
 enum Kind {

@@ -430,6 +430,7 @@ impl ShellState {
             later_open_generation: 0,
             unread_anchor: None,
             manual_unread: Default::default(),
+            ordinary_history: Default::default(),
             read_presentation: Default::default(),
             read_settings: Default::default(),
             read_shortcuts: Default::default(),
@@ -440,6 +441,7 @@ impl ShellState {
             thread_window: Default::default(),
             thread_at_bottom: true,
             thread_generation: 0,
+            reconnect_generation: 0,
             thread_target: None,
             thread_loading: false,
             thread_error: None,
@@ -589,6 +591,7 @@ impl ShellState {
             later_open_generation: 0,
             unread_anchor: None,
             manual_unread: Default::default(),
+            ordinary_history: Default::default(),
             read_presentation: Default::default(),
             read_settings: Default::default(),
             read_shortcuts: Default::default(),
@@ -599,6 +602,7 @@ impl ShellState {
             thread_window: Default::default(),
             thread_at_bottom: true,
             thread_generation: 0,
+            reconnect_generation: 0,
             thread_target: None,
             thread_loading: false,
             thread_error: None,
@@ -942,6 +946,7 @@ impl ShellState {
             later_open_generation: 0,
             unread_anchor: None,
             manual_unread: Default::default(),
+            ordinary_history: Default::default(),
             read_presentation: Default::default(),
             read_settings: Default::default(),
             read_shortcuts: Default::default(),
@@ -952,6 +957,7 @@ impl ShellState {
             thread_window: Default::default(),
             thread_at_bottom: true,
             thread_generation: 0,
+            reconnect_generation: 0,
             thread_target: None,
             thread_loading: false,
             thread_error: None,
@@ -1980,6 +1986,20 @@ impl ShellState {
             | "canvas-structure-mixed-narrow"
             | "canvas-replacement"
             | "canvas-replacement-narrow"
+            | "canvas-owner-delete"
+            | "canvas-owner-delete-narrow"
+            | "canvas-live-split-rich"
+            | "canvas-live-split-rich-narrow"
+            | "canvas-split-gap"
+            | "canvas-split-gap-narrow"
+            | "canvas-coalesced-owner-rich"
+            | "canvas-coalesced-owner-rich-narrow"
+            | "canvas-live-split-child-delete"
+            | "canvas-live-split-child-delete-narrow"
+            | "canvas-retained-pair-delete"
+            | "canvas-retained-pair-delete-narrow"
+            | "canvas-owner-first-pair-delete"
+            | "canvas-owner-first-pair-delete-narrow"
             | "canvas-structure-text"
             | "canvas-structure-text-narrow"
             | "canvas-local-review"
@@ -2126,6 +2146,18 @@ impl ShellState {
                             .into(),
                     );
                 }
+            }
+            "ordinary-history-cursor" | "ordinary-history-cursor-narrow" => {
+                crate::bootstrap::ordinary_history::fixture::apply(&mut state)
+            }
+            "reconnect-unread-opening" | "reconnect-unread-opening-narrow" => {
+                crate::bootstrap::unread_fixture::apply(&mut state)
+            }
+            "reconnect-thread-continuation" | "reconnect-thread-continuation-narrow" => {
+                crate::bootstrap::reconnect::fixture::apply(&mut state)
+            }
+            "later-cold-message-navigation" | "later-cold-message-navigation-narrow" => {
+                crate::later::message_fixture::apply(&mut state)
             }
             "later-files" | "later-files-narrow" => crate::later::file_fixture::apply(&mut state),
             "later" | "later-empty" | "later-error" | "later-reminder" | "later-new-reminder" => {

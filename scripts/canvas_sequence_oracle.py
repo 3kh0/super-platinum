@@ -43,32 +43,53 @@ def snapshot(event,parts):
 
 
 def expected_events(e):
-    revision=0;parts=[e.seed]
+    # Event chronology is independent of the per-member histories used by wire.
+    preenter=e.cadence.startswith('preenter-')
+    schedule=[(-1,j) for j in range(len(e.parent_updates))] if preenter else []
     for i,updates in enumerate(e.updates):
-        before=parts[-1];offset=T.utf16(before);revision+=1;parts.append('')
-        yield dict(kind='enter',activeIndex=i+1,inputType='insertParagraph',data=None,selectionStart=offset,selectionEnd=offset,start=offset,end=offset,
-                   beforeText=before,afterText='',beforeRevision=revision-1,revision=revision,caret=0,beforeInputTrusted=True,inputTrusted=True),parts.copy()
-        prior=''
-        for j,after in enumerate(updates):
-            if len(updates)==1 or j==0:kind,data,start,stop,selection='insertText',after,0,0,(0,0)
-            else:
-                n=T.utf16(updates[0])
-                if e.cadence=='erase-before-enter' or e.cadence=='revert-before-enter' and j==3:
-                    kind,data,start,stop='deleteContentBackward',None,0,T.utf16(prior);selection=(start,stop)
-                elif j==1:kind,data,start,stop,selection='insertText',' draftx',n,n,(n,n)
-                elif e.cadence=='revert-before-enter':kind,data,start,stop,selection='deleteContentBackward',None,n,n+7,(n,n+7)
-                elif j==2:kind,data,start,stop,selection='deleteContentBackward',None,n+6,n+7,(n+7,n+7)
-                else:kind,data,start,stop,selection='insertText','paragraph',n+1,n+6,(n+1,n+6)
-            revision+=1;parts[-1]=after
-            yield dict(kind='edit',activeIndex=i+1,inputType=kind,data=data,selectionStart=selection[0],selectionEnd=selection[1],start=start,end=stop,
-                       beforeText=prior,afterText=after,beforeRevision=revision-1,revision=revision,caret=start+T.utf16(data or ''),beforeInputTrusted=True,inputTrusted=True),parts.copy()
-            prior=after
+        schedule.append((i,None))
+        schedule.extend((i,j) for j in range(1 if i==0 and e.cadence.startswith('revisit-') else len(updates)))
+        if i==1 and e.cadence.startswith('revisit-'):
+            schedule.extend((0,j) for j in range(1,len(e.updates[0])))
+        if i==1 and e.parent_updates and not preenter:
+            schedule.extend((-1,j) for j in range(len(e.parent_updates)))
+    revision=0;parts=[e.seed]
+    for i,j in schedule:
+        index=i+1;revision+=1
+        if j is None:
+            before=parts[-1];offset=T.utf16(before);parts.append('')
+            yield dict(kind='enter',activeIndex=index,inputType='insertParagraph',data=None,selectionStart=offset,selectionEnd=offset,start=offset,end=offset,
+                       beforeText=before,afterText='',beforeRevision=revision-1,revision=revision,caret=0,beforeInputTrusted=True,inputTrusted=True),parts.copy()
+            continue
+        updates=e.parent_updates if i==-1 else e.updates[i];prior=parts[index];after=updates[j]
+        if i==-1:
+            n=T.utf16(e.seed)
+            if e.cadence.endswith('-erase'):kind,data,start,stop,selection='deleteContentBackward',None,0,n,(0,n)
+            elif j==0:kind,data,start,stop,selection='insertText',' draftx',n,n,(n,n)
+            elif e.cadence.endswith('-revert'):kind,data,start,stop,selection='deleteContentBackward',None,n,n+7,(n,n+7)
+            elif j==1:kind,data,start,stop,selection='deleteContentBackward',None,n+6,n+7,(n+7,n+7)
+            else:kind,data,start,stop,selection='insertText','revised',n+1,n+6,(n+1,n+6)
+        elif j==0:kind,data,start,stop,selection='insertText',after,0,0,(0,0)
+        else:
+            n=T.utf16(updates[0])
+            if e.cadence in ('erase-before-enter','revisit-erase') or e.cadence=='revert-before-enter' and j==3:
+                kind,data,start,stop='deleteContentBackward',None,0,T.utf16(prior);selection=(start,stop)
+            elif j==1:kind,data,start,stop,selection='insertText',' draftx',n,n,(n,n)
+            elif e.cadence in ('revert-before-enter','revisit-revert'):kind,data,start,stop,selection='deleteContentBackward',None,n,n+7,(n,n+7)
+            elif j==2:kind,data,start,stop,selection='deleteContentBackward',None,n+6,n+7,(n+7,n+7)
+            else:kind,data,start,stop,selection='insertText','revised' if e.cadence=='revisit-correction' else 'paragraph',n+1,n+6,(n+1,n+6)
+        parts[index]=after
+        yield dict(kind='edit',activeIndex=index,inputType=kind,data=data,selectionStart=selection[0],selectionEnd=selection[1],start=start,end=stop,
+                   beforeText=prior,afterText=after,beforeRevision=revision-1,revision=revision,caret=start+T.utf16(data or ''),beforeInputTrusted=True,inputTrusted=True),parts.copy()
 
 
 def witness(value,e):
-    require(isinstance(value,dict) and value.get('kind')=='sequence' and value.get('offset')==T.utf16(e.seed)
+    preenter=e.cadence.startswith('preenter-')
+    first_index=len(e.parent_updates) if preenter else 0
+    first_text=e.parent_final if preenter else e.seed
+    require(isinstance(value,dict) and value.get('kind')=='sequence' and value.get('offset')==T.utf16(first_text)
             and type(value.get('offset')) is int and S.plain_sections(value.get('before'))==[e.seed]
-            and value.get('revision')==1 and type(value.get('revision')) is int and value.get('beforeInputTrusted') is True
+            and value.get('revision')==first_index+1 and type(value.get('revision')) is int and value.get('beforeInputTrusted') is True
             and value.get('inputTrusted') is True and value.get('inputType')=='insertParagraph'
             and all(k not in value for k in ('placeholder','caretChildZero','typing','repeat','leadingPlaceholder','emptyProof')),
             'Sequence first Enter ownership/proof changed')
@@ -81,13 +102,15 @@ def witness(value,e):
         require(isinstance(event,dict) and all(event.get(k)==v and type(event.get(k)) is type(v) for k,v in fields.items()),'Sequence trusted event/range/revision changed')
         snapshot(event,parts)
         if previous:
-            frozen=len(parts)-1
-            require(event['sections'][:frozen]==previous['sections'][:frozen]
-                    and event['after'][0]['elements'][:frozen]==previous['after'][0]['elements'][:frozen]
-                    and event['rawAfter'][0]['elements'][:frozen]==previous['rawAfter'][0]['elements'][:frozen],
-                    'Sequence later event changed a prior completed paragraph')
+            target=fields['activeIndex'] if fields['kind']=='edit' else None
+            for index in range(len(previous['sections'])):
+                if index==target:continue
+                require(event['sections'][index]==previous['sections'][index]
+                        and event['after'][0]['elements'][index]==previous['after'][0]['elements'][index]
+                        and event['rawAfter'][0]['elements'][index]==previous['rawAfter'][0]['elements'][index],
+                        'Sequence event changed a non-target paragraph')
         previous=event
-    require(value.get('after')==events[0]['after'] and value.get('rawAfter')==events[0]['rawAfter'],'Sequence initial Enter snapshot replaced')
+    require(value.get('after')==events[first_index]['after'] and value.get('rawAfter')==events[first_index]['rawAfter'],'Sequence initial Enter snapshot replaced')
     require(type(sequence.get('revision')) is int and sequence['revision']==len(events)
             and all(sequence.get(k)==events[-1][k] for k in ('after','rawAfter','html')),'Sequence final snapshot detached from event ledger')
     return sequence
@@ -140,7 +163,7 @@ def validate(receipt,append_count=1,history='bootstrap',layout='no-following',ca
                                 'Unaccepted sequence changed visible/canonical inventory')
         received=None
         if source['acknowledgements']:
-            bodies={e.original:e.wire_seed,**{k:W.M.rtml(v) for k,v in zip(selected,e.final)}};revisions={e.original:2000,**{k:2000 if e.reused and i==0 else 1000 for i,k in enumerate(selected)}}
+            bodies={e.original:e.parent_wire,**{k:W.M.rtml(v) for k,v in zip(selected,e.final)}};revisions={e.original:2000,**{k:2000 if e.reused and i==0 else 1000 for i,k in enumerate(selected)}}
             received=W.ack(source['acknowledgements'][0],sent[:1] if scenario=='partial' else sent,originals,bodies,revisions,e,scenario=='partial')
         if accepted:
             reads=source['readbacks'];first_rows=W.inventory(reads[0],e,initial,selected)
@@ -166,10 +189,10 @@ def validate(receipt,append_count=1,history='bootstrap',layout='no-following',ca
         if uncertain:require(stage['journal']==held_journal,'Unknown outcome lost durable third member')
         require(geo.get('ok') is True and geo.get('noOverflow') is True,'Sequence layout overflow')
         held=name in ('sequence','saving','refused','uncertain')
-        if held:parts=[e.seed,*e.final]
+        if held:parts=[e.parent_final,*e.final]
         elif name.endswith('-editing') or name.endswith('-saving'):
             identity,content=W.later(e,selected)[(index-4)//3]
-            parts=[content] if name.endswith('-saving') else [e.seed if identity==e.original else e.final[selected.index(identity)]]
+            parts=[content] if name.endswith('-saving') else [e.parent_final if identity==e.original else e.final[selected.index(identity)]]
         else:parts=None
         if parts is not None:
             editor=geo.get('native');S.native(editor,parts,not(pending or uncertain),S.ERROR if name=='refused' else None)

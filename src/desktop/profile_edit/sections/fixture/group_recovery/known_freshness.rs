@@ -8,6 +8,9 @@ use tokio::sync::mpsc;
 
 pub(crate) const RENAMED: &str = "@Renamed crew";
 pub(crate) fn enabled() -> bool {
+    if super::super::group_title::named() {
+        return true;
+    }
     super::enabled()
         && matches!(
             case().as_str(),

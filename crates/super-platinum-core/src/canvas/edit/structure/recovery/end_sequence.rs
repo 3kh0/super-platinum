@@ -1,4 +1,4 @@
-//! v14 ordered paragraph sequence evidence. Validation never grants replay authority.
+//! v14 unchanged-parent and v15 parent-report sequences; inert evidence only.
 use super::*;
 use crate::canvas::edit::structure::{end as operation, inventory};
 use std::collections::BTreeMap;
@@ -9,12 +9,39 @@ impl Checkpoint {
         target: &str,
         session: &str,
         before: &TextDraft,
+        parent_updates: &[TextDraft],
         members: &[operation::sequence::Member],
         data: &RawMessage,
     ) -> Result<Self, Error> {
+        let members = members
+            .iter()
+            .map(|m| {
+                Ok(SequenceMember {
+                    id: m.id.clone(),
+                    position: m.position.clone(),
+                    reused: m.reused,
+                    updates: m
+                        .updates
+                        .iter()
+                        .map(TextDraft::rtml)
+                        .collect::<Result<Vec<_>, _>>()?,
+                })
+            })
+            .collect::<Result<Vec<_>, Error>>()?;
+        let action = if parent_updates.is_empty() {
+            Action::EndSequence { members }
+        } else {
+            Action::EndSequenceParent {
+                parent_updates: parent_updates
+                    .iter()
+                    .map(TextDraft::rtml)
+                    .collect::<Result<Vec<_>, _>>()?,
+                members,
+            }
+        };
         let owner = &inventory.owner;
         let result = Self {
-            version: 14,
+            version: if parent_updates.is_empty() { 14 } else { 15 },
             scope: Scope {
                 workspace: owner.workspace.clone(),
                 user: owner.user.clone(),
@@ -25,23 +52,7 @@ impl Checkpoint {
             target: target.into(),
             session: session.into(),
             sequence: 1,
-            action: Action::EndSequence {
-                members: members
-                    .iter()
-                    .map(|m| {
-                        Ok(SequenceMember {
-                            id: m.id.clone(),
-                            position: m.position.clone(),
-                            reused: m.reused,
-                            updates: m
-                                .updates
-                                .iter()
-                                .map(TextDraft::rtml)
-                                .collect::<Result<Vec<_>, _>>()?,
-                        })
-                    })
-                    .collect::<Result<Vec<_>, Error>>()?,
-            },
+            action,
             draft: before.rtml()?,
             sections: inventory
                 .sections
@@ -54,13 +65,24 @@ impl Checkpoint {
         Ok(result)
     }
     pub(super) fn validate_end_sequence(&self) -> Result<(), Error> {
-        let Action::EndSequence { members } = &self.action else {
-            return Err(Error::Unsupported);
+        let (parent_reports, members) = match &self.action {
+            Action::EndSequence { members } => (&[][..], members),
+            Action::EndSequenceParent {
+                parent_updates,
+                members,
+            } if !parent_updates.is_empty() => (parent_updates.as_slice(), members),
+            _ => return Err(Error::Unsupported),
         };
         // Bound inert serialized reports before parsing or cloning any drafts.
-        let mut reports = 0usize;
+        let mut reports = parent_reports.len();
         let mut report_bytes = 0usize;
-        operation::sequence::budget::counts(members.len(), 0, 0)?;
+        operation::sequence::budget::counts(members.len(), reports, 0)?;
+        for raw in parent_reports {
+            report_bytes = report_bytes
+                .checked_add(raw.len())
+                .ok_or(Error::Unsupported)?;
+            operation::sequence::budget::counts(members.len(), reports, report_bytes)?;
+        }
         for m in members {
             reports = reports
                 .checked_add(m.updates.len())
@@ -101,6 +123,16 @@ impl Checkpoint {
         let original = sections.get(&self.target).ok_or(Error::Unsupported)?;
         let before = TextDraft::from_rtml(&self.draft)?;
         operation::repeat::admit(original, &before)?;
+        let parent_updates = parent_reports
+            .iter()
+            .map(|raw| {
+                let draft = TextDraft::from_rtml(raw)?;
+                if draft.rtml()? != *raw {
+                    return Err(Error::Unsupported);
+                }
+                Ok(draft)
+            })
+            .collect::<Result<Vec<_>, Error>>()?;
         let selected = operation::empty::candidate(
             &ordered.values().copied().collect::<Vec<_>>(),
             &self.target,
@@ -163,6 +195,14 @@ impl Checkpoint {
                 wire: rows[i + 1].message(38)?.ok_or(Error::Unsupported)?,
             });
         }
-        operation::sequence::validate(original, selected, &self.session, &before, &plan, &data)
+        operation::sequence::validate(
+            original,
+            selected,
+            &self.session,
+            &before,
+            &parent_updates,
+            &plan,
+            &data,
+        )
     }
 }

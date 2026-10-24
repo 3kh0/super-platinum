@@ -37,7 +37,23 @@ class SplitStorage:
                 or content not in ("empty", "spaces", "nbsp", "br", "mixed", "mixed-br", "separators", "feff-leading", "feff-interior", "feff-post-br")
                 or (content != "empty" and mode != "reuse")):
             raise RuntimeError("Unknown Canvas journal mode")
-        result.version, result.action = ((14, "EndSequence") if mode == "sequence" else
+        pre_enter = checks.get("SUPER_PLATINUM_CANVAS_SPLIT_PRE_ENTER", "none")
+        if pre_enter not in ("none", "correction", "revert", "retype") or (pre_enter != "none" and mode != "middle"):
+            raise RuntimeError("Unknown pre-middle journal selector")
+        middle_parent = checks.get("SUPER_PLATINUM_CANVAS_SPLIT_MIDDLE_PARENT", "none")
+        middle_cadence = checks.get("SUPER_PLATINUM_CANVAS_SPLIT_MIDDLE_CADENCE", "parent-first")
+        if (middle_parent not in ("none", "correction", "erase", "revert") or middle_cadence not in ("parent-first", "child-first", "interleaved")
+                or (middle_parent != "none" and mode != "middle") or (middle_parent == "none" and middle_cadence != "parent-first")):
+            raise RuntimeError("Unknown middle parent journal selector")
+        from canvas_second_middle_wire import selectors
+        second_middle=checks.get("SUPER_PLATINUM_CANVAS_SECOND_MIDDLE", "none")
+        second_middle_cadence=checks.get("SUPER_PLATINUM_CANVAS_SECOND_MIDDLE_CADENCE", "straight")
+        selectors(mode,typing,pre_enter,middle_parent,middle_cadence,second_middle,second_middle_cadence)
+        parent_sequence = mode == "sequence" and checks.get("SUPER_PLATINUM_CANVAS_SEQUENCE_CADENCE") in (
+            "parent-correction", "parent-erase", "parent-revert", "preenter-correction", "preenter-erase", "preenter-revert")
+        result.version, result.action = ((18, "SplitSequence") if second_middle != "none" else (17, "SplitParent") if middle_parent != "none" else (16, "SplitPreEnter") if pre_enter != "none" else
+            (15, "EndSequenceParent") if parent_sequence else
+            (14, "EndSequence") if mode == "sequence" else
             (13, "EndRepeatTyping") if mode == "repeat" and typing != "none" else
             (12, "EndRepeat") if mode == "repeat" else
             (11, "EmptyTyping") if mode == "empty" and typing != "none" else

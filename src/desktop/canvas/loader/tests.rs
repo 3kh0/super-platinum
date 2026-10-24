@@ -80,6 +80,14 @@ fn first_load_event_installs_readonly_preview_then_latest_pair_without_manual_re
     assert!(reader.editable);
     assert!(!reader.loading);
     assert!(!checklist::presentation(&shell).unwrap().stale);
+    assert!(
+        reader.text.items.is_empty(),
+        "mapping proof is pending off the UI thread"
+    );
+    assert!(checklist::reader::worker::settle_for_test(
+        &shell,
+        &mut reader
+    ));
     assert_eq!(reader.text.items.len(), 1);
     assert!(checklist::event_reads::needed(&shell).is_none());
 }

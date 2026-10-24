@@ -2,7 +2,7 @@
 use super::*;
 
 pub(super) async fn continue_pair(
-    mut state: Signal<ShellState>,
+    state: Signal<ShellState>,
     desktop: &dioxus::desktop::DesktopContext,
     stages: &mut Vec<Value>,
 ) -> Result<(), String> {
@@ -70,7 +70,7 @@ pub(super) async fn continue_pair(
             tokio::time::sleep(std::time::Duration::from_millis(50)).await;
         }
         stage(state, desktop, names[1], ordinal + 1, stages).await?;
-        if !fixture::complete_text(&mut state.write()) {
+        if !fixture::complete_text(state).await {
             return Err(format!(
                 "{target} continuation ACK/readback failed: {}",
                 fixture::proof(&state.peek())["acknowledgements"]

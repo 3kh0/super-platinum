@@ -20,6 +20,48 @@ pub(super) fn label_with_context(
     canvas_fallback: Option<&str>,
     user: &mut impl FnMut(&str) -> Result<String, Unavailable>,
 ) -> Result<String, Unavailable> {
+    label_with_emoji_context(items, quip, canvas_fallback, None, user)
+}
+pub(super) fn label_with_emoji_context(
+    items: &[Value],
+    quip: QuipTitle<'_>,
+    canvas_fallback: Option<&str>,
+    emoji: Option<super::EmojiText>,
+    user: &mut impl FnMut(&str) -> Result<String, Unavailable>,
+) -> Result<String, Unavailable> {
+    label_with_resolvers(items, quip, canvas_fallback, emoji, user, &mut |_| {
+        Err(Unavailable::UnsupportedTitle)
+    })
+}
+
+pub(super) fn label_with_resolvers(
+    items: &[Value],
+    quip: QuipTitle<'_>,
+    canvas_fallback: Option<&str>,
+    emoji: Option<super::EmojiText>,
+    user: &mut impl FnMut(&str) -> Result<String, Unavailable>,
+    channel: &mut impl FnMut(&str) -> Result<String, Unavailable>,
+) -> Result<String, Unavailable> {
+    label_with_group_resolver(
+        items,
+        quip,
+        canvas_fallback,
+        emoji,
+        user,
+        channel,
+        &mut |_| Err(Unavailable::UnsupportedTitle),
+    )
+}
+
+pub(super) fn label_with_group_resolver(
+    items: &[Value],
+    quip: QuipTitle<'_>,
+    canvas_fallback: Option<&str>,
+    emoji: Option<super::EmojiText>,
+    user: &mut impl FnMut(&str) -> Result<String, Unavailable>,
+    channel: &mut impl FnMut(&str) -> Result<String, Unavailable>,
+    group: &mut impl FnMut(&str) -> Result<String, Unavailable>,
+) -> Result<String, Unavailable> {
     let mut has_user = false;
     let mut blocks = Vec::with_capacity(items.len());
     for block in items {
@@ -27,19 +69,15 @@ pub(super) fn label_with_context(
         for section in elements(block, "rich_text")? {
             let mut text = String::new();
             for leaf in elements(section, "rich_text_section")? {
-                match leaf.get("type").and_then(Value::as_str) {
-                    Some("text") => text.push_str(
-                        leaf.get("text")
-                            .and_then(Value::as_str)
-                            .ok_or(Unavailable::UnsupportedTitle)?,
-                    ),
-                    Some("user") => {
-                        let id = super::users::id(leaf)?;
+                match classify(leaf, emoji)? {
+                    Leaf::Text(value) => text.push_str(value),
+                    Leaf::User(id) => {
                         text.push_str(&user(id)?);
                         has_user = true;
                     }
-                    Some("link") => text.push_str(super::link::text(leaf)?),
-                    _ => return Err(Unavailable::UnsupportedTitle),
+                    Leaf::Channel(id) => text.push_str(&channel(id)?),
+                    Leaf::UserGroup(id) => text.push_str(&group(id)?),
+                    Leaf::Emoji(value) => text.push_str(&value),
                 }
             }
             sections.push(text);
@@ -69,7 +107,7 @@ pub(super) fn label_with_context(
     Ok(trim_emoji(selected))
 }
 
-fn elements<'a>(value: &'a Value, kind: &str) -> Result<&'a [Value], Unavailable> {
+pub(super) fn elements<'a>(value: &'a Value, kind: &str) -> Result<&'a [Value], Unavailable> {
     if value.get("type").and_then(Value::as_str) != Some(kind) {
         return Err(Unavailable::UnsupportedTitle);
     }
@@ -78,6 +116,34 @@ fn elements<'a>(value: &'a Value, kind: &str) -> Result<&'a [Value], Unavailable
         .and_then(Value::as_array)
         .map(Vec::as_slice)
         .ok_or(Unavailable::UnsupportedTitle)
+}
+
+/// One grammar for extraction and dependency scanning; styles/opaque fields
+/// remain untouched rather than normalized into the display label.
+pub(super) enum Leaf<'a> {
+    Text(&'a str),
+    User(&'a str),
+    Channel(&'a str),
+    UserGroup(&'a str),
+    Emoji(String),
+}
+pub(super) fn classify(
+    leaf: &Value,
+    emoji: Option<super::EmojiText>,
+) -> Result<Leaf<'_>, Unavailable> {
+    Ok(match leaf.get("type").and_then(Value::as_str) {
+        Some("text") => Leaf::Text(
+            leaf.get("text")
+                .and_then(Value::as_str)
+                .ok_or(Unavailable::UnsupportedTitle)?,
+        ),
+        Some("user") => Leaf::User(super::users::id(leaf)?),
+        Some("channel") => Leaf::Channel(super::channels::id(leaf)?),
+        Some("usergroup") => Leaf::UserGroup(super::groups::id(leaf)?),
+        Some("link") => Leaf::Text(super::link::text(leaf)?),
+        Some("emoji") => Leaf::Emoji(super::emoji::text(leaf, emoji)?),
+        _ => return Err(Unavailable::UnsupportedTitle),
+    })
 }
 
 // QIRz.L uses the nonglobal original pH4l expression, only at offset zero.

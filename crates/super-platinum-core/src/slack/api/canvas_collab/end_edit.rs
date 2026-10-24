@@ -23,12 +23,29 @@ pub async fn execute_canvas_end_edit(
     let request =
         request(client, workspace, fresh, &prepared, now).map_err(CanvasEditFailure::NotSent)?;
     let bytes = transport.execute_canvas_edit(request).await?;
-    let ack = EditAck::decode(&bytes).map_err(|_| {
-        CanvasEditFailure::Uncertain(Error::Api("invalid_canvas_edit_acknowledgement".into()))
-    })?;
-    prepared.validate_ack(&ack).map_err(|_| {
-        CanvasEditFailure::Uncertain(Error::Api("unconfirmed_canvas_edit_acknowledgement".into()))
+    validate_response(prepared, bytes).await
+}
+
+// Receipt validation replays every member's CRDT history. The response already
+// follows a dispatched request, so every failure here remains uncertain.
+async fn validate_response(
+    prepared: PreparedEndEdit,
+    bytes: Vec<u8>,
+) -> Result<AcceptedEnd, CanvasEditFailure> {
+    tokio::task::spawn_blocking(move || {
+        let ack = EditAck::decode(&bytes).map_err(|_| {
+            CanvasEditFailure::Uncertain(Error::Api("invalid_canvas_edit_acknowledgement".into()))
+        })?;
+        prepared.validate_ack(&ack).map_err(|_| {
+            CanvasEditFailure::Uncertain(Error::Api(
+                "unconfirmed_canvas_edit_acknowledgement".into(),
+            ))
+        })
     })
+    .await
+    .map_err(|_| {
+        CanvasEditFailure::Uncertain(Error::Api("unconfirmed_canvas_edit_acknowledgement".into()))
+    })?
 }
 
 fn request(

@@ -215,9 +215,23 @@ pub(in crate::canvas::edit) fn update(
         .map_err(|_| Error::Unsupported)?
         .ok_or(Error::Unsupported)?;
     let model = desired.model()?;
+    let before_text = doc.get_heads();
     let mut tx = doc.transaction();
     tx.update_text(&object, format!("{}\u{feff}", model.text))
         .map_err(|_| Error::Unsupported)?;
+    // The original completes its text phase before computing marks from the
+    // resulting document. Keep the intermediate text head in history, but only
+    // publish the final report head below. Empty transactions add no change.
+    tx.commit_with(CommitOptions::default().with_time(seconds(now)?));
+    replay_append_marks(
+        &mut doc,
+        &object,
+        &before_text,
+        &original.model()?.text,
+        &model.text,
+        now,
+    )?;
+    let mut tx = doc.transaction();
     // E268501 updateMarks: merge equivalent ranges; write false only for
     // removed/changed old ranges, then apply newly added ranges. Existing
     // unchanged marks are not rewritten during an unrelated text insertion.
@@ -261,6 +275,62 @@ pub(in crate::canvas::edit) fn update(
         .replace_fields(5, &[F::bytes(5, &doc.save())?])?
         .replace_fields(6, &processed)?
         .replace_fields(12, &[F::bytes(12, head.as_bytes())?])?)
+}
+
+// Original applyPatches explicitly reapplies marks carried by a splice before
+// updateMarks reconciles the desired report. Automerge inheritance alone has
+// the same projection but omits that historical change. This bounded adapter
+// covers one appended splice before FEFF, not arbitrary multi-patch edits.
+fn replay_append_marks(
+    doc: &mut Automerge,
+    object: &automerge::ObjId,
+    before: &[automerge::ChangeHash],
+    original: &str,
+    desired: &str,
+    now: u64,
+) -> Result<(), Error> {
+    let Some(suffix) = desired.strip_prefix(original).filter(|s| !s.is_empty()) else {
+        return Ok(());
+    };
+    let patches = doc.diff(before, &doc.get_heads());
+    let [patch] = patches.as_slice() else {
+        return Ok(());
+    };
+    let automerge::PatchAction::SpliceText {
+        index,
+        value,
+        marks: Some(marks),
+    } = &patch.action
+    else {
+        return Ok(());
+    };
+    if &patch.obj != object
+        || *index != original.encode_utf16().count()
+        || value.make_string() != suffix
+    {
+        return Ok(());
+    }
+    let end = index
+        .checked_add(suffix.encode_utf16().count())
+        .ok_or(Error::Unsupported)?;
+    // E267533 getMarkOrNull excludes false/null; E267657 uses UTF-16
+    // splice offset/length. Each active mark is its own original change.
+    for (name, value) in marks.iter().filter(|(_, value)| {
+        matches!(
+            value,
+            automerge::ScalarValue::Boolean(true) | automerge::ScalarValue::Str(_)
+        )
+    }) {
+        let mut tx = doc.transaction();
+        tx.mark(
+            object,
+            automerge::marks::Mark::new(name.into(), value.clone(), *index, end),
+            ExpandMark::After,
+        )
+        .map_err(|_| Error::Unsupported)?;
+        tx.commit_with(CommitOptions::default().with_time(seconds(now)?));
+    }
+    Ok(())
 }
 
 // E267858 getMarks ignores boolean-false tombstones; E268200 groups by

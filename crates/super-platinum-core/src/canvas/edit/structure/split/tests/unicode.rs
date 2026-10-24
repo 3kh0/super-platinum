@@ -206,7 +206,7 @@ fn unicode_split_parent_can_save_again_with_exact_lineage_and_child() {
         assert_eq!(fresh.section(p.child_section()), Some(&child));
     }
     let actions = super::super::super::paragraph_actions(&fresh, &["item"], 100);
-    assert!(!actions[0].as_ref().unwrap().delete);
+    assert!(actions[0].as_ref().unwrap().delete);
     let intent = TextIntent::capture(&fresh, "item", 100).unwrap();
     let i = fresh
         .sections

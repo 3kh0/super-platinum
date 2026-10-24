@@ -38,6 +38,7 @@ pub(super) fn kick(mut state: Signal<ShellState>, owner: Owner) {
         let mut s = state.write();
         if !owner.publication_current(&s)
             || conditional::busy(&s, &owner.context.key())
+            || unknown::busy(&s, &owner.context.key())
             || conditional::fixture::drain_held(&s)
             || !s.core.workspaces[&owner.context.session.team_id]
                 .directory_channels

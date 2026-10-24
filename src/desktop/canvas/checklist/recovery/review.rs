@@ -4,6 +4,8 @@ use super::*;
 use super_platinum_core::canvas::edit::structure::recovery::journal::{LocalDecision, LocalReview};
 
 mod insertion;
+mod owner_delete;
+mod second_middle;
 mod sequence;
 mod split;
 mod start_typing;
@@ -368,6 +370,12 @@ pub(in crate::canvas) fn Panel(
         .ready
         .as_ref()
         .is_some_and(|ready| ready.review.is_split() || ready.review.is_end());
+    let is_second_middle = value.ready.as_ref().is_some_and(|ready| {
+        ready
+            .review
+            .split()
+            .is_some_and(|split| split.second_target().is_some())
+    });
     let is_insertion = value
         .ready
         .as_ref()
@@ -381,13 +389,15 @@ pub(in crate::canvas) fn Panel(
             h3 {"Review unconfirmed change"}
             p {"Slack may have applied this change. Check the canvas in Slack and close other copies of Super Platinum before continuing."}
             if let Some(action) = action {p {strong {"Saved request: "}"{action}"}}
-            if is_sequence {p {"Any, all, or none of these paragraph changes may have reached Slack. Removing this lock leaves every outcome unknown."}} else if is_repeat {p {"Any, all, or none of these three paragraph changes may have reached Slack. Removing this lock leaves all three outcomes unknown."}} else if is_start_typing || is_split || value.ready.as_ref().is_some_and(|ready| ready.review.is_replacement()) {p {"Either part, both parts, or neither part may have reached Slack. Removing this lock leaves both outcomes unknown."}}
+            if is_sequence {p {"Any, all, or none of these paragraph changes may have reached Slack. Removing this lock leaves every outcome unknown."}} else if is_repeat || is_second_middle {p {"Any, all, or none of these three paragraph changes may have reached Slack. Removing this lock leaves all three outcomes unknown."}} else if is_start_typing || is_split || value.ready.as_ref().is_some_and(|ready| ready.review.is_replacement()) {p {"Either part, both parts, or neither part may have reached Slack. Removing this lock leaves both outcomes unknown."}}
             if is_sequence {if let Some(ready)=value.ready.as_ref() {{sequence::comparison(&ready.review)}}} else if is_start_typing {
                 if let Some(ready) = value.ready.as_ref() {{start_typing::comparison(&ready.review)}}
             } else if is_split {
                 if let Some(ready) = value.ready.as_ref() {{split::comparison(&ready.review)}}
             } else if is_insertion {
                 if let Some(ready) = value.ready.as_ref() {{insertion::comparison(&ready.review)}}
+            } else if value.ready.as_ref().is_some_and(|ready|ready.review.split_owner_child().is_some()) {
+                if let Some(ready)=value.ready.as_ref() {{owner_delete::comparison(&ready.review)}}
             } else if !text.is_empty() {div {class:"canvas-review-preview","{text}"}}
             p {"Removing this local edit lock does not confirm success, undo a change, or send it again. The saved record will remain on this computer with an unknown outcome."}
             if busy {p {role:"status","Checking the local record…"}}

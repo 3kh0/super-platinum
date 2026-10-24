@@ -2,9 +2,10 @@
 import fs from 'node:fs/promises';
 export const histories=['bootstrap','retained-positive','retained-zero'];
 export const layouts=['no-following','text-following','empty-final-following','empty-nonfinal-following'];
-export const cadences=['straight','correction-before-enter','erase-before-enter','revert-before-enter','trailing-empty'];
+export const cadences=['straight','correction-before-enter','erase-before-enter','revert-before-enter','trailing-empty','revisit-correction','revisit-erase','revisit-revert','parent-correction','parent-erase','parent-revert','preenter-correction','preenter-erase','preenter-revert'];
 export function validRequest(expected,history='bootstrap',layout='no-following',corpus='ascii',count=2,cadence='straight') {
-  return histories.includes(history)&&layouts.includes(layout)&&cadences.includes(cadence)&&Number.isInteger(count)&&count>=2&&count<=16
+  return histories.includes(history)&&layouts.includes(layout)&&cadences.includes(cadence)&&Number.isInteger(count)&&count>=(cadence.startsWith('preenter-')?1:2)&&count<=16
+    && (!(cadence.startsWith('revisit-')||cadence.startsWith('parent-'))||count>=3)
     && expected?.ok===true&&['ascii','unicode'].includes(corpus)&&expected.mode==='sequence'&&expected.typing==='none'
     && expected.corpus===corpus&&expected.sequenceCount===count&&expected.sequenceHistory===history&&expected.sequenceLayout===layout&&expected.sequenceCadence===cadence
     && ['canvas-structure','canvas-structure-narrow'].includes(expected.fixture)&&/^[a-f0-9]{32}$/.test(expected.nonce)
@@ -40,33 +41,66 @@ export function admission(expected) {
 }
 
 export function actionPlan(corpus,count,cadence){
-  if(!['ascii','unicode'].includes(corpus)||!Number.isInteger(count)||count<1||count>16||!cadences.includes(cadence))return null;
+  if(!['ascii','unicode'].includes(corpus)||!Number.isInteger(count)||count<(cadence.startsWith('preenter-')?1:2)||count>16||!cadences.includes(cadence)||((cadence.startsWith('revisit-')||cadence.startsWith('parent-'))&&count<3))return null;
   const target=count===8?5:count===16?14:0,result=[];
   const insert=(text,after)=>({type:'insert',text,after}),select=(start,end)=>({type:'select',start,end}),erase=after=>({type:'backspace',after});
+  if(cadence.startsWith('preenter-')){
+    const seed=corpus==='ascii'?'Keep this':'Caf\u00e9 & \u65e5\u672c\u{1f600}';
+    if(cadence==='preenter-erase')result.push(select(0,seed.length),erase(''));
+    else{
+      result.push(insert(' draftx',seed+' draftx'));
+      if(cadence==='preenter-revert')result.push(select(seed.length,seed.length+7),erase(seed));
+      else result.push(erase(seed+' draft'),select(seed.length+1,seed.length+6),insert('revised',seed+' revised'));
+    }
+  }
   for(let i=0;i<count;i++){
     const name=i<3?['New','Next','Last'][i]:'Row '+(i+1),prefix=corpus==='unicode'?name+' \u65e5\u672c\u{1f600} &':name;
     result.push({type:'enter',after:''});
     if(i===count-1&&cadence==='trailing-empty')continue;
-    if(i===target&&cadence!=='straight'&&cadence!=='trailing-empty'){
+    if(i===target&&cadence.endsWith('-before-enter')){
       result.push(insert(prefix,prefix));
       if(cadence==='erase-before-enter')result.push(select(0,prefix.length),erase(''));
       else if(cadence==='revert-before-enter')result.push(insert(' draftx',prefix+' draftx'),select(prefix.length,prefix.length+7),erase(prefix),select(0,prefix.length),erase(''));
       else result.push(insert(' draftx',prefix+' draftx'),erase(prefix+' draft'),select(prefix.length+1,prefix.length+6),insert('paragraph',prefix+' paragraph'));
     }else{const text=prefix+' paragraph';result.push(insert(text,text));}
+    if(i===1&&(cadence.startsWith('revisit-')||cadence.startsWith('parent-'))){
+      const first=cadence.startsWith('parent-')?(corpus==='ascii'?'Keep this':'Caf\u00e9 & \u65e5\u672c\u{1f600}'):(corpus==='unicode'?'New \u65e5\u672c\u{1f600} &':'New')+' paragraph';
+      result.push({type:'click',activeIndex:cadence.startsWith('parent-')?0:1},select(first.length,first.length));
+      if(cadence.endsWith('-erase'))result.push(select(0,first.length),erase(''));
+      else{
+        result.push(insert(' draftx',first+' draftx'));
+        if(cadence.endsWith('-revert'))result.push(select(first.length,first.length+7),erase(first));
+        else result.push(erase(first+' draft'),select(first.length+1,first.length+6),insert('revised',first+' revised'));
+      }
+      result.push({type:'click',activeIndex:2},select((prefix+' paragraph').length,(prefix+' paragraph').length));
+    }
   }
   return result;
 }
-export function inspect(expected,texts,revision,selection=null,complete=false){
+export function inspect(expected,texts,revision,selection=null,complete=false,activeIndex=null,point=false){
   const root=document.querySelector('.canvas-dialog #canvas-text-editor'),field=root?.querySelector('#canvas-text-draft');
   if(!root||!field||!field.isContentEditable||document.activeElement!==field||root.dataset.editorGeneration!==expected.generation
     ||root.dataset.canvasVisit!==expected.visit||field.dataset.canvasSplitProbe!==expected.nonce+':'+expected.ordinal)return {ok:false};
   const witness=window.superPlatinumCanvasSplit?.capture(field,expected.generation,expected.visit);
-  const blocks=witness?.sequence?.after??witness?.typing?.after??witness?.repeat?.after??witness?.after;
-  const actual=blocks?.[0]?.elements?.map(s=>s.elements?.map(r=>r.type==='text'?r.text:null).join(''));
   const snapshot=window.superPlatinumRichEditor.snapshot(field);
+  const prelude=expected.sequenceCadence.startsWith('preenter-')&&texts.length===1&&!complete;
+  if(prelude?witness!==null:!witness)return {ok:false};
+  const blocks=prelude?snapshot.blocks:(witness?.sequence?.after??witness?.typing?.after??witness?.repeat?.after??witness?.after);
+  const actual=blocks?.[0]?.elements?.map(s=>s.elements?.map(r=>r.type==='text'?r.text:null).join(''));
   if(JSON.stringify(actual)!==JSON.stringify(texts)||snapshot.revision!==revision||snapshot.composing)return {ok:false,actual,revision:snapshot.revision,witness};
-  const child=field.firstChild?.childNodes[texts.length-1],text=texts.at(-1);
+  const index=activeIndex??texts.length-1;
+  if(!Number.isInteger(index)||index<((expected.sequenceCadence.startsWith('parent-')||expected.sequenceCadence.startsWith('preenter-'))?0:1)||index>=texts.length)return {ok:false};
+  const child=field.firstChild?.childNodes[index],text=texts[index];
   if(!child)return {ok:false};
+  if(point){
+    const r=document.createRange();r.selectNodeContents(child);
+    const boxes=[...r.getClientRects(),child.getBoundingClientRect()];
+    for(const box of boxes){
+      const x=(box.left+box.right)/2,y=(box.top+box.bottom)/2,hit=document.elementFromPoint(x,y);
+      if(box.width>0&&box.height>0&&x>0&&x<innerWidth&&y>0&&y<innerHeight&&hit&&(hit===child||child.contains(hit)))return {ok:true,point:{x,y},activeIndex:index};
+    }
+    return {ok:false};
+  }
   if(selection){
     const points=[],walker=document.createTreeWalker(child,NodeFilter.SHOW_TEXT);let offset=0;
     for(let node=walker.nextNode();node;node=walker.nextNode()){
@@ -82,20 +116,26 @@ export function inspect(expected,texts,revision,selection=null,complete=false){
   if(complete){if(witness?.kind!=='sequence'||witness.sequence.events.filter(e=>e.kind==='enter').length!==expected.sequenceCount)return {ok:false,witness};field.dataset.canvasSequenceComplete=expected.nonce+':'+expected.ordinal;}
   return {ok:true,witness,revision,html:field.innerHTML,texts,selection:{start:at(range.startContainer,range.startOffset),end:at(range.endContainer,range.endOffset)}};
 }
-async function dispatch(call,sessionId,expected,result){
- const plan=actionPlan(expected.corpus,expected.sequenceCount,expected.sequenceCadence);let texts=[expected.seed],revision=0;result.actions=[];
- const check=async(selection=null,complete=false)=>{const r=await call('Runtime.evaluate',{expression:`(${inspect.toString()})(${JSON.stringify(expected)},${JSON.stringify(texts)},${revision},${JSON.stringify(selection)},${complete})`,returnByValue:true},sessionId);if(r.exceptionDetails||r.result?.value?.ok!==true)throw Error('Sequence inspection failed; no replay: '+JSON.stringify(r.result?.value));return r.result.value;};
+export async function dispatch(call,sessionId,expected,result){
+ const plan=actionPlan(expected.corpus,expected.sequenceCount,expected.sequenceCadence);let texts=[expected.seed],revision=0,activeIndex=0;result.actions=[];
+ const check=async(selection=null,complete=false,index=activeIndex,point=false)=>{const r=await call('Runtime.evaluate',{expression:`(${inspect.toString()})(${JSON.stringify(expected)},${JSON.stringify(texts)},${revision},${JSON.stringify(selection)},${complete},${index},${point})`,returnByValue:true},sessionId);if(r.exceptionDetails||r.result?.value?.ok!==true)throw Error('Sequence inspection failed; no replay: '+JSON.stringify(r.result?.value));return r.result.value;};
  for(const action of plan){
    const entry={action,dispatchAttempted:false};result.actions.push(entry);
-   if(revision)entry.before=await check();
+   if(revision||expected.sequenceCadence.startsWith('preenter-'))entry.before=await check();
    if(action.type==='select'){entry.after=await check(action);continue;}
+   if(action.type==='click'){
+     const target=await check(null,false,action.activeIndex,true);
+     entry.dispatchAttempted=true;result.dispatchAttempted=true;entry.target=target;
+     for(const type of ['mousePressed','mouseReleased'])await call('Input.dispatchMouseEvent',{type,...target.point,button:'left',clickCount:1},sessionId);
+     activeIndex=action.activeIndex;entry.after=await check();continue;
+   }
    entry.dispatchAttempted=true;result.dispatchAttempted=true;
    if(action.type==='insert')await call('Input.insertText',{text:action.text},sessionId);
    else{const enter=action.type==='enter',key=enter?'Enter':'Backspace',code=enter?13:8;
      await call('Input.dispatchKeyEvent',{type:'keyDown',key,code:key,windowsVirtualKeyCode:code,nativeVirtualKeyCode:code,...(enter?{text:'\r',unmodifiedText:'\r'}:{})},sessionId);
      await call('Input.dispatchKeyEvent',{type:'keyUp',key,code:key,windowsVirtualKeyCode:code,nativeVirtualKeyCode:code},sessionId);
    }
-   if(action.type==='enter')texts.push('');else texts[texts.length-1]=action.after;
+   if(action.type==='enter'){texts.push('');activeIndex=texts.length-1;}else texts[activeIndex]=action.after;
    revision++;entry.after=await check();
  }
  result.completion=await check(null,true);

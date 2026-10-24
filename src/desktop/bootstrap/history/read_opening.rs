@@ -1,6 +1,7 @@
 //! A cold first-unread opening must reach the unread boundary, not fetch before
 //! it. conversations.history returns newest first; cursor/time pagination is
 //! documented at https://docs.slack.dev/reference/methods/conversations.history/.
+#[cfg(test)]
 use crate::realtime::activity_counts::CursorOwner;
 use crate::state::ShellState;
 use dioxus::prelude::*;
@@ -12,17 +13,24 @@ use super_platinum_core::{
     state::cmp_ts,
 };
 
+pub(crate) mod check;
+pub(crate) mod context;
+pub(crate) mod fixture;
+use context::{Context, Owner};
+
 const PAGE_BUDGET: usize = 8;
 const TIME_BUDGET: std::time::Duration = std::time::Duration::from_secs(20);
 
 fn current(
     s: &ShellState,
-    owner: &CursorOwner,
+    owner: &Owner,
     scope: &str,
     channel: &str,
     boundary: &str,
+    reconnect: Option<&super::super::reconnect::Visit>,
 ) -> bool {
-    owner.current(&s.core)
+    super::super::reconnect::history_gate::current(s, reconnect)
+        && owner.current(&s.core)
         && s.timeline_scope() == scope
         && s.core.pending_scroll_to
             == Some((
@@ -30,6 +38,8 @@ fn current(
                 PendingScrollTarget::FirstUnreadAfter(boundary.into()),
             ))
 }
+
+use super::super::reconnect::history_gate::{JoinedOpening, joined_opening};
 
 #[cfg(test)]
 mod tests {
@@ -61,12 +71,101 @@ mod tests {
         (s, transport, session)
     }
     #[test]
+    fn reconnect_does_not_retire_a_valid_ordinary_unread_page() {
+        let (mut s, transport, session) = fixture();
+        let scope = s.timeline_scope();
+        let channel = s.core.active_channel.clone().unwrap();
+        let owner = Owner::Live(Arc::new(
+            CursorOwner::capture(&s.core, &transport, &session).unwrap(),
+        ));
+        s.reconnect_generation += 1;
+        assert!(current(&s, &owner, &scope, &channel, "10.000001", None));
+        s.core.pending_scroll_to = None;
+        assert!(!current(&s, &owner, &scope, &channel, "10.000001", None));
+    }
+    #[test]
+    fn reconnect_joins_old_ticket_and_only_retries_after_owned_release() {
+        let (mut s, _, session) = fixture();
+        let channel = s.core.active_channel.clone().unwrap();
+        let account = s.core.active_account.clone();
+        let epoch = s.core.account_epoch;
+        let ticket = (s.timeline_scope(), "10.000001".into());
+        s.read_presentation.unread_fetching = Some(ticket.clone());
+        s.read_presentation.unread_loading = Some(ticket.clone());
+        assert_eq!(
+            joined_opening(
+                &s.read_presentation.unread_fetching,
+                &s.read_presentation.unread_loading,
+                &ticket,
+                true,
+                false
+            ),
+            JoinedOpening::Waiting
+        );
+        s.reconnect_generation += 1;
+        assert_eq!(
+            joined_opening(
+                &s.read_presentation.unread_fetching,
+                &s.read_presentation.unread_loading,
+                &ticket,
+                true,
+                false
+            ),
+            JoinedOpening::Waiting
+        );
+        release(
+            &mut s,
+            &ticket,
+            &account,
+            epoch,
+            &session.team_id,
+            &channel,
+            true,
+        );
+        assert_eq!(
+            joined_opening(
+                &s.read_presentation.unread_fetching,
+                &s.read_presentation.unread_loading,
+                &ticket,
+                true,
+                false
+            ),
+            JoinedOpening::Available
+        );
+        // A replacement owns the ticket before another joiner wakes.
+        s.read_presentation.unread_fetching = Some(ticket.clone());
+        assert_eq!(
+            joined_opening(
+                &s.read_presentation.unread_fetching,
+                &s.read_presentation.unread_loading,
+                &ticket,
+                true,
+                false
+            ),
+            JoinedOpening::Waiting
+        );
+        s.read_presentation.unread_fetching = None;
+        s.read_presentation.unread_loading = None;
+        assert_eq!(
+            joined_opening(
+                &s.read_presentation.unread_fetching,
+                &s.read_presentation.unread_loading,
+                &ticket,
+                true,
+                false
+            ),
+            JoinedOpening::Finished
+        );
+    }
+    #[test]
     fn same_transport_credential_rotation_cannot_accept_old_history_pages() {
         let (mut s, transport, session) = fixture();
         let scope = s.timeline_scope();
         let channel = s.core.active_channel.clone().unwrap();
-        let owner = CursorOwner::capture(&s.core, &transport, &session).unwrap();
-        assert!(current(&s, &owner, &scope, &channel, "10.000001"));
+        let owner = Owner::Live(Arc::new(
+            CursorOwner::capture(&s.core, &transport, &session).unwrap(),
+        ));
+        assert!(current(&s, &owner, &scope, &channel, "10.000001", None));
         s.core
             .session
             .as_mut()
@@ -75,7 +174,7 @@ mod tests {
             .get_mut(&session.team_id)
             .unwrap()
             .token = "rotated-fixture-token".into();
-        assert!(!current(&s, &owner, &scope, &channel, "10.000001"));
+        assert!(!current(&s, &owner, &scope, &channel, "10.000001", None));
     }
     #[test]
     fn rotation_cleanup_releases_only_the_task_that_owned_the_spinner() {
@@ -151,12 +250,36 @@ fn release(
 }
 
 pub(super) async fn refresh(
-    mut state: Signal<ShellState>,
+    state: Signal<ShellState>,
     transport: &Arc<Transport>,
     client: &SlackClient,
     session: &WorkspaceSession,
     channel: &str,
     boundary: &str,
+    reconnect: Option<&super::super::reconnect::Visit>,
+) {
+    let Some(context) = Context::live(&state.peek(), transport, client, session) else {
+        return;
+    };
+    refresh_context(state, context, channel, boundary, reconnect).await;
+}
+pub(super) async fn refresh_fixture(
+    state: Signal<ShellState>,
+    channel: &str,
+    boundary: &str,
+    reconnect: Option<&super::super::reconnect::Visit>,
+) {
+    let Some(context) = Context::fixture(&state.peek()) else {
+        return;
+    };
+    refresh_context(state, context, channel, boundary, reconnect).await;
+}
+async fn refresh_context(
+    mut state: Signal<ShellState>,
+    context: Context,
+    channel: &str,
+    boundary: &str,
+    reconnect: Option<&super::super::reconnect::Visit>,
 ) {
     use crate::read_preferences::presentation::UnreadContinuation;
     let (scope, account, epoch) = {
@@ -168,15 +291,54 @@ pub(super) async fn refresh(
         )
     };
     let ticket = (scope.clone(), boundary.to_owned());
-    let Some(owner) = CursorOwner::capture(&state.peek().core, transport, session).map(Arc::new)
-    else {
-        return;
-    };
+    let owner = context.owner();
+    let team = context.team();
+    let opening = fixture::begin(&state.peek(), reconnect.is_some());
+    // A reconnect may arrive while an earlier opening owns the same ticket.
+    // Join that bounded task instead of returning busy and then invalidating
+    // its result, or clearing a ticket which another task still owns.
+    let deadline = tokio::time::Instant::now() + TIME_BUDGET;
+    let joining = reconnect.is_some()
+        && state.peek().read_presentation.unread_fetching.as_ref() == Some(&ticket);
+    if joining {
+        let mut previous = None;
+        loop {
+            let s = state.peek();
+            let progress = joined_opening(
+                &s.read_presentation.unread_fetching,
+                &s.read_presentation.unread_loading,
+                &ticket,
+                current(&s, &owner, &scope, channel, boundary, reconnect),
+                tokio::time::Instant::now() >= deadline,
+            );
+            let label = format!("{progress:?}");
+            if previous.as_ref() != Some(&label) {
+                fixture::event(opening, "join", &s, serde_json::json!({"decision":label}));
+                previous = Some(label);
+            }
+            drop(s);
+            match progress {
+                JoinedOpening::Finished | JoinedOpening::Rejected | JoinedOpening::TimedOut => {
+                    fixture::event(
+                        opening,
+                        "join-end",
+                        &state.peek(),
+                        serde_json::json!({"decision":format!("{progress:?}")}),
+                    );
+                    return;
+                }
+                JoinedOpening::Available => break,
+                JoinedOpening::Waiting => {}
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+        }
+    }
     let mut pages = {
         let mut s = state.write();
-        if !current(&s, &owner, &scope, channel, boundary)
+        if !current(&s, &owner, &scope, channel, boundary, reconnect)
             || s.read_presentation.unread_fetching.as_ref() == Some(&ticket)
         {
+            fixture::event(opening, "busy-or-retired", &s, serde_json::Value::Null);
             return;
         }
         let pages = s
@@ -189,7 +351,7 @@ pub(super) async fn refresh(
         s.read_presentation.unread_fetching = Some(ticket.clone());
         s.read_presentation.unread_loading = Some(ticket.clone());
         s.read_presentation.unread_paused = false;
-        if let Some(w) = s.core.workspaces.get_mut(&session.team_id) {
+        if let Some(w) = s.core.workspaces.get_mut(team) {
             w.messages
                 .entry(channel.into())
                 .or_default()
@@ -197,18 +359,18 @@ pub(super) async fn refresh(
         }
         pages
     };
-    let deadline = tokio::time::Instant::now() + TIME_BUDGET;
     for page_index in 0..PAGE_BUDGET {
-        if !current(&state.peek(), &owner, &scope, channel, boundary) {
+        if !current(&state.peek(), &owner, &scope, channel, boundary, reconnect) {
             release(
                 &mut state.write(),
                 &ticket,
                 &account,
                 epoch,
-                &session.team_id,
+                team,
                 channel,
                 true,
             );
+            fixture::event(opening, "retired", &state.peek(), serde_json::Value::Null);
             return;
         }
         state.write().read_presentation.unread_continuation = Some(UnreadContinuation {
@@ -225,30 +387,40 @@ pub(super) async fn refresh(
             limit: Some(100),
             inclusive: false,
         };
-        let file_read = state.write().core.begin_file_display_read(&session.team_id);
-        let result = tokio::time::timeout_at(
-            deadline,
-            api::fetch_history(transport, client, session, request),
-        )
-        .await
-        .unwrap_or_else(|_| Err(Error::Api("history_opening_timed_out".into())));
-        if !current(&state.peek(), &owner, &scope, channel, boundary) {
+        let file_read = state.write().core.begin_file_display_read(team);
+        let pending = context.begin(opening, request);
+        let response = pending.id();
+        let result = tokio::time::timeout_at(deadline, context.fetch(pending)).await;
+        let outcome = match &result {
+            Err(_) => "timeout",
+            Ok(Err(_)) => "error",
+            Ok(Ok(_)) => "success",
+        };
+        fixture::response(
+            response,
+            &state.peek(),
+            current(&state.peek(), &owner, &scope, channel, boundary, reconnect),
+            outcome,
+        );
+        let result = result.unwrap_or_else(|_| Err(Error::Api("history_opening_timed_out".into())));
+        if !current(&state.peek(), &owner, &scope, channel, boundary, reconnect) {
             release(
                 &mut state.write(),
                 &ticket,
                 &account,
                 epoch,
-                &session.team_id,
+                team,
                 channel,
                 true,
             );
+            fixture::event(opening, "retired", &state.peek(), serde_json::Value::Null);
             return;
         }
         let (page, more, next, files) = match result.and_then(|page| {
             let files = state
                 .read()
                 .core
-                .finish_file_display_read(&session.team_id, file_read)
+                .finish_file_display_read(team, file_read)
                 .map_err(|reason| Error::Api(reason.into()))?;
             if page.messages.len() > 100 {
                 return Err(Error::Api("history_opening_page_too_large".into()));
@@ -260,36 +432,25 @@ pub(super) async fn refresh(
             Ok(value) => value,
             Err(error) => {
                 let mut s = state.write();
-                release(
-                    &mut s,
-                    &ticket,
-                    &account,
-                    epoch,
-                    &session.team_id,
-                    channel,
-                    false,
-                );
+                release(&mut s, &ticket, &account, epoch, team, channel, false);
                 if let Some(bag) = s
                     .core
                     .workspaces
-                    .get_mut(&session.team_id)
+                    .get_mut(team)
                     .and_then(|w| w.messages.get_mut(channel))
                 {
                     bag.history_failed = true;
                 }
                 s.report_failure(&error,"",||"Could not finish loading the unread starting point. Continue loading to try again.".into());
+                fixture::event(opening, "error", &s, serde_json::Value::Null);
                 return;
             }
         };
         pages = next;
         let mut s = state.write();
-        let upload_ids = crate::messaging::upload_recovery::incoming(
-            &s,
-            &session.team_id,
-            channel,
-            &page.messages,
-        );
-        if let Some(w) = s.core.workspaces.get_mut(&session.team_id) {
+        let upload_ids =
+            crate::messaging::upload_recovery::incoming(&s, team, channel, &page.messages);
+        if let Some(w) = s.core.workspaces.get_mut(team) {
             let bag = w.messages.entry(channel.into()).or_default();
             for message in page.messages {
                 let message = files.message(message);
@@ -309,11 +470,12 @@ pub(super) async fn refresh(
             bag.history_refreshing = more;
             bag.has_more_older = true;
         }
-        crate::messaging::upload_recovery::reconcile(
-            &mut s,
-            &session.team_id,
-            channel,
-            Some(&upload_ids),
+        crate::messaging::upload_recovery::reconcile(&mut s, team, channel, Some(&upload_ids));
+        fixture::event(
+            opening,
+            "merged",
+            &s,
+            serde_json::json!({"pageIndex":page_index,"more":more,"cursor":pages.cursor,"latest":pages.latest}),
         );
         if !more {
             s.read_presentation.unread_loading = None;
@@ -325,6 +487,7 @@ pub(super) async fn refresh(
                 s.stick_to_bottom = true;
             }
             s.reset_timeline_window();
+            fixture::event(opening, "completed", &s, serde_json::Value::Null);
             return;
         }
         s.read_presentation.unread_continuation = Some(UnreadContinuation {
@@ -334,16 +497,9 @@ pub(super) async fn refresh(
             owner: owner.clone(),
         });
         if page_index + 1 == PAGE_BUDGET || tokio::time::Instant::now() >= deadline {
-            release(
-                &mut s,
-                &ticket,
-                &account,
-                epoch,
-                &session.team_id,
-                channel,
-                false,
-            );
+            release(&mut s, &ticket, &account, epoch, team, channel, false);
             s.refresh_from_core();
+            fixture::event(opening, "paused", &s, serde_json::Value::Null);
             return;
         }
         // Projection is rebuilt once at completion/pause, not for every page.

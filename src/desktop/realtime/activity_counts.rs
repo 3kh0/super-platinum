@@ -41,7 +41,7 @@ impl CountsOwner {
         };
         owner.current(core).then_some(owner)
     }
-    fn current(&self, core: &CoreAppState) -> bool {
+    pub(crate) fn current(&self, core: &CoreAppState) -> bool {
         core.active_account == self.account
             && core.account_epoch == self.epoch
             && core

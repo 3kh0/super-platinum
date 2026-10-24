@@ -28,6 +28,7 @@ mod render;
 pub(crate) mod search;
 pub(crate) mod teams;
 mod topics;
+pub(crate) mod unknown;
 use context::Context;
 pub(crate) use emoji::{
     EmojiStandard, emoji_standard, fixture_emoji_assignments, fixture_emoji_guard_probe,
@@ -54,6 +55,7 @@ pub(crate) struct Registry {
     fixture: Option<fixture::Model>,
     startup: BTreeMap<Key, (Arc<Context>, bool)>,
     conditional: conditional::Registry,
+    unknown: unknown::Registry,
     posting: Vec<search::posting::Pending>,
     opened: Vec<search::open::Pending>,
 }

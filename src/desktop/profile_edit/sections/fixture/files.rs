@@ -61,6 +61,18 @@ pub(crate) fn source_label() -> &'static str {
     }
 }
 pub(crate) fn mounted_label() -> &'static str {
+    if super::group_title::named() {
+        return super::group_title::ORIGINAL;
+    }
+    if super::missing_channel::named() {
+        return super::missing_channel::ORIGINAL;
+    }
+    if super::channel_title::named() {
+        return super::channel_title::original_label();
+    }
+    if super::emoji_title::named() {
+        return super::emoji_title::label(false);
+    }
     if super::link_title::named() {
         return super::link_title::ORIGINAL;
     }
@@ -79,6 +91,18 @@ pub(crate) fn mounted_label() -> &'static str {
     }
 }
 pub(crate) fn renamed_label() -> &'static str {
+    if super::group_title::named() {
+        return super::group_title::RENAMED;
+    }
+    if super::missing_channel::named() {
+        return super::missing_channel::final_label();
+    }
+    if super::channel_title::named() {
+        return super::channel_title::renamed_label();
+    }
+    if super::emoji_title::named() {
+        return super::emoji_title::label(true);
+    }
     if super::link_title::named() {
         return super::link_title::RENAMED;
     }
@@ -116,6 +140,15 @@ pub(crate) fn raw(renamed: bool) -> Value {
 /// Formatting and unknown fields survive in source/effective metadata; the
 /// canonical title extractor treats these text values literally.
 pub(crate) fn title_blocks(renamed: bool) -> Value {
+    if super::group_title::named() {
+        return super::group_title::blocks();
+    }
+    if super::channel_title::named() || super::missing_channel::named() {
+        return super::channel_title::blocks();
+    }
+    if super::emoji_title::named() {
+        return super::emoji_title::blocks(renamed);
+    }
     if super::link_title::named() {
         return super::link_title::blocks(renamed);
     }
@@ -163,7 +196,14 @@ pub(crate) fn release() -> Value {
     let held = ledger().lock().unwrap().held.take();
     let cancelled = held.as_ref().is_some_and(|s| s.is_closed());
     let response = raw(false);
-    if (super::empty_canvas::existing() || super::link_title::named()) && held.is_some() {
+    if (super::empty_canvas::existing()
+        || super::channel_title::named()
+        || super::missing_channel::named()
+        || super::group_title::named()
+        || super::link_title::named()
+        || super::emoji_title::named())
+        && held.is_some()
+    {
         if let Some(row) = ledger().lock().unwrap().requests.last_mut() {
             row["releasedResponse"] = response.clone();
         }
@@ -269,7 +309,13 @@ pub(crate) async fn read(
         Mode::Normal => Ok(raw(false)),
         Mode::Renamed => Ok(raw(true)),
     };
-    if super::empty_canvas::existing() || super::link_title::named() {
+    if super::empty_canvas::existing()
+        || super::link_title::named()
+        || super::emoji_title::named()
+        || super::channel_title::named()
+        || super::missing_channel::named()
+        || super::group_title::named()
+    {
         if let Some(row) = ledger().lock().unwrap().requests.last_mut() {
             row["response"] = match &result {
                 Ok(raw) => json!({"raw":raw}),

@@ -3,6 +3,8 @@ pub(crate) mod file_actions;
 mod file_check;
 pub(crate) mod file_fixture;
 mod files;
+pub(crate) mod message_check;
+pub(crate) mod message_fixture;
 mod navigation;
 use crate::state::{MainView, ShellState};
 use dioxus::prelude::*;
@@ -58,6 +60,9 @@ pub fn visible_state(shell: &ShellState) -> Option<&super_platinum_core::later::
 }
 
 pub async fn load(mut state: Signal<ShellState>, filter: LaterFilter, append: bool) {
+    if message_fixture::filter(state, filter, append) {
+        return;
+    }
     let Some(ctx) = Context::get(&state) else {
         return;
     };

@@ -289,6 +289,15 @@ impl PreparedEndEdit {
                 stages[0].as_slice()
             })
     }
+    pub fn parent_draft(&self) -> &TextDraft {
+        self.witness
+            .parent_updates
+            .last()
+            .unwrap_or(&self.intent.seed)
+    }
+    pub fn parent_updates(&self) -> &[TextDraft] {
+        self.witness.parent_updates()
+    }
     pub fn checkpoint(&self) -> Result<recovery::Checkpoint, Error> {
         if self.is_sequence() {
             return recovery::Checkpoint::end_sequence(
@@ -296,6 +305,7 @@ impl PreparedEndEdit {
                 self.target_section(),
                 self.session_id(),
                 &self.witness.before,
+                &self.witness.parent_updates,
                 &self.sequence_rows,
                 &self.data,
             );
@@ -460,6 +470,7 @@ impl PreparedEndEdit {
                 .reused()
                 .map_or_else(|| Ok(child.clone()), |old| old.merge_partial(child))?,
             parent_wire: self.parent_wire.clone(),
+            parent_draft: self.parent_draft().clone(),
             child_wire: self.child_wire.clone(),
             child_draft: self.child_draft.clone(),
             second,

@@ -146,6 +146,9 @@ pub(crate) fn install(shell: &mut ShellState) {
     if super::files::named() {
         super::files::install();
     }
+    if super::channel_title::named() || super::missing_channel::named() {
+        crate::app_home::channel_fetches::conditional::fixture::install(shell);
+    }
     if super::completion::named() && std::env::var(super::completion::FLAG).as_deref() == Ok("1") {
         super::completion::install(shell);
     }

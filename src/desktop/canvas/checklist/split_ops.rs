@@ -1,5 +1,6 @@
-//! One parent/child split shares the existing file lock and readback custody.
+//! Parent/child splits share the existing file lock and readback custody.
 use super::*;
+pub(super) mod readback;
 use super_platinum_core::canvas::edit::structure::{
     AcceptedSplit, PreparedSplitEdit, SplitIntent, SplitWitness,
 };
@@ -22,6 +23,7 @@ pub(in crate::canvas) fn begin_split(
     attempt.mutation = Mutation::Split {
         witness: Arc::new(witness),
         child: None,
+        second_child: None,
     };
     shell
         .canvas_checklist
@@ -69,10 +71,16 @@ pub(in crate::canvas) fn mark_dispatched(
         .iter_mut()
         .find(|op| op.attempt.serial == attempt.serial)
         .unwrap();
-    let Mutation::Split { child, .. } = &mut operation.attempt.mutation else {
+    let Mutation::Split {
+        child,
+        second_child,
+        ..
+    } = &mut operation.attempt.mutation
+    else {
         return false;
     };
     *child = Some(prepared.child_section().to_owned());
+    *second_child = prepared.second_child_section().map(str::to_owned);
     operation.structural_request = Some(prepared.document_data().clone());
     operation.stage = Stage::Saving;
     operation.dispatched = Some((prepared.session_id().into(), prepared.sequence()));
@@ -94,7 +102,12 @@ pub(in crate::canvas) fn finish_split(
     }) else {
         return false;
     };
-    let Mutation::Split { child, .. } = &operation.attempt.mutation else {
+    let Mutation::Split {
+        child,
+        second_child,
+        ..
+    } = &operation.attempt.mutation
+    else {
         return false;
     };
     let matches = operation
@@ -105,8 +118,10 @@ pub(in crate::canvas) fn finish_split(
         })
         && accepted.target_section() == attempt.section
         && child.as_deref() == Some(accepted.child_id())
+        && second_child.as_deref() == accepted.second_child_id()
         && [accepted.parent_section(), accepted.child_section()]
-            .iter()
+            .into_iter()
+            .chain(accepted.second_child_section())
             .all(|section| {
                 section.thread_id().ok().flatten() == Some(attempt.snapshot.thread_id())
                     && section.document_id().ok().flatten() == Some(attempt.snapshot.document_id())
@@ -117,7 +132,11 @@ pub(in crate::canvas) fn finish_split(
         Stage::Uncertain
     };
     if matches {
-        operation.accepted = Some(Accepted::Split(accepted));
+        operation.accepted = Some(if accepted.second_child_id().is_some() {
+            Accepted::SplitSequence(readback::AcceptedState::new(accepted))
+        } else {
+            Accepted::Split(accepted)
+        });
     }
     true
 }

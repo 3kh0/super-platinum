@@ -79,7 +79,10 @@ async fn run(
     )
     .await?;
     checked(desktop,r#"(()=>{const b=document.getElementById('canvas-text-save');b.click();b.click();return {ok:true};})()"#).await?;
-    wait(desktop,r#"(()=>{const e=document.getElementById('canvas-text-draft');return {ok:e?.contentEditable==='false'&&document.getElementById('canvas-text-save')?.disabled&&document.getElementById('canvas-text-cancel')?.disabled&&document.querySelector('[data-canvas-section="item"] button')?.disabled};})()"#).await?;
+    // While canonical state is stale, the mapping worker clears old action
+    // authority. The neighboring item can therefore be an inert checkbox span
+    // rather than a disabled button; both must remain present and non-actionable.
+    wait(desktop,r#"(()=>{const e=document.getElementById('canvas-text-draft'),row=document.querySelector('[data-canvas-section="item"]'),controls=row?.querySelectorAll('[role="checkbox"]'),c=controls?.length===1?controls[0]:null;const frozen=e?.contentEditable==='false',saveDisabled=document.getElementById('canvas-text-save')?.disabled===true,cancelDisabled=document.getElementById('canvas-text-cancel')?.disabled===true,checkboxDisabled=!!c&&c.isConnected&&c.getAttribute('aria-checked')==='false'&&((c.tagName==='BUTTON'&&c.disabled===true)||(c.tagName==='SPAN'&&c.getAttribute('aria-disabled')==='true'))&&!row.querySelector('button:not(:disabled)');return {ok:frozen&&saveDisabled&&cancelDisabled&&checkboxDisabled,frozen,saveDisabled,cancelDisabled,checkboxDisabled,checkboxTag:c?.tagName??null};})()"#).await?;
     if super::fixture::attempts(&state.peek()) != 1 {
         return Err("Duplicate Save dispatched more than once".into());
     }

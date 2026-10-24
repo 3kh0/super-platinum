@@ -28,6 +28,8 @@ pub struct EndWitness {
     updates: Vec<TextDraft>,
     second_updates: Vec<TextDraft>,
     sequence_updates: Option<Vec<Vec<TextDraft>>>,
+    parent_updates: Vec<TextDraft>,
+    pre_enter: Option<sequence::witness::Boundary>,
     empty_enter: bool,
     repeat: bool,
 }
@@ -51,6 +53,8 @@ impl EndWitness {
             updates: Vec::new(),
             second_updates: Vec::new(),
             sequence_updates: None,
+            parent_updates: Vec::new(),
+            pre_enter: None,
             empty_enter: false,
             repeat: false,
         })
@@ -63,6 +67,8 @@ impl EndWitness {
             updates: Vec::new(),
             second_updates: Vec::new(),
             sequence_updates: None,
+            parent_updates: Vec::new(),
+            pre_enter: None,
             empty_enter: true,
             repeat: false,
         }
@@ -254,6 +260,11 @@ impl EndIntent {
         now: u64,
     ) -> Result<PreparedEndEdit, Error> {
         self.revalidate(fresh, now)?;
+        if !witness.is_sequence()
+            && (!witness.parent_updates.is_empty() || witness.pre_enter.is_some())
+        {
+            return Err(Error::Changed);
+        }
         if self.empty_enter != witness.empty_enter
             || self.is_repeat() != witness.repeat
             || self.is_sequence() != witness.is_sequence()

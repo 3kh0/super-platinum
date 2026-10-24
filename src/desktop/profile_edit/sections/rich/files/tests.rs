@@ -1,5 +1,7 @@
 use super::*;
 use serde_json::json;
+mod channels;
+mod groups;
 
 fn setup() -> (ShellState, Token) {
     let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
@@ -280,6 +282,59 @@ fn canvas_blocks_require_independent_runtime_observation_and_preserve_literal_ti
             .unwrap(),
         "Changed &amp;"
     );
+}
+
+#[test]
+fn emoji_title_context_keeps_file_runtime_and_token_custody_separate() {
+    let (mut shell, token) = setup();
+    let id = "FFILE0001";
+    let mut raw = response(id, "Wrong fallback", "quip");
+    raw["file"]["title_blocks"] = json!([{"type":"rich_text","block_id":"kept-block","elements":[
+        {"type":"rich_text_section","elements":[{"type":"text","text":"Project "},
+        {"type":"emoji","name":"wave","style":{"bold":true},"opaque":{"keep":1}},
+        {"type":"text","text":" plan"}]}]}]);
+    put(&mut shell, &token, &raw);
+    let wire = json!({"type":"canvas","file_id":id,"text":"https://fixture.invalid/unchanged",
+        "url":"https://fixture.invalid/unchanged","style":{"italic":true},"opaque":{"keep":42}});
+    let original_wire = wire.clone();
+    let observed = Observation::capture(&shell, &token, id).unwrap();
+    assert_eq!(observed.label(&wire).unwrap(), "Project :wave: plan");
+    assert!(observed.current(&shell));
+    assert_eq!(
+        observed.emoji.descriptor()["origin"],
+        "application-presentation"
+    );
+    assert_eq!(wire, original_wire);
+    assert_eq!(
+        observed.row.source()["title_blocks"],
+        raw["file"]["title_blocks"]
+    );
+    // A changed source retires this observation while the mounted label remains
+    // immutable. Emoji-only extraction is empty, never the separate fallback.
+    let mut changed = raw.clone();
+    changed["file"]["title_blocks"][0]["elements"][0]["elements"] =
+        json!([{"type":"emoji","name":"wave"}]);
+    put(&mut shell, &token, &changed);
+    assert!(!observed.current(&shell));
+    assert_eq!(observed.label(&wire).unwrap(), "Project :wave: plan");
+    let empty = Observation::capture(&shell, &token, id).unwrap();
+    assert_eq!(empty.label(&wire).unwrap(), "");
+    shell.canvas_titles = Default::default();
+    assert!(!empty.current(&shell));
+    assert!(Observation::capture(&shell, &token, id).is_err());
+    shell.canvas_titles = crate::canvas::quip_titles::State::fresh();
+    let fresh = Observation::capture(&shell, &token, id).unwrap();
+    shell
+        .core
+        .workspaces
+        .get_mut(&token.owner.team)
+        .unwrap()
+        .rt_generation += 1;
+    assert!(!fresh.current(&shell));
+    put(&mut shell, &token, &changed);
+    let next = Observation::capture(&shell, &token, id).unwrap();
+    shell.core.account_epoch += 1;
+    assert!(!next.current(&shell));
 }
 
 #[test]

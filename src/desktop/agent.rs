@@ -96,6 +96,10 @@ pub async fn serve(
     crate::slack_links::user_check::start(state, desktop.clone());
     crate::read_preferences::settings::check::start(state, desktop.clone());
     crate::read_preferences::navigation_check::start(state, desktop.clone());
+    crate::later::message_check::start(state, desktop.clone());
+    crate::bootstrap::reconnect::check::start(state, desktop.clone());
+    crate::bootstrap::unread_check::start(state, desktop.clone());
+    crate::bootstrap::ordinary_history::check::start(state, desktop.clone());
     crate::read_shortcuts::check::start(state, desktop.clone());
     crate::read_shortcuts::bulk::check::start(state, desktop.clone());
     crate::message_buttons::multi_channel_check::start(state, desktop.clone());
@@ -112,6 +116,7 @@ pub async fn serve(
     crate::canvas::text::check::start(state, desktop.clone());
     crate::canvas::text::heading_check::start(state, desktop.clone());
     crate::canvas::text::underline_check::start(state, desktop.clone());
+    crate::canvas::text::owner_delete_fixture::check::start(state, desktop.clone());
     crate::canvas::text::structure_check::start(state, desktop.clone());
     crate::canvas::text::split_check::start(state, desktop.clone());
     crate::canvas::text::split_recovery_check::start(state, desktop.clone());

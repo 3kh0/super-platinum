@@ -78,9 +78,9 @@ fn accepted_split_parent_remains_editable_and_keeps_lineage_across_two_text_save
     }
     let actions = super::super::super::paragraph_actions(&s, &["item"], 100);
     let actions = actions[0].as_ref().unwrap();
-    assert!(!actions.delete);
+    assert!(actions.delete);
     assert!(actions.insert_before && actions.insert_after);
-    assert!(super::super::super::StructureIntent::delete(&s, "item", 100).is_err());
+    assert!(super::super::super::StructureIntent::delete(&s, "item", 100).is_ok());
     assert!(SplitIntent::capture(&s, "item", 100).is_err());
 }
 #[test]

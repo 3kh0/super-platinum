@@ -26,13 +26,22 @@ def bytes_vector(value):
 
 
 class SplitReviewStorage:
-    def __init__(self, captures, split_mode="middle", typing="none", reuse_content="empty"):
+    def __init__(self, captures, split_mode="middle", typing="none", reuse_content="empty", sequence_cadence="straight", pre_enter="none", middle_parent="none", middle_cadence="parent-first", second_middle="none", second_middle_cadence="straight"):
         require(split_mode in ("sequence", "repeat", "empty", "start", "middle", "end", "reuse") and typing in ("none", "correction", "erase", "restore")
                 and (split_mode != "sequence" or typing == "none")
                 and (typing != "restore" or split_mode in ("repeat", "empty", "start", "middle"))
                 and reuse_content in ("empty", "spaces", "nbsp", "br", "mixed", "mixed-br", "separators", "feff-leading", "feff-interior", "feff-post-br")
                 and (reuse_content == "empty" or split_mode == "reuse"), "Unknown Canvas recovery mode")
-        self.version, self.action = ((14, "EndSequence") if split_mode == "sequence" else
+        require(pre_enter in ("none", "correction", "revert", "retype") and (pre_enter == "none" or split_mode == "middle"), "Unknown pre-middle recovery selector")
+        require(middle_parent in ("none", "correction", "erase", "revert") and middle_cadence in ("parent-first", "child-first", "interleaved")
+                and (middle_parent == "none" or split_mode == "middle") and (middle_parent != "none" or middle_cadence == "parent-first"), "Unknown middle parent recovery selector")
+        from canvas_second_middle_wire import selectors
+        selectors(split_mode,typing,pre_enter,middle_parent,middle_cadence,second_middle,second_middle_cadence)
+        parent_sequence = split_mode == "sequence" and sequence_cadence in (
+            "parent-correction", "parent-erase", "parent-revert", "preenter-correction", "preenter-erase", "preenter-revert")
+        self.version, self.action = ((18, "SplitSequence") if second_middle != "none" else (17, "SplitParent") if middle_parent != "none" else (16, "SplitPreEnter") if pre_enter != "none" else
+            (15, "EndSequenceParent") if parent_sequence else
+            (14, "EndSequence") if split_mode == "sequence" else
             (13, "EndRepeatTyping") if split_mode == "repeat" and typing != "none" else
             (12, "EndRepeat") if split_mode == "repeat" else
             (11, "EmptyTyping") if split_mode == "empty" and typing != "none" else

@@ -2,7 +2,7 @@
 use super::*;
 
 pub(super) async fn continue_members(
-    mut state: Signal<ShellState>,
+    state: Signal<ShellState>,
     desktop: &dioxus::desktop::DesktopContext,
     stages: &mut Vec<Value>,
 ) -> Result<(), String> {
@@ -29,7 +29,7 @@ pub(super) async fn continue_members(
     }
     steps.push((
         fixture::parent_id().into(),
-        fixture::parent_text().into(),
+        fixture::sequence::parent_final(),
         fixture::corpus().edited.into(),
         [
             "parent-editing".into(),
@@ -37,6 +37,15 @@ pub(super) async fn continue_members(
             "parent-confirmed".into(),
         ],
     ));
+    continue_steps(state, desktop, stages, steps).await
+}
+
+pub(super) async fn continue_steps(
+    mut state: Signal<ShellState>,
+    desktop: &dioxus::desktop::DesktopContext,
+    stages: &mut Vec<Value>,
+    steps: Vec<(String, String, String, [String; 3])>,
+) -> Result<(), String> {
     for (step, (target, initial, replacement, names)) in steps.into_iter().enumerate() {
         let ordinal = 4 + step * 3;
         let writes = step + 2;
@@ -73,14 +82,27 @@ pub(super) async fn continue_members(
             tokio::time::sleep(std::time::Duration::from_millis(50)).await;
         }
         stage(state, desktop, &names[1], ordinal + 1, stages).await?;
-        if !fixture::complete_text(&mut state.write()) {
+        if !fixture::complete_text(state).await {
             return Err(format!(
                 "{target} continuation ACK/readback failed: {}",
                 fixture::proof(&state.peek())["acknowledgements"]
             ));
         }
         wait(desktop,&format!(r#"(()=>{{const row=document.querySelector('[data-canvas-text-section="'+{}+'"] .canvas-paragraph-content');return {{ok:!document.getElementById('canvas-text-editor')&&row?.textContent==={}}};}})()"#,json!(target),json!(replacement))).await?;
-        stage(state, desktop, &names[2], ordinal + 2, stages).await?;
+        if target == fixture::parent_id() {
+            stage(state, desktop, &names[2], ordinal + 2, stages).await?;
+        } else {
+            stage_for_section(
+                state,
+                desktop,
+                &names[2],
+                ordinal + 2,
+                stages,
+                &target,
+                &replacement,
+            )
+            .await?;
+        }
     }
     Ok(())
 }

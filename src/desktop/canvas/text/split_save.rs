@@ -1,9 +1,29 @@
 //! One native split, durable pair reservation and complete receipt settlement.
 use super::*;
 use super_platinum_core::{
-    canvas::edit::structure::SplitWitness,
+    canvas::edit::{
+        Error,
+        structure::{PreparedSplitEdit, SplitIntent, SplitWitness, recovery::Checkpoint},
+    },
     slack::{api, transport::CanvasEditFailure},
 };
+
+/// Keep report reconstruction and validation of its exact inert checkpoint on
+/// one worker. Neither caller rebuilds the checkpoint on the desktop task.
+pub(super) async fn prepare(
+    intent: SplitIntent,
+    fresh: Arc<api::CanvasCollabSnapshot>,
+    witness: SplitWitness,
+    now: u64,
+) -> Result<(PreparedSplitEdit, Checkpoint), Error> {
+    tokio::task::spawn_blocking(move || {
+        let prepared = intent.prepare(&fresh, &witness, now)?;
+        let checkpoint = prepared.checkpoint()?;
+        Ok((prepared, checkpoint))
+    })
+    .await
+    .map_err(|_| Error::Unsupported)?
+}
 
 pub(super) fn submit(
     mut state: Signal<ShellState>,
@@ -93,7 +113,7 @@ pub(super) fn submit(
         )
         .await
         {
-            Ok(value) => value,
+            Ok(value) => Arc::new(value),
             Err(_) => {
                 reject(
                     state,
@@ -105,20 +125,34 @@ pub(super) fn submit(
                 return;
             }
         };
-        let prepared = if checklist::dispatchable(&state.peek(), &attempt) {
-            checklist::save::now_usec()
-                .map(|now| {
-                    intent.prepare(
-                        &fresh,
-                        checklist::split_ops::witness(&attempt).expect("split attempt"),
-                        now,
-                    )
-                })
-                .transpose()
+        let preparation = if checklist::recovery::split_preparation_current(&state.peek(), &attempt)
+        {
+            checklist::save::now_usec().map(|now| {
+                (
+                    now,
+                    checklist::split_ops::witness(&attempt)
+                        .expect("split attempt")
+                        .clone(),
+                )
+            })
         } else {
-            Ok(None)
+            None
         };
-        let prepared = match prepared {
+        let prepared = match preparation {
+            Some((now, witness)) => prepare(intent, fresh.clone(), witness, now).await.map(Some),
+            None => Ok(None),
+        };
+        if !checklist::recovery::split_preparation_current(&state.peek(), &attempt) {
+            reject(
+                state,
+                draft,
+                generation,
+                &attempt,
+                "This canvas view changed before the edit was sent.",
+            );
+            return;
+        }
+        let (prepared, checkpoint) = match prepared {
             Ok(Some(prepared)) => prepared,
             Err(super_platinum_core::canvas::edit::Error::Unchanged) => {
                 cancel(state, draft, generation);
@@ -135,14 +169,16 @@ pub(super) fn submit(
                 return;
             }
         };
-        let ticket = match checklist::recovery::reserve_split(state, &attempt, &prepared).await {
+        let ticket = match checklist::recovery::reserve_split(state, &attempt, checkpoint).await {
             Ok(ticket) => ticket,
             Err(reason) => {
                 reject(state, draft, generation, &attempt, reason);
                 return;
             }
         };
-        if !checklist::split_ops::mark_dispatched(&mut state.write(), &attempt, &prepared) {
+        if !checklist::recovery::split_preparation_current(&state.peek(), &attempt)
+            || !checklist::split_ops::mark_dispatched(&mut state.write(), &attempt, &prepared)
+        {
             let _ = checklist::recovery::complete(state, &ticket).await;
             reject(
                 state,

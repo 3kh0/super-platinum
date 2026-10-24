@@ -1,5 +1,6 @@
 //! One parent/child end shares the existing file lock and readback custody.
 use super::*;
+pub(super) mod readback;
 use super_platinum_core::canvas::edit::structure::{
     AcceptedEnd, EndIntent, EndWitness, PreparedEndEdit,
 };
@@ -163,7 +164,33 @@ pub(in crate::canvas) fn finish_end(
         Stage::Uncertain
     };
     if matches {
-        operation.accepted = Some(Accepted::End(accepted));
+        operation.accepted = Some(Accepted::End(readback::AcceptedState::new(accepted)));
     }
     true
+}
+
+/// The disconnected completion worker must still own the exact saving operation.
+pub(in crate::canvas) fn fixture_completion_current(shell: &ShellState, attempt: &Attempt) -> bool {
+    attempt.scope.current(shell)
+        && shell.canvas_checklist.view.as_ref().is_some_and(|view| {
+            view_current(shell, view)
+                && view.generation == attempt.visit
+                && view.read == attempt.read
+                && view.revision == attempt.revision
+                && !view.loading
+                && view.file == attempt.snapshot.file_id()
+                && view
+                    .snapshot
+                    .as_ref()
+                    .is_some_and(|snapshot| Arc::ptr_eq(snapshot, &attempt.snapshot))
+        })
+        && shell.canvas_checklist.operations.iter().any(|op| {
+            op.attempt.serial == attempt.serial
+                && op.stage == Stage::Saving
+                && op.accepted.is_none()
+                && op.dispatched.is_some()
+                && Arc::ptr_eq(&op.attempt.snapshot, &attempt.snapshot)
+                && (matches!(&op.attempt.mutation, Mutation::End { .. })
+                    || matches!(&op.attempt.mutation, Mutation::Split { witness, .. } if witness.second_split_target().is_some()))
+        })
 }

@@ -14,13 +14,17 @@ from canvas_split_recovery_storage import ACCOUNT, SplitReviewStorage
 class StorageTests(unittest.TestCase):
     MODE = "middle"
     TYPING = "none"
+    CADENCE = "straight"
+    PRE_ENTER = "none"
+    MIDDLE_PARENT = "none"
+    SECOND_MIDDLE = "none"
     VERSION = 3
     ACTION = {"Split": {"parent_draft": "Keep this", "child_draft": "Second paragraph"}}
 
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = SplitReviewStorage(Path(self.temp.name), split_mode=self.MODE, typing=self.TYPING)
+        self.store = SplitReviewStorage(Path(self.temp.name), split_mode=self.MODE, typing=self.TYPING, sequence_cadence=self.CADENCE, pre_enter=self.PRE_ENTER, middle_parent=self.MIDDLE_PARENT, second_middle=self.SECOND_MIDDLE)
         self.checkpoint = {"version": self.VERSION, "action": copy.deepcopy(self.ACTION)}
         self.operation = "00000000-0000-4000-8000-000000000123"
         with closing(sqlite3.connect(self.store.path)) as db:
@@ -199,7 +203,7 @@ class SequenceStorageTests(RepeatEnterStorageTests):
         original = json.loads(self.store.original["body"])
         for mutation in ("history", "order", "missing"):
             changed = json.loads(json.dumps(original))
-            members = changed["action"]["EndSequence"]["members"]
+            members = changed["action"][next(iter(self.ACTION))]["members"]
             if mutation == "history":
                 members[0]["updates"] = ["New", ""]
             elif mutation == "order":
@@ -211,6 +215,94 @@ class SequenceStorageTests(RepeatEnterStorageTests):
                 db.commit()
             with self.assertRaises(RuntimeError):
                 self.store.observe(self.archived)
+
+
+class ParentSequenceStorageTests(SequenceStorageTests):
+    CADENCE = "parent-correction"
+    VERSION = 15
+    ACTION = {"EndSequenceParent": {
+        "parent_updates": ["Keep this draftx", "Keep this draft", "Keep this revised"],
+        "members": SequenceStorageTests.ACTION["EndSequence"]["members"]}}
+
+    def test_parent_history_and_v15_cannot_change_during_archive(self):
+        self.archive();self.store.observe(self.archived)
+        for mutation in ("parent-reports", "v14"):
+            changed=json.loads(self.store.original['body'])
+            if mutation=="parent-reports":changed['action']['EndSequenceParent']['parent_updates']=[]
+            else:
+                changed['version']=14
+                changed['action']={'EndSequence':{'members':changed['action']['EndSequenceParent']['members']}}
+            with closing(sqlite3.connect(self.store.path)) as db:
+                db.execute("UPDATE local_reviews SET body=?",(json.dumps(changed),));db.commit()
+            with self.assertRaises(RuntimeError):self.store.observe(self.archived)
+
+
+class ParentEraseSequenceStorageTests(ParentSequenceStorageTests):
+    CADENCE = "parent-erase"
+    ACTION = {"EndSequenceParent": {"parent_updates": [""],
+        "members": SequenceStorageTests.ACTION["EndSequence"]["members"]}}
+
+
+class ParentRevertSequenceStorageTests(ParentSequenceStorageTests):
+    CADENCE = "parent-revert"
+    ACTION = {"EndSequenceParent": {"parent_updates": ["Keep this draftx", "Keep this"],
+        "members": SequenceStorageTests.ACTION["EndSequence"]["members"]}}
+
+
+class PreenterCorrectionStorageTests(ParentSequenceStorageTests):
+    CADENCE = "preenter-correction"
+
+
+class PreenterEraseStorageTests(ParentEraseSequenceStorageTests):
+    CADENCE = "preenter-erase"
+
+
+class PreenterRevertStorageTests(ParentRevertSequenceStorageTests):
+    CADENCE = "preenter-revert"
+
+
+class PreMiddleStorageTests(StorageTests):
+    PRE_ENTER = "revert"
+    VERSION = 16
+    ACTION = {"SplitPreEnter": {"enter_draft":"Original tail", "parent_draft":"Original", "child_draft":" tail",
+                                "pre_enter_updates":["Original changed tail","Original tail"], "child_updates":[]}}
+
+    def test_v16_pre_enter_history_cannot_disappear_after_unlock(self):
+        self.archive();self.store.observe(self.archived)
+        for key in ('enter_draft','pre_enter_updates'):
+            body=json.loads(self.store.original['body']);body['action']['SplitPreEnter'][key]='wrong' if key=='enter_draft' else []
+            with closing(sqlite3.connect(self.store.path)) as db:
+                db.execute("UPDATE local_reviews SET body=?",(json.dumps(body),));db.commit()
+            with self.assertRaises(RuntimeError):self.store.observe(self.archived)
+
+
+class MiddleParentStorageTests(StorageTests):
+    MIDDLE_PARENT = "revert"
+    VERSION = 17
+    ACTION = {"SplitParent": {"enter_draft":"Original tail", "parent_draft":"Original", "child_draft":" tail",
+                             "pre_enter_updates":[], "child_updates":[], "parent_updates":["Original draftx","Original"]}}
+
+    def test_v17_parent_history_cannot_disappear_after_unlock(self):
+        self.archive();self.store.observe(self.archived)
+        body=json.loads(self.store.original['body']);body['action']['SplitParent']['parent_updates']=[]
+        with closing(sqlite3.connect(self.store.path)) as db:
+            db.execute("UPDATE local_reviews SET body=?",(json.dumps(body),));db.commit()
+        with self.assertRaises(RuntimeError):self.store.observe(self.archived)
+
+
+class SecondMiddleStorageTests(StorageTests):
+    SECOND_MIDDLE = "parent"
+    VERSION = 18
+    ACTION = {"SplitSequence": {"child":"first","second_child":"second","second_target":"Original",
+        "second_enter_draft":"Keep this revised","final_updates":[[""],["Second draftx","Second"],["this revised"]]}}
+
+    def test_v18_three_identities_and_report_history_remain_exact_after_archive(self):
+        self.archive();self.store.observe(self.archived)
+        for key in ('child','second_child','second_target','second_enter_draft','final_updates'):
+            body=json.loads(self.store.original['body']);body['action']['SplitSequence'][key]=None
+            with closing(sqlite3.connect(self.store.path)) as db:
+                db.execute("UPDATE local_reviews SET body=?",(json.dumps(body),));db.commit()
+            with self.assertRaises(RuntimeError):self.store.observe(self.archived)
 
 
 if __name__ == "__main__":

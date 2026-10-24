@@ -15,6 +15,11 @@ pub(super) async fn load(
         comments::annotation::fixture::refresh_reader(&mut state.write(), &mut reader.write());
         return;
     }
+    if text::owner_delete_fixture::enabled(&state.peek()) {
+        text::owner_delete_fixture::reload(state).await;
+        checklist::reader::update_mapping(&state.peek(), &mut reader.write());
+        return;
+    }
     if text::split_recovery_fixture::enabled(&state.peek()) {
         text::split_recovery_fixture::reload(state, reader).await;
         return;

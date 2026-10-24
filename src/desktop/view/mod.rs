@@ -362,6 +362,7 @@ pub fn shell() -> Element {
                             channel_resources::ChannelResources {key:"{snapshot.core.account_epoch}-{snapshot.core.active_team.as_deref().unwrap_or_default()}-{active_channel_id}",state,channel:active_channel_id.to_owned()}
                         } else {
                         {crate::read_preferences::notice::unread_loading(state, &snapshot)}
+                        {crate::bootstrap::ordinary_history::render(state, &snapshot)}
                         section {
                             id: "message-timeline",
                             class: "timeline",

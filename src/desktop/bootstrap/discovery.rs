@@ -460,6 +460,18 @@ pub async fn load_main_view(mut state: Signal<ShellState>, target: MainView) {
             spawn(super::open_thread(signal, surface.channel, root));
         }
     }
+    refresh_main_view(state, target, None).await;
+}
+
+/// Refresh a surface's data without performing rail navigation.
+pub(super) async fn refresh_main_view(
+    mut state: Signal<ShellState>,
+    target: MainView,
+    reconnect: Option<&super::reconnect::Visit>,
+) {
+    if reconnect.is_some_and(|visit| !visit.current(&state.peek())) {
+        return;
+    }
     if target == MainView::Home || std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
         return;
     }
@@ -494,14 +506,18 @@ pub async fn load_main_view(mut state: Signal<ShellState>, target: MainView) {
         MainView::Dms => {
             let load_seq = {
                 let mut shell = state.write();
-                shell.core.dms.loading = true;
+                if reconnect.is_none() {
+                    shell.core.dms.loading = true;
+                }
                 shell.core.dms.load_seq = shell.core.dms.load_seq.wrapping_add(1);
                 shell.core.dms.load_seq
             };
             match api::fetch_client_dms(&transport, &client, &workspace_session, 100, None).await {
                 Ok(page) => {
                     let mut shell = state.write();
-                    if shell.core.dms.load_seq != load_seq {
+                    if shell.core.dms.load_seq != load_seq
+                        || reconnect.is_some_and(|visit| !visit.current(&shell))
+                    {
                         return;
                     }
                     shell.core.dms.entries.clear();
@@ -517,7 +533,9 @@ pub async fn load_main_view(mut state: Signal<ShellState>, target: MainView) {
                 }
                 Err(error) => {
                     let mut shell = state.write();
-                    if shell.core.dms.load_seq != load_seq {
+                    if shell.core.dms.load_seq != load_seq
+                        || reconnect.is_some_and(|visit| !visit.current(&shell))
+                    {
                         return;
                     }
                     shell.core.dms.loading = false;
@@ -527,6 +545,9 @@ pub async fn load_main_view(mut state: Signal<ShellState>, target: MainView) {
         }
         MainView::Threads => crate::thread_feed::load(state, false).await,
         MainView::Activity => return crate::activity_feed::load(state, false).await,
+    }
+    if reconnect.is_some_and(|visit| !visit.current(&state.peek())) {
+        return;
     }
     super::session::hydrate_current_surface(state).await;
 }

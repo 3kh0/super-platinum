@@ -1,0 +1,35 @@
+{
+  "source": "tmp/canvas-preenter-middle-20261023/reference/source-seeds.json",
+  "seeds": [
+    {
+      "parentMode": "bootstrap",
+      "sourceRtml": "Keep thisSecond paragraph",
+      "canonicalSourceSessionBase64": null
+    },
+    {
+      "parentMode": "bootstrap",
+      "sourceRtml": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00Second \u65e5\u672c\ud83d\ude00 &amp; paragraph",
+      "canonicalSourceSessionBase64": null
+    },
+    {
+      "parentMode": "retained",
+      "sourceRtml": "Keep thisSecond paragraph",
+      "canonicalSourceSessionBase64": "CglwYXJhZ3JhcGgQ6AcY6AcqxgGFb0qDWD3WBQC7AQEKq83vASNFAAAAAAE8LSG4J7gugM/hNWjIKxLFbHP+ct0NFk9GoVibUsNuogYBAgMCEwIjBkACVgIMAQQCBBEEEwcVECECIwU0AkIFVgdXHIABAn8AfwF/HH+AgL/WBn8AfwcAAhoAAAIaAQADGQAAAn4AAhgBfgdkZWxldGVkBHRleHQAGhwAfhxlGgECGn4BBBoBfgEAGRZ/NktlZXAgdGhpc1NlY29uZCBwYXJhZ3JhcGjvu78cAAAyQDNjMmQyMWI4MjdiODJlODBjZmUxMzU2OGM4MmIxMmM1NmM3M2ZlNzJkZDBkMTY0ZjQ2YTE1ODliNTJjMzZlYTJCQDNjMmQyMWI4MjdiODJlODBjZmUxMzU2OGM4MmIxMmM1NmM3M2ZlNzJkZDBkMTY0ZjQ2YTE1ODliNTJjMzZlYTJaRQpAM2MyZDIxYjgyN2I4MmU4MGNmZTEzNTY4YzgyYjEyYzU2YzczZmU3MmRkMGQxNjRmNDZhMTU4OWI1MmMzNmVhMhDoBw=="
+    },
+    {
+      "parentMode": "retained",
+      "sourceRtml": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00Second \u65e5\u672c\ud83d\ude00 &amp; paragraph",
+      "canonicalSourceSessionBase64": "CglwYXJhZ3JhcGgQ6AcY6Acq9AGFb0qD6yf+fADpAQEKq83vASNFAAAAAAGTgQJ3hwnh/cXizeNNhT95V1j3wY0IlzsTe7G0Vn1bNgYBAgMCEwIjBkACVgIMAQQCBBEEEwcVECECIwU0AkIFVhdXOoABAn8AfwF/K3+AgL/WBn8AfwcAAikAAAIpAQADKAAAAn4AAicBfgdkZWxldGVkBHRleHQAKSsAfitWKQECKX4BBCkBfgEAAxZ/JgcWAjZ/RgcWAjZ/RhAWfzZDYWbDqSAmYW1wOyDml6XmnKzwn5iAU2Vjb25kIOaXpeacrPCfmIAgJmFtcDsgcGFyYWdyYXBo77u/KwAAMkA5MzgxMDI3Nzg3MDllMWZkYzVlMmNkZTM0ZDg1M2Y3OTU3NThmN2MxOGQwODk3M2IxMzdiYjFiNDU2N2Q1YjM2QkA5MzgxMDI3Nzg3MDllMWZkYzVlMmNkZTM0ZDg1M2Y3OTU3NThmN2MxOGQwODk3M2IxMzdiYjFiNDU2N2Q1YjM2WkUKQDkzODEwMjc3ODcwOWUxZmRjNWUyY2RlMzRkODUzZjc5NTc1OGY3YzE4ZDA4OTczYjEzN2JiMWI0NTY3ZDViMzYQ6Ac="
+    },
+    {
+      "parentMode": "retained-zero",
+      "sourceRtml": "Keep thisSecond paragraph",
+      "canonicalSourceSessionBase64": "CglwYXJhZ3JhcGgQABjoByrUAYVvSoNdcT7VAMkBAQqrze8BI0UAAAAAAdGpFnx6Id4Kc/xJOwUEcG2Mgv6pwGdoZTizqE5nOiOrBwECAwITAyMHQANDAlYCDAEEAgQRBhMJFRAhAiMINAJCBVYHVxyAAQICAAIBfgMZfoCAv9YGAH4AAX8AAgcAAhoAAAIaAQADGAAAAQACfgAEFwF/ZX4HZGVsZXRlZAR0ZXh0ABocAH0DfgMYAX9mAhp+AQQaAX4BABkWfzZLZWVwIHRoaXNTZWNvbmQgcGFyYWdyYXBo77u/HAABMkBkMWE5MTY3YzdhMjFkZTBhNzNmYzQ5M2IwNTA0NzA2ZDhjODJmZWE5YzA2NzY4NjUzOGIzYTg0ZTY3M2EyM2FiQkA5MzdlMjdhOTE4YTE5M2VjMjJmZmU3YTU1NTNhZjdhZjk0MWM5OTY0NDk5YzUyNDU0ODQ1ZjUxOGQxZjJkNzdjWkUKQGQxYTkxNjdjN2EyMWRlMGE3M2ZjNDkzYjA1MDQ3MDZkOGM4MmZlYTljMDY3Njg2NTM4YjNhODRlNjczYTIzYWIQ6Ac="
+    },
+    {
+      "parentMode": "retained-zero",
+      "sourceRtml": "Caf\u00e9 &amp; \u65e5\u672c\ud83d\ude00Second \u65e5\u672c\ud83d\ude00 &amp; paragraph",
+      "canonicalSourceSessionBase64": "CglwYXJhZ3JhcGgQABjoByqCAoVvSoMLctqSAPcBAQqrze8BI0UAAAAAAerNb40rw2yJ6dA6LivZ3ChtGlELCEVhakVlzLFvv59LBwECAwITAyMHQANDAlYCDAEEAgQRBhMJFRAhAiMINAJCBVYXVzqAAQICAAIBfgMofoCAv9YGAH4AAX8AAgcAAikAAAIpAQADJwAAAQACfgAEJgF/Vn4HZGVsZXRlZAR0ZXh0ACkrAH0DfgMnAX9XAil+AQQpAX4BAAMWfyYHFgI2f0YHFgI2f0YQFn82Q2Fmw6kgJmFtcDsg5pel5pys8J+YgFNlY29uZCDml6XmnKzwn5iAICZhbXA7IHBhcmFncmFwaO+7vysAATJAZWFjZDZmOGQyYmMzNmM4OWU5ZDAzYTJlMmJkOWRjMjg2ZDFhNTEwYjA4NDU2MTZhNDU2NWNjYjE2ZmJmOWY0YkJAOTM3ZTI3YTkxOGExOTNlYzIyZmZlN2E1NTUzYWY3YWY5NDFjOTk2NDQ5OWM1MjQ1NDg0NWY1MThkMWYyZDc3Y1pFCkBlYWNkNmY4ZDJiYzM2Yzg5ZTlkMDNhMmUyYmQ5ZGMyODZkMWE1MTBiMDg0NTYxNmE0NTY1Y2NiMTZmYmY5ZjRiEOgH"
+    }
+  ]
+}

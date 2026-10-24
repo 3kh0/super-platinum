@@ -38,6 +38,9 @@ pub(crate) fn named() -> bool {
         )
 }
 pub(crate) fn enabled() -> bool {
+    if super::group_title::named() {
+        return true;
+    }
     cfg!(any(test, feature = "protected-native-fixture"))
         && named()
         && std::env::var(FLAG).as_deref() == Ok("1")

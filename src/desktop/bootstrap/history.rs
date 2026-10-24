@@ -1,11 +1,11 @@
 use dioxus::prelude::{ReadableExt, Signal, WritableExt};
 use super_platinum_core::slack::api;
 
-use super::common::{credentials, persist_workspace, refresh_history_at};
+use super::common::{credentials, persist_workspace};
 use crate::realtime::activity_counts::{CursorOwner, confirm_channel_read, confirm_thread_read};
 use crate::state::ShellState;
 
-mod read_opening;
+pub(super) mod read_opening;
 
 pub fn refresh_selected_channel(
     state: Signal<ShellState>,
@@ -15,11 +15,24 @@ pub fn refresh_selected_channel(
     let navigation = crate::app_home::workflows::navigation_history::flush(state);
     async move {
         dioxus::prelude::spawn(navigation);
-        refresh_selected_channel_inner(state).await;
+        refresh_selected_channel_inner(state, None).await;
     }
 }
 
-async fn refresh_selected_channel_inner(mut state: Signal<ShellState>) {
+pub(super) async fn refresh_selected_channel_owned(
+    state: Signal<ShellState>,
+    visit: &super::reconnect::Visit,
+) {
+    let navigation = crate::app_home::workflows::navigation_history::flush(state);
+    dioxus::prelude::spawn(navigation);
+    refresh_selected_channel_inner(state, Some(visit)).await;
+}
+async fn refresh_selected_channel_inner(
+    mut state: Signal<ShellState>,
+    reconnect: Option<&super::reconnect::Visit>,
+) {
+    let request = state.peek().reconnect_generation;
+
     let (team, channel, scope) = {
         let state = state.read();
         let (Some(team), Some(channel)) = (
@@ -30,11 +43,29 @@ async fn refresh_selected_channel_inner(mut state: Signal<ShellState>) {
         };
         (team, channel, state.timeline_scope())
     };
+    let current = |s: &ShellState| {
+        s.timeline_scope() == scope
+            && s.reconnect_generation == request
+            && reconnect.is_none_or(|v| v.current(s))
+    };
+    if !current(&state.peek()) {
+        return;
+    }
     // Park the conversation before any network work. The scroll container is
     // shared, so a newly opened channel otherwise keeps the offset of the one
     // left behind — on a shorter transcript that is an empty pane, and on a
     // longer one it is a random position in the middle of history.
     let opening = state.read().core.pending_scroll_to.clone();
+    if opening.as_ref().is_some_and(|(c, t)| {
+        c == &channel
+            && matches!(
+                t,
+                super_platinum_core::domain::PendingScrollTarget::FirstUnreadAfter(_)
+            )
+    }) {
+        super::ordinary_history::unread_start(&mut state.write(), &team, &channel);
+    }
+
     let mark_on_open = opening.as_ref().is_some_and(|(_, target)| {
         crate::read_preferences::opening::offset(&state.peek(), target).is_some()
             || !matches!(
@@ -45,7 +76,7 @@ async fn refresh_selected_channel_inner(mut state: Signal<ShellState>) {
     if let Some((pending_channel, target)) = opening
         && pending_channel == channel
         && scroll_to_target(state, &target).await
-        && state.read().timeline_scope() == scope
+        && current(&state.read())
         // An explicit message can be present in cache before the surrounding
         // history arrives. Keep its identity through that merge: prepended
         // rows change both virtual indices and spacer heights.
@@ -54,13 +85,56 @@ async fn refresh_selected_channel_inner(mut state: Signal<ShellState>) {
     {
         state.write().core.pending_scroll_to = None;
     }
+    if read_opening::fixture::enabled(&state.peek()) {
+        let pending = state.peek().core.pending_scroll_to.clone();
+        if let Some((
+            pending_channel,
+            super_platinum_core::domain::PendingScrollTarget::FirstUnreadAfter(boundary),
+        )) = pending
+            && pending_channel == channel
+        {
+            read_opening::refresh_fixture(state, &channel, &boundary, reconnect).await;
+        }
+        if current(&state.peek()) {
+            finish_scroll(state, &channel, current).await;
+        }
+        return;
+    }
+    if super::ordinary_history::fixture::enabled(&state.peek()) {
+        let context = super::ordinary_history::Context::fixture(&state.peek());
+        if let Some(context) = context {
+            let latest = state
+                .peek()
+                .core
+                .pending_scroll_to
+                .as_ref()
+                .and_then(|(_, t)| match t {
+                    super_platinum_core::domain::PendingScrollTarget::Message(ts) => {
+                        Some(ts.clone())
+                    }
+                    _ => None,
+                });
+            let ticket = super::ordinary_history::refresh(
+                state, context, &team, &channel, latest, false, reconnect,
+            )
+            .await;
+            if current(&state.peek())
+                && ticket.is_some_and(|t| {
+                    super::ordinary_history::ticket_current(&state.peek(), &team, &channel, t)
+                })
+            {
+                finish_scroll(state, &channel, current).await;
+            }
+        }
+        return;
+    }
     if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
         return;
     }
     let Some((transport, client, workspaces)) = credentials(&state) else {
         return;
     };
-    if state.read().timeline_scope() != scope {
+    if !current(&state.read()) {
         return;
     }
     let Some(workspace_session) = workspaces
@@ -81,6 +155,7 @@ async fn refresh_selected_channel_inner(mut state: Signal<ShellState>) {
             })
             .flatten()
     });
+    let mut ordinary_ticket = None;
     if let Some((
         pending_channel,
         super_platinum_core::domain::PendingScrollTarget::FirstUnreadAfter(cursor),
@@ -94,10 +169,11 @@ async fn refresh_selected_channel_inner(mut state: Signal<ShellState>) {
             &workspace_session,
             &channel,
             cursor,
+            reconnect,
         )
         .await;
     } else {
-        refresh_history_at(
+        ordinary_ticket = super::common::refresh_history_at_owned(
             &mut state,
             &transport,
             &client,
@@ -105,13 +181,22 @@ async fn refresh_selected_channel_inner(mut state: Signal<ShellState>) {
             &team,
             channel.clone(),
             latest,
+            reconnect,
         )
         .await;
+        if ordinary_ticket.is_none() {
+            return;
+        }
     }
+    let current = |s: &ShellState| {
+        current(s)
+            && ordinary_ticket
+                .is_none_or(|t| super::ordinary_history::ticket_current(s, &team, &channel, t))
+    };
     // The reader moved on while this was in flight; the conversation on screen
     // now has its own refresh, and scrolling or marking it here would act on the
     // wrong one.
-    if state.read().timeline_scope() != scope {
+    if !current(&state.read()) {
         return;
     }
     let is_connect = state
@@ -128,7 +213,7 @@ async fn refresh_selected_channel_inner(mut state: Signal<ShellState>) {
         // Do not hold a signal read guard in a match guard and then acquire a
         // write guard in its arm. Dioxus keeps that temporary alive for the
         // whole arm, which deadlocks the serial UI dispatcher.
-        if state.read().timeline_scope() != scope {
+        if !current(&state.read()) {
             return;
         }
         match result {
@@ -149,11 +234,26 @@ async fn refresh_selected_channel_inner(mut state: Signal<ShellState>) {
             }
         }
     }
-    if state.read().timeline_scope() != scope {
+    if !current(&state.read()) {
         return;
     }
     super::session::hydrate_current_surface(state).await;
+    if !current(&state.peek()) {
+        return;
+    }
     persist_workspace(&state, &team);
+    finish_scroll(state, &channel, &current).await;
+    if !current(&state.read()) {
+        return;
+    }
+    mark_channel_read(state, mark_on_open).await;
+}
+
+async fn finish_scroll(
+    mut state: Signal<ShellState>,
+    channel: &str,
+    current: impl Fn(&ShellState) -> bool,
+) {
     // Re-read the anchor instead of replaying the copy taken before the fetch.
     // It may already have been applied, or dropped because the reader scrolled
     // away — replaying it there is what yanked a reader at the bottom of a busy
@@ -162,14 +262,10 @@ async fn refresh_selected_channel_inner(mut state: Signal<ShellState>) {
     if let Some((pending_channel, target)) = pending
         && pending_channel == channel
         && scroll_to_target(state, &target).await
-        && state.read().timeline_scope() == scope
+        && current(&state.read())
     {
         state.write().core.pending_scroll_to = None;
     }
-    if state.read().timeline_scope() != scope {
-        return;
-    }
-    mark_channel_read(state, mark_on_open).await;
 }
 
 pub async fn load_older(state: Signal<ShellState>) {
@@ -177,9 +273,7 @@ pub async fn load_older(state: Signal<ShellState>) {
 }
 
 async fn load_older_in_mode(mut state: Signal<ShellState>, fixture: bool) {
-    // As with initial history/replies, fixture rows are a closed population.
-    // The synthetic captured session must never enable scroll-triggered reads.
-    if fixture {
+    if fixture && !super::ordinary_history::fixture::enabled(&state.peek()) {
         return;
     }
     if state
@@ -191,76 +285,16 @@ async fn load_older_in_mode(mut state: Signal<ShellState>, fixture: bool) {
     {
         return;
     }
-    let (team, channel, oldest, has_more, generation, epoch) = {
-        let shell = state.read();
-        let (Some(team), Some(channel)) = (
-            shell.core.active_team.clone(),
-            shell.core.active_channel.clone(),
-        ) else {
+    let ready = {
+        let s = state.peek();
+        let (Some(team), Some(channel)) = (&s.core.active_team, &s.core.active_channel) else {
             return;
         };
-        let list = shell
-            .core
-            .workspaces
-            .get(&team)
-            .and_then(|workspace| workspace.messages.get(&channel));
-        (
-            team,
-            channel,
-            list.and_then(|list| list.messages.first())
-                .and_then(|message| message.ts.clone()),
-            list.is_some_and(|list| list.has_more_older),
-            shell.channel_generation,
-            shell.core.account_epoch,
-        )
+        super::ordinary_history::automatic(&s, team, channel) && !s.loading_older
     };
-    if !has_more || state.read().loading_older {
-        return;
+    if ready {
+        super::ordinary_history::resume(state).await;
     }
-    let Some(oldest) = oldest else { return };
-    let Some((transport, client, workspaces)) = credentials(&state) else {
-        return;
-    };
-    let Some(workspace_session) = workspaces
-        .into_iter()
-        .find(|workspace| workspace.team_id == team)
-    else {
-        return;
-    };
-    state.write().loading_older = true;
-    refresh_history_at(
-        &mut state,
-        &transport,
-        &client,
-        &workspace_session,
-        &team,
-        channel.clone(),
-        Some(oldest),
-    )
-    .await;
-    // A history response may warm its original conversation's cache, but must
-    // not hydrate or change the loading flag of a newer navigation/account.
-    let current = {
-        let shell = state.read();
-        shell.channel_generation == generation
-            && shell.core.account_epoch == epoch
-            && shell.core.active_team.as_ref() == Some(&team)
-            && shell.core.active_channel.as_ref() == Some(&channel)
-            && shell
-                .core
-                .transport
-                .as_ref()
-                .is_some_and(|active| std::sync::Arc::ptr_eq(active, &transport))
-    };
-    if !current {
-        return;
-    }
-    state.write().loading_older = false;
-    persist_workspace(&state, &team);
-    // timeline_anchor.js preserves the visible row across the prepend. A
-    // second scrollHeight adjustment here would apply the insertion twice,
-    // and could also override scrolling performed during the network wait.
-    super::session::hydrate_current_surface(state).await;
 }
 
 /// Returns whether the anchor actually landed on its row. A pending anchor is

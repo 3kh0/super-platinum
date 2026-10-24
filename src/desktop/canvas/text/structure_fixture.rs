@@ -14,6 +14,7 @@ pub(in crate::canvas) const HTML: &str = "<div class='quip-canvas-content'><h1>P
 #[derive(Default)]
 pub(in crate::canvas) struct State {
     pub attempts: usize,
+    pub(in crate::canvas) owner_delete: Option<super::owner_delete_fixture::State>,
     pub(super) canonical: Option<Arc<CanvasCollabSnapshot>>,
     pub(super) text_attempts: usize,
     pub(super) pending_text: Option<(
@@ -36,7 +37,21 @@ pub(in crate::canvas) fn requested() -> bool {
     crate::fixture::is_fixture()
         && matches!(
             std::env::var("SUPER_PLATINUM_FIXTURE").as_deref(),
-            Ok("canvas-replacement"
+            Ok("canvas-owner-delete"
+                | "canvas-owner-delete-narrow"
+                | "canvas-live-split-rich"
+                | "canvas-live-split-rich-narrow"
+                | "canvas-split-gap"
+                | "canvas-split-gap-narrow"
+                | "canvas-coalesced-owner-rich"
+                | "canvas-coalesced-owner-rich-narrow"
+                | "canvas-live-split-child-delete"
+                | "canvas-live-split-child-delete-narrow"
+                | "canvas-retained-pair-delete"
+                | "canvas-retained-pair-delete-narrow"
+                | "canvas-owner-first-pair-delete"
+                | "canvas-owner-first-pair-delete-narrow"
+                | "canvas-replacement"
                 | "canvas-replacement-narrow"
                 | "canvas-structure"
                 | "canvas-structure-narrow"
@@ -313,4 +328,12 @@ pub(super) fn attempts(shell: &ShellState) -> usize {
         .structure_fixture
         .as_ref()
         .map_or(0, |f| f.attempts)
+}
+
+pub(super) fn owner_delete_state(source: Arc<CanvasCollabSnapshot>) -> State {
+    State {
+        canonical: Some(source),
+        owner_delete: Some(super::owner_delete_fixture::State::default()),
+        ..Default::default()
+    }
 }

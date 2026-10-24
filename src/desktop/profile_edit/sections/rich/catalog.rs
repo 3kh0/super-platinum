@@ -2,6 +2,7 @@ use super::*;
 #[derive(Clone, Default)]
 pub(super) struct Catalog {
     entries: Vec<(Value, String)>,
+    channel_dependencies: std::collections::BTreeSet<String>,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -11,12 +12,16 @@ pub(super) struct Witness {
 }
 impl Catalog {
     pub(super) fn contains_any(&self, ids: &[String]) -> bool {
-        self.entries.iter().any(|(token, _)| {
-            token["type"] == "channel"
-                && token["channel_id"]
-                    .as_str()
-                    .is_some_and(|id| ids.iter().any(|failed| failed == id))
-        })
+        ids.iter().any(|id| self.channel_dependencies.contains(id))
+            || self.entries.iter().any(|(token, _)| {
+                token["type"] == "channel"
+                    && token["channel_id"]
+                        .as_str()
+                        .is_some_and(|id| ids.iter().any(|failed| failed == id))
+            })
+    }
+    pub(super) fn channel_dependencies(&mut self, ids: impl IntoIterator<Item = String>) {
+        self.channel_dependencies.extend(ids);
     }
     pub(super) fn insert(&mut self, raw: &Value, label: String) -> Result<(), Error> {
         self.entries.push((identity(raw)?, label));

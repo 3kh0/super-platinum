@@ -1,4 +1,15 @@
 #!/usr/bin/env bash
+# Known nested usergroup titles: check-profile-usergroup-title-native.py (known/failure/cancel/retirement).
+# Shared missing nested channel acquisition: check-profile-missing-channel-title-native.py
+# --case positive|omission|failure|cancel|retirement (normal/narrow; closed owned transport).
+# Profile nested public channel titles: check-profile-channel-title-native.py
+# --case known/failure/cancel/retirement, same profile-sections-mentions[-narrow] fixtures.
+# Known private-member titles: check-profile-private-channel-title-native.py; same cases
+# plus membership restoration, with the explicit private-title flag (public checks unchanged).
+# Explicit English nonmember placeholders: check-profile-nonmember-channel-title-native.py
+# adds the nonmember-title flag and advances the membership case to placeholder custody.
+# Profile emoji title lifecycle: use check-profile-emoji-title-native.py with the existing
+# profile-sections-mentions[-narrow] fixture and scoped emoji-title flags.
 # Launches real Dioxus Desktop fixture windows and captures them through the
 # unchanged Super Platinum agent protocol. No Slack session or network access is used.
 
@@ -57,7 +68,7 @@ FIXTURES=(
   threads-keyboard-narrow
   threads-file-paste threads-file-paste-narrow
   rail-account-snoozed
-  animated-reaction reaction-picker later later-files later-files-narrow later-empty later-error later-reminder later-new-reminder
+  animated-reaction reaction-picker later later-files later-files-narrow later-cold-message-navigation later-cold-message-navigation-narrow reconnect-thread-continuation reconnect-thread-continuation-narrow reconnect-unread-opening reconnect-unread-opening-narrow ordinary-history-cursor ordinary-history-cursor-narrow later-empty later-error later-reminder later-new-reminder
   bookmarks bookmarks-narrow bookmarks-edit bookmarks-remove bookmarks-error bookmarks-folder bookmarks-folder-remove bookmarks-move
   channel-canvas-surface channel-canvas-surface-narrow
   channel-tabs-canvas channel-tabs-canvas-narrow
@@ -82,6 +93,14 @@ FIXTURES=(
   canvas-checklist canvas-checklist-narrow canvas-checklist-saving canvas-checklist-uncertain
   canvas-text canvas-text-narrow
   canvas-structure canvas-structure-narrow
+  # Owned snapshot/journal/capture ACK initialization comes from the dedicated runner.
+  canvas-owner-delete canvas-owner-delete-narrow
+  canvas-live-split-rich canvas-live-split-rich-narrow
+  canvas-split-gap canvas-split-gap-narrow
+  canvas-coalesced-owner-rich canvas-coalesced-owner-rich-narrow
+  canvas-live-split-child-delete canvas-live-split-child-delete-narrow
+  canvas-retained-pair-delete canvas-retained-pair-delete-narrow
+  canvas-owner-first-pair-delete canvas-owner-first-pair-delete-narrow
   canvas-structure-mixed canvas-structure-mixed-narrow
   canvas-replacement canvas-replacement-narrow
   canvas-structure-text canvas-structure-text-narrow
@@ -303,6 +322,39 @@ FIXTURES=(
 owned_fixture_route() {
   owned_route=""
   case "$1" in
+    ordinary-history-cursor|ordinary-history-cursor-narrow)
+      owned_route="Use python scripts/check-ordinary-history-cursor-native.py --binary <verified-binary> --captures <new-absolute-directory> --fixture $1; this runner owns disconnected page releases and capture ACKs."
+      ;;
+    reconnect-unread-opening|reconnect-unread-opening-narrow)
+      owned_route="Use python scripts/check-reconnect-unread-opening-native.py --binary <verified-binary> --captures <new-absolute-directory> --fixture $1; this runner owns disconnected history releases and capture ACKs."
+      ;;
+    reconnect-thread-continuation|reconnect-thread-continuation-narrow)
+      owned_route="Use python scripts/check-reconnect-thread-continuation-native.py --binary <verified-binary> --captures <new-absolute-directory> --fixture $1; this runner owns disconnected read releases and capture ACKs."
+      ;;
+    later-cold-message-navigation|later-cold-message-navigation-narrow)
+      owned_route="Use python scripts/check-later-cold-message-navigation-native.py --binary <verified-binary> --captures <new-absolute-directory> --fixture $1; this runner owns offline metadata releases and capture ACKs."
+      return 0 ;;
+    canvas-owner-first-pair-delete|canvas-owner-first-pair-delete-narrow)
+      owned_route="Use python scripts/check-canvas-owner-first-pair-delete-native.py --binary <verified-binary> --captures <new-absolute-directory> --fixture $1; this runner initializes both retained histories, private journal and capture ACKs."
+      return 0 ;;
+    canvas-retained-pair-delete|canvas-retained-pair-delete-narrow)
+      owned_route="Use python scripts/check-canvas-retained-pair-delete-native.py --binary <verified-binary> --captures <new-absolute-directory> --fixture $1; this runner initializes both retained histories, private journal and capture ACKs."
+      return 0 ;;
+    canvas-live-split-child-delete|canvas-live-split-child-delete-narrow)
+      owned_route="Use python scripts/check-canvas-live-split-child-delete-native.py --binary <verified-binary> --captures <new-absolute-directory> --fixture $1; this runner initializes the saved pair, private journal and capture ACKs."
+      ;;
+    canvas-coalesced-owner-rich|canvas-coalesced-owner-rich-narrow)
+      owned_route="Use python scripts/check-canvas-coalesced-owner-rich-native.py --binary <verified-binary> --captures <new-absolute-directory> --fixture $1; this runner initializes parent coalescence, private journal and capture ACKs."
+      ;;
+    canvas-split-gap|canvas-split-gap-narrow)
+      owned_route="Use python scripts/check-canvas-split-gap-native.py --binary <verified-binary> --captures <new-absolute-directory> --fixture $1; this runner initializes the saved pair, private journal and capture ACKs."
+      ;;
+    canvas-live-split-rich|canvas-live-split-rich-narrow)
+      owned_route="Use python scripts/check-canvas-live-split-rich-native.py --binary <verified-binary> --captures <new-absolute-directory> --fixture $1; this runner initializes the saved live pair, private journal and capture ACKs."
+      return 0 ;;
+    canvas-owner-delete|canvas-owner-delete-narrow)
+      owned_route="Use python scripts/check-canvas-owner-delete-native.py --binary <verified-binary> --captures <new-absolute-directory> --fixture $1; this runner initializes the offline snapshot, journal and capture ACKs. It also owns --coalesced and recovery scenarios."
+      return 0 ;;
     canvas-editor-recovery|canvas-editor-recovery-narrow)
       owned_route="Use scripts/check-canvas-editor-recovery-native.py with a protected-native-fixture binary for synthetic-session, no-HTTP interaction checks."
       return 0 ;;

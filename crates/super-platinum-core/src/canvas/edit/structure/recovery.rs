@@ -26,6 +26,10 @@ enum Action {
     EndSequence {
         members: Vec<SequenceMember>,
     },
+    EndSequenceParent {
+        parent_updates: Vec<String>,
+        members: Vec<SequenceMember>,
+    },
     EndRepeatTyping {
         child: String,
         position: String,
@@ -86,6 +90,44 @@ enum Action {
         offset_utf16: usize,
         parent_draft: String,
         child_draft: String,
+    },
+    SplitSequence {
+        child: String,
+        position: String,
+        offset_utf16: usize,
+        parent_draft: String,
+        child_draft: String,
+        parent_updates: Vec<String>,
+        child_updates: Vec<String>,
+        second_child: String,
+        second_position: String,
+        second_target: super::SplitSequenceTarget,
+        second_enter_draft: String,
+        second_offset_utf16: usize,
+        second_parent_draft: String,
+        second_child_draft: String,
+        final_updates: [Vec<String>; 3],
+    },
+    SplitParent {
+        child: String,
+        position: String,
+        offset_utf16: usize,
+        enter_draft: String,
+        parent_draft: String,
+        child_draft: String,
+        pre_enter_updates: Vec<String>,
+        parent_updates: Vec<String>,
+        child_updates: Vec<String>,
+    },
+    SplitPreEnter {
+        child: String,
+        position: String,
+        offset_utf16: usize,
+        enter_draft: String,
+        parent_draft: String,
+        child_draft: String,
+        pre_enter_updates: Vec<String>,
+        child_updates: Vec<String>,
     },
     SplitTyping {
         child: String,
@@ -183,14 +225,32 @@ impl Checkpoint {
     pub fn is_split(&self) -> bool {
         matches!(
             self.action,
-            Action::Split { .. } | Action::SplitTyping { .. }
+            Action::Split { .. }
+                | Action::SplitTyping { .. }
+                | Action::SplitPreEnter { .. }
+                | Action::SplitParent { .. }
+                | Action::SplitSequence { .. }
         )
     }
     pub fn is_split_typing(&self) -> bool {
+        if let Action::SplitSequence {
+            child_updates,
+            final_updates,
+            ..
+        } = &self.action
+        {
+            return !child_updates.is_empty()
+                || !final_updates[1].is_empty()
+                || !final_updates[2].is_empty();
+        }
         matches!(self.action, Action::SplitTyping { .. })
+            || matches!(&self.action, Action::SplitPreEnter { child_updates, .. } | Action::SplitParent { child_updates, .. } if !child_updates.is_empty())
     }
     pub fn is_sequence(&self) -> bool {
-        matches!(self.action, Action::EndSequence { .. })
+        matches!(
+            self.action,
+            Action::EndSequence { .. } | Action::EndSequenceParent { .. }
+        )
     }
     pub fn is_repeat(&self) -> bool {
         matches!(
@@ -207,6 +267,7 @@ impl Checkpoint {
             self.action,
             Action::End { .. }
                 | Action::EndSequence { .. }
+                | Action::EndSequenceParent { .. }
                 | Action::EndRepeat { .. }
                 | Action::EndRepeatTyping { .. }
                 | Action::EmptyEnter { .. }
@@ -217,7 +278,9 @@ impl Checkpoint {
         )
     }
     pub fn is_end_reuse(&self) -> bool {
-        if let Action::EndSequence { members } = &self.action {
+        if let Action::EndSequence { members } | Action::EndSequenceParent { members, .. } =
+            &self.action
+        {
             return members.first().is_some_and(|m| m.reused);
         }
         matches!(
@@ -267,6 +330,10 @@ impl Checkpoint {
                 | (Action::EndRepeat { .. }, 12)
                 | (Action::EndRepeatTyping { .. }, 13)
                 | (Action::EndSequence { .. }, 14)
+                | (Action::EndSequenceParent { .. }, 15)
+                | (Action::SplitPreEnter { .. }, 16)
+                | (Action::SplitParent { .. }, 17)
+                | (Action::SplitSequence { .. }, 18)
         ) || self.sequence != 1
             || self.session.len() != 12
             || !self.session.bytes().all(|b| b.is_ascii_hexdigit())
@@ -303,7 +370,6 @@ impl Checkpoint {
             if s.thread_id()? != Some(self.thread.as_str())
                 || s.document_id()? != Some(self.document.as_str())
                 || s.sequence()?.is_none_or(|n| n == 0 || n > i64::MAX as u64)
-                || s.deleted()? == Some(true)
                 || !ids.insert(s.id().to_owned())
             {
                 return Err(Error::Unsupported);
@@ -312,6 +378,22 @@ impl Checkpoint {
             position::canonical(p)?;
             if !positions.insert(p.to_owned()) {
                 return Err(Error::Unsupported);
+            }
+        }
+        let source_rows = self
+            .sections
+            .iter()
+            .map(|b| Section::decode(b))
+            .collect::<Result<Vec<_>, _>>()?;
+        for row in &source_rows {
+            if row.deleted()? == Some(true) {
+                if row.crdt()?.is_some_and(|wire| wire.has(10)) {
+                    super::owner_delete::tombstone(&source_rows, row)?;
+                } else {
+                    if super::split::child_tombstone(&source_rows, row, 0).is_err() {
+                        super::split::gap_tombstone(&source_rows, row)?;
+                    }
+                }
             }
         }
         if self.is_sequence() {
@@ -347,6 +429,7 @@ impl Checkpoint {
         match &self.action {
             Action::Replace { .. }
             | Action::EndSequence { .. }
+            | Action::EndSequenceParent { .. }
             | Action::EndRepeat { .. }
             | Action::EndRepeatTyping { .. }
             | Action::EmptyEnter { .. }
@@ -354,6 +437,9 @@ impl Checkpoint {
             | Action::StartTyping { .. }
             | Action::Split { .. }
             | Action::SplitTyping { .. }
+            | Action::SplitPreEnter { .. }
+            | Action::SplitParent { .. }
+            | Action::SplitSequence { .. }
             | Action::End { .. }
             | Action::EndReuse { .. }
             | Action::EndTyping { .. }
@@ -395,10 +481,13 @@ impl Checkpoint {
         {
             return Err(Error::Unsupported);
         }
+        self.validate_owner_delete()?;
+        self.validate_child_delete()?;
         Ok(())
     }
 }
 
+mod child_delete;
 mod empty_enter;
 mod end;
 mod end_clearing;
@@ -406,6 +495,7 @@ mod end_repeat;
 mod end_reuse;
 mod end_sequence;
 mod end_typing;
+mod owner_delete;
 mod replacement;
 mod split;
 mod start_typing;

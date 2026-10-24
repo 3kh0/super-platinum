@@ -5,6 +5,7 @@ use serde_json::{Value, json};
 mod ack_content;
 pub(crate) mod formatted_title;
 mod headings;
+mod phases;
 mod underline;
 mod whitespace;
 

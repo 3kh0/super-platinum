@@ -136,6 +136,9 @@ pub(super) fn validate(
     now: Option<u64>,
     allow_zero_base: bool,
 ) -> Result<Automerge, Error> {
+    if wire.has(10) {
+        return owner_delete::history(wire, section, draft, deleted, now, allow_zero_base);
+    }
     let sequence = section.sequence()?.ok_or(Error::Unsupported)?;
     if wire
         .fields()
