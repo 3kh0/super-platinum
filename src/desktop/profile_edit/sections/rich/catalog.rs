@@ -1,19 +1,58 @@
 use super::*;
 #[derive(Clone, Default)]
 pub(super) struct Catalog {
-    entries: Vec<(Value, String)>,
+    entries: Vec<(Value, String, Option<Presentation>)>,
+    presentations: Vec<(Value, Presentation)>,
+    section_units: Vec<(Value, Vec<u16>)>,
     channel_dependencies: std::collections::BTreeSet<String>,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(super) struct Witness {
     pub value: Value,
+    #[serde(default)]
     pub label: String,
+    #[serde(default, rename = "labelUnits")]
+    pub label_units: Option<Vec<u16>>,
+    #[serde(default)]
+    pub presentation: Option<Presentation>,
+}
+/// Presentation is independently admitted from a current Canvas status receipt.
+/// These bits never enter the persisted raw token.
+#[derive(Clone, Debug, serde::Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub(super) struct Presentation {
+    kind: String,
+    icon: String,
+    disabled: bool,
+}
+impl Presentation {
+    pub(super) fn canvas_section() -> Self {
+        Self {
+            kind: "canvas-section".into(),
+            icon: "description".into(),
+            disabled: false,
+        }
+    }
+    pub(super) fn deleted_canvas() -> Self {
+        Self {
+            kind: "deleted-canvas".into(),
+            icon: "delete".into(),
+            disabled: true,
+        }
+    }
+    pub(super) fn private_canvas() -> Self {
+        Self {
+            kind: "private-canvas".into(),
+            icon: "lock".into(),
+            disabled: false,
+        }
+    }
 }
 impl Catalog {
     pub(super) fn contains_any(&self, ids: &[String]) -> bool {
         ids.iter().any(|id| self.channel_dependencies.contains(id))
-            || self.entries.iter().any(|(token, _)| {
+            || self.entries.iter().any(|(token, _, _)| {
                 token["type"] == "channel"
                     && token["channel_id"]
                         .as_str()
@@ -23,8 +62,60 @@ impl Catalog {
     pub(super) fn channel_dependencies(&mut self, ids: impl IntoIterator<Item = String>) {
         self.channel_dependencies.extend(ids);
     }
+    pub(super) fn private_canvas(&mut self, raw: &Value) -> Result<(), Error> {
+        self.reference_presentation(raw, Presentation::private_canvas())
+    }
+    pub(super) fn deleted_canvas(&mut self, raw: &Value) -> Result<(), Error> {
+        self.reference_presentation(raw, Presentation::deleted_canvas())
+    }
+    fn reference_presentation(
+        &mut self,
+        raw: &Value,
+        presentation: Presentation,
+    ) -> Result<(), Error> {
+        if raw["type"] != "canvas" {
+            return Err(unavailable());
+        }
+        let identity = identity(raw)?;
+        let entry = self
+            .entries
+            .iter_mut()
+            .rev()
+            .find(|(value, _, _)| value == &identity)
+            .ok_or_else(unavailable)?;
+        entry.2 = Some(presentation.clone());
+        self.presentations.push((raw.clone(), presentation));
+        Ok(())
+    }
+    pub(super) fn presentations(&self) -> Value {
+        Value::Object(
+            self.presentations
+                .iter()
+                .map(|(raw, presentation)| {
+                    (raw.to_string(), serde_json::to_value(presentation).unwrap())
+                })
+                .collect(),
+        )
+    }
+    pub(super) fn insert_section(&mut self, raw: &Value, units: &[u16]) -> Result<(), Error> {
+        self.insert(raw, String::from_utf16_lossy(units))?;
+        self.section_units.push((identity(raw)?, units.to_vec()));
+        self.reference_presentation(raw, Presentation::canvas_section())
+    }
+    pub(super) fn label_units(&self) -> Value {
+        Value::Object(
+            self.presentations
+                .iter()
+                .filter_map(|(raw, _)| {
+                    let key = identity(raw).ok()?;
+                    let (_, units) = self.section_units.iter().find(|(id, _)| id == &key)?;
+                    Some((raw.to_string(), serde_json::json!(units)))
+                })
+                .collect(),
+        )
+    }
     pub(super) fn insert(&mut self, raw: &Value, label: String) -> Result<(), Error> {
-        self.entries.push((identity(raw)?, label));
+        self.entries.push((identity(raw)?, label, None));
         Ok(())
     }
     pub(super) fn context(
@@ -40,14 +131,21 @@ impl Catalog {
             )
         }) {
             let identity = identity(&token.value)?;
-            if !self
-                .entries
-                .iter()
-                .any(|(raw, label)| raw == &identity && label == &token.label)
-            {
+            let section = self.section_units.iter().find(|(raw, _)| raw == &identity);
+            let label_matches = |label: &String| match section {
+                Some((_, units)) => {
+                    token.label.is_empty() && token.label_units.as_ref() == Some(units)
+                }
+                None => token.label_units.is_none() && label == &token.label,
+            };
+            if !self.entries.iter().any(|(raw, label, presentation)| {
+                raw == &identity && label_matches(label) && presentation == &token.presentation
+            }) {
                 return Err(unavailable());
             }
-            if matches!(token.value["type"].as_str(), Some("file" | "canvas")) {
+            if let Some((_, units)) = section {
+                context.canvas_section(&token.value, units)?;
+            } else if matches!(token.value["type"].as_str(), Some("file" | "canvas")) {
                 context.file(&token.value, token.label.clone())?;
             } else {
                 context.mention(&token.value, token.label.clone())?;
@@ -79,6 +177,62 @@ fn identity(value: &Value) -> Result<Value, Error> {
 mod tests {
     use super::*;
     #[test]
+    fn section_witness_requires_exact_units_even_for_equal_lossy_display() {
+        let raw = serde_json::json!({"type":"canvas","file_id":"FFILE0001","section_id":"temp:C:0123456789abcdef01234567","url":"https://fixture.invalid/canvas","opaque":{"keep":7},"style":{"bold":true}});
+        let owner = Owner {
+            account: "account".into(),
+            team: "T12345678".into(),
+            user: "U12345678".into(),
+        };
+        let first = vec![b'A' as u16, 0xd83d, 0x2026];
+        let other = vec![b'A' as u16, 0xd83e, 0x2026];
+        assert_eq!(
+            String::from_utf16_lossy(&first),
+            String::from_utf16_lossy(&other)
+        );
+        let mut catalog = Catalog::default();
+        catalog.insert_section(&raw, &first).unwrap();
+        let mut witness = Witness {
+            value: raw.clone(),
+            label: String::new(),
+            label_units: Some(first.clone()),
+            presentation: Some(Presentation::canvas_section()),
+        };
+        assert!(
+            catalog
+                .context(std::slice::from_ref(&witness), &owner)
+                .is_ok()
+        );
+        witness.label_units = Some(other);
+        assert!(
+            catalog
+                .context(std::slice::from_ref(&witness), &owner)
+                .is_err()
+        );
+        witness.label_units = None;
+        witness.label = String::from_utf16_lossy(&first);
+        assert!(
+            catalog
+                .context(std::slice::from_ref(&witness), &owner)
+                .is_err()
+        );
+        witness.label_units = Some(first);
+        witness.label.clear();
+        witness.presentation = None;
+        assert!(
+            catalog
+                .context(std::slice::from_ref(&witness), &owner)
+                .is_err()
+        );
+        witness.presentation = Some(Presentation::canvas_section());
+        witness.value["section_id"] = Value::from("other");
+        assert!(catalog.context(&[witness], &owner).is_err());
+        assert_eq!(
+            catalog.label_units()[raw.to_string()],
+            serde_json::json!([65, 55357, 8230])
+        );
+    }
+    #[test]
     fn only_style_is_outside_catalog_identity() {
         let a = serde_json::json!({"type":"channel","channel_id":"C12345678","future":{"x":1}});
         let mut b = a.clone();
@@ -98,6 +252,8 @@ mod tests {
             user: "U12345678".into(),
         };
         let mut token = Witness {
+            label_units: None,
+            presentation: None,
             value: raw,
             label: "#at-opening".into(),
         };
@@ -127,14 +283,20 @@ mod tests {
         styled["style"] = serde_json::json!({"bold":true});
         let witnesses = vec![
             Witness {
+                label_units: None,
+                presentation: None,
                 value: user.clone(),
                 label: "@".into(),
             },
             Witness {
+                label_units: None,
+                presentation: None,
                 value: channel.clone(),
                 label: "#channel".into(),
             },
             Witness {
+                label_units: None,
+                presentation: None,
                 value: styled.clone(),
                 label: "@".into(),
             },
@@ -167,14 +329,20 @@ mod tests {
         assert!(form.capture().is_ok());
         let reordered = vec![
             Witness {
+                label_units: None,
+                presentation: None,
                 value: channel.clone(),
                 label: "#channel".into(),
             },
             Witness {
+                label_units: None,
+                presentation: None,
                 value: user.clone(),
                 label: "@".into(),
             },
             Witness {
+                label_units: None,
+                presentation: None,
                 value: styled.clone(),
                 label: "@".into(),
             },
@@ -207,6 +375,8 @@ mod tests {
             });
             let mut catalog = Catalog::default();
             let mut token = Witness {
+                label_units: None,
+                presentation: None,
                 value: raw.clone(),
                 label: "Canonical title".into(),
             };

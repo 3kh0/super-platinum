@@ -1,0 +1,52 @@
+{
+  "ok": true,
+  "count": 2,
+  "vectors": [
+    {
+      "method": "quip.getCanvasBulkSectionIdsData",
+      "args": {
+        "file_id": "FSTATUS0001",
+        "section_ids": [
+          "s1"
+        ]
+      },
+      "formEntries": [
+        [
+          "file_id",
+          "FSTATUS0001"
+        ],
+        [
+          "section_ids",
+          "s1"
+        ]
+      ],
+      "httpMethod": "POST",
+      "path": "/api/quip.getCanvasBulkSectionIdsData",
+      "pathProvenance": "Static GGwr constructor; host/session/envelope not executed"
+    },
+    {
+      "method": "quip.getCanvasBulkSectionIdsData",
+      "args": {
+        "file_id": "FSTATUS0001",
+        "section_ids": [
+          "s1",
+          "s2"
+        ]
+      },
+      "formEntries": [
+        [
+          "file_id",
+          "FSTATUS0001"
+        ],
+        [
+          "section_ids",
+          "s1,s2"
+        ]
+      ],
+      "httpMethod": "POST",
+      "path": "/api/quip.getCanvasBulkSectionIdsData",
+      "pathProvenance": "Static GGwr constructor; host/session/envelope not executed"
+    }
+  ],
+  "scope": "Actual retained UPtI/qVKj pure FormData encoding using Node built-in FormData/Blob; no HTTP, token, live endpoint or auth."
+}

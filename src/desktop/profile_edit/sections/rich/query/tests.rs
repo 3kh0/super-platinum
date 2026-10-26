@@ -233,6 +233,8 @@ fn indices_and_revisions_cannot_substitute_tokens_and_only_one_choice_is_spent()
     let (shell, _, _) = mounted();
     let owner = Owner::capture(&shell).unwrap();
     let witness = |id: &str, label: &str| catalog::Witness {
+        label_units: None,
+        presentation: None,
         value: json!({"type":"channel","channel_id":id}),
         label: label.into(),
     };
@@ -269,10 +271,14 @@ fn selected_occurrence_keeps_prior_catalog_and_preserves_style_identity() {
             .context(
                 &[
                     catalog::Witness {
+                        label_units: None,
+                        presentation: None,
                         value: old,
                         label: "#old-name".into()
                     },
                     catalog::Witness {
+                        label_units: None,
+                        presentation: None,
                         value: styled,
                         label: selected.label
                     },
@@ -307,10 +313,14 @@ fn same_label_members_retain_distinct_identity_and_original_opaque_occurrences()
             .context(
                 &[
                     catalog::Witness {
+                        label_units: None,
+                        presentation: None,
                         value: original,
                         label: "@Original label".into()
                     },
                     catalog::Witness {
+                        label_units: None,
+                        presentation: None,
                         value: styled,
                         label: selected.label.clone()
                     },
@@ -323,6 +333,8 @@ fn same_label_members_retain_distinct_identity_and_original_opaque_occurrences()
         catalog
             .context(
                 &[catalog::Witness {
+                    label_units: None,
+                    presentation: None,
                     value: json!({"type":"user","user_id":"UMEMBER01"}),
                     label: selected.label,
                 }],
@@ -388,6 +400,8 @@ fn file_selection_keeps_canonical_wire_and_label_out_of_dom_and_catalog_custody(
         catalog
             .context(
                 &[catalog::Witness {
+                    label_units: None,
+                    presentation: None,
                     value: styled,
                     label: selected.label.clone()
                 }],
@@ -406,6 +420,8 @@ fn file_selection_keeps_canonical_wire_and_label_out_of_dom_and_catalog_custody(
             catalog
                 .context(
                     &[catalog::Witness {
+                        label_units: None,
+                        presentation: None,
                         value: wrong,
                         label: selected.label.clone()
                     }],

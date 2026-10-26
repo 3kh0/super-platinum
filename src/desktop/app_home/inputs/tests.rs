@@ -20,6 +20,66 @@ fn input() -> InputKey {
     }
 }
 #[test]
+fn ordinary_parent_feedback_stays_absent_before_and_after_invalid_edit() {
+    let mut s = setup();
+    let choice = InputKey {
+        block_id: "home-choice".into(),
+        action_id: "value".into(),
+    };
+    assert!(form(&s).unwrap().fields[&choice].error.is_some());
+    let pristine = form(&s).unwrap().clone();
+    assert_eq!(presentation_error(&s, &choice), None);
+    assert_eq!(form(&s).unwrap(), &pristine);
+
+    let k = visit(&s);
+    assert!(set_local(
+        &mut s,
+        k,
+        &input(),
+        InputValue::Text(String::new())
+    ));
+    assert!(form(&s).unwrap().fields[&input()].dirty);
+    assert!(form(&s).unwrap().fields[&input()].error.is_some());
+    let edited = form(&s).unwrap().clone();
+    let wire = edited.state().unwrap();
+    assert_eq!(presentation_error(&s, &input()), None);
+    assert_eq!(form(&s).unwrap(), &edited);
+    assert_eq!(form(&s).unwrap().state().unwrap(), wire);
+    s.app_home.surface.as_mut().unwrap().id = next();
+    assert_eq!(presentation_error(&s, &input()), None);
+    assert_eq!(form(&s).unwrap(), &edited);
+}
+
+#[test]
+fn native_empty_buffer_feedback_survives_overlay_but_not_foreign_owner() {
+    let mut s = setup();
+    let o = owner(&s).unwrap();
+    let day = InputKey {
+        block_id: "home-day".into(),
+        action_id: "value".into(),
+    };
+    s.app_home
+        .forms
+        .get_mut(&o)
+        .unwrap()
+        .set_native_error(&day, String::new(), "Complete the native date.".into())
+        .unwrap();
+    assert_eq!(form(&s).unwrap().native_error_text(&day), Some(""));
+    assert_eq!(
+        presentation_error(&s, &day).as_deref(),
+        Some("Complete the native date.")
+    );
+    assert!(form(&s).unwrap().state().is_err());
+    s.overlay = Some(Overlay::AppModal);
+    assert_eq!(
+        presentation_error(&s, &day).as_deref(),
+        Some("Complete the native date.")
+    );
+    s.core.account_epoch += 1;
+    assert_eq!(presentation_error(&s, &day), None);
+    assert!(s.app_home.forms[&o].native_error_text(&day).is_some());
+}
+#[test]
 fn actual_quiet_home_edit_button_form_and_update_keep_exact_state_and_conversation_drafts() {
     let mut s = setup();
     s.core.composer.text = "unsent".into();

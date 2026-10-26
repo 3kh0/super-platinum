@@ -11,13 +11,10 @@ pub struct ExternalOption {
 }
 impl ExternalOption {
     pub fn parse(raw: &Value) -> Result<Self, FormError> {
-        let object = raw.as_object().ok_or_else(invalid)?;
-        if object
-            .keys()
-            .any(|key| !matches!(key.as_str(), "text" | "value" | "description"))
-        {
-            return Err(invalid());
-        }
+        raw.as_object().ok_or_else(invalid)?;
+        // IKXd passes originalOption through state/actions unchanged. Unknown
+        // top-level metadata is opaque data, not a link or rendering directive.
+        // Display accessors below read only the validated composition fields.
         plain(&raw["text"], 75)?;
         let value = raw
             .get("value")

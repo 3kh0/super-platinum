@@ -1,0 +1,42 @@
+// Actual bridge and shared lease in an event/DOM double; not browser focus proof.
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+function setup(selected=[],source=['a','b','']){
+ const nodes=new Map(),observers=[],pending=new Set(),events=[];
+ const mutated=(target,type,name)=>{for(const o of observers){const c=o.options;if(c&&(target===o.target||c.subtree&&o.target.contains(target))&&(type==='childList'&&c.childList||type==='attributes'&&c.attributes&&(!c.attributeFilter||c.attributeFilter.includes(name))))pending.add(o);}};
+ class Node{
+  constructor(tag){this.tagName=tag.toUpperCase();this.children=[];this.parentNode=null;this.dataset={};this.listeners=new Map();this.attributes={};this.isConnected=true;this.disabled=false;this.checked=false;this.value='';}
+  set id(v){this._id=v;nodes.set(v,this)}get id(){return this._id}
+  get textContent(){return (this._text||'')+this.children.map(n=>n.textContent).join('')}set textContent(v){this._text=v;mutated(this,'childList')}
+  appendChild(n){n.parentNode=this;this.children.push(n);mutated(this,'childList');return n}
+  contains(n){return n===this||this.children.some(c=>c.contains(n))}
+  setAttribute(k,v){this.attributes[k]=v;mutated(this,'attributes',k)}
+  querySelectorAll(selector){const out=[];const walk=n=>{for(const c of n.children){if(selector==='input[data-option-index]'&&c.tagName==='INPUT'&&c.dataset.optionIndex!==undefined)out.push(c);walk(c)}};walk(this);return out}
+  addEventListener(t,f,c=false){this.listeners.set(t,[...(this.listeners.get(t)||[]),{f,c}])}
+  removeEventListener(t,f,c=false){this.listeners.set(t,(this.listeners.get(t)||[]).filter(l=>l.f!==f||l.c!==c))}
+  fire(type,props={}){const e={type,isTrusted:false,prevented:false,stopped:false,preventDefault(){this.prevented=true},stopImmediatePropagation(){this.stopped=true},...props};const path=[];for(let n=this;n;n=n.parentNode)path.push(n);for(const n of path.slice().reverse())for(const l of n.listeners.get(type)||[])if(l.c){l.f(e);if(e.stopped)return e;}for(const n of path)for(const l of n.listeners.get(type)||[])if(!l.c){l.f(e);if(e.stopped)return e;}return e}
+ }
+ const home=new Node('section');home.id='app-home';home.dataset={visit:'1',revision:'2'};
+ const host=new Node('span');host.id='host';host.dataset={homeStaticMount:'3',nativeId:'pick',locked:'false',required:'true',invalid:'false'};home.appendChild(host);
+ const node=new Node('div');node.id='pick';host.appendChild(node);
+ const options=source.map((v,i)=>({value:v,source:JSON.stringify({value:v,text:{type:i===1?'mrkdwn':'plain_text',text:i===1?'*Beta*':v||'Empty'},opaque:{key:v}})}));
+ const rows=options.map((o,i)=>{const label=new Node('label');label.dataset.optionSource=o.source;node.appendChild(label);const input=new Node('input');input.type='checkbox';input.value=`option-${i}`;input.dataset.optionIndex=String(i);label.appendChild(input);const text=new Node('span');text.textContent=['Alpha','Beta','Empty'][i];label.appendChild(text);const description=new Node('span');description.textContent='Inert description';label.appendChild(description);return input});
+ const window={},document={body:home,getElementById:id=>nodes.get(id)};
+ const ctx=vm.createContext({window,document,MutationObserver:class{constructor(cb){this.cb=cb;observers.push(this)}observe(target,options){this.target=target;this.options=options}disconnect(){this.options=null;pending.delete(this)}}});
+ vm.runInContext(fs.readFileSync(__dirname+'/../bridge.js','utf8')+'\n'+fs.readFileSync(__dirname+'/bridge.js','utf8'),ctx);
+ const api=ctx.mountHomeCheckboxes({host:'host',mount:3,visit:1,revision:2,selected,options},{send:e=>events.push(JSON.parse(JSON.stringify(e)))}),entry=window.__spHomeStatic.entries.get(3);
+ const ack=()=>api.ack({seq:entry.seq});ack();
+ const expected=()=>({visit:1,revision:2,fields:[{id:'pick',checkbox:true,mount:3,seq:entry.seq,values:[...entry.values],options:options.map((o,i)=>({value:`option-${i}`,sourceValue:o.value,source:o.source}))}]});
+ const choose=i=>{rows[i].checked=!rows[i].checked;rows[i].fire('change');ack()};
+ const flush=()=>{let count=0;while(pending.size&&count++<20){const batch=[...pending];pending.clear();for(const o of batch)if(o.options)o.cb();}assert.equal(pending.size,0,'observer must settle');return count;};
+ return {home,host,node,rows,entry,api,ack,expected,choose,events,ctx,window,flush,mutated,Node};
+}
+test('checkbox toggles append, remove, and reappend in occurrence order including empty value',()=>{const s=setup();s.choose(1);s.choose(0);s.choose(1);s.choose(1);s.choose(2);assert.deepEqual(s.events.at(-1).values,['a','b','']);assert.equal(s.events.at(-1).index,2);assert.equal(s.events.at(-1).checked,true);});
+test('required empty is an actual callback and quiet groups use the same owned listener',()=>{const s=setup(['a']);s.choose(0);assert.deepEqual(s.events.at(-1).values,[]);assert.equal(s.events.at(-1).checked,false);assert.equal(s.events.length,2);});
+test('hidden survivors remain ordered through current-row edits and exact lease attestation',()=>{const s=setup(['hidden','b'],['a','b','']);s.choose(0);assert.deepEqual(s.events.at(-1).values,['hidden','b','a']);const release=s.ctx.lockHomeStatic(s.expected());assert.equal(typeof release,'function');release();});
+test('published progress replays exact row toggles while retaining hidden survivors',()=>{const s=setup(['hidden']),old=s.expected();s.rows[1].checked=true;s.rows[1].fire('change');s.rows[0].checked=true;s.rows[0].fire('change');assert.equal(s.ctx.lockHomeStatic(old),'busy');assert.equal(s.ctx.lockHomeStatic(s.expected()),'busy');s.ack();const release=s.ctx.lockHomeStatic(s.expected());assert.equal(typeof release,'function');release();});
+test('missing, forged, duplicate, or out-of-range progress journal refuses rather than waits',()=>{for(const corrupt of [s=>s.entry.changes=[],s=>s.entry.changes[0].index=99,s=>s.entry.changes[0].checked=false,s=>s.entry.values.push('hidden'),s=>s.entry.changes[0].seq++]){const s=setup(['hidden']),old=s.expected();s.rows[0].checked=true;s.rows[0].fire('change');corrupt(s);assert.equal(s.ctx.lockHomeStatic(old),null);}});
+test('unsignaled checked state, changed row/source/text, owner and invalid ack refuse custody',()=>{for(const corrupt of [s=>s.rows[0].checked=false,s=>s.rows[0].parentNode.dataset.optionSource='{}',s=>s.rows[0].parentNode.children[1].textContent='Forged',s=>s.entry.rows[0]=s.rows[1],s=>s.home.dataset.revision='9',s=>s.entry.acked=s.entry.seq+1]){const s=setup();s.choose(0);const expected=s.expected();corrupt(s);assert.equal(s.ctx.lockHomeStatic(expected),null);}});
+test('source loading suppresses callbacks and observer quiesces without rewriting labels',()=>{const s=setup();const labels=s.rows.map(r=>r.parentNode.textContent);s.host.dataset.locked='true';s.mutated(s.host,'attributes','data-locked');assert.ok(s.flush()<3);assert.ok(s.rows.every(r=>r.disabled));s.rows[0].checked=true;s.rows[0].fire('change');assert.equal(s.rows[0].checked,false);assert.equal(s.events.length,1);assert.deepEqual(s.rows.map(r=>r.parentNode.textContent),labels);});
+test('short lease gates row changes but permits Tab; release is exact and idempotent',()=>{const s=setup();const release=s.ctx.lockHomeStatic(s.expected());assert.equal(typeof release,'function');assert.equal(s.rows[0].fire('click').prevented,true);assert.equal(s.rows[0].fire('change').prevented,true);assert.equal(s.rows[0].fire('keydown',{key:'Tab'}).prevented,false);assert.equal(s.events.length,1);release();release();s.choose(0);assert.deepEqual(s.events.at(-1).values,['a']);});
+test('all sibling integrity is checked before published Busy classification',()=>{const s=setup(),expected=s.expected();s.rows[0].checked=true;s.rows[0].fire('change');const q=new s.Node('select');q.id='quiet';q.value='option-1';q.options=[{value:'option-0',textContent:'Quiet'}];s.home.appendChild(q);expected.fields.push({id:'quiet',mount:null,seq:null,index:0,options:[{value:'option-0',text:'Quiet'}]});assert.equal(s.ctx.lockHomeStatic(expected),null);});
+test('retired node closes once and cannot emit or acquire a new lease',()=>{const s=setup();const release=s.ctx.lockHomeStatic(s.expected());s.home.dataset.revision='3';s.mutated(s.home,'childList');s.flush();assert.equal(s.entry.closed,true);const count=s.events.length;s.choose(0);assert.equal(s.events.length,count);release();assert.equal(s.ctx.lockHomeStatic(s.expected()),null);});

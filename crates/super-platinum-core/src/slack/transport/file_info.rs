@@ -2,6 +2,7 @@
 //! supply nested channel_map order; this is not canonical publication authority.
 use super::*;
 mod metadata;
+mod reference;
 #[cfg(test)]
 mod tests;
 

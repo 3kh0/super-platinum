@@ -104,6 +104,7 @@ enum Mutation {
         child: Option<String>,
         second_child: Option<String>,
     },
+    ReplacementPreparing,
     Replacement {
         replacement: String,
     },
@@ -116,7 +117,7 @@ enum Accepted {
     End(end_ops::readback::AcceptedState),
     Split(super_platinum_core::canvas::edit::structure::AcceptedSplit),
     SplitSequence(split_ops::readback::AcceptedState),
-    Replacement(super_platinum_core::canvas::edit::structure::AcceptedReplacement),
+    Replacement(replacement_ops::readback::AcceptedState),
     Checkbox(AcceptedCheckbox),
     Structure(super_platinum_core::canvas::edit::structure::AcceptedStructure),
     StructureWorker(structure_ops::readback::AcceptedState),
@@ -476,6 +477,10 @@ impl Attempt {
     }
 }
 pub(super) fn dispatchable(shell: &ShellState, attempt: &Attempt) -> bool {
+    !matches!(attempt.mutation, Mutation::ReplacementPreparing)
+        && preparation_owner_current(shell, attempt)
+}
+fn preparation_owner_current(shell: &ShellState, attempt: &Attempt) -> bool {
     attempt.scope.current(shell)
         && shell.canvas_checklist.operations.iter().any(|operation| {
             operation.attempt.serial == attempt.serial && operation.stage == Stage::Preparing
@@ -716,7 +721,13 @@ pub(super) fn confirm_readback(shell: &mut ShellState, attempt: &Attempt, read: 
         return true;
     }
     if let Accepted::Replacement(accepted) = accepted {
-        if !accepted.confirms_readback(snapshot).unwrap_or(false) {
+        if !accepted.confirms(
+            shell,
+            snapshot,
+            attempt,
+            read,
+            &shell.canvas_checklist.operations[index],
+        ) {
             return false;
         }
         if shell.canvas_checklist.operations[index].durable.is_some() {

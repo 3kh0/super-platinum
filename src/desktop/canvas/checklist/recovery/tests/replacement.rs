@@ -31,7 +31,7 @@ fn paired_readback_stays_locked_until_exact_durable_retirement_and_rechecks_late
     };
     shell.canvas_checklist.operations[0].durable = Some(Ticket {
         owner,
-        receipt: receipt.clone(),
+        receipt: Arc::new(receipt.clone()),
     });
     assert!(replacement_ops::mark_dispatched(
         &mut shell, &attempt, &prepared
@@ -48,8 +48,15 @@ fn paired_readback_stays_locked_until_exact_durable_retirement_and_rechecks_late
     assert!(journal.get(receipt.checkpoint().scope()).unwrap().as_ref() == Some(&receipt));
     let newer = begin_read(&mut shell).unwrap();
     assert!(finish_read(&mut shell, &newer, Ok(current)));
-    assert!(!confirm_readback(&mut shell, &attempt, &newer));
-    assert!(journal.complete(&receipt).unwrap());
+    assert!(!replacement_ops::readback::verify_now(&mut shell, &newer));
+    let op = &shell.canvas_checklist.operations[0];
+    let Some(Accepted::Replacement(accepted)) = op.accepted.as_ref() else {
+        panic!("pair")
+    };
+    let token = accepted.confirmed(&shell, &newer, op).unwrap();
+    let ticket = op.durable.clone().unwrap();
+    assert!(journal.complete_replacement(&receipt, &token).unwrap());
+    assert!(confirmed::mark_retired(&mut shell, &attempt, &ticket));
     finish_retirement(&mut shell, &attempt, true);
     assert!(text_ops::settled(&shell, &attempt));
     assert!(shell.canvas_checklist.operations.is_empty());

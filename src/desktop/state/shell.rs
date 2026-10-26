@@ -14,6 +14,7 @@ pub struct ShellState {
     pub(crate) message_buttons: crate::message_buttons::State,
     pub(crate) app_home: crate::app_home::Root,
     pub(crate) directory_member_fetches: crate::directory_member_fetches::Registry,
+    pub(crate) group_unknown: crate::usergroups::unknown::Registry,
     pub(crate) group_freshness: crate::usergroups::freshness::Registry,
     pub(crate) app_modal: Option<crate::app_modal::Session>,
     pub(crate) app_modal_closes: Vec<crate::app_modal::CloseTicket>,

@@ -103,15 +103,24 @@ fn paired_seal_requires_both_rows_and_keeps_replacement_editable_after_settlemen
     let mut missing = (*current).clone();
     missing.sections.retain(|s| s.id() != id);
     let read = load(&mut shell, Arc::new(missing));
+    assert!(!checklist::replacement_ops::readback::verify_now(
+        &mut shell, &read
+    ));
     assert!(!checklist::confirm_readback(&mut shell, &attempt, &read));
     let mut changed = (*current).clone();
     let row = changed.sections.iter_mut().find(|s| s.id() == id).unwrap();
     *row = super_platinum_core::canvas::wire::Section::from_raw(row.raw().remove(38).unwrap())
         .unwrap();
     let read = load(&mut shell, Arc::new(changed));
+    assert!(!checklist::replacement_ops::readback::verify_now(
+        &mut shell, &read
+    ));
     assert!(!checklist::confirm_readback(&mut shell, &attempt, &read));
     let read = load(&mut shell, current.clone());
-    assert!(checklist::confirm_readback(&mut shell, &attempt, &read));
+    assert!(!checklist::confirm_readback(&mut shell, &attempt, &read));
+    assert!(checklist::replacement_ops::readback::verify_now(
+        &mut shell, &read
+    ));
     assert!(checklist::text_ops::settled(&shell, &attempt));
     assert!(TextIntent::capture(&current, &id, 100).is_ok());
     let view = checklist::presentation(&shell).unwrap();
@@ -210,7 +219,10 @@ fn retained_old_tombstone_preserves_text_edit_but_does_not_grant_structural_elig
     ));
     let current = Arc::new(current);
     let read = load(&mut shell, current.clone());
-    assert!(checklist::confirm_readback(&mut shell, &attempt, &read));
+    assert!(!checklist::confirm_readback(&mut shell, &attempt, &read));
+    assert!(checklist::replacement_ops::readback::verify_now(
+        &mut shell, &read
+    ));
     let map = Mapping::project(
         &shell,
         &structure_fixture::document(&current),
@@ -220,6 +232,13 @@ fn retained_old_tombstone_preserves_text_edit_but_does_not_grant_structural_elig
     assert!(item.intent.is_some());
     assert!(item.structure.is_none());
     assert!(!item.replacement);
+    let certified = checklist::presentation(&shell).unwrap().snapshot.unwrap();
+    let certified_map = Mapping::project(
+        &shell,
+        &structure_fixture::document(&certified),
+        Some(&certified),
+    );
+    assert!(certified_map.items[&id].replacement);
     assert!(!map.items.contains_key("paragraph"));
     let edit = TextIntent::capture(&current, &id, now)
         .unwrap()

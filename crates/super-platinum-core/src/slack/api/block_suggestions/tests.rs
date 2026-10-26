@@ -156,7 +156,7 @@ fn external_action_requires_exact_committed_raw_and_current_owner() {
     let mut message = message();
     let owner = owner();
     let option = ExternalOption::parse(
-        &json!({"text":{"type":"plain_text","text":"Remote","emoji":false},"value":"remote"}),
+        &json!({"text":{"type":"plain_text","text":"Remote","emoji":false},"value":"remote","opaque":{"kept":[1,false,null]},"url":"https://example.test/not-navigation"}),
     )
     .unwrap();
     let captured =
@@ -178,6 +178,20 @@ fn external_action_requires_exact_committed_raw_and_current_owner() {
         )
         .is_ok()
     );
+    state["b"]["a"]["selected_option"]["opaque"]["kept"][0] = json!(2);
+    assert!(
+        super::super::block_action_external(
+            &SlackClient::default(),
+            &workspace(),
+            &current,
+            "A1",
+            "T2",
+            "token",
+            Some(&state)
+        )
+        .is_err()
+    );
+    state = inputs.values().unwrap().unwrap();
     state["b"]["a"]["selected_option"]["text"]["text"] = json!("Forged metadata");
     assert!(
         super::super::block_action_external(

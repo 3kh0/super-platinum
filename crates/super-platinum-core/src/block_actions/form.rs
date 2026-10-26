@@ -89,6 +89,14 @@ pub enum InputKind {
     ExternalSelect {
         min_query_length: usize,
     },
+    /// Home-only email control; generic Modal parsing remains unsupported.
+    Email,
+    /// Home-only numeric control. Generic Modal parsing still rejects number_input.
+    Number {
+        is_decimal_allowed: bool,
+        min_value: Option<String>,
+        max_value: Option<String>,
+    },
     Text {
         multiline: bool,
         min_length: Option<usize>,
@@ -131,6 +139,9 @@ pub enum InputValue {
     ExternalOptions(Vec<ExternalOption>),
     External(Option<ExternalOption>),
     Text(String),
+    Number(Option<String>),
+    /// None is an omitted Home parent; a callback always stores Some, even empty.
+    Email(Option<String>),
     Selected(Vec<String>),
     Date(Option<String>),
     User(Option<String>),

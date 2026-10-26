@@ -5,6 +5,30 @@ use automerge::{
 };
 
 pub(super) fn ordinary(row: &Section, now: u64) -> Result<(), Error> {
+    ordinary_policy(row, now, false, false)
+}
+
+/// Separate source-proven ordinary replacement history; gap admission is unchanged.
+pub(in crate::canvas::edit::structure) fn independent(
+    row: &Section,
+    now: u64,
+) -> Result<(), Error> {
+    ordinary_policy(row, now, true, false)
+}
+
+/// Only exact-byte certificate evidence may use this path. Opaque Section fields
+/// were already preserved by the sealed pair; they confer no history authority.
+/// Generic independent/gap admission keeps its original closed field grammar.
+pub(in crate::canvas::edit::structure) fn witnessed(row: &Section, now: u64) -> Result<(), Error> {
+    ordinary_policy(row, now, true, true)
+}
+
+fn ordinary_policy(
+    row: &Section,
+    now: u64,
+    independent: bool,
+    witnessed: bool,
+) -> Result<(), Error> {
     if row.section_type()?.unwrap_or(0) != 0
         || row
             .sequence()?
@@ -12,33 +36,37 @@ pub(super) fn ordinary(row: &Section, now: u64) -> Result<(), Error> {
         || row.style()?.unwrap_or(0) != 0
         || row.read_only()? == Some(true)
         || row.parents()?.is_some_and(|p| !p.fields().is_empty())
-        || row.raw().fields().iter().any(|f| {
-            !matches!(
-                f.tag(),
-                1 | 2
-                    | 3
-                    | 6
-                    | 7
-                    | 8
-                    | 9
-                    | 10
-                    | 11
-                    | 12
-                    | 13
-                    | 16
-                    | 18
-                    | 19
-                    | 20
-                    | 21
-                    | 25
-                    | 29
-                    | 33
-                    | 35
-                    | 38
-                    | 103
-                    | 104
-            )
-        })
+        // Known unsupported Section fields remain refused even at the witnessed
+        // seam; only uninterpreted extensions bypass the closed field list.
+        || row.raw().fields().iter().any(|f| matches!(f.tag(), 15 | 36 | 39))
+        || (!witnessed
+            && row.raw().fields().iter().any(|f| {
+                !matches!(
+                    f.tag(),
+                    1 | 2
+                        | 3
+                        | 6
+                        | 7
+                        | 8
+                        | 9
+                        | 10
+                        | 11
+                        | 12
+                        | 13
+                        | 16
+                        | 18
+                        | 19
+                        | 20
+                        | 21
+                        | 25
+                        | 29
+                        | 33
+                        | 35
+                        | 38
+                        | 103
+                        | 104
+                )
+            }))
         || row.raw().uint(11)?.unwrap_or(0) != 0
         || row.raw().boolean(29)? == Some(true)
         || row
@@ -83,7 +111,7 @@ pub(super) fn ordinary(row: &Section, now: u64) -> Result<(), Error> {
         return Err(Error::Unsupported);
     }
     let live = if deleted {
-        deletion_prefix(&doc, &wire, &draft)?
+        deletion_prefix(&doc, &wire, &draft, independent)?
     } else {
         doc
     };
@@ -93,20 +121,28 @@ pub(super) fn ordinary(row: &Section, now: u64) -> Result<(), Error> {
         .parse()
         .map_err(|_| Error::Unsupported)?;
     let initial = live.fork_at(&[base]).map_err(|_| Error::Unsupported)?;
-    bootstrap(&initial, wire.uint(2)? == Some(0))?;
-    super::super::rich::descendants(&live, base, &draft, 1)
+    bootstrap(&initial, wire.uint(2)? == Some(0), independent)?;
+    if independent {
+        super::super::rich::independent_descendants(&live, base, &draft, 1)
+    } else {
+        super::super::rich::descendants(&live, base, &draft, 1)
+    }
 }
 
-fn bootstrap(doc: &Automerge, zero: bool) -> Result<(), Error> {
+fn bootstrap(doc: &Automerge, zero: bool, independent: bool) -> Result<(), Error> {
     let changes = doc.get_changes(&[]);
     let [change] = changes.as_slice() else {
         return Err(Error::Unsupported);
     };
     let actor = change.actor_id().to_hex_string();
+    // The captured replacement-created empty row has a full ten-byte actor,
+    // unlike the legacy bootstrap's session-plus-zero-suffix actor. Only the
+    // independent zero-base branch admits it; its exact empty bootstrap ops
+    // and the following deletion-only history remain mandatory.
     if change.seq() != 1
         || !change.deps().is_empty()
         || actor.len() != 20
-        || !actor.ends_with("00000000")
+        || (!(independent && zero) && !actor.ends_with("00000000"))
     {
         return Err(Error::Unsupported);
     }
@@ -163,6 +199,7 @@ fn deletion_prefix(
     doc: &Automerge,
     wire: &RawMessage,
     draft: &TextDraft,
+    independent: bool,
 ) -> Result<Automerge, Error> {
     let heads = doc.get_heads();
     let [head] = heads.as_slice() else {
@@ -178,8 +215,10 @@ fn deletion_prefix(
         return Err(Error::Unsupported);
     };
     let actor = change.actor_id().to_hex_string();
+    // Original replacement deletion uses a full ten-byte actor too. The old
+    // gap proof keeps its suffix policy; both branches prove the exact delta.
     if actor.len() != 20
-        || !actor.ends_with("00000000")
+        || (!independent && !actor.ends_with("00000000"))
         || !validation::processed(wire, &previous.to_string())?
         || prefix.get_changes(&[]).len() + 1 != doc.get_changes(&[]).len()
     {

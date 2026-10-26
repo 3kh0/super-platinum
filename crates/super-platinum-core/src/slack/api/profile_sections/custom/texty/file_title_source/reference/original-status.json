@@ -1,0 +1,1555 @@
+{
+  "ok": true,
+  "count": 22,
+  "cases": [
+    {
+      "name": "deleted",
+      "row": {
+        "id": "FSTATUS0001",
+        "mode": "quip",
+        "filetype": "quip",
+        "title": "SECRET TITLE",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "SECRET BLOCK"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "is_deleted": true
+      },
+      "title": "Deleted canvas",
+      "slug": {
+        "label": "Deleted canvas",
+        "labelResolverParams": {
+          "variant": "deleted",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Deleted canvas",
+          "plainTextSectionPreview": "",
+          "labelOverride": "SECRET OVERRIDE",
+          "hideTitle": true
+        },
+        "iconName": "trash",
+        "isDisabled": true,
+        "isLocked": false,
+        "isLoading": false
+      },
+      "token": {
+        "type": "canvas",
+        "file_id": "FSTATUS0001",
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 2
+        }
+      },
+      "deltaSlug": {
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "id": "FSTATUS0001",
+        "label": "Deleted canvas",
+        "type": "canvas"
+      },
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "tombstone",
+      "row": {
+        "id": "FSTATUS0001",
+        "mode": "tombstone",
+        "filetype": "quip",
+        "title": "SECRET TITLE",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "SECRET BLOCK"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "title": "Deleted canvas",
+      "slug": {
+        "label": "Deleted canvas",
+        "labelResolverParams": {
+          "variant": "deleted",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Deleted canvas",
+          "plainTextSectionPreview": "",
+          "labelOverride": "SECRET OVERRIDE",
+          "hideTitle": true
+        },
+        "iconName": "trash",
+        "isDisabled": true,
+        "isLocked": false,
+        "isLoading": false
+      },
+      "token": {
+        "type": "canvas",
+        "file_id": "FSTATUS0001",
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 2
+        }
+      },
+      "deltaSlug": {
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "id": "FSTATUS0001",
+        "label": "Deleted canvas",
+        "type": "canvas"
+      },
+      "calls": [],
+      "inputUnchanged": true
+    },
+    {
+      "name": "nonexistent",
+      "row": {
+        "id": "FSTATUS0001",
+        "mode": "quip",
+        "filetype": "quip",
+        "title": "SECRET TITLE",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "SECRET BLOCK"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "isNonExistent": true
+      },
+      "title": "Deleted canvas",
+      "slug": {
+        "label": "Deleted canvas",
+        "labelResolverParams": {
+          "variant": "deleted",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Deleted canvas",
+          "plainTextSectionPreview": "",
+          "labelOverride": "SECRET OVERRIDE",
+          "hideTitle": true
+        },
+        "iconName": "trash",
+        "isDisabled": true,
+        "isLocked": false,
+        "isLoading": false
+      },
+      "token": {
+        "type": "canvas",
+        "file_id": "FSTATUS0001",
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 2
+        }
+      },
+      "deltaSlug": {
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "id": "FSTATUS0001",
+        "label": "Deleted canvas",
+        "type": "canvas"
+      },
+      "calls": [],
+      "inputUnchanged": true
+    },
+    {
+      "name": "hidden-limit",
+      "row": {
+        "id": "FSTATUS0001",
+        "mode": "hidden_by_limit",
+        "filetype": "quip",
+        "title": "SECRET TITLE",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "SECRET BLOCK"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "title": "Private canvas",
+      "slug": {
+        "label": "Private canvas",
+        "labelResolverParams": {
+          "variant": "hidden",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Private canvas",
+          "plainTextSectionPreview": "",
+          "labelOverride": "SECRET OVERRIDE",
+          "hideTitle": true
+        },
+        "iconName": "lock",
+        "isDisabled": false,
+        "isLocked": true,
+        "isLoading": false
+      },
+      "token": {
+        "type": "canvas",
+        "file_id": "FSTATUS0001",
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 2
+        }
+      },
+      "deltaSlug": {
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "id": "FSTATUS0001",
+        "label": "Private canvas",
+        "type": "canvas"
+      },
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "hidden-flag",
+      "row": {
+        "id": "FSTATUS0001",
+        "mode": "quip",
+        "filetype": "quip",
+        "title": "SECRET TITLE",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "SECRET BLOCK"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "is_hidden_by_limit": true
+      },
+      "title": "Private canvas",
+      "slug": {
+        "label": "Private canvas",
+        "labelResolverParams": {
+          "variant": "hidden",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Private canvas",
+          "plainTextSectionPreview": "",
+          "labelOverride": "SECRET OVERRIDE",
+          "hideTitle": true
+        },
+        "iconName": "lock",
+        "isDisabled": false,
+        "isLocked": true,
+        "isLoading": false
+      },
+      "token": {
+        "type": "canvas",
+        "file_id": "FSTATUS0001",
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 2
+        }
+      },
+      "deltaSlug": {
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "id": "FSTATUS0001",
+        "label": "Private canvas",
+        "type": "canvas"
+      },
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "access-denied",
+      "row": {
+        "id": "FSTATUS0001",
+        "mode": "quip",
+        "filetype": "quip",
+        "title": "SECRET TITLE",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "SECRET BLOCK"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "file_access": "access_denied"
+      },
+      "title": "Private canvas",
+      "slug": {
+        "label": "Private canvas",
+        "labelResolverParams": {
+          "variant": "hidden",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Private canvas",
+          "plainTextSectionPreview": "",
+          "labelOverride": "SECRET OVERRIDE",
+          "hideTitle": true
+        },
+        "iconName": "lock",
+        "isDisabled": false,
+        "isLocked": true,
+        "isLoading": false
+      },
+      "token": {
+        "type": "canvas",
+        "file_id": "FSTATUS0001",
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 2
+        }
+      },
+      "deltaSlug": {
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "id": "FSTATUS0001",
+        "label": "Private canvas",
+        "type": "canvas"
+      },
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "not-found",
+      "row": {
+        "id": "FSTATUS0001",
+        "mode": "not_found",
+        "filetype": "quip",
+        "title": "SECRET TITLE",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "SECRET BLOCK"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "title": "Private canvas",
+      "slug": {
+        "label": "Private canvas",
+        "labelResolverParams": {
+          "variant": "hidden",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Private canvas",
+          "plainTextSectionPreview": "",
+          "labelOverride": "SECRET OVERRIDE",
+          "hideTitle": true
+        },
+        "iconName": "lock",
+        "isDisabled": false,
+        "isLocked": true,
+        "isLoading": false
+      },
+      "token": {
+        "type": "canvas",
+        "file_id": "FSTATUS0001",
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 2
+        }
+      },
+      "deltaSlug": {
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "id": "FSTATUS0001",
+        "label": "Private canvas",
+        "type": "canvas"
+      },
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "not-visible-mode",
+      "row": {
+        "id": "FSTATUS0001",
+        "mode": "not_visible",
+        "filetype": "quip",
+        "title": "SECRET TITLE",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "SECRET BLOCK"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "title": "Private canvas",
+      "slug": {
+        "label": "Private canvas",
+        "labelResolverParams": {
+          "variant": "hidden",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Private canvas",
+          "plainTextSectionPreview": "",
+          "labelOverride": "SECRET OVERRIDE",
+          "hideTitle": true
+        },
+        "iconName": "lock",
+        "isDisabled": false,
+        "isLocked": true,
+        "isLoading": false
+      },
+      "token": {
+        "type": "canvas",
+        "file_id": "FSTATUS0001",
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 2
+        }
+      },
+      "deltaSlug": {
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "id": "FSTATUS0001",
+        "label": "Private canvas",
+        "type": "canvas"
+      },
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "not-visible-access",
+      "row": {
+        "id": "FSTATUS0001",
+        "mode": "quip",
+        "filetype": "quip",
+        "title": "SECRET TITLE",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "SECRET BLOCK"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "file_access": "not_visible"
+      },
+      "title": "Private canvas",
+      "slug": {
+        "label": "Private canvas",
+        "labelResolverParams": {
+          "variant": "hidden",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Private canvas",
+          "plainTextSectionPreview": "",
+          "labelOverride": "SECRET OVERRIDE",
+          "hideTitle": true
+        },
+        "iconName": "lock",
+        "isDisabled": false,
+        "isLocked": true,
+        "isLoading": false
+      },
+      "token": {
+        "type": "canvas",
+        "file_id": "FSTATUS0001",
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 2
+        }
+      },
+      "deltaSlug": {
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "id": "FSTATUS0001",
+        "label": "Private canvas",
+        "type": "canvas"
+      },
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "template-mode",
+      "row": {
+        "id": "FSTATUS0001",
+        "mode": "template_not_visible",
+        "filetype": "quip",
+        "title": "SECRET TITLE",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "SECRET BLOCK"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "title": "Private canvas",
+      "slug": {
+        "label": "Private canvas",
+        "labelResolverParams": {
+          "variant": "hidden",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Private canvas",
+          "plainTextSectionPreview": "",
+          "labelOverride": "SECRET OVERRIDE",
+          "hideTitle": true
+        },
+        "iconName": "lock",
+        "isDisabled": false,
+        "isLocked": true,
+        "isLoading": false
+      },
+      "token": {
+        "type": "canvas",
+        "file_id": "FSTATUS0001",
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 2
+        }
+      },
+      "deltaSlug": {
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "id": "FSTATUS0001",
+        "label": "Private canvas",
+        "type": "canvas"
+      },
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "template-access",
+      "row": {
+        "id": "FSTATUS0001",
+        "mode": "quip",
+        "filetype": "quip",
+        "title": "SECRET TITLE",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "SECRET BLOCK"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "file_access": "template_not_visible"
+      },
+      "title": "Private canvas",
+      "slug": {
+        "label": "Private canvas",
+        "labelResolverParams": {
+          "variant": "hidden",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Private canvas",
+          "plainTextSectionPreview": "",
+          "labelOverride": "SECRET OVERRIDE",
+          "hideTitle": true
+        },
+        "iconName": "lock",
+        "isDisabled": false,
+        "isLocked": true,
+        "isLoading": false
+      },
+      "token": {
+        "type": "canvas",
+        "file_id": "FSTATUS0001",
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 2
+        }
+      },
+      "deltaSlug": {
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "id": "FSTATUS0001",
+        "label": "Private canvas",
+        "type": "canvas"
+      },
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "blocked",
+      "row": {
+        "id": "FSTATUS0001",
+        "mode": "canvas_slack_connect_blocked",
+        "filetype": "quip",
+        "title": "SECRET TITLE",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "SECRET BLOCK"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "title": "Private canvas",
+      "slug": {
+        "label": "Private canvas",
+        "labelResolverParams": {
+          "variant": "hidden",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Private canvas",
+          "plainTextSectionPreview": "",
+          "labelOverride": "SECRET OVERRIDE",
+          "hideTitle": true
+        },
+        "iconName": "lock",
+        "isDisabled": false,
+        "isLocked": true,
+        "isLoading": false
+      },
+      "token": {
+        "type": "canvas",
+        "file_id": "FSTATUS0001",
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 2
+        }
+      },
+      "deltaSlug": {
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "id": "FSTATUS0001",
+        "label": "Private canvas",
+        "type": "canvas"
+      },
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "dlp",
+      "row": {
+        "id": "FSTATUS0001",
+        "mode": "quip",
+        "filetype": "quip",
+        "title": "SECRET TITLE",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "SECRET BLOCK"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "is_tombstoned": true
+      },
+      "title": "Private canvas",
+      "slug": {
+        "label": "Private canvas",
+        "labelResolverParams": {
+          "variant": "hidden",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Private canvas",
+          "plainTextSectionPreview": "",
+          "labelOverride": "SECRET OVERRIDE",
+          "hideTitle": true
+        },
+        "iconName": "lock",
+        "isDisabled": false,
+        "isLocked": true,
+        "isLoading": false
+      },
+      "token": {
+        "type": "canvas",
+        "file_id": "FSTATUS0001",
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 2
+        }
+      },
+      "deltaSlug": {
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "id": "FSTATUS0001",
+        "label": "Private canvas",
+        "type": "canvas"
+      },
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "deleted-wins",
+      "row": {
+        "id": "FSTATUS0001",
+        "mode": "quip",
+        "filetype": "quip",
+        "title": "SECRET TITLE",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "SECRET BLOCK"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "is_deleted": true,
+        "file_access": "not_visible",
+        "is_hidden_by_limit": true
+      },
+      "title": "Deleted canvas",
+      "slug": {
+        "label": "Deleted canvas",
+        "labelResolverParams": {
+          "variant": "deleted",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Deleted canvas",
+          "plainTextSectionPreview": "",
+          "labelOverride": "SECRET OVERRIDE",
+          "hideTitle": true
+        },
+        "iconName": "trash",
+        "isDisabled": true,
+        "isLocked": false,
+        "isLoading": false
+      },
+      "token": {
+        "type": "canvas",
+        "file_id": "FSTATUS0001",
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 2
+        }
+      },
+      "deltaSlug": {
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "id": "FSTATUS0001",
+        "label": "Deleted canvas",
+        "type": "canvas"
+      },
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "truthy-string-deleted",
+      "row": {
+        "id": "FSTATUS0001",
+        "mode": "quip",
+        "filetype": "quip",
+        "title": "SECRET TITLE",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "SECRET BLOCK"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "is_deleted": "false"
+      },
+      "title": "Deleted canvas",
+      "slug": {
+        "label": "Deleted canvas",
+        "labelResolverParams": {
+          "variant": "deleted",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Deleted canvas",
+          "plainTextSectionPreview": "",
+          "labelOverride": "SECRET OVERRIDE",
+          "hideTitle": true
+        },
+        "iconName": "trash",
+        "isDisabled": true,
+        "isLocked": false,
+        "isLoading": false
+      },
+      "token": {
+        "type": "canvas",
+        "file_id": "FSTATUS0001",
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 2
+        }
+      },
+      "deltaSlug": {
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "id": "FSTATUS0001",
+        "label": "Deleted canvas",
+        "type": "canvas"
+      },
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "minimal-not_visible",
+      "row": {
+        "id": "FSTATUS0001",
+        "mode": "not_visible"
+      },
+      "slug": {
+        "label": "Private canvas",
+        "labelResolverParams": {
+          "variant": "hidden",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Private canvas",
+          "plainTextSectionPreview": ""
+        },
+        "iconName": "lock",
+        "isDisabled": false,
+        "isLocked": true,
+        "isLoading": false
+      },
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        }
+      ]
+    },
+    {
+      "name": "minimal-template_not_visible",
+      "row": {
+        "id": "FSTATUS0001",
+        "mode": "template_not_visible"
+      },
+      "slug": {
+        "label": "Private canvas",
+        "labelResolverParams": {
+          "variant": "hidden",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Private canvas",
+          "plainTextSectionPreview": ""
+        },
+        "iconName": "lock",
+        "isDisabled": false,
+        "isLocked": true,
+        "isLoading": false
+      },
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        }
+      ]
+    },
+    {
+      "name": "unknown",
+      "row": {
+        "id": "FSTATUS0001",
+        "mode": "quip",
+        "title": "Known plain",
+        "isUnknown": true
+      },
+      "ordinary": {
+        "label": "Known plain",
+        "labelResolverParams": {
+          "variant": "normal",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Known plain",
+          "plainTextSectionPreview": ""
+        },
+        "iconName": "canvas-content",
+        "isDisabled": false,
+        "isLocked": false,
+        "isLoading": false
+      },
+      "loading": {
+        "label": "",
+        "labelResolverParams": {
+          "variant": "not_loaded",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Known plain",
+          "plainTextSectionPreview": ""
+        },
+        "iconName": "canvas-content",
+        "isDisabled": false,
+        "isLocked": false,
+        "isLoading": true
+      },
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "normal-title-text-adapter"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "normal-title-text-adapter"
+        }
+      ],
+      "normalPlainTitleAdapter": true
+    },
+    {
+      "name": "locked-flag",
+      "row": {
+        "id": "FSTATUS0001",
+        "mode": "quip",
+        "title": "Known plain",
+        "is_locked": true
+      },
+      "ordinary": {
+        "label": "Known plain",
+        "labelResolverParams": {
+          "variant": "normal",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Known plain",
+          "plainTextSectionPreview": ""
+        },
+        "iconName": "canvas-content",
+        "isDisabled": false,
+        "isLocked": false,
+        "isLoading": false
+      },
+      "loading": {
+        "label": "Known plain",
+        "labelResolverParams": {
+          "variant": "normal",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Known plain",
+          "plainTextSectionPreview": ""
+        },
+        "iconName": "canvas-content",
+        "isDisabled": false,
+        "isLocked": false,
+        "isLoading": false
+      },
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "normal-title-text-adapter"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "normal-title-text-adapter"
+        }
+      ],
+      "normalPlainTitleAdapter": true
+    },
+    {
+      "name": "normal",
+      "row": {
+        "id": "FSTATUS0001",
+        "mode": "quip",
+        "title": "Known plain"
+      },
+      "ordinary": {
+        "label": "Known plain",
+        "labelResolverParams": {
+          "variant": "normal",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Known plain",
+          "plainTextSectionPreview": ""
+        },
+        "iconName": "canvas-content",
+        "isDisabled": false,
+        "isLocked": false,
+        "isLoading": false
+      },
+      "loading": {
+        "label": "Known plain",
+        "labelResolverParams": {
+          "variant": "normal",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Known plain",
+          "plainTextSectionPreview": ""
+        },
+        "iconName": "canvas-content",
+        "isDisabled": false,
+        "isLocked": false,
+        "isLoading": false
+      },
+      "calls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "normal-title-text-adapter"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "normal-title-text-adapter"
+        }
+      ],
+      "normalPlainTitleAdapter": true
+    },
+    {
+      "name": "absent-fetchfalse",
+      "slug": {
+        "label": "Deleted canvas",
+        "labelResolverParams": {
+          "variant": "deleted",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Deleted canvas",
+          "plainTextSectionPreview": ""
+        },
+        "iconName": "trash",
+        "isDisabled": true,
+        "isLocked": false,
+        "isLoading": false
+      },
+      "calls": [],
+      "note": "KhL1 first request=false, then laT0 with empty id exits status helper; no fetch."
+    },
+    {
+      "name": "absent-default-fetch",
+      "row": {
+        "id": "FSTATUS0001",
+        "isUnknown": true
+      },
+      "calls": [
+        {
+          "kind": "unknown-hit",
+          "team": "TSTATUS",
+          "id": "FSTATUS0001"
+        }
+      ],
+      "managerAdapter": true
+    }
+  ],
+  "adapters": [
+    "English key-returning translator",
+    "identity selector memoization and small LRU",
+    "unknown manager is a call ledger, not transport",
+    "normal plain title text identity adapter; unavailable title paths forbid conversion and Quip reads",
+    "DSA enum1 and explicit team host; unused imports fail if invoked"
+  ],
+  "limits": [
+    "No Profile mounted editor, DOM, Save/server, network, actual UFM publication or authority lifecycle execution",
+    "pND/ actual converter returns slug data, does not preserve arbitrary opaque token keys; product raw-preservation contract remains separate",
+    "English labels are source translation keys, not observed locale"
+  ]
+}

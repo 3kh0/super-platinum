@@ -49,7 +49,7 @@ fn child_text() -> String {
 pub(super) fn seed(corpus: &str, mode: &str) -> Arc<CanvasCollabSnapshot> {
     seed_variant(corpus, mode, &variant())
 }
-fn seed_variant(corpus: &str, mode: &str, variant: &str) -> Arc<CanvasCollabSnapshot> {
+pub(super) fn seed_variant(corpus: &str, mode: &str, variant: &str) -> Arc<CanvasCollabSnapshot> {
     let source = child_delete::seed_variant(corpus, mode, variant);
     let owner = parent(mode);
     let child = seed::child(&source, owner);
@@ -131,7 +131,7 @@ async fn open(
     id: &str,
     deleting: bool,
 ) -> Result<(), String> {
-    row(desktop, id, false, deleting || rich_gap()).await?;
+    row(desktop, id, false, true).await?;
     let selector = if deleting {
         "[data-structure-action=delete]"
     } else {
@@ -203,7 +203,7 @@ async fn finish(
     }
     Ok(())
 }
-fn unchanged(
+pub(super) fn unchanged(
     before: &CanvasCollabSnapshot,
     after: &CanvasCollabSnapshot,
     target: &str,
@@ -219,7 +219,7 @@ fn unchanged(
     }
     Ok(())
 }
-fn canonical(source: &CanvasCollabSnapshot, id: &str, rtml: &str) -> Result<(), String> {
+pub(super) fn canonical(source: &CanvasCollabSnapshot, id: &str, rtml: &str) -> Result<(), String> {
     let value = source
         .section(id)
         .and_then(|s| s.raw().message(12).ok().flatten())

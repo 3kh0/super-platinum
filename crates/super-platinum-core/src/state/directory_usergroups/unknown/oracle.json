@@ -1,0 +1,933 @@
+{
+  "ok": true,
+  "count": 8,
+  "guardCount": 8,
+  "cases": [
+    {
+      "name": "absent-positive",
+      "before": {
+        "source": {
+          "team": "TGROUP001",
+          "userGroups": {},
+          "quipTitle": {}
+        },
+        "placeholder": {
+          "id": "SGROUP001",
+          "name": "SGROUP001",
+          "isUnknown": true,
+          "handle": "SGROUP001"
+        },
+        "labels": {
+          "flattened": "Notes for @unknown-group",
+          "title": "Notes for @unknown-group",
+          "final": "Notes for @unknown-group"
+        },
+        "pending": [
+          "SGROUP001"
+        ],
+        "samePlaceholder": true
+      },
+      "retainedBeforeDispatch": null,
+      "requests": [
+        {
+          "kind": "fetch",
+          "ids": [
+            "SGROUP001"
+          ],
+          "reason": "UnknownFetchManager"
+        }
+      ],
+      "response": {
+        "userGroups": [
+          {
+            "id": "SGROUP001",
+            "team_id": "TGROUP001",
+            "handle": "fetched",
+            "name": "Fetched group",
+            "date_update": 102
+          }
+        ]
+      },
+      "events": [
+        {
+          "kind": "upsert",
+          "userGroups": [
+            {
+              "id": "SGROUP001",
+              "team_id": "TGROUP001",
+              "handle": "fetched",
+              "name": "Fetched group",
+              "date_update": 102
+            }
+          ]
+        }
+      ],
+      "after": {
+        "source": {
+          "team": "TGROUP001",
+          "userGroups": {
+            "SGROUP001": {
+              "id": "SGROUP001",
+              "team_id": "TGROUP001",
+              "handle": "fetched",
+              "name": "Fetched group",
+              "date_update": 102
+            }
+          },
+          "quipTitle": {}
+        },
+        "row": {
+          "id": "SGROUP001",
+          "team_id": "TGROUP001",
+          "handle": "fetched",
+          "name": "Fetched group",
+          "date_update": 102
+        },
+        "labels": {
+          "flattened": "Notes for @fetched",
+          "title": "Notes for @fetched",
+          "final": "Notes for @fetched"
+        },
+        "pending": [],
+        "conditionalCalls": [
+          {
+            "kind": "conditional-hit",
+            "team": "TGROUP001",
+            "id": "SGROUP001"
+          },
+          {
+            "kind": "conditional-hit",
+            "team": "TGROUP001",
+            "id": "SGROUP001"
+          },
+          {
+            "kind": "conditional-hit",
+            "team": "TGROUP001",
+            "id": "SGROUP001"
+          }
+        ]
+      },
+      "timers": [
+        0
+      ],
+      "timeouts": [
+        65000
+      ],
+      "rawTitleUnchanged": true,
+      "originalTransientUnchanged": true
+    },
+    {
+      "name": "absent-success-omission",
+      "before": {
+        "source": {
+          "team": "TGROUP001",
+          "userGroups": {},
+          "quipTitle": {}
+        },
+        "placeholder": {
+          "id": "SGROUP001",
+          "name": "SGROUP001",
+          "isUnknown": true,
+          "handle": "SGROUP001"
+        },
+        "labels": {
+          "flattened": "Notes for @unknown-group",
+          "title": "Notes for @unknown-group",
+          "final": "Notes for @unknown-group"
+        },
+        "pending": [
+          "SGROUP001"
+        ],
+        "samePlaceholder": true
+      },
+      "retainedBeforeDispatch": null,
+      "requests": [
+        {
+          "kind": "fetch",
+          "ids": [
+            "SGROUP001"
+          ],
+          "reason": "UnknownFetchManager"
+        }
+      ],
+      "response": {
+        "userGroups": []
+      },
+      "events": [
+        {
+          "kind": "upsert",
+          "userGroups": [
+            {
+              "id": "SGROUP001",
+              "isNonExistent": true
+            }
+          ]
+        }
+      ],
+      "after": {
+        "source": {
+          "team": "TGROUP001",
+          "userGroups": {
+            "SGROUP001": {
+              "id": "SGROUP001",
+              "isNonExistent": true
+            }
+          },
+          "quipTitle": {}
+        },
+        "row": {
+          "id": "SGROUP001",
+          "isNonExistent": true
+        },
+        "labels": {
+          "flattened": "Notes for @unknown-group",
+          "title": "Notes for @unknown-group",
+          "final": "Notes for @unknown-group"
+        },
+        "pending": [],
+        "conditionalCalls": [
+          {
+            "kind": "conditional-hit",
+            "team": "TGROUP001",
+            "id": "SGROUP001"
+          },
+          {
+            "kind": "conditional-hit",
+            "team": "TGROUP001",
+            "id": "SGROUP001"
+          },
+          {
+            "kind": "conditional-hit",
+            "team": "TGROUP001",
+            "id": "SGROUP001"
+          }
+        ]
+      },
+      "timers": [
+        0
+      ],
+      "timeouts": [
+        65000
+      ],
+      "rawTitleUnchanged": true,
+      "originalTransientUnchanged": true
+    },
+    {
+      "name": "absent-wrapper-error",
+      "before": {
+        "source": {
+          "team": "TGROUP001",
+          "userGroups": {},
+          "quipTitle": {}
+        },
+        "placeholder": {
+          "id": "SGROUP001",
+          "name": "SGROUP001",
+          "isUnknown": true,
+          "handle": "SGROUP001"
+        },
+        "labels": {
+          "flattened": "Notes for @unknown-group",
+          "title": "Notes for @unknown-group",
+          "final": "Notes for @unknown-group"
+        },
+        "pending": [
+          "SGROUP001"
+        ],
+        "samePlaceholder": true
+      },
+      "retainedBeforeDispatch": null,
+      "requests": [
+        {
+          "kind": "fetch",
+          "ids": [
+            "SGROUP001"
+          ],
+          "reason": "UnknownFetchManager"
+        }
+      ],
+      "response": {
+        "error": "closed acquisition failure"
+      },
+      "events": [
+        {
+          "kind": "upsert",
+          "userGroups": [
+            {
+              "id": "SGROUP001",
+              "isNonExistent": true
+            }
+          ]
+        }
+      ],
+      "after": {
+        "source": {
+          "team": "TGROUP001",
+          "userGroups": {
+            "SGROUP001": {
+              "id": "SGROUP001",
+              "isNonExistent": true
+            }
+          },
+          "quipTitle": {}
+        },
+        "row": {
+          "id": "SGROUP001",
+          "isNonExistent": true
+        },
+        "labels": {
+          "flattened": "Notes for @unknown-group",
+          "title": "Notes for @unknown-group",
+          "final": "Notes for @unknown-group"
+        },
+        "pending": [],
+        "conditionalCalls": [
+          {
+            "kind": "conditional-hit",
+            "team": "TGROUP001",
+            "id": "SGROUP001"
+          },
+          {
+            "kind": "conditional-hit",
+            "team": "TGROUP001",
+            "id": "SGROUP001"
+          },
+          {
+            "kind": "conditional-hit",
+            "team": "TGROUP001",
+            "id": "SGROUP001"
+          }
+        ]
+      },
+      "timers": [
+        0
+      ],
+      "timeouts": [
+        65000
+      ],
+      "rawTitleUnchanged": true,
+      "originalTransientUnchanged": true
+    },
+    {
+      "name": "existing-known-at-dispatch",
+      "before": {
+        "source": {
+          "team": "TGROUP001",
+          "userGroups": {},
+          "quipTitle": {}
+        },
+        "placeholder": {
+          "id": "SGROUP001",
+          "name": "SGROUP001",
+          "isUnknown": true,
+          "handle": "SGROUP001"
+        },
+        "labels": {
+          "flattened": "Notes for @unknown-group",
+          "title": "Notes for @unknown-group",
+          "final": "Notes for @unknown-group"
+        },
+        "pending": [
+          "SGROUP001"
+        ],
+        "samePlaceholder": true
+      },
+      "retainedBeforeDispatch": {
+        "id": "SGROUP001",
+        "handle": "retained",
+        "date_update": 101
+      },
+      "requests": [
+        {
+          "kind": "fetch",
+          "ids": [],
+          "reason": "UnknownFetchManager"
+        }
+      ],
+      "response": {
+        "userGroups": []
+      },
+      "events": [
+        {
+          "kind": "upsert",
+          "userGroups": [
+            {
+              "id": "SGROUP001",
+              "handle": "retained",
+              "date_update": 101
+            }
+          ]
+        }
+      ],
+      "after": {
+        "source": {
+          "team": "TGROUP001",
+          "userGroups": {
+            "SGROUP001": {
+              "id": "SGROUP001",
+              "handle": "retained",
+              "date_update": 101
+            }
+          },
+          "quipTitle": {}
+        },
+        "row": {
+          "id": "SGROUP001",
+          "handle": "retained",
+          "date_update": 101
+        },
+        "labels": {
+          "flattened": "Notes for @retained",
+          "title": "Notes for @retained",
+          "final": "Notes for @retained"
+        },
+        "pending": [],
+        "conditionalCalls": [
+          {
+            "kind": "conditional-hit",
+            "team": "TGROUP001",
+            "id": "SGROUP001"
+          },
+          {
+            "kind": "conditional-hit",
+            "team": "TGROUP001",
+            "id": "SGROUP001"
+          },
+          {
+            "kind": "conditional-hit",
+            "team": "TGROUP001",
+            "id": "SGROUP001"
+          }
+        ]
+      },
+      "timers": [
+        0
+      ],
+      "timeouts": [
+        65000
+      ],
+      "rawTitleUnchanged": true,
+      "originalTransientUnchanged": true
+    },
+    {
+      "name": "existing-unknown-at-dispatch",
+      "before": {
+        "source": {
+          "team": "TGROUP001",
+          "userGroups": {},
+          "quipTitle": {}
+        },
+        "placeholder": {
+          "id": "SGROUP001",
+          "name": "SGROUP001",
+          "isUnknown": true,
+          "handle": "SGROUP001"
+        },
+        "labels": {
+          "flattened": "Notes for @unknown-group",
+          "title": "Notes for @unknown-group",
+          "final": "Notes for @unknown-group"
+        },
+        "pending": [
+          "SGROUP001"
+        ],
+        "samePlaceholder": true
+      },
+      "retainedBeforeDispatch": {
+        "id": "SGROUP001",
+        "name": "SGROUP001",
+        "handle": "secret",
+        "isUnknown": true
+      },
+      "requests": [
+        {
+          "kind": "fetch",
+          "ids": [],
+          "reason": "UnknownFetchManager"
+        }
+      ],
+      "response": {
+        "userGroups": []
+      },
+      "events": [
+        {
+          "kind": "upsert",
+          "userGroups": [
+            {
+              "id": "SGROUP001",
+              "name": "SGROUP001",
+              "handle": "secret",
+              "isUnknown": true
+            }
+          ]
+        }
+      ],
+      "after": {
+        "source": {
+          "team": "TGROUP001",
+          "userGroups": {
+            "SGROUP001": {
+              "id": "SGROUP001",
+              "name": "SGROUP001",
+              "handle": "secret",
+              "isUnknown": true
+            }
+          },
+          "quipTitle": {}
+        },
+        "row": {
+          "id": "SGROUP001",
+          "name": "SGROUP001",
+          "handle": "secret",
+          "isUnknown": true
+        },
+        "labels": {
+          "flattened": "Notes for @unknown-group",
+          "title": "Notes for @unknown-group",
+          "final": "Notes for @unknown-group"
+        },
+        "pending": [],
+        "conditionalCalls": [
+          {
+            "kind": "conditional-hit",
+            "team": "TGROUP001",
+            "id": "SGROUP001"
+          },
+          {
+            "kind": "conditional-hit",
+            "team": "TGROUP001",
+            "id": "SGROUP001"
+          },
+          {
+            "kind": "conditional-hit",
+            "team": "TGROUP001",
+            "id": "SGROUP001"
+          }
+        ]
+      },
+      "timers": [
+        0
+      ],
+      "timeouts": [
+        65000
+      ],
+      "rawTitleUnchanged": true,
+      "originalTransientUnchanged": true
+    },
+    {
+      "name": "existing-terminal-at-dispatch",
+      "before": {
+        "source": {
+          "team": "TGROUP001",
+          "userGroups": {},
+          "quipTitle": {}
+        },
+        "placeholder": {
+          "id": "SGROUP001",
+          "name": "SGROUP001",
+          "isUnknown": true,
+          "handle": "SGROUP001"
+        },
+        "labels": {
+          "flattened": "Notes for @unknown-group",
+          "title": "Notes for @unknown-group",
+          "final": "Notes for @unknown-group"
+        },
+        "pending": [
+          "SGROUP001"
+        ],
+        "samePlaceholder": true
+      },
+      "retainedBeforeDispatch": {
+        "id": "SGROUP001",
+        "isNonExistent": true
+      },
+      "requests": [
+        {
+          "kind": "fetch",
+          "ids": [],
+          "reason": "UnknownFetchManager"
+        }
+      ],
+      "response": {
+        "userGroups": []
+      },
+      "events": [
+        {
+          "kind": "upsert",
+          "userGroups": [
+            {
+              "id": "SGROUP001",
+              "isNonExistent": true
+            }
+          ]
+        }
+      ],
+      "after": {
+        "source": {
+          "team": "TGROUP001",
+          "userGroups": {
+            "SGROUP001": {
+              "id": "SGROUP001",
+              "isNonExistent": true
+            }
+          },
+          "quipTitle": {}
+        },
+        "row": {
+          "id": "SGROUP001",
+          "isNonExistent": true
+        },
+        "labels": {
+          "flattened": "Notes for @unknown-group",
+          "title": "Notes for @unknown-group",
+          "final": "Notes for @unknown-group"
+        },
+        "pending": [],
+        "conditionalCalls": [
+          {
+            "kind": "conditional-hit",
+            "team": "TGROUP001",
+            "id": "SGROUP001"
+          },
+          {
+            "kind": "conditional-hit",
+            "team": "TGROUP001",
+            "id": "SGROUP001"
+          },
+          {
+            "kind": "conditional-hit",
+            "team": "TGROUP001",
+            "id": "SGROUP001"
+          }
+        ]
+      },
+      "timers": [
+        0
+      ],
+      "timeouts": [
+        65000
+      ],
+      "rawTitleUnchanged": true,
+      "originalTransientUnchanged": true
+    },
+    {
+      "name": "retained-known-wrapper-error",
+      "before": {
+        "source": {
+          "team": "TGROUP001",
+          "userGroups": {},
+          "quipTitle": {}
+        },
+        "placeholder": {
+          "id": "SGROUP001",
+          "name": "SGROUP001",
+          "isUnknown": true,
+          "handle": "SGROUP001"
+        },
+        "labels": {
+          "flattened": "Notes for @unknown-group",
+          "title": "Notes for @unknown-group",
+          "final": "Notes for @unknown-group"
+        },
+        "pending": [
+          "SGROUP001"
+        ],
+        "samePlaceholder": true
+      },
+      "retainedBeforeDispatch": {
+        "id": "SGROUP001",
+        "handle": "retained",
+        "date_update": 101
+      },
+      "requests": [
+        {
+          "kind": "fetch",
+          "ids": [],
+          "reason": "UnknownFetchManager"
+        }
+      ],
+      "response": {
+        "error": "closed acquisition failure"
+      },
+      "events": [
+        {
+          "kind": "upsert",
+          "userGroups": [
+            {
+              "id": "SGROUP001",
+              "handle": "retained",
+              "date_update": 101
+            }
+          ]
+        }
+      ],
+      "after": {
+        "source": {
+          "team": "TGROUP001",
+          "userGroups": {
+            "SGROUP001": {
+              "id": "SGROUP001",
+              "handle": "retained",
+              "date_update": 101
+            }
+          },
+          "quipTitle": {}
+        },
+        "row": {
+          "id": "SGROUP001",
+          "handle": "retained",
+          "date_update": 101
+        },
+        "labels": {
+          "flattened": "Notes for @retained",
+          "title": "Notes for @retained",
+          "final": "Notes for @retained"
+        },
+        "pending": [],
+        "conditionalCalls": [
+          {
+            "kind": "conditional-hit",
+            "team": "TGROUP001",
+            "id": "SGROUP001"
+          },
+          {
+            "kind": "conditional-hit",
+            "team": "TGROUP001",
+            "id": "SGROUP001"
+          },
+          {
+            "kind": "conditional-hit",
+            "team": "TGROUP001",
+            "id": "SGROUP001"
+          }
+        ]
+      },
+      "timers": [
+        0
+      ],
+      "timeouts": [
+        65000
+      ],
+      "rawTitleUnchanged": true,
+      "originalTransientUnchanged": true
+    },
+    {
+      "name": "retained-unknown-wrapper-error",
+      "before": {
+        "source": {
+          "team": "TGROUP001",
+          "userGroups": {},
+          "quipTitle": {}
+        },
+        "placeholder": {
+          "id": "SGROUP001",
+          "name": "SGROUP001",
+          "isUnknown": true,
+          "handle": "SGROUP001"
+        },
+        "labels": {
+          "flattened": "Notes for @unknown-group",
+          "title": "Notes for @unknown-group",
+          "final": "Notes for @unknown-group"
+        },
+        "pending": [
+          "SGROUP001"
+        ],
+        "samePlaceholder": true
+      },
+      "retainedBeforeDispatch": {
+        "id": "SGROUP001",
+        "isUnknown": true,
+        "handle": "secret"
+      },
+      "requests": [
+        {
+          "kind": "fetch",
+          "ids": [],
+          "reason": "UnknownFetchManager"
+        }
+      ],
+      "response": {
+        "error": "closed acquisition failure"
+      },
+      "events": [
+        {
+          "kind": "upsert",
+          "userGroups": [
+            {
+              "id": "SGROUP001",
+              "isUnknown": true,
+              "handle": "secret"
+            }
+          ]
+        }
+      ],
+      "after": {
+        "source": {
+          "team": "TGROUP001",
+          "userGroups": {
+            "SGROUP001": {
+              "id": "SGROUP001",
+              "isUnknown": true,
+              "handle": "secret"
+            }
+          },
+          "quipTitle": {}
+        },
+        "row": {
+          "id": "SGROUP001",
+          "isUnknown": true,
+          "handle": "secret"
+        },
+        "labels": {
+          "flattened": "Notes for @unknown-group",
+          "title": "Notes for @unknown-group",
+          "final": "Notes for @unknown-group"
+        },
+        "pending": [],
+        "conditionalCalls": [
+          {
+            "kind": "conditional-hit",
+            "team": "TGROUP001",
+            "id": "SGROUP001"
+          },
+          {
+            "kind": "conditional-hit",
+            "team": "TGROUP001",
+            "id": "SGROUP001"
+          },
+          {
+            "kind": "conditional-hit",
+            "team": "TGROUP001",
+            "id": "SGROUP001"
+          }
+        ]
+      },
+      "timers": [
+        0
+      ],
+      "timeouts": [
+        65000
+      ],
+      "rawTitleUnchanged": true,
+      "originalTransientUnchanged": true
+    }
+  ],
+  "guards": [
+    {
+      "name": "fetch-disabled",
+      "id": "SGROUP001",
+      "fetch": false,
+      "team": "TGROUP001",
+      "restricted": false,
+      "result": "undefined",
+      "requests": [],
+      "conditional": []
+    },
+    {
+      "name": "missing-team",
+      "id": "SGROUP001",
+      "fetch": true,
+      "team": null,
+      "restricted": false,
+      "result": "undefined",
+      "requests": [],
+      "conditional": []
+    },
+    {
+      "name": "invalid-id",
+      "id": "bad-id",
+      "fetch": true,
+      "team": "TGROUP001",
+      "restricted": false,
+      "result": {
+        "id": "bad-id",
+        "isNonExistent": true
+      },
+      "requests": [],
+      "conditional": []
+    },
+    {
+      "name": "empty-id",
+      "id": "",
+      "fetch": true,
+      "team": "TGROUP001",
+      "restricted": false,
+      "result": false,
+      "requests": [],
+      "conditional": []
+    },
+    {
+      "name": "restricted",
+      "id": "SGROUP001",
+      "fetch": true,
+      "team": "TGROUP001",
+      "restricted": true,
+      "result": {
+        "id": "SGROUP001",
+        "isNonExistent": true
+      },
+      "requests": [],
+      "conditional": []
+    },
+    {
+      "name": "present-unknown",
+      "row": {
+        "id": "SGROUP001",
+        "isUnknown": true,
+        "handle": "secret"
+      },
+      "returnedSameRow": true,
+      "requests": [],
+      "conditional": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ]
+    },
+    {
+      "name": "present-terminal",
+      "row": {
+        "id": "SGROUP001",
+        "isNonExistent": true
+      },
+      "returnedSameRow": true,
+      "requests": [],
+      "conditional": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ]
+    },
+    {
+      "name": "present-known",
+      "row": {
+        "id": "SGROUP001",
+        "handle": "known"
+      },
+      "returnedSameRow": true,
+      "requests": [],
+      "conditional": [
+        {
+          "kind": "conditional-hit",
+          "team": "TGROUP001",
+          "id": "SGROUP001"
+        }
+      ]
+    }
+  ],
+  "host": {
+    "source": "synthetic mutable per-team map",
+    "dispatch": "raw D8Wa action result held/released; D8Wa acquisition and d92s reducer are adapter boundaries",
+    "scheduler": "debounce promises executed immediately with requested delays recorded; actual nz6C memoizer nativeMap cache",
+    "timeout": "BaWM.wj pass-through records65000; no real timeout execution",
+    "labels": "actual bQFi/XXup/Quip/slug with identity selector memoization and English translator",
+    "upsert": "actual manager/wrapper calls; host replaces raw row exactly, no production reducer/server claim",
+    "ownership": "manager keyed by team; no Profile consumer/account/socket lifecycle simulated"
+  }
+}

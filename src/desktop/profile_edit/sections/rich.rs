@@ -141,8 +141,19 @@ fn open_with_recovery(
         let mut shell = state.write();
         let (opening, hits) =
             opening::tracked_with_members(&mut shell, visit, serial, id, key, !known);
+        let needs_sections = shell
+            .profile_edit
+            .sections
+            .draft
+            .as_ref()
+            .and_then(|d| d.form.as_ref().and_then(|f| f.value(id)).map(|v| (d, v)))
+            .is_some_and(|(d, v)| match v {
+                SectionValue::LongText(blocks) => files::sections::needs(&shell, &d.token, blocks),
+                _ => false,
+            });
         let accepted = match opening {
-            Ok(opening) => finish(&mut shell, opening),
+            Ok(opening) if !needs_sections => finish(&mut shell, opening),
+            Ok(_) => false,
             Err(_) => false,
         };
         let recovery = (!accepted)
@@ -170,6 +181,40 @@ pub(crate) fn labels(
     let session = d.rich.as_ref()?;
     (current(shell, &d.token, visit, serial) && session.id == id && session.key == key)
         .then(|| session.labels.clone())
+}
+pub(crate) fn presentations(
+    shell: &ShellState,
+    visit: u64,
+    serial: u64,
+    id: &str,
+    key: u64,
+) -> String {
+    shell
+        .profile_edit
+        .sections
+        .draft
+        .as_ref()
+        .filter(|d| current(shell, &d.token, visit, serial))
+        .and_then(|d| d.rich.as_ref())
+        .filter(|s| s.id == id && s.key == key)
+        .map_or_else(|| "{}".into(), |s| s.catalog.presentations().to_string())
+}
+pub(crate) fn label_units(
+    shell: &ShellState,
+    visit: u64,
+    serial: u64,
+    id: &str,
+    key: u64,
+) -> String {
+    shell
+        .profile_edit
+        .sections
+        .draft
+        .as_ref()
+        .filter(|d| current(shell, &d.token, visit, serial))
+        .and_then(|d| d.rich.as_ref())
+        .filter(|s| s.id == id && s.key == key)
+        .map_or_else(|| "{}".into(), |s| s.catalog.label_units().to_string())
 }
 pub(crate) fn mount_current(shell: &ShellState, visit: u64, serial: u64, key: u64) -> bool {
     editable(shell, visit, serial)

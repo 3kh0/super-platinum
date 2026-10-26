@@ -14,6 +14,7 @@ use super_platinum_core::{
     },
 };
 pub(crate) mod check;
+pub(crate) mod unified;
 const TEAM: &str = "TINIT0001";
 const USER: &str = "UINIT0001";
 const CHANNEL: &str = "CINIT0001";

@@ -21819,3 +21819,392 @@ Core48,portable35,original30nested+2guards,root/corefmt and desktop test compila
 Preserved failures: original harness A/B setup/whitespace assumptions; nativeA oracle universally rejected legitimate cold-file metadata lease, then closed replay found Save must remain disabled while rich editor mounted even when form canSave. Two exact predicates and negatives fixed; nativeB passed same binary, no Rust edits/rebuild. Native user regression Quip is nullish; nonempty/empty bypass evidence is original/core only. Full original mounting/server/locale/restart and locally absent usergroup title semantics remain unverified.
 
 Next active `tmp/profile-canvas-missing-usergroup-title-20261024/checkpoint.json`: execute original absent selector return/scheduling/publication and reconcile shared source custody before implementation. Full parityACTIVE/build tuningFROZEN; existing edits/caches/evidence/permissions remain preserved.
+
+
+## Profile Canvas missing usergroup title acceptance (2026-10-24)
+
+[Acceptance](../tmp/profile-canvas-missing-usergroup-title-20261024/integration/acceptance.json), SHA256 `ca820e20d5a965a8b2316a9e59de9a94e5069fa238fa9a22c7f8f6c435ed4a3a`: 16 offline cases, 88 stages/original PNGs individually reviewed, 176 capture edges; all owned processes closed with empty cleanup errors. Shared absent-group acquisition, source-owned transient/local terminal presentation, restricted-self bypass, mounted draft custody, Cancel/retirement and Use/Save/readback passed. Primary30 group requests +16 file reads; numeric app exits unknown. Core47+51, portable52, fixture-cycle3, formatting and desktop test compilation passed. Desktop Rust tests not executed. Build-b f1bea80f419ba7f2be5a7e5432af2d8f4ceb0f1f1e94b3a7e178820dd5152246 passed354.36s; check-c341.52s; unchanged inputs. Failed compilerA/private accessor, nativeA/fixture recursion and nativeB/exact oracle expectations retained. Corrected nativeC uses unchanged build-b. Other-prefix readiness diagnostics and viewport limits explicitly recorded. No live/server/OS-input/notification/device or elapsed timeout claims. Full parity remains ACTIVE; build tuning FROZEN. Next read-only milestone: unavailable Canvas reference statuses, [checkpoint](../tmp/profile-canvas-unavailable-reference-20261024/checkpoint.json).
+
+
+## Profile unavailable Canvas reference acceptance (2026-10-24)
+
+[Acceptance](../tmp/profile-canvas-unavailable-reference-20261024/integration/acceptance.json), SHA256 `19938c62cda4075414f90a4860aa123ec7fb70c9b266d09d4afb641688c6e744`: 16 offline cases,106 stages/original PNGs individually inspected,212 capture edges; all owned processes closed with empty cleanup errors. Exact not_visible/template_not_visible response custody, private lock presentation, same-source template recovery, sticky access, mounted raw/style/draft custody, failure/Retry/Cancel/retirement and Use/Save/readback passed. Primary26 files.info; combined48 files.info+2 discovery+2 usergroup fixture requests. Numeric app exits unknown; two other-prefix diagnostics separate. Core49+51+16=116, portable29, syntax6 and formatting passed. Desktop tests compiled390.74s but not executed; cached build432.37s, unchanged inputs, binaryda672ced3db4809bffe3683bc3f9e7dd45662035c90e37c6abcba64aa0f5f345. Original22status+3transition+3supplement vectors use retained factories/synthetic hosts; no original mounted runtime or server claim. Source A ordering/partial-merge gaps corrected B; pre-prop desktop omission and original-host failures preserved. No-kind partial history is original/core-only. Narrow scroll limits retained. Full parityACTIVE/build tuningFROZEN. Next: [deleted Canvas reference checkpoint](../tmp/profile-canvas-deleted-reference-20261024/checkpoint.json), exact file_deleted/tombstone and disabled editor semantics before implementation. Existing permissions/caches/evidence preserved.
+
+
+## Profile deleted Canvas reference acceptance (2026-10-24)
+
+[Acceptance](../tmp/profile-canvas-deleted-reference-20261024/integration/acceptance.json), SHA256 `f35628e5159a53ce605396bba17630b240272bc1b6e654fbaa54861cc7828660`:18 selected offline cases,116 stages/originals individually inspected,232 capture edges,54 files.info fixture reads (26 primary),all processes closed/cleanup empty. Exact API-deleted disabled token, surrounding editable description, raw/style/opaque Use/Save/readback, full recovery/partial retention and failure/Cancel/retirement passed. Selected6 A+4fresh B+8regressions share binaryd2ce897f552767bf6c4a9ed6d3ad5cea97cb022c66874afd291e3ad3f82fa308. Four A external-oracle failures preserved; exact mountedPrivateRetained-to-mountedDeletedRetained correction only, negative checks and closed replay followed by fresh affected reruns. Product source unchanged/no rebuild. Core52+51+17=120,portable33,syntax7,format PASS; desktop tests compiled375.51s but not executed; build427.43s. Original8mapping+3consumer cases use retained factories/synthetic hosts, own-undefined DOM counterexample preserved; full original Quill/Save not executed. Numeric app exits unknown, scroll/contrast limits retained. Existing workspace.deleted_files fences unchanged, so next active [workspace deletion reference checkpoint](../tmp/profile-canvas-deletion-event-20261024/checkpoint.json) addresses that actual remaining gap. Full parityACTIVE/build tuningFROZEN; permissions/caches/edits/evidence preserved.
+
+
+## 2026-10-24 - Profile Canvas deletion-event acceptance
+
+Accepted bounded offline slice: [acceptance](../tmp/profile-canvas-deletion-event-20261024/integration/acceptance.json), SHA256 `521b655bd71dda3135798e9177a7a49b3defd926f454bdb49bf1ccae90dfd88e`. Twenty selected cases/124 stages/124 individually inspected original PNGs/248 capture edges/38 files.info reads; all processes closed with empty cleanup errors, numeric app exits unknown. Known-source tombstones survive Profile visits, actual team navigation and reconnect; old read/opening refusal, mounted raw/style custody and Save/readback passed.
+
+150 focused core tests, formatting,33 portable/7 syntax and desktop test compilation passed; desktop tests not executed (recorded LLVM memory limit). Original8 event/reducer/selector vectors passed, not full original mounted Profile. Eighteen cases use B904b2316..., two ordinary Ccbdd199c...; all5299 inputs compared and sole fixture invalidation call differs, production identical. BuildsB355.43s/C363.63s are functional runs, no performance comparison.
+
+All10 failedA and2 ordinaryB excluded and preserved. Fixed fixture rail seed, exact raw-versus-projected-field oracle expectation, then fixture shared invalidation to retain original offline/Retry/held-cancel assertions. One pointer guard failure retained without guard change. Root preflight Windows-path and report-key mismatches stopped before Cargo/acceptance and were corrected without widening checks. Registry remains incomplete; arbitrary cached/local deletion bits are not event authority. Narrow scrolling, muted contrast and no live/server/OS/device claims remain.
+
+Full parity ACTIVE; build tuning FROZEN. Next [Canvas section-link checkpoint](../tmp/profile-canvas-section-reference-20261024/checkpoint.json): original contract and existing core/desktop acquisition investigation, no implementation/native acceptance yet.
+
+
+## 2026-10-24 - Profile Canvas section-link acceptance
+
+[Acceptance](../tmp/profile-canvas-section-reference-20261024/integration/acceptance.json), SHA256 `0116ac2d89864e7401f431c443b19929679826f938fdbce078610f2c599b234e`:20 selected offline cases/128 stages/128 individually inspected original PNGs/256 capture edges/68 fixture requests (34 files.info,32 section reads,2 users.prefs.get). Exact section/raw/style/UTF16 custody, mixed labels, completion/Undo, Use/Save/readback, missing/error/cancel/stale account/socket and private/deleted states passed. All owned processes closed; numeric app exits unknown.
+
+Core87, portable39, syntax13, formatting and desktop test compilation passed; desktop Rust tests not executed due prior LLVM memory limit. Original35 focused cases used retained factories/disclosed synthetic adapters, not full original mounted Profile or conditional-manager timing. Eighteen cases use buildA81adb6aa...,two repaired success cases buildB9258034f...;5323 inputs compared, sole exact three-line offline no-I/O member-settlement admission differs. Production unchanged between binaries. BuildB366.37s is functional acceptance, no performance benchmark.
+
+Failed successA2 retained/excluded; fixture-only repair passed fresh runs without guard/oracle relaxation. Regression-wrapper list schema error stopped before launches and corrected fresh A2 passed. Derived Python Unicode file corruption corrected against intact JavaScript UTF16 arrays; original bad artifact preserved. CoreA passed81 but review found colon-ID/falsey-section/absence-generation gaps; B87 supersedes it. Exotic previews, general conditional fetch scheduling, new section insertion, live/server/OS input, accessibility and broad performance remain open. Narrow scroll and contrast limits recorded.
+
+Full parity ACTIVE; build tuning FROZEN. Next [App Home quiet external-select checkpoint](../tmp/app-home-external-select-20261024/checkpoint.json): focused original Home routing plus core/desktop source reconciliation, before implementation. Existing permissions, edits, caches and evidence preserved.
+
+
+### 2026-10-24 - quiet Home external-select accepted; unified context next
+
+Bounded offline acceptance: [receipt](../tmp/app-home-external-select-20261024/integration/acceptance.json), SHA256 `f6bc85d42b6635e70b161da462f6a11867b8b144a50799bd625e0bb887ed094c`. Twelve selected cases, 124 stages, 164 individually inspected original PNGs, 328 capture edges; all processes closed, cleanup empty. Ten cases use C and two retirement cases D; 5,334 compiled inputs differ only in a fixture retirement wait. Core 666 and portable 51 passed; desktop tests compiled only. Retained original routing/select evidence uses disclosed hosts (26 cases).
+
+Search/local selection, raw opaque custody, retained error/loading results, same-value replacement, refresh/cached return, final native draft lease, explicit action state, stale ownership and Retry-After behavior passed in observed nonunified mode. Four Message/Modal regressions passed. Failed A/C evidence remains excluded and preserved. Legacy pointer parking was disclosed and replaced by tested passive guards; selected C/D runs did not move/restore the pointer. Numeric application exit1 reflects owned termination and is distinct from harness/native PASS. Scroll-position and lifecycle/server limitations remain in the acceptance record.
+
+Full goal ACTIVE. Next: [unified Home context](../tmp/app-home-unified-context-20261024/checkpoint.json), using current shared metadata and the same route witness for suggestions/actions. Build tuning remains frozen; no live Slack, OS input, notifications/devices, registration, pushes or deployment authorized.
+
+
+## Unified Home context acceptance (2026-10-24)
+
+[Acceptance](../tmp/app-home-unified-context-20261024/integration/acceptance.json), SHA256 `c19ffb68c4edb990194862c37b3791401f9952f154091af0041e8bd66e578004`:12 selected offline cases,94 stages,169 original PNGs individually inspected,338 edges;34 suggestions,8 actions,12 genuine Home-open requests. Eight primary C and four unchanged A regressions,5350 compiled inputs differ only in new fixture/test; all12 processes closed/cleanupempty, passive no move/restore, harness0 distinct recorded application exit1.
+
+Source-backed unified chooser/query/action routing, exact two-form/native draft custody, Refresh recovery, source/configuration failures, known-empty omission/fallback, final native-lock admission and stale source/socket/account rejection passed. Core163, portable56, original18 through disclosed hosts, formatting and desktop test compilation359.07s PASS; desktop Rust tests not executed. Cached buildC387.92s, SHA7fef77fe7575b6729d7b9c3c8dc0580a7d05d27080d3b7a64610f79d140e5a17; no tuning.
+
+Preserved/excluded failures: A invalid short synthetic member IDs; B incomplete generic channel inventory and incorrect one-form oracle. Minimal fixture source repairs retain production guards; exact two-form negatives and fresh C native cases pass. Visual limits include targeted scroll views, tab overflow and minimal synthetic sidebar; chooser-source unavailability can coexist with valid retained override routing. No full transport/correlation, server, full original mount, OS-input or broad sidebar claim.
+
+Full parity ACTIVE/build tuning FROZEN. Next [quiet Home multi-external-select](../tmp/app-home-multi-external-select-20261024/checkpoint.json): exact retained Home contract then narrow reuse of accepted Message/Modal mechanisms. Existing permissions/edits/caches/evidence preserved.
+
+
+## Quiet Home multi-external-select acceptance (2026-10-25)
+
+[Acceptance](../tmp/app-home-multi-external-select-20261024/integration/acceptance.json), SHA256 `52768297921af44253b30e40e7217eab31068acccbbffe89a242dc1ed5101f3c`: 14 selected offline cases, 108 stages, all 204 original PNGs individually inspected, 408 capture edges. Actual ledgers: 30 suggestions, 18 actions, six Home opens. All 14 processes closed with empty cleanup errors; passive pointer guards and 250 ms response limits unchanged. Harness0 is distinct from owned-termination application exit1.
+
+Ordered opaque multi selections, separate invalid visible edits and accepted form state, required-empty/initial-overlimit/reduced-limit handling, current maximum presentation, initial/saved prop behavior, explicit Button arrays, unified context, failure/Retry, stale ownership and native draft protection passed. Four prior single/unified regressions carry. Four cases use F, two E, eight C; all 5,359 compiled inputs compared, C-to-F only two fixture files and E-to-F only capture.rs. Core179, portable67, retained-original29 and formatting passed; desktop tests compiled only. Cached F build393.76s SHA`dd5eed2710b594591f882e23c6ea759f65bf10202bcedcf461ef67c04d4277a1`.
+
+Preserved/excluded failures: A/B fixture compiler errors; C six stale DOM captures; E four captures frozen before native calendar mount acknowledgement. F waits actual current DOM/control/native registration before immutable capture; product/oracle guards unchanged. D was never launched. Per-scroll clipping, literal original ?1 items?, synthetic hosts, unexecuted desktop Rust tests, and no live/server/full original mount/OS-input claims remain explicit.
+
+Full parity ACTIVE; build tuning FROZEN. Next [quiet Home single person selector](../tmp/app-home-user-select-20261025/checkpoint.json): exact retained callback/clear contract, then current member picker/directory reuse with Home authority. Preserve all edits/caches/evidence and permission boundaries.
+
+
+### 2026-10-25 - quiet Home single person selector accepted
+
+12 selected cases,86 stages,158 individually inspected originals; core228/portable64/original18 PASS,desktop tests compiled only. C2+B10 differ only in two fixture files; failed B selections preserved/excluded. [Acceptance](../tmp/app-home-user-select-20261025/integration/acceptance.json), SHA4cd75771cd2863de778c94528645339ca8c32add62caa67edd660367fc602698. [Details](parity-history-20261025.md). Full parity ACTIVE/build tuning FROZEN; next quiet Home multi-person selector.
+
+
+### 2026-10-25 - Home multi-person selection accepted
+
+12 selected cases,88 stages,172 individually inspected originals; core234/portable81/original20 PASS,desktop tests compiled only. B2+A10 differ only in one props fixture file; failed A props preserved/excluded. [Acceptance](../tmp/app-home-multi-user-select-20261025/integration/acceptance.json), SHAfa10822dadd20231956d3b31b362b59eb7769e0d420c254f3c2890f49caf6bd1. [Details](parity-history-20261025.md). Full parity ACTIVE/build tuning FROZEN; next Home channel selection with supported enterprise filtering and exact mode-source reconciliation.
+
+
+2026-10-25 Home single channel integration: 242 focused core tests executed and passed (141 Home action + 101 form). Retained producer confirmation resolves ordinary configured T-workspace versus configured enterprise mode; E credentials lacking enterprise identity remain explicitly unavailable. Desktop source/fixtures are being frozen; native acceptance pending. Full parity ACTIVE, build tuning FROZEN. Evidence: tmp/app-home-channel-select-20261025/checkpoint.json.
+
+2026-10-25 Home channel native A: eight primary cases failed before first stage because Home renderer excluded InputKind::Channel. Four shared regressions passed22 stages/29PNG/58edges. All processes closed, failed evidence preserved. Sole renderer admission repair frozenB; formatting passed, cached build running. No current milestone acceptance claim.
+
+
+## Home single-channel selector - bounded acceptance
+
+Accepted tmp/app-home-channel-select-20261025/integration/acceptance.json:12 cases/86 stages/167 inspected originals/334 edges. Selection/clear, response-URL state, display/committed props, remote labels, ordinary/configured-enterprise filters, Button state, failures, stale ownership and draft guards passed. Four shared regressions carry across one renderer admission delta. A missed renderer admission; B fixed it, then exposed a checker projection mistake. Fresh C reran all eight primaries with unchanged B executable and full original lifecycle guards. A/B failures excluded. Core242/reference47/portable111 passed; desktop tests compile-only. E credentials without configured enterprise identity, raw alias precedence native coverage, real Home-open/transport and OS input remain outside scope. Build tuning frozen. Next: Home multi_channels_select.
+
+
+## Home multi-channel selector - bounded acceptance
+
+Accepted tmp/app-home-multi-channel-select-20261025/integration/acceptance.json:13 cases/104 stages/235 inspected originals/470 edges, one executable54cd523e and5404 unchanged compiled inputs. Ordered overmax/required-empty arrays, display/committed props, current maximum, no response-URL flag, remote labels, mode-independent public channel search, current Button context, failures/stale ownership/native drafts passed. Single-channel ordinary/enterprise and Modal multi-channel regressions included. No failed native case. Before freeze, remote display evidence was retained across prop-only changes and tested with actual remote cached return. Core248/reference30/portable107 passed; desktop tests compile-only.27 searches/15 actions/four synthetic prepared Modal submissions; original guards/closures verified. Limits retain fixture adapters, separate scroll/overlay visibility and no live/OS input claim. Build tuning frozen; full goal ACTIVE. Next: Home conversations_select defaults/filter source contract and integrated acceptance.
+
+## Quiet Home conversation selector accepted ? 2026-10-25
+
+[Acceptance](../tmp/app-home-conversation-select-20261025/integration/acceptance.json): 12 native cases,96 stages,269 original PNGs individually inspected,538 capture edges. All processes closed with original passive/250ms/terminal guards and empty cleanup errors; app exit1 recorded separately from harness0. One executable313be0c50450...,5414 compiled inputs and163 helper bindings unchanged. Core254,portable95,retained53 passed; eight desktop tests compiled only. Check412.38s/build446.15s are functional cached runs, not benchmarks.
+
+Quiet selected_conversation covers public/private/member/group-DM choices, optional clear, exact response-URL flag and Button state, display-only initial props, saved/committed separation, remote label retention, workspace filters, failure/Retry and query/context/view/socket/account retirement. No Home current-conversation provider is inferred. Aggregate prepared users/channels/mpims are shared; single-channel and Modal regressions passed both widths. Native aggregate errors are fixture-intercepted; concurrent transport/maxRetryAfter remain source/compiled-test evidence. Raw original Home ingress, live Slack, genuine Home-open, OS input and restart remain unverified. See acceptance for capture-specific limits.
+
+A root capture-folder collision was refused before native launch; previous evidence preserved, unused tmp/hcvs/a selected. No failed native case or product rebuild. Build tuning stays frozen. Full parity remains ACTIVE; next Home multi_conversations_select retained default/current-view contract and integrated acceptance.
+
+## Quiet Home multi-conversation selector accepted ? 2026-10-25
+
+[Acceptance](../tmp/app-home-multi-conversation-select-20261025/integration/acceptance.json):13 native cases,110 stages,308 individually inspected original PNGs,616 capture edges. All owned processes closed under passive250ms/per-edge/terminal guards, no cleanup errors; app exit1 separate from harness0. One executable88601f23e54c...,5421 compiled inputs and170 helper bindings unchanged. Core261,portable99,retained52 passed; nine desktop tests compiled only. Cached functional check399.96s/build451.25s, no benchmark or profile change.
+
+Home-only multi parser admits ignored default flag without changing Modal viewed-origin resolution. Ordered required-empty/overmax arrays commit, explicit Button has no response-URL flag, initial props affect display only and remote labels survive cached return. Filters, native draft protection and chip-removal/query/context/view/socket/account retirement passed. Fixed channel-only refresh crossing into retained multi-conversation labels before freeze; pure regression compiled. Existing single Home conversation/Modal multi-conversation both widths and Home multi-channel normal selection passed. Native aggregate errors remain intercepted; rawview ingress, full original runtime, live Slack, OS input and restart unverified. Capture-specific scroll/occlusion limits recorded.
+
+Full parity ACTIVE; build tuning FROZEN. Next Home plain-text Enter dispatch source contract and integrated acceptance.
+
+## Home plain-text dispatch accepted - 2026-10-25
+
+[Acceptance](../tmp/app-home-text-enter-20261025/integration/acceptance.json): 10 selected offline native cases,76 stages,166 individually inspected original PNGs,332 capture edges. All owned processes closed with empty cleanup errors and unchanged passive250ms/per-edge/terminal guards.34 prepared blocks.actions (30 text plus4 existing Button),2 users/search and2 prepared views.submit. Application exit1 is separate from passing harness0. Five B primary cases, four A shared regressions and one C narrow rerun retain their exact three binaries; later differences were fixture-only. Core270,portable146,bridge6,retained49 passed. Nine desktop Rust tests compiled only; missed-first-poll test is not an executed desktop unit-test claim.
+
+Enter literal/Change normalized wire, per-action500ms trailing coalescing, latest sibling/calendar state, invalid commits, independent fields, overlapping response/loading behavior, no automatic uncertain replay and fresh explicit requests passed. Exact native text/calendar leases, acknowledged release, busy-only arbitration and publication-seeded cooldown were integrated. Shared quiet Home/Modal regressions passed both widths.
+
+Failed compiler A and native A/B evidence is preserved. Initial native fixture borrows across awaits were repaired; full prepared URL query is source-checked. Existing global IME composition suppression remains intact; a separate noncomposing repeated Meta+Shift Enter proves dispatch. Narrow lifecycle uses actual guarded toast dismissal after original failure/recovery captures, retaining unchanged Home state and hit guards. No failed receipt was retroactively accepted. Original widget hosts do not prove full-shell/physical IME; all action responses are offline intercepted carriers, server modal/navigation and broad restart/raw-view ingress remain unverified.
+
+Full parity ACTIVE; build tuning FROZEN. Next: mixed nonquiet text-to-Button native synchronization (current Button path attests received text model and native calendars only).
+
+
+### Mixed Home text-to-Button synchronization accepted; focus continuity next
+
+Acceptance: `tmp/app-home-text-button-sync-20261025/integration/acceptance.json` (SHA256 `259976afe84f1f460c3f00f2b257bb604c77c81a74b8329cf5d08e1193872b0c`). Eight selected cases,54 stages,136 individually inspected originals and272 capture edges passed. Actual Button preparation/pending response use a closed interceptor; mixed text/calendar custody releases at invocation. Unseen-buffer/injected ack-lag/retired-view refusal, immutable Button versus later text state, pending edits and uncertain-no-replay passed. Four A primary checker failures (inherited initial notice expected null) remain preserved; four fresh B primary cases passed on the same executable, retaining four passing A regressions. No product change or rebuild for the oracle correction.
+
+Formatting, check--tests (374.74s), functional build (367.89s),98 portable checks and19 retained-function vectors passed. Six authored desktop Rust tests compiled only; core270 evidence is carried with unchanged inputs. Binary `ebfcd295bbb13d7db86390aae00ac6bf545444994f9a10e89297cea4d8a6c28b`. No live Slack, physical keyboard/IME, broad restart or full original shell claim. Normal/narrow originals include separate scroll-target coverage and the real uncertain toast before guarded dismissal.
+
+Full parity remains ACTIVE; build tuning remains FROZEN. Next: `tmp/app-home-text-focus-20261025/checkpoint.json`. The text lease disables controls and fixture helpers refocus each action, leaving uninterrupted typing/caret continuity unverified. Establish a focus-once mounted reproduction and fix any demonstrated gap without weakening ownership. Preserve all permission boundaries and one Cargo/native pipeline.
+
+
+## 2026-10-25 - Home text focus/caret accepted; static-select dispatch begun
+
+[Acceptance](../tmp/app-home-text-focus-20261025/integration/acceptance.json) SHA256 36447347337171b25bc2f114ed55b54d30a8899d464e1752137f888eb173b695: 8 selected cases,50 stages,97 original PNGs individually inspected,194 capture edges,28 intercepted prepared blocks.actions. Readonly short custody repairs reproduced native focus loss without focus/value/selection restoration; explicit intent and retired-node refusal verified. Four failed A primary wrappers remain failed; exact oracle corrections passed four fresh B runs using the same binary, carrying four passing A regressions. All original passive250ms/owned closure guards retained.
+
+Formatting/build and14 JS/72 current portable checks passed.79 inherited portable checks and270 independently locked core tests carried with unchanged inputs. Prior desktop Rust tests compiled only; no new Rust product/test logic. Offline synthetic DOM only, no physical keyboard/IME/live Slack acceptance. Build tuning FROZEN; full parity ACTIVE. Next [single static-select dispatch checkpoint](../tmp/app-home-static-dispatch-20261025/checkpoint.json) begins with concrete nonquiet parser gate and retained behavior/mounted callback investigation; no next-slice implementation claimed.
+
+
+### Home input-block static-select dispatch accepted; clear/reopen started (2026-10-25)
+
+Acceptance: `tmp/app-home-static-dispatch-20261025/integration/acceptance.json` (SHA256 f3da8e83ec5f8b118fce5327f2ebfeaec91e227bb14b9a460dd2d104636303df). Ten selected offline native cases passed 80 stages, 442 capture edges and 46 intercepted prepared actions; all 221 originals were individually viewed. Selection/clear/repeat, latest native siblings, leading/trailing delivery, loading, offline/rate/uncertain recovery and owner retirement passed with affected shared text/Button regressions.
+
+Actual startup observer feedback and published-sequence/ack races were repaired. The prior failed checks/native runs remain preserved, including fixture wait-result and readiness failures. Nine passing E-binary cases carry because F differs only by one fixture settlement before an unchanged guarded probe; pending-normal passed fresh on F. Source and exact binary provenance are explicit in the acceptance record.
+
+Core278 and JS10 executed PASS; portable99 carried unchanged. DesktopRust11 compiled only; earlier test-link LLVM OOM remains a limitation. Formatting and final functional build passed (377.45s, unchanged inputs, existing cache/profile). No cold benchmark or build tuning occurred. Synthetic DOM, target-scrolled captures, offline response adapters and no physical popup/keyboard/IME claims remain explicit.
+
+Full parity remains ACTIVE. Next bounded work has started at `tmp/app-home-static-remount-20261025/checkpoint.json`: actual Messages/Home navigation after optional clear, null draft retention, new-mount initial fallback without replay, detached old-node inertness and explicit reselection. Its native acceptance is pending. All existing safety and permission boundaries remain unchanged.
+
+
+### Home static clear/reopen accepted; non-input wrappers started (2026-10-25)
+
+Acceptance: `tmp/app-home-static-remount-20261025/integration/acceptance.json`, SHA256 f82e3cefc49c310394e7a72f18f69871f81c7142888e58e27fd20cccbec50b4e. Both normal/narrow native cases passed:10stages,52captureedges,4intercepted prepared actions and all26 originals individually viewed. Actual Messages/Home callbacks retire the cleared native control; the new mount displays initial Alpha while committed state remainsnull with no replay. Detached old-node input is inert, and explicit Beta produces the second action per case.
+
+The cached Home source is supplied through an explicit offline adapter after the actual Home route. No live acquisition, physical popup/keyboard/IME or full-workspace claim. Format/build PASS376.35s unchanged inputs;36portable PASS. Production unchanged for this remount slice: core278/JS10 and prior desktopRust11 compilation carried. Rust desktop tests remain compile-only. A root audit import-path error was fixed before successful closed audit; no native failure was promoted or rerun unnecessarily.
+
+Full parity ACTIVE; build tuning FROZEN. Next source work started at `tmp/app-home-static-wrappers-20261025/checkpoint.json`: exact actions/section single-static admission, no input-required validation or clear affordance, inline rendering without duplicate dirty fields, and original Button/select block-loading semantics. Four new core tests are authored and locked suites are running; desktop/native acceptance is pending. No permission boundaries changed.
+
+
+2026-10-25 Home static wrappers integration checkpoint: core282 and JS10 PASS; portable74 PASS. Check A FAILED8 source errors; preserved. Scoped B repairs passed fmt/check (368.83s) and functional build (450.76s), unchanged inputs, binary bc1531d146edd045126a97a69d7752fdb9f207f3a1aa2baee27d61fafd53539a. Desktop Rust tests compile-only. Native B closed audit bbb35e24c8a055267cdc3688bea30bb3373835d97a46e36b5e3c2e6e3b98d338:11 cases,9PASS2FAIL,77stages,380capture edges,190original+2diagnostic PNGs,46prepared actions. All192 original files individually inspected across root and bounded workers. Selection failures are fixture explicit-null initial_option; C removes key. Separate normal-width visual defect: long statuses widen inline controls and wrap Send. Do not accept wrapper slice yet. C build running; let finish, apply prepared scoped CSS fix and actual cross-state geometry assertions, then rerun affected6 primary cases. Carry5 shared regression passes55images unchanged. Full parity ACTIVE; build tuning FROZEN.
+
+
+2026-10-25 ACCEPTED Home single static actions/accessory +ordinary Button processing. Acceptance e2b14e4e7392bf67bde11991b2f61433b50a4225a9d4b4a2646c7eac3916d6c9 at tmp/app-home-static-wrappers-20261025/integration/acceptance.json. Selected11PASS,77stages,372capture edges,186original PNGs individually inspected,46prepared blocks.actions; six freshD +five unchangedB shared cases. Core282/JS10/portable83 executedPASS; desktop12newRust compiled-only. D build379.62s unchangedinputs cb4814fdd867acbcc37f174ecd19940978e1e7d3405c25d56ed959cc0a1b77a9. A compile8errors fixed; B selection2 failures invalid explicit-null fixture corrected to absent key; B status-width visual defect fixed by scoped280px wrapper/statuswrap. FreshD geometry rejectsoldwidthgrowth and all6primarypass. Closed audit8c7ba473dc564f22b1a61f2a3168145f58df157c0dd6fa113200ac733bd5e1ef; all failed receipts and metadata-only audit import/path corrections preserved. Limits: synthetic guarded native controls, no physical dropdown/IME/liveSlack; explicit-null initial option unsupported; other control families remain open. Next ACTIVE: Home multi_static_select INPUT dispatch, retained behavior contract +read-only reuse map begun at tmp/app-home-multi-static-dispatch-20261025. Full parity ACTIVE; build tuning FROZEN.
+
+## Home multi-static input dispatch accepted; checkbox input next
+
+Acceptance: [multi-static](../tmp/app-home-multi-static-dispatch-20261025/integration/acceptance.json), SHA256 e9d23a7211348f42fe6a7da92802c26cabcd5aa8fa39fd88d80eb5804b49eb84. Full parity ACTIVE; build tuning FROZEN.
+
+Selected10 native cases PASS (6 C primary +4 B shared),88 semantic stages,339 original PNGs individually inspected,678 capture edges. Current source/core/helper bindings and owned process/terminal/closed-log/cleanup guards passed.56 production-intercepted blocks.actions requests are distinct from2 legacy Button activation builders. Ordered raw options, empty values, required-empty/overmax parent-before-validation, trailing-only500ms, immutable queued action/latest form, display props/current metadata, Button sibling custody and failure/retirement/no-replay are accepted only within recorded offline scope.
+
+Core290 executed PASS (143 form+147 home,8new); JS18 PASS; portable83 PASS. Desktop check B369.68s PASS including7new tests compiled only; prior LLVM test-link OOM limitation remains. Build B450.83s and C374.84s PASS unchanged inputs, no profile/cache experiments. C binary82885b5c15fc98d24e0e0c2672c9fddda501ddb0304d138da4e5961413bf785c. C format PASS. Initial check A failed5 ambiguous refresh imports; explicit one-file repair preserved. All6 B primary failures remain excluded: oversized narrow capture target, source-refresh capture settling and checkbox UA change trust oracle. C changed only private fixture helpers.rs/layout.js plus checker expectations; visibility/hit/full-model/custody guards remain strict. Four B shared cases and110 originals carry unchanged. C normals53+narrow176 originals complete. Metadata-only acceptance status-label preflight failure is preserved separately; no visual/native criteria changed.
+
+Limits remain: no live Slack/server, physical OS keyboard/IME, device/audio/notification or package actions. Exact mapped saved-option descriptor projection/full original lifecycle/raw ingress and noninput multi/confirm/visibility remain open. Quiet multi proves membership/existing wire order. Narrow fields need targeted scroll captures; toast overlays are recorded. Application exit1 is owned harness termination, separately from successful harness and cleanup.
+
+Next active slice: [Home checkbox input dispatch](../tmp/app-home-checkbox-dispatch-20261025/checkpoint.json). Actual quiet renderer/core serializer exists; dispatch admission and lifecycle remain incomplete. Start bounded retained-reference contract and source reuse map; no checkbox product edits or verification yet. Existing permissions/caches/evidence are preserved.
+
+## Home checkbox input dispatch accepted (offline)
+
+[Acceptance](../tmp/app-home-checkbox-dispatch-20261025/integration/acceptance.json): selected six C primary plus four B shared cases passed, 80 stages and 354 original PNGs individually inspected. Core740, bridge JS28, portable96, formatting, locked desktop check and build passed; eight new desktop Rust tests compiled only. The exact one-file private-fixture C delta carries four B shared cases/132 originals. All ten processes closed with clean owned cleanup. Sixty-four production-intercepted requests and two separate legacy Button activation builders are distinguished.
+
+Ordered raw survivors, quiet callbacks, required-empty state with earlier queued action, leading/trailing500ms, mounted prop retention, rich labels/descriptions, Button custody and source/owner/offline/uncertain/no-replay behavior are accepted only within the recorded offline scope. Exact original mapped saved-descriptor projection, broader raw ingress/lifecycle, non-input controls and physical/live Slack acceptance remain open. Failed compile A and three failed B primary receipts are retained, not promoted; C fixes fixture preflight and exact new sequence acknowledgement without changing production code.
+
+Full parity remains ACTIVE; build tuning remains FROZEN at the verified12-job baseline. Next: [ordinary Home radio input dispatch](../tmp/app-home-radio-dispatch-20261025/checkpoint.json), beginning with retained reference and actual source reuse maps. No live actions or other permission expansion.
+
+## Home radio input dispatch accepted (offline)
+
+[Acceptance](../tmp/app-home-radio-dispatch-20261025/integration/acceptance.json): fresh radio6 plus checkbox-selection2 and single-static-selection2 passed, 80 stages and 369 original PNGs individually inspected. Core756, bridge JS39, portable95, formatting, locked desktop check and build passed; ten new desktop Rust tests compiled only. Base reference32 and presentation supplement5 are distinct. All ten processes closed with clean owned cleanup; 68 production-intercepted preparations and two legacy Button activation builders are distinguished.
+
+Current option metadata, mounted value retention, hidden parent/Button state, empty-value selection, native same-checked silence, leading/trailing500ms and source/owner/failure/no-replay behavior are accepted only in the recorded offline scope. A real Messages/Home route with explicit existing cache adapter verifies visible initial Gamma versus committed empty state; Home-open network/cache acquisition is not claimed. Untouched radio error text/node/accessibility reference is absent while core validity stays intact. Source presentation was repaired before compile/native; no failed A attempt is claimed. Direct null/repeat callbacks and saved-null/empty-initial constructor variants remain reference/core coverage. Broader raw ingestion, physical/live and shared control error-context behavior remain open.
+
+Full parity remains ACTIVE; build tuning remains FROZEN at the verified 12-job baseline. Next: [shared Home validation feedback](../tmp/app-home-validation-feedback-20261025/checkpoint.json), prompted by concrete radio hook evidence and the generic error rendering still used elsewhere. Establish actual shared context/lifecycle before implementation; preserve settled control behavior and permission boundaries.
+
+
+## Shared Home validation feedback accepted (2026-10-25)
+
+Evidence: [acceptance](../tmp/app-home-validation-feedback-20261025/integration/acceptance.json), SHA256 4ae22c6e7b1abb5c0e0e81ed513bebfc5613e9f97df33d54bfc9293c23fc432e. Selected 10 native passes / 90 stages / 234 individually inspected originals:8 A unchanged passes plus2 B after the sole external fixture wait correction. Both original A failures remain failed; 12 original/diagnostic images inspected. Full parity ACTIVE, build tuning FROZEN.
+
+Ordinary Home parent feedback removed consistently while core validity/wire/suppression, local count warnings and request statuses remain separate. Reference 22, portable 205, repaired guard 10, fmt and locked check/build passed. Core 756 carried by exact hashes; desktop Rust tests compiled only. Native badInput reproduction, physical input/IME, live Slack and explicit backing error providers remain outside this acceptance. Next: [Home datepicker dispatch](../tmp/app-home-date-dispatch-20261025/checkpoint.json), source/reference investigation before implementation.
+
+
+## 2026-10-25 - Home datepicker input dispatch accepted
+
+[Acceptance](../tmp/app-home-date-dispatch-20261025/integration/acceptance.json), SHA256 134f24ade807b4028df77318462ec7cf33030ccc4ea4a5f6d60bcd82fe27aee6. Selected native evidence: 8 passing cases, 64 semantic stages, 306 capture edges, 153 original PNGs individually reviewed and 44 intercepted prepared blocks.actions envelopes. B text-state normal/narrow carry across the exact documented delta; E selection and mixed Button normal/narrow pass freshly; F retirement normal/narrow pass freshly using the unchanged E binary. All selected process closures and cleanup passed.
+
+Separate editable buffer/display/committed parent semantics, same-value suppression, optional first blank, required fallback, quiet Button sync, props/reset/cached return, leading/trailing latest state and acknowledged draft preservation are verified in the recorded offline scope. Empty-selector admission and bounded trusted-progress retry preserve valid actions across acquisition races. Source/owner retirement, uncertainty/offline no-replay and explicit recovery passed.
+
+Executed: reference 51+7+1, focused locked core 765, exact standalone production Rust comparator 5, Date JS10/shared selector JS11/legacy calendar JS17, portable Python102. E cargo fmt --check and locked desktop check --tests passed; build E passed406.53s, SHA85213a710f0c61a4b6ab1f56c7bc79f84ee6561bedbeb88cf8cf1888b44db017. Renderer tests compiled only due preserved prior test-link LLVM memory failure. No cold benchmarks, profile experiments or live Slack actions.
+
+Failures remain evidence: B six native failures (empty selector guard and old Button checker), C four date failures (received-progress race and null/focus fixture assumptions), E two retirement checker failures (Date status resides in its measured field wrapper). All157 failure originals were reviewed; none was reclassified. D check failed on Result-to-Option conversion and E repaired it. Final acceptance assembly also preserved its metadata flag-name correction. C Button passes were rerun after acquisition changed. Physical picker/IME/locale/full React ingestion/live server delivery and fresh native badInput remain unverified.
+
+Full parity remains ACTIVE, build tuning FROZEN. Next: [direct text/calendar action admission](../tmp/app-home-text-calendar-admission-20261025/checkpoint.json), starting with read-only source and fixture maps of its separate lock/busy path. No uncompiled next-slice implementation is introduced at this checkpoint.
+
+## 2026-10-25 - Direct text/calendar action admission accepted
+
+Full parity ACTIVE; build tuning FROZEN. Acceptance: tmp/app-home-text-calendar-admission-20261025/integration/acceptance.json (SHA256 e91897b6c63074c20250319f1a52068f74067d01f744315cdf18a9de26a6d880). Five native cases /40stages /21 intercepted requests /79original PNGs individually inspected passed. Normal/narrow admission and text-state plus normal date-selection preserve all original passive250ms, edge, terminal, closed-log/process/cleanup guards.
+
+Direct acquire now reuses the unchanged RetrySnapshot comparison. Actual native input seq1->2 during25/28ms observation yields old lease=false/current busy=false; fresh acquisition sends the original queued action once with committed B/native draft C distinct. Unseen DOM, source refresh and socket retirement refuse without replay; explicit new actions recover. Text remains trailing-only500ms with2s bounded acquisition and10ms compatible-progress waits. No sent-request retry. The12-path source delta is bound; core and comparator bytes are unchanged.
+
+B fmt/checktests/build passed (373.95s check,384.89s build), binary2e8e225b0fe9230966ba477e20b772cd934c55a3546a4514b7d07e2de17f53a3. Portable213 executed; core765 and pureRust5 carry unchanged. New renderer regressions compiled only; retained LLVM test-link memory limit unchanged. A check101/E0609 fixture field path and initial stale authored negative-test failure remain preserved. Corrected retained-draft oracle requires C across remount while widget/parent remain B. No live Slack, physical keyboard/picker/IME, new malformed-native-date or full reconnect claim; owner rebind is an explicit fixture adapter. Narrow viewport and tab overflow limits retained.
+
+Next active: tmp/app-home-time-dispatch-20261025/checkpoint.json, Home input-block timepicker dispatch source/reference mapping; datetimepicker separate. No next-slice draft or acceptance claimed. No extra build tuning or benchmark. Goal remains ACTIVE.
+
+Home Time dispatch accepted: 9 native cases, 79 stages, 201 original PNGs individually inspected; core777/reference142/JS23/portable103 passed. Failures and scope recorded in docs/parity-history-20261025.md and tmp/app-home-time-dispatch-20261025/integration/acceptance.json. Next active slice: Home datetimepicker dispatch mapping. Full parity ACTIVE; build tuning FROZEN.
+
+Datetime integration checkpoint: core789 and cached check/build A passed; shared4 native regressions passed with101 originals inspected. Datetime A4PASS/4FAIL exposed concrete quiet-lease/remount failures; fixes underway, no acceptance claim. See docs/parity-history-20261025.md and docs/CURRENT-STATE.md. Full goal ACTIVE; build tuning FROZEN.
+
+Home Datetime dispatch accepted within recorded offline scope:13 native cases/113 stages/85 intercepted requests;339 originals individually inspected. Core789 and cached check/buildB passed; renderer Rust tests compiled only. Two runtime bugs repaired; failed A evidence preserved. See docs/parity-history-20261025.md and current-state checklist. Next active:single-user Home dispatch; build tuning remains frozen.
+
+
+2026-10-25 checkpoint: Home single users_select dispatch accepted within offline scope: 11 native cases,82 stages,261 individually inspected accepted originals,800 core tests; renderer tests compile-only. Acceptance SHA7440a6ee93d33e5153c04e1210111c94c58a64491b1eda5b4d28e56300f476f1. Nine B passes plus two C admission passes with identical production/core source; A/B failures and inspected diagnostics preserved. Full goal ACTIVE, build tuning FROZEN. Next Home multi_users_select dispatch reference/source mapping started. See CURRENT-STATE.md and parity-history-20261025.md.
+
+
+2026-10-25 checkpoint: Home multi-user input dispatch accepted within offline scope:11cases/87stages/295accepted originals inspected,812core/47original/79portablePASS; renderer tests compiled only. Samebinary A10passed+B1shared-checker rerun; failed A preserved. Full parity ACTIVE/build FROZEN. Evidence tmp/app-home-multi-user-dispatch-20261025/integration/acceptance.json (c3b366d181390e3368376ac2dd98959b15a4962c37d0f09aeaaee2cd66aae8d6). Next Home single channels_select dispatch source/reference mapping started. See docs/CURRENT-STATE.md and dated history.
+
+
+2026-10-25 checkpoint: Home single-channel dispatch accepted within offline scope: 11 cases / 88 stages / 377 accepted original PNGs inspected; 822 focused core, 60 original and 131 portable PASS; renderer tests compiled only. Eight B passes plus three C passes share one binary; failed check A and native B receipts preserved. Full parity ACTIVE/build FROZEN. Evidence tmp/app-home-channel-dispatch-20261025/integration/acceptance.json SHA b0d0441655c46ab023bc8186100ebdcc59842a211bc88adc1e986cf2faacc2b1. Next Home multi_channels_select reference/source mapping started. See concise current state and dated history.
+
+
+2026-10-25: Home multi-channel dispatch accepted: 11 native cases/87 stages/35 actions/411 accepted PNGs (600 originals inspected), core835/original62/portable120. See docs/parity-history-20261025.md and tmp/app-home-multi-channel-dispatch-20261025/integration/acceptance.json. Same-binary checker recovery preserves all failed A receipts. Next single-conversation dispatch; full parity ACTIVE, build tuning FROZEN.
+
+
+2026-10-25: Home single-conversation dispatch accepted: 11 native cases/89 stages/45 actions/420 accepted PNGs (782 originals inspected), core847/original67/portable144. See docs/parity-history-20261025.md and tmp/app-home-conversation-dispatch-20261025/integration/acceptance.json. Same-binary checker recovery preserves eight failed A wrappers. Next multi-conversation dispatch; full parity ACTIVE, build tuning FROZEN.
+
+
+2026-10-25: Home multi-conversation dispatch accepted:11 offline native cases/88 stages/40 actions/9 reads/506 accepted PNGs; all632 originals inspected. Core861/original72/portable122 PASS;7 renderer tests compiled only. Eight A passes+three B fixture-only recoveries; failures preserved. Acceptance SHA f05c76387357e3c87879e81ef92bf8fb93919b97962570e639a03590ae6d9f6d. Full parity ACTIVE, build tuning FROZEN. Next Home external_select dispatch reference/maps; sole Cargo/native pipeline idle. See CURRENT-STATE and dated history.
+
+
+2026-10-25: Home external_select input dispatch accepted within offline scope:11 native cases94stages34actions43suggestions,876core,58+4original,89portable,12renderer compile-only;290 accepted/all562 originals inspected. Evidence tmp/app-home-external-dispatch-20261025/integration/acceptance.json SHA256 ff4308fa02fd02e880578a88a8f5ca9648da63308b8efe310a506277985fba14. Failed compile/native/checker evidence preserved. Next Home multi_external_select dispatch started; full parity ACTIVE, build tuning FROZEN. See docs/CURRENT-STATE.md and dated history.
+
+
+## Home multi external dispatch accepted; numeric input next
+
+Accepted [multi external dispatch](../tmp/app-home-multi-external-dispatch-20261025/integration/acceptance.json), SHA256 c128efe84c11c068dc5bb96a914bd3e8526620bdd6ce83a0b75ad2e088d0bba6: 11/11 native cases, 108 stages, 43 intercepted actions, 35 suggestion calls, 802 capture edges and 401 original PNGs individually reviewed. Core889/reference75/portable98 passed, renderer10 tests compiled only. Formatting/check/build/native all passed; check422.14s/build472.98s/native313.10s. Full ordered parent/action arrays, trailing-only callbacks, overmax/required-empty distinctions, mounted property effects, projected return, failure recovery, stale ownership and Date/Reset custody verified. Open-picker Remove disabled state fixed. Shared single external/quiet multi/multi-conversation compatibility passed. Exact offline/synthetic/retained-host/scroll limits remain in acceptance. Portable authored exception-type failure is preserved; no compiler or native failure.
+
+[Numeric inputs](../tmp/app-home-number-input-20261025/checkpoint.json) are next: current parser and renderer explicitly fall back to unsupported. Reference/source mapping started; no numeric implementation or acceptance yet. Full parity ACTIVE, build tuning FROZEN; no live or privileged actions authorized.
+
+
+## 2026-10-25 Home numeric acceptance; email inputs next
+
+Home number_input acceptance: tmp/app-home-number-input-20261025/integration/acceptance.json, SHA256 91def4a34d1f3afc0982f76c732de20587879849ce6f750bc2bdc090c7136418. Eleven cases/108 stages/58 actions/5 suggestions/850 capture edges/425 acceptance originals individually inspected. Eight numeric C cases passed281.39s; three shared B cases carry with exact unchanged-production proof. Core903/reference80/JS30/portable39 passed; seven new renderer Rust tests compiled only. CheckB396.36s/buildB468.62s/buildC397.62s; C only repairs two numeric fixture files. All guards/closed logs/cleanup passed.
+
+Preserved failures: coreA902+1 malformed new test fixture; checkA fixture import collision; nativeB5pass6fail (five await-borrow panics, one source-refresh/mount timeout). All256B originals inspected. Numeric production unchanged through C repair. Accepted numeric/local/parent, initial/saved/return/reset, Enter/change/blur/trailing delivery, queued-invalid parent, enabled overlap/failure/recovery, owner/source retirement, unseen Date/numeric custody and shared compatibility. Offline synthetic only; generic Modal/message numeric remains unsupported. Minor numeric failure-copy noun text action retained as next-slice repair.
+
+Next active milestone: Home email_text_input, tmp/app-home-email-input-20261025/checkpoint.json. Existing source falls through Unsupported; original contract/source maps first, no email product edits yet. Full goal ACTIVE, build tuning FROZEN, all permissions unchanged.
+
+## Home email input accepted; Home focus-on-load started (2026-10-26)
+
+Acceptance: [email](../tmp/app-home-email-input-20261025/integration/acceptance.json), SHA256 31a2c6739e5fd7e98c5dddc747468323416056eb350e40c60a5598ace6061cdd. Eleven offline cases,111 stages,900 guarded capture edges,450 individually inspected acceptance originals. Six C email cases plus two D retirement cases use identical C executable9f1a83944085d5922cf63359841e0026ae794a56ae01fb80776b8153136057ce; three shared A cases carry with exact source/CSS delta proof. Core918, reference47 composed scenarios/23validatorrows, JavaScript40, portable59; eight renderer Rust tests compiled only. Formatting/checkA/buildsA-B-C passed; check/coreA carry. NativeC267.68s; checker-only D69.14s, no rebuild.
+
+Supports Home email raw/local/parent values, explicit triggers, leading/trailing500ms, validation/queued-valid latest-parent state, mount ordering and saved-parent retention, fresh return/Reset, loading/failure/recovery/no-replay, Button siblings and stale source/owner/unseen-draft protection. Corrected icon spacing and generalized shared action failure copy verified. Generic Modal/message email, Home focus_on_load, physical/IME/live Slack and full original React lifecycle remain unverified/outside this scoped acceptance. Narrow screenshots cover a target-scroll union.
+
+Preserved A7pass4fail (fixture held-lease deadlock/checker preReset authority/visual overlap), B0pass8fail (wrong CSS wrapper caught by measured spacing), C6pass2fail (retired-owner null wrongly compared with empty timer list), all originals and archives. D corrected only the retired-owner assertion; strict custody/no-replay and current-owner timer checks remain. A442+B8+C390+D108 originals were individually inspected across accepted and failed runs. Root manifest-key and acceptance-report schema authoring failures are separately preserved; no execution outcomes were rewritten.
+
+Next active: [Home focus-on-load checkpoint](../tmp/app-home-focus-on-load-20261026/checkpoint.json). Reference worker executes retained single-line/multiline focus methods; renderer maps logical ownership/remount integration before changes. Full parity ACTIVE; build tuning FROZEN. No live actions, OS input, notifications/devices, package changes, cleanup, pushes or deployment authorized.
+
+
+## Home text-family focus_on_load acceptance ? 2026-10-26
+
+Accepted offline: [evidence](../tmp/app-home-focus-on-load-20261026/integration/acceptance.json), 14 cases/125 stages/292 capture edges/146 acceptance originals individually inspected. Eight C primary plus six B compatibility cases use unchanged B binary. Retained-original43, JS54, portable59 passed; five renderer Rust tests compiled only; independently locked core918 carried by exact unchanged inputs. Formatting/check B passed (394.43s); build B397.75s; native B190.90s (6pass8checkerfail), C111.02s (8pass).
+
+Owned quiet/dispatch Text multiline/singleline, Number and Email focus now honors raw boolean flags. Verify no-steal updates, Reset/source/fresh-visit/removal/kind lifecycle, disabled retry distinction, pending Email and lease refusal without replay. Product lifetime policy is explicit, not original full React reconciliation. All guards unchanged. Check A fixture import failure and B textarea/trusted-blur checker failures preserved; C changed only four checker/test helpers and used same executable. All88 failed originals inspected too. Original-resolution reread resolved a scaled-view newline impression; exact values retained internal newline. No live/physical-input, multi-true arbitration or broad full-shell claim.
+
+Next begun: [Home Date focus checkpoint](../tmp/app-home-date-focus-20261026/checkpoint.json). Retained Date focus includes select/editing-display behavior; pin its contract before implementation. Full parity ACTIVE; build tuning FROZEN.
+
+
+## 2026-10-26 Home Date native B integration checkpoint
+
+Full-parity goal ACTIVE; build tuning FROZEN. Home Date reference72, JS111 and checker84 passed before native execution. Locked test-target checks A/B passed415.92s/396.64s; cached builds A/B passed407.28s/394.46s with unchanged inputs. B executable dda06b87e264aa81fe337ce894e56d9e096d88009cc295ed3dbf276351d70625. Fifteen fixture-only schema/display/clock repairs between A/B are preserved in tmp/app-home-date-focus-20261026/integration/source-delta-b.json.
+
+Native B ran17cases in266.27s: 1pass16fail,95semantic stages,320capture edges,176original images. Closed audit tmp/app-home-date-focus-20261026/integration/closed-audit-b.json SHA0e3e331a7c85f1176ffc18f3ade86013c9ae4d59114c4abd7d4a89629e6e3bc4 preserves actual failures. Confirmed product defects: focused Date detachment loses focus on source remount; a retained Date registry drops its acknowledged input-only draft on a later visit. Scoped fixes separate draft retention from same-visit focus intent. Fixture Reset wrongly required active focus on a button it disables; checker failures include integral-float capture clocks, inherited case provenance, variable shadowing and a stale quiet-multi custody oracle. None is treated as accepted by replay alone. C repairs/validation pending. No live Slack or physical input/actions; earlier accepted parity remains scoped and carried forward.
+
+
+### Home Date native C checkpoint
+
+C locked test-target check423.20s/build399.73s passed unchanged inputs; executable f5985f8cd8537fb4db564a19367f6e1cb7d2791d8fb8cea7b0d1896b47daa27e. Renderer116JS and checker102portable passed before native. NativeC299.91s:9pass8fail,128semantic stages,386capture edges,201original PNGs. All201 individually inspected and exact union bound in tmp/app-home-date-focus-20261026/integration/visual-union-c.json SHAb3c03ef3c72408eae2f2881dfb28694b96b8e5d55183320742389371dc265f38. Closed audit9c264278df694ac82b2339f8fce83945f14f4bc78e8b1bcb443739e5d1c9e19a.
+
+All9compatibility cases passed, including retained uncommitted Date draft across owner revisit. Four primary focus/editing native bodies complete; exact Reset default-submit and cached-return-notice checker corrections diagnose their wrapper failures. Lifecycle removal is blocked by obsolete initialized Date parent token. Guardnormal strict capture equality observed a model change; retired-activity settlement is missing, exact differing key absent in old receipt. D scoped corrections preserve strict equality and add diagnostics, forward actual rawDirty internally to preserve known uncommitted draft removal refusal, and exercise pristine removal plus a new finite uncommitted-removal/refusal/restoration stage. No full Date acceptance yet. GoalACTIVE/buildtuningFROZEN. Four unchanged C compatibility paths may carry only with explicit D source-impact rationale; affected13cases rerun.
+
+
+## 2026-10-26 Home Date focus/editing accepted; Time focus begins
+
+Acceptance: tmp/app-home-date-focus-20261026/integration/acceptance.json SHA2564d46ac79efca0daf41d4516dbb9f4b4f92d8b77da8b6da0137f0dcb84edd11c4. Seventeen passing scoped cases,153 stages,404 capture edges,202 individually inspected acceptance originals:11 D,2 E same-D-binary lifecycle reruns,4 explicitly carried unchanged C compatibility cases. D build396.55s/check400.96s passed unchanged; E33.89s no rebuild. Reference72/rendererJS117/portable122 pass;8 renderer Rust regressions compile-only, core918 exact unchanged carry. All B176/C201/D165 originals inspected, failed receipts preserved. D real fixes protect uncommitted Date raw drafts while allowing pristine removal; focused source range and cross-visit draft fixes carry C. E only corrects restored conflict-notice clearing and exact BODY/Reset active-field projection. Offline DOM/intercepted requests only; calendar popup is an explicit adapter, physical popup/IME/live Slack unverified.
+
+Full-parity goal remains ACTIVE; build tuning FROZEN. Next Home Time focus_on_load starts with retained original combobox focus contract and minimal renderer/checker plan; prior97 Time parser/dispatch reference scenarios and compatible native evidence carry. No new product draft or Cargo/native run yet. Permissions unchanged.
+
+
+## 2026-10-26 Home Time focus native A and targeted repair
+
+Time focus source/reference35 new probes (+97 accepted reference carry), formatting and cached locked test-target check A397.918s/buildA402.263s passed. Binary dcc2b266e4ad97938f15b8cb3ec2dc7c2add8ed3d9ed83874510fb9eb199c809. Native A171.802s:4passed/7failed,48 completed semantic stages,276 capture edges,145 originals all individually inspected; audit404176a2357c70b973dd3d7565f9aee46bd7ead283b34cbff8a51fd10fdd1f55. Four Time compatibility cases passed. Primary failures: stale blur erased focus intent after raw draft survived; fixture could accept old same-visit DOM before replacement; cooldown disabled the fixture Refresh focus-away target. Datetime native11 stages completed but request8/9 order reversed across independent asynchronous blocks; precise metadata remained correct. Failed receipts preserved.
+
+Production C guards stale ordinary-Time blur; fixture B binds exact Home revision and acknowledged native mounts, uses enabled Home tab focus without navigation, preserves exact diagnostics. Checker B accepts exactly the two valid request8/9 bijections with full origin/state/timing checks;155 portable tests pass. New51 focused JS tests pass and archived B fails stale-blur regression. Three Rust regressions compile-only; core918 carried unchanged. Exact8compiled-path repair frozen; cached compile B session70391 running, then11case100stage native rerun. Full parity ACTIVE/build tuning FROZEN/permissions unchanged.
+
+
+### Home Time focus native B and fixture correction C
+
+B check403.6804s/build405.3241s passed unchanged. Native B231.1362s closed6pass/5fail,96 stages348 capture edges179 originals. Audit06e7c47909ca7b3d8aa3b0158596730188ae1321badee15515595a9a9ce26b25. All four Time compatibility cases and Datetime pass; normal focus passes. Narrow focus/guards bodies complete but checker rejects scroll retries and semantic-disabled beforeinput=false. Lifecycle removal observation incorrectly includes a closed retained entry; production ready() correctly enumerates current form fields. One fixture helper correction binds current keys and retains exact native acknowledgements;20 observer checks pass. Production unchanged. CompileC66340 running, no Time acceptance. Prior phrase "New51 focused JS tests" refers to51 executed checks, not51 newly authored. Full parity ACTIVE; build tuning FROZEN.
+
+
+### Home Time focus accepted; composite Datetime editing begun
+
+Acceptance tmp/app-home-time-focus-20261026/integration/acceptance.json SHAa97b6c6c35b2a91fcc0348d06e8e08e4fdd0aacb0e5a29131bf3df85fff3f610.11cases100stages356edges178originals individually inspected. FourC+twoD sameC executable23c18abb405efd8194c15c0d9887e9185c72eb62727904f9beace576e6bfb481, fiveBcompatible carried. Ccheck411.2031s/build396.7772s;D34.0768s no rebuild.51focusedJS168portable20observer tests;reference32+3 plus97carry;3Rusttests compileonly;core918 unchangedcarry. A/B/C failures and all145/179/54 originals preserved. Dchecker permits ack0 only in pending Time observations, final settled custody unchanged. Datetime helper B path omission disclosed and fully replayed under bound dependencies. Full parity ACTIVE, build tuning FROZEN. Next active tmp/app-home-datetime-editing-20261026: original Home drops focus flag; separate composite Date editabletext gap under reference and source-boundary work. No product edits/newbuilds yet.
+
+
+2026-10-26: Composite Datetime editableDate accepted10cases106stages342edges171inspected acceptedPNG; exact evidence `tmp/app-home-datetime-editing-20261026/integration/acceptance.json` SHA256c3ae148affb64a6d96b7c1f11f66a5fcb430df623cbc375e5ae9211a04db1e47. Actual failed runs preserved, all332 originals inspected. C Rustcheck explicitly carried to fixture-JS-only Dbuild; no new Rusttestexecution claim. Next ordinaryDate app-owned popup reference boundary started; fullparity ACTIVE and buildtuning FROZEN. See docs/CURRENT-STATE.md and parity-history-20261026.md.
+
+
+## 2026-10-26 ? Ordinary Date app calendar accepted; keyboard dismissal reference next
+
+Full parity ACTIVE; build tuning FROZEN. Acceptance: `tmp/app-home-date-popup-20261026/integration/acceptance.json` (SHA256 `5f414c4a086df4e331d182ef931c684a4f9e827fe1f66858730232cbfbf8cc40`). Six actual passing cases /79 stages /158 capture edges /79 accepted PNGs /20 intercepted requests; all114 C/D/E original screenshots individually reviewed. E narrow2/27 passed; D normal2/27 and C compatibility2/25 carry through source-impact and full original closed-wrapper replay. Native failures C2pass/4fail and D2pass/2fail remain preserved.
+
+Implemented app-owned calendar with exact locale weekday/blank-cell grid, four month/year controls, selected/today/active states, optional clear, required absence, keyboard movement, input Escape/outside close and exact input-before-trigger order. Native evidence exposed navigation closing after its button was replaced; composed event-path ownership fixes it. Narrow fixture corrections permit keyboard input only on already-focused controls covered solely by their current owned popup; foreign overlays/source/lease failures still refuse.
+
+Actual A locked test-target check403.87s and format passed. Latest cached buildD401.28s passed with unchanged inputs; later Rust checking/formatting explicitly carries across JS-only deltas. JS51 New York/37 UTC, original22 and portable75 pass; core918 unchanged-input carry. Renderer Rust tests compiled only due retained linker-memory limitation. An extra fullUTC test48/49 failure in the unchanged permissive parser is preserved, not silently fixed. No tuning, cold benchmarks or live/OS/device actions.
+
+Next active checkpoint: `tmp/app-home-date-popup-dismissal-20261026/checkpoint.json`. Inspect retained KqVf outer Popover Escape/focus behavior; no new product change or launch yet. Physical keyboard/IME, screen-reader/announcement behavior and broader shell coverage remain unverified.
+
+
+## 2026-10-26 - Ordinary Date calendar dismissal and opener focus accepted
+
+[Acceptance](../tmp/app-home-date-popup-dismissal-20261026/integration/acceptance.json): 4 cases / 69 stages / 138 capture edges / 69 accepted originals. B executes dismissal normal+narrow42; A passing popup+guards normal27 carries on identical binary with full wrapper replay. All113 A/B original PNGs individually inspected, including failed diagnostics. Local Escape propagation, exact opener restoration, pointer-trigger content focus, selection/clear ordering and silent source/lease custody verified.
+
+Formatting, locked test-target check404.54s and cached build398.86s passed; JS58 New York/44 UTC popup-editing, reference16+3 probes, portableA66 and focusedB21 passed (overlapping suites). Core918 carries via2040 unchanged inputs. Renderer Rust tests compiled only due retained linker-memory limit. NativeA2 failures are preserved checker overconstraints on hidden-day-to-BODY settlement; finite correction then freshB2 passes, no source change/rebuild. Physical input, broader nested popovers, exact React transition timing and prior UTC parser fallback limitation remain explicit.
+
+Full-parity goal ACTIVE, build tuning FROZEN. Next: [composite Datetime Date calendar](../tmp/app-home-datetime-popup-20261026/checkpoint.json), preserving independent raw Time draft and aggregate custody. No new permissions or live actions.
+
+
+## 2026-10-26 - Composite Datetime Date calendar accepted
+
+Accepted 8 cases/106 stages/212 capture edges/106 accepted images; all191 B/C/D/E originals individually inspected. Evidence: tmp/app-home-datetime-popup-20261026/integration/acceptance.json (SHA256 2a4a46c376ee7f306d0ad5e6dfd54b78b37fc1f678e6559897f4e472997a770a). Explicit same-production B/C carries and fixture-only D delta; E fixes finite1e-7px comparison only, no source rebuild. Initial compile/native/checker failures retained. D fmt/check/build passed; core918 carried, renderer Rust tests compiled only. JS74NY/32UTCpopup passed. Full parity ACTIVE, build tuning FROZEN. Next active checkpoint: tmp/canvas-last-live-retained-replacement-20261026/checkpoint.json; retained original-method composition underway before source edits. Existing safety boundaries unchanged.
+
+
+2026-10-26 Canvas retained last-live replacement: full locked core library A completed, 5403 passed / 4 failed / 6 ignored, 584.97s, inputs unchanged. Existing missing-owner safeguards caught unsound independent-tombstone fallback; A evidence preserved under tmp/canvas-last-live-retained-replacement-20261026/integration/core-a. Repair requires witnessed provenance while preserving normal CONTENT edit then replacement. Desktop fixtures remain source-only; no native acceptance. Full parity ACTIVE; build tuning FROZEN.
+
+2026-10-26 Canvas retained replacement core repair: B focused 275 PASS; C full 5410 PASS / 1 FAIL / 6 ignored exposed missing current-row ownership check. D full library 5411 PASS / 6 ignored, 519.40s, unchanged inputs. Private runtime provenance comes only from accepted pair plus complete readback; raw/inert recovery data cannot grant it. Exact row ownership/retained histories checked; ordinary edit-then-replace remains supported. Desktop check started; native acceptance pending. A/B/C failure/review evidence preserved.
+
+2026-10-26 Canvas native E: check400.73s/build484.93s PASS, binary828a78a96f85620b1b9a12b623f23a569ca5b946cdf47fd7635ef7f574b19c02. First normal run failed owned caption250ms probe (252.4ms, last_error1460) after cancelled; stationary pointer, owned foreground, clean process closure. Three completed captures plus diagnostic, all four individually inspected; no accepted native case. Exact failed audit/inspection in integration/closed-audit-e.json and inspection-e.json. Moving synchronous replacement intent/checkpoint validation to guarded workers; guard remains unchanged.
+
+
+2026-10-26 Canvas last-live replacement F: cached locked check/build PASS (403.17s/396.03s), unchanged inputs. Native first normal case reached six stages with all responsiveness probes passing, then failed: Confirmed pair did not retire exact journal. Seven original PNGs individually inspected; closed audit and inspection preserved under tmp/canvas-last-live-retained-replacement-20261026/integration. Exact preserved opaque section metadata is rejected during certification; narrow repair in progress. Not acceptance. Full parity ACTIVE; build tuning FROZEN.
+
+2026-10-26 Canvas core G/H/I: G existing structure regressions276 PASS;3 new tests failed synthetic envelope before certification. H envelope correction2 PASS/1 invalid omission assertion FAIL. I test-only correction3 PASS (180.19s unchanged inputs). Production unchanged since G; opaque metadata permitted only at exact witnessed-certificate seam. Raw missing-owner/history/mutation refusals retained. Root/core formatting PASS; cached application check I running. Native acceptance pending.
+
+2026-10-26 Canvas I: locked application check/build PASS438.34s/479.18s unchanged inputs. Native normal case FAIL after6stages: immediate fixture exact-row lookup races background reader mapping after editor dismissal. Closed read-only SQLite confirms zero active/archive receipts; saved5-row canonical equals full accepted ACK/readback, retained bytes exact. Seven original screenshots inspected; diagnostic empty row and Edit focus visible. Preserve failed run, add bounded fixture mount wait, no product/guard relaxation. Full parity ACTIVE; build tuning FROZEN.
+
+2026-10-26 Canvas J: fixture-only exact-row mount wait; fmt PASS/build PASS405.91s unchanged. Actual check I explicitly carried across approved single-file delta; no check J execution. Native normal/narrow edit-repeat, partial ACK, missing/mutated retained-row cases PASS (52stages). Retired FAIL after5stages on fixture reload ordering; unknown/restart skipped. Closed audit6cases5PASS1FAIL57stages114edges58originals, all individually inspected by workers. K will correct retired-only reload order; preserve passing J cases and run only remaining3. Full goal ACTIVE.
+
+2026-10-26 Canvas last-live retained replacement ACCEPTED bounded offline: acceptance 5b230b102e95919bb02892c9db8d7f72dea63d93150ca9aca323ee03035cec3f. Eight processes/seven logical cases/69 stages/138 capture edges/69 accepted PNGs; all93 originals inspected. First5J cases carry via exact retired-only fixture delta;3K cases PASS. Actual checkI carried across2fixture changes, K build PASS403.56s. Core279 relevant PASS across recorded production-identical runs. Full parity remains ACTIVE, build tuning FROZEN. Next milestone started: durable confirmed structural authority across cold restart, checkpoint tmp/canvas-confirmed-provenance-restart-20261026/checkpoint.json.
+
+2026-10-26 confirmed Canvas provenance restart core A:285 structure tests PASS0FAIL419.64s unchanged inputs. Six new tests cover confirmed storage/restore/repeat, exact retry/stale receipt, atomic rollback, scope/row/orphan rejection and v5-v6 migration. Review found artificial lifetime32scope cap copied from pending receipts; removing before desktop integration with33scope regression. Not native acceptance; full parity ACTIVE.
+
+2026-10-26 confirmed Canvas provenance restart core B gate PASS:7durable tests386.92s unchanged, including33real confirmedscopes. A285 broaderstructure passes carry across exact confirmed-cap-removal andnewtest two-file delta (286unique relevanttests). Independentcorefmt PASS. Desktop production+freshprocessfixture and finitechecker integration started; proposed9processes49stages. No native acceptance yet; fullgoalACTIVE/buildFROZEN.
+
+
+## 2026-10-26 - Confirmed Canvas provenance across cold restart accepted
+
+Accepted bounded offline9process49stage98edge49original-image matrix: normal/narrow two successive cold reopen cycles, restored structural actions, CONTENT edit then repeated replacement, cumulative history, changed-row refusal, pending precedence and inert fresh recovery. Acceptance: tmp/canvas-confirmed-provenance-restart-20261026/integration/acceptance.json SHA9c845d862d2e8056bd6a1233a8136b0f476f46a177ed66b1098be5e26ed42c95.
+Core A285+B7 gives286 unique relevant tests; root/core fmt PASS; actual check C229.59s and build D404.66s PASS. Renderer tests compile-only. Portable27+10 carried plus1 serialization regression; prior37 reused. All49 originals individually inspected; owned closure/cleanup verified. D reopen original failure preserved; exact SQL rows unchanged, list/tuple checker correction re-audited closed evidence without relaunch. Initial compile failures and build C disk-full failure preserved. Lossless compression of inactive evidence executables preserved hashes and recovered space; no deletion/profile change. Latest binary c9c3d2e22ac845919403a4abf00f539e3be60345da3bd94d6644a9746cf03215.
+Next active checkpoint: tmp/canvas-retirement-cancellation-20261026/checkpoint.json. Map actual component lifetime and deterministic held storage completion, then execute cancellation/close-reopen without stale authority or stranded finishing state. No cancellation-inside-commit acceptance yet. Full parity ACTIVE; build tuning FROZEN; all permission boundaries unchanged.
+
+
+## 2026-10-26 - Canvas retirement cancellation accepted; Profile tone-title next
+
+Fixed exact completed replacement operation left AwaitingRead after Close/storage retirement. Acceptance tmp/canvas-retirement-cancellation-20261026/integration/acceptance.json SHA2a8c5f8235b7260459e1af2b9e2fceb09b4ae5449f7e177fbf53e1f886c2aa05:4process24stage48edge24originals individually inspected. Actual Refresh waiter drops on Close at preworker/postworker boundaries; retained task retires while closed, exact finalSQL, no replay, usable reopen/Edit/Cancel. No inside-SQLite cancellation claim; postcommit stage table body inferred, closedSQL directly observed. Root formatting, check B413.45s/build B406.17s and portable17 PASS. New renderer regressions compile-only; unchanged2,045core source files carry286 unique relevant tests. A visibility failure preserved/corrected one fixture line. Binary882d5e0394161103021e44c446b372ee2cf266abe7cde444dbf8db7cd3e61deb.
+All24 Canvas images passed bounded visual review; pre-existing closed-shell synthetic text mojibake traced to boot.rs784/adjacent emoji remains explicitly outside whole-shell typography acceptance.
+Next active tmp/profile-canvas-tone-title-20261026/checkpoint.json. REA-guided retained original title/emoji factories executed43 cases with immutable inputs (reference contract0258ad57054dde8ec1ae3cceacebedec1edabc8a528d376a5bb3fa04b8be5420). Disjoint core/desktop implementation begun; raw tone fields, original precedence/coercion, label custody and mounted Save/readback required. No new product checks/native acceptance yet. Full parity ACTIVE; build tuning FROZEN and permissions unchanged.
+
+
+2026-10-26 Profile Canvas tone title: core/desktop/helper A frozen. Root/core fmt PASS; portable16+26 PASS. Focused locked core A failed382.21s with LLVM no space on device before tests executed; inputs unchanged. C: full; lossless compression checked unchanged hashes but recovered no usable space. App check/build/native pending. User asked to free8GB or review an obsolete cache; no destructive cleanup authorized. Full parity ACTIVE; build tuning FROZEN. See tmp/profile-canvas-tone-title-20261026/checkpoint.json.
+
+
+2026-10-26 user pause/redirection wrap:58focused core tests PASS. Existing app check A completed FAIL308.70s E0603 private profile_sections import at desktop fixture emoji_title.rs95; source unchanged. No repair/build/native after pause. Cleanup inventory272bytecode dirs81,848,073bytes; automatic approval review rejected both deletion forms, no agent deletion. Source tests/build caches/evidence preserved. Goal PAUSED.

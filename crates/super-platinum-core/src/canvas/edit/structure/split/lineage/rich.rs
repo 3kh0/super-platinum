@@ -48,6 +48,25 @@ pub(super) fn descendants(
     draft: &TextDraft,
     prefix_len: usize,
 ) -> Result<(), Error> {
+    descendants_policy(doc, tail, draft, prefix_len, false)
+}
+
+pub(super) fn independent_descendants(
+    doc: &Automerge,
+    tail: automerge::ChangeHash,
+    draft: &TextDraft,
+    prefix_len: usize,
+) -> Result<(), Error> {
+    descendants_policy(doc, tail, draft, prefix_len, true)
+}
+
+fn descendants_policy(
+    doc: &Automerge,
+    tail: automerge::ChangeHash,
+    draft: &TextDraft,
+    prefix_len: usize,
+    independent: bool,
+) -> Result<(), Error> {
     let prefix = doc.fork_at(&[tail]).map_err(|_| Error::Unsupported)?;
     let prefix_changes = prefix.get_changes(&[]);
     let changes = doc.get_changes(&[tail]);
@@ -82,7 +101,7 @@ pub(super) fn descendants(
         // next change must depend on the immediately preceding one, excluding
         // concurrent branches even when their text projection happens to agree.
         if actor.len() != 20
-            || !actor.ends_with("00000000")
+            || (!independent && !actor.ends_with("00000000"))
             || change.seq() != next
             || change.deps().is_empty()
             || change.deps().len() > 1024

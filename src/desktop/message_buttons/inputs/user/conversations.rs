@@ -135,7 +135,7 @@ fn effective_user<'a>(w: &'a Workspace, u: &'a User) -> &'a User {
         })
         .unwrap_or(u)
 }
-fn effective_channel<'a>(w: &'a Workspace, c: &'a Channel) -> &'a Channel {
+pub(crate) fn effective_channel<'a>(w: &'a Workspace, c: &'a Channel) -> &'a Channel {
     w.channels
         .get(&c.id)
         .filter(|old| !newer(c.updated, old.updated))

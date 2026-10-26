@@ -371,3 +371,31 @@ pub(crate) fn group_event(shell: &mut ShellState, raw: Value) -> Result<(), Stri
     shell.refresh_from_core();
     Ok(())
 }
+
+/// Closed navigation fixture: only an unchanged captured credential owner may
+/// attach the synthetic profile response adapter to a new real Profile visit.
+pub(crate) fn rebind_deletion_navigation(
+    shell: &mut ShellState,
+    owner: &crate::directory_member_fetches::Context,
+) -> Result<(), String> {
+    if !super::deletion_event::named()
+        || super::deletion_event::case() != "known"
+        || !owner.account_current(shell)
+        || shell.core.active_team.as_deref() != Some(owner.session.team_id.as_str())
+    {
+        return Err("Closed original navigation owner required".into());
+    }
+    let token = Token::capture(shell).ok_or("Missing returned owner")?;
+    let identity = shell
+        .profile_edit
+        .sections
+        .fixture
+        .as_mut()
+        .and_then(|f| f.mentions.as_mut())
+        .ok_or("Missing retained fixture adapter")?;
+    if !Arc::ptr_eq(&identity.transport, &owner.transport) || identity.token.owner != token.owner {
+        return Err("Navigation replaced fixture credentials".into());
+    }
+    identity.token = token;
+    Ok(())
+}

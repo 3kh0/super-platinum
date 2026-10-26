@@ -263,3 +263,56 @@ fn unavailable_history_preserves_raw_label_fallback_without_minting_order() {
     );
     assert!(s.core.workspaces[TEAM].directory_usergroups.is_legacy());
 }
+
+#[test]
+fn publication_observer_captures_exact_paired_successor_before_later_queue() {
+    let mut s = shell();
+    let before = snapshot(&s);
+    let seen = std::cell::RefCell::new(None);
+    let mut first = work(
+        &mut s,
+        metadata(
+            vec![json!({"id":GROUP,"name":"One","handle":"one"})],
+            NativeMembers::Preserve,
+        ),
+    );
+    let pending = first.next(&s, &|_| true).unwrap().unwrap();
+    let reply = reply(&pending);
+    first
+        .finish_observed(&mut s, pending, reply, &|_| true, &|s| {
+            *seen.borrow_mut() = Some(snapshot(s));
+        })
+        .unwrap();
+    let observed = seen.into_inner().unwrap();
+    let o = Context::capture(&s, TEAM).unwrap();
+    let w = &s.core.workspaces[TEAM];
+    assert!(!before.current(
+        &w.directory_usergroups,
+        &o.account,
+        &o.session,
+        o.epoch,
+        &w.usergroups
+    ));
+    assert!(observed.current(
+        &w.directory_usergroups,
+        &o.account,
+        &o.session,
+        o.epoch,
+        &w.usergroups
+    ));
+    let _next = work(
+        &mut s,
+        metadata(
+            vec![json!({"id":GROUP,"handle":"two"})],
+            NativeMembers::Preserve,
+        ),
+    );
+    let w = &s.core.workspaces[TEAM];
+    assert!(!observed.current(
+        &w.directory_usergroups,
+        &o.account,
+        &o.session,
+        o.epoch,
+        &w.usergroups
+    ));
+}

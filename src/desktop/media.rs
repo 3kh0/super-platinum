@@ -26,11 +26,11 @@ pub(crate) use uri::MediaUri;
 #[cfg(target_os = "windows")]
 const WINDOWS_BROWSER_ARGS: &str = "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --autoplay-policy=no-user-gesture-required --unsafely-treat-insecure-origin-as-secure=http://dioxus.index.html";
 
-/// A 64×64 translucent grey skeleton box.
+/// A 64Ã—64 translucent grey skeleton box.
 ///
 /// Sources are registered during projection and fetched afterwards, so the
 /// WebView always asks for some assets before their bytes exist. Answering that
-/// with 404 paints the platform's broken-image icon — a hard visual error for
+/// with 404 paints the platform's broken-image icon â€” a hard visual error for
 /// what is only a load in flight. Sized elements (avatars, emoji, icons) stretch
 /// this to their own box; block and attachment images have no intrinsic size in
 /// CSS, so 64 square is what they reserve until the real image arrives.
@@ -47,7 +47,7 @@ const PLACEHOLDER_PNG: &[u8] = &[
     0xe6, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
 ];
 
-/// A fully transparent 1×1 PNG for emoji, which sit inline in a sentence: a grey
+/// A fully transparent 1Ã—1 PNG for emoji, which sit inline in a sentence: a grey
 /// box mid-word reads as damage, whereas a gap reads as text still loading.
 const TRANSPARENT_PNG: &[u8] = &[
     0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
@@ -102,7 +102,7 @@ enum Backoff {
     /// sweep polls every second, so retrying this is a permanent stream of
     /// requests that can never succeed.
     Abandoned,
-    /// A timeout, a refused connection, or a server error — all of which pass.
+    /// A timeout, a refused connection, or a server error â€” all of which pass.
     /// Retried on a doubling delay so a boot while offline does not turn into a
     /// request per second per image.
     Retry { failures: u32, at: Instant },
@@ -112,7 +112,7 @@ enum Backoff {
 struct MediaAsset {
     mime: String,
     bytes: Arc<[u8]>,
-    /// Bytes worth painting that are not the ones asked for — the slot's
+    /// Bytes worth painting that are not the ones asked for â€” the slot's
     /// previous picture, recovered from disk. They stay pending so the current
     /// image replaces them once it downloads.
     provisional: bool,
@@ -178,8 +178,8 @@ struct MediaSource {
     snapshot: Option<std::sync::Weak<[u8]>>,
     mime: String,
     authenticated: bool,
-    /// Registered but not queued. Full-resolution originals — a 60 MB video, a
-    /// photo behind a thumbnail — exist as assets so the viewer can open them,
+    /// Registered but not queued. Full-resolution originals â€” a 60 MB video, a
+    /// photo behind a thumbnail â€” exist as assets so the viewer can open them,
     /// but nothing downloads them until somebody asks.
     deferred: bool,
     /// A finite emoji catalog can register appearances without prefetching all
@@ -316,7 +316,7 @@ impl MediaRegistry {
         self.register(kind, url, mime, is_slack_hosted(url))
     }
 
-    /// Registers a profile picture under a stable identity — a Slack user id, or
+    /// Registers a profile picture under a stable identity â€” a Slack user id, or
     /// the bot/webhook icon key from `state::message_avatar`.
     ///
     /// The identity, not the URL, is what the on-disk cache is keyed by: Slack
@@ -332,8 +332,8 @@ impl MediaRegistry {
         )
     }
 
-    /// Registers an image the UI paints at icon size — a context-block avatar,
-    /// an unfurl service icon — which has no identity beyond its URL. Cached so
+    /// Registers an image the UI paints at icon size â€” a context-block avatar,
+    /// an unfurl service icon â€” which has no identity beyond its URL. Cached so
     /// a channel of bot posts stops re-downloading the same faces every launch.
     pub fn register_icon(&self, kind: MediaAssetKind, url: &str) -> MediaAssetId {
         self.register_slotted(kind, format!("icon/{url}"), url, "image/png")
@@ -528,7 +528,7 @@ impl MediaRegistry {
 
     /// Whether this asset has bytes to paint right now.
     ///
-    /// Callers with a real fallback — initials, an event glyph — should render
+    /// Callers with a real fallback â€” initials, an event glyph â€” should render
     /// that instead of an `img` whose bytes have not landed. The placeholder the
     /// protocol serves is only for images with nothing better to show.
     pub fn is_ready(&self, id: &MediaAssetId) -> bool {
@@ -989,6 +989,9 @@ pub fn desktop_config(media: MediaRegistry) -> Config {
                 | "canvas-live-split-child-delete-narrow"
                 | "canvas-retained-pair-delete-narrow"
                 | "canvas-owner-first-pair-delete-narrow"
+                | "canvas-last-live-replacement-narrow"
+                | "canvas-confirmed-provenance-narrow"
+                | "canvas-retirement-cancellation-narrow"
                 | "canvas-structure-mixed-narrow"
                 | "canvas-replacement-narrow"
                 | "canvas-structure-text-narrow"
@@ -1175,6 +1178,43 @@ pub fn desktop_config(media: MediaRegistry) -> Config {
                 | "slack-links-narrow"
                 | "app-shortcuts-narrow"
                 | "app-home-inputs-narrow"
+                | "app-home-external-select-narrow"
+                | "app-home-external-dispatch-narrow"
+                | "app-home-multi-external-dispatch-narrow"
+                | "app-home-number-input-narrow"
+                | "app-home-email-input-narrow"
+                | "app-home-focus-on-load-narrow"
+                | "app-home-multi-external-select-narrow"
+                | "app-home-channel-select-narrow"
+                | "app-home-conversation-select-narrow"
+                | "app-home-multi-conversation-select-narrow"
+                | "app-home-text-dispatch-narrow"
+                | "app-home-text-button-sync-narrow"
+                | "app-home-text-focus-narrow"
+                | "app-home-static-dispatch-narrow"
+                | "app-home-static-remount-narrow"
+                | "app-home-static-wrappers-narrow"
+                | "app-home-multi-static-dispatch-narrow"
+                | "app-home-checkbox-dispatch-narrow"
+                | "app-home-radio-dispatch-narrow"
+                | "app-home-date-dispatch-narrow"
+                | "app-home-date-focus-narrow"
+                | "app-home-date-popup-narrow"
+                | "app-home-time-dispatch-narrow"
+                | "app-home-time-focus-narrow"
+                | "app-home-datetime-editing-narrow"
+                | "app-home-datetime-popup-narrow"
+                | "app-home-datetime-dispatch-narrow"
+                | "app-home-multi-channel-select-narrow"
+                | "app-home-user-select-narrow"
+                | "app-home-user-dispatch-narrow"
+                | "app-home-channel-dispatch-narrow"
+                | "app-home-multi-channel-dispatch-narrow"
+                | "app-home-conversation-dispatch-narrow"
+                | "app-home-multi-conversation-dispatch-narrow"
+                | "app-home-multi-user-dispatch-narrow"
+                | "app-home-multi-user-select-narrow"
+                | "app-home-unified-context-narrow"
                 | "app-home-calendar-narrow"
                 | "app-home-workflow-auth-narrow"
                 | "app-home-workflow-auth-held-narrow"
@@ -1601,7 +1641,7 @@ mod tests {
         assert!(at > Instant::now());
         drop(backoff);
 
-        // Once the delay is up the source is tried again — an app that booted
+        // Once the delay is up the source is tried again â€” an app that booted
         // offline must not be stuck showing initials for the whole session.
         registry.backoff.write().unwrap().insert(
             stalled.clone(),

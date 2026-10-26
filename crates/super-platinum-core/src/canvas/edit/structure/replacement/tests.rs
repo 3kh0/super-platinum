@@ -301,3 +301,9 @@ fn whole_pair_readback_requires_new_history_and_exact_old_tombstone_or_sealed_ab
 mod journal;
 
 mod local_review;
+
+mod retained;
+
+mod native_opaque;
+
+mod durable;

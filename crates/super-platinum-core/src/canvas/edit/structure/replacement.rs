@@ -5,6 +5,10 @@
 use super::*;
 use crate::canvas::wire::{DocumentData, EditAck};
 
+mod confirmed;
+pub(super) mod eligibility;
+pub use confirmed::ConfirmedReplacement;
+
 pub struct ReplacementIntent {
     inventory: Inventory,
     title: CanonicalTitle,
@@ -18,12 +22,9 @@ pub struct ReplacementIntent {
 /// Canonical shape is necessary; the explicitly named public constructor also
 /// requires its caller to own a Main Canvas view and the targeted body action.
 fn sole_body(inventory: &Inventory, target: &str) -> Result<(), Error> {
-    if inventory.sections.len() != 2 || inventory.ordered.last().map(String::as_str) != Some(target)
-    {
-        return Err(Error::Unsupported);
-    }
-    let title = inventory.get(&inventory.ordered[0])?;
-    if title.section_type()? != Some(64) || title.style()? != Some(48) {
+    let rows = inventory.sections.values().collect::<Vec<_>>();
+    let candidate = eligibility::last_live(&rows)?;
+    if candidate.id() != target {
         return Err(Error::Unsupported);
     }
     Ok(())
@@ -31,11 +32,6 @@ fn sole_body(inventory: &Inventory, target: &str) -> Result<(), Error> {
 
 /// Read-only presentation check; creates neither an ID nor a session.
 pub fn can_replace_main_canvas(snapshot: &CanvasCollabSnapshot, target: &str, now: u64) -> bool {
-    // Ordinary multi-row canvases must not clone/validate their complete
-    // inventory once for every visible paragraph during presentation.
-    if snapshot.sections.len() != 2 {
-        return false;
-    }
     (|| -> Result<(), Error> {
         let inventory = Inventory::capture(snapshot)?;
         sole_body(&inventory, target)?;
@@ -105,6 +101,8 @@ impl ReplacementIntent {
         now: u64,
     ) -> Result<PreparedReplacement, Error> {
         self.inventory.revalidate(fresh)?;
+        let carried = self.inventory.carry(fresh)?;
+        let fresh = &carried;
         self.title.revalidate(fresh)?;
         sole_body(&self.inventory, self.original.id())?;
         self.inventory.paragraph(&self.original, now)?;
@@ -131,6 +129,7 @@ impl ReplacementIntent {
             session: self.session.clone(),
         }
         .prepare(fresh, now)?;
+        let provenance_basis = provenance::Evidence::basis(&self.inventory)?;
         // A dedicated pair: the single-row safe_delete guard stays unchanged.
         let deletion = PreparedStructureEdit::build(
             StructureIntent {
@@ -168,6 +167,7 @@ impl ReplacementIntent {
             insertion,
             original: self.original,
             data,
+            provenance_basis,
         })
     }
 }
@@ -177,6 +177,7 @@ pub struct PreparedReplacement {
     insertion: PreparedStructureEdit,
     original: Section,
     data: RawMessage,
+    provenance_basis: provenance::Evidence,
 }
 impl PreparedReplacement {
     pub fn workspace_id(&self) -> &str {
@@ -276,22 +277,43 @@ impl PreparedReplacement {
             result.final_data = Some(DocumentData::from_raw(raw)?);
             Ok(result)
         };
+        // Durability requires the exact reserved checkpoint. Keep a checkpoint
+        // failure separate from the existing ACK-only contract.
+        let checkpoint = self.checkpoint();
         let deletion = self.deletion.validate_ack(&member(old)?)?;
         let insertion = self.insertion.validate_ack(&member(new)?)?;
         Ok(AcceptedReplacement {
+            confirmed_receipt: std::sync::OnceLock::new(),
+            checkpoint,
             deletion,
             insertion,
             original: self.original,
+            provenance_basis: self.provenance_basis,
         })
     }
 }
 
 pub struct AcceptedReplacement {
+    confirmed_receipt: std::sync::OnceLock<String>,
+    checkpoint: Result<recovery::Checkpoint, Error>,
+    provenance_basis: provenance::Evidence,
     deletion: AcceptedStructure,
     insertion: AcceptedStructure,
     original: Section,
 }
 impl AcceptedReplacement {
+    /// Mint local provenance only after a complete ACK and exact full readback.
+    /// An unknown journal receipt or freshly decoded snapshot cannot call this.
+    pub fn certify_readback(
+        &self,
+        fresh: &CanvasCollabSnapshot,
+    ) -> Result<CanvasCollabSnapshot, Error> {
+        if !self.confirms_readback(fresh)? {
+            return Err(Error::Unconfirmed);
+        }
+        provenance::certify(&self.provenance_basis, fresh, self.original.id())
+    }
+
     pub fn target_section(&self) -> &str {
         self.deletion.target_section()
     }

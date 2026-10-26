@@ -154,7 +154,7 @@ pub(super) async fn run(
         state,
         "pair-deleted",
         &mut ordinal,
-        row(desktop, &next, true, rich_gap()).await?,
+        row(desktop, &next, true, true).await?,
     )
     .await?;
     open(desktop, "neighbor", false).await?;
@@ -182,7 +182,7 @@ pub(super) async fn run(
         state,
         "remaining-confirmed",
         &mut ordinal,
-        row(desktop, "neighbor", true, rich_gap()).await?,
+        row(desktop, "neighbor", true, true).await?,
     )
     .await?;
     terminal(state, desktop, ordinal).await

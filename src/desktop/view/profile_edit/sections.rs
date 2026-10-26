@@ -115,10 +115,12 @@ fn rich_pane(
         };
     }
     let labels = labels.unwrap();
+    let label_units = controller::rich::label_units(&state.peek(), visit, serial, &id, key);
+    let presentations = controller::rich::presentations(&state.peek(), visit, serial, &id, key);
     rsx! {
         div{key:"rich-{key}",id:"profile-section-rich-pane","data-rich-visit":key,"data-composing":"false",
             onmounted:move |_|{dioxus::document::eval(&format!("const pane=document.getElementById('profile-section-rich-pane');if(pane?.dataset.richVisit==='{key}'){{pane.addEventListener('compositionstart',()=>pane.dataset.composing='true');pane.addEventListener('compositionend',()=>pane.dataset.composing='false');}}"));},
-            crate::view::rich_editor::RichEditor{id:"profile-section-rich",label,labels,blocks:serialized,disabled:locked,expected_generation:Some(serial)}
+            crate::view::rich_editor::RichEditor{id:"profile-section-rich",label,labels,presentations,label_units,blocks:serialized,disabled:locked,expected_generation:Some(serial)}
             rich::Suggestions{key:"profile-rich-completion-{key}",state,visit,serial,mount:key}
             button{r#type:"button",disabled:locked,onclick:move |_|{
                 let id=id.clone();spawn(async move{

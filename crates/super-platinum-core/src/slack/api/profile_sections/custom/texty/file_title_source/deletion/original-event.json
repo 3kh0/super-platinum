@@ -1,0 +1,1026 @@
+{
+  "ok": true,
+  "count": 8,
+  "vectors": [
+    {
+      "name": "known-single",
+      "before": {
+        "FSTATUS0001": {
+          "id": "FSTATUS0001",
+          "mode": "quip",
+          "filetype": "quip",
+          "title": "Original title",
+          "updated": 101,
+          "opaque": {
+            "old": true
+          }
+        },
+        "FOTHER001": {
+          "id": "FOTHER001",
+          "mode": "quip",
+          "title": "Other"
+        }
+      },
+      "messages": [
+        {
+          "type": "file_deleted",
+          "file_id": "FSTATUS0001",
+          "event_ts": "2000000000.1"
+        }
+      ],
+      "after": {
+        "FSTATUS0001": {
+          "id": "FSTATUS0001",
+          "mode": "tombstone",
+          "is_deleted": true
+        },
+        "FOTHER001": {
+          "id": "FOTHER001",
+          "mode": "quip",
+          "title": "Other"
+        }
+      },
+      "eventCalls": [],
+      "eventEffects": [
+        {
+          "kind": "side",
+          "name": "clear-file-session",
+          "args": [
+            [
+              "FSTATUS0001"
+            ]
+          ]
+        },
+        {
+          "kind": "manager-delete",
+          "teamId": "TEVENT",
+          "ids": [
+            "FSTATUS0001"
+          ]
+        },
+        {
+          "kind": "side",
+          "name": "detach-message-files",
+          "args": [
+            {
+              "fileIds": [
+                "FSTATUS0001"
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "side",
+          "name": "quip-mention-count",
+          "args": [
+            {
+              "channelId": "canvas-channel:FSTATUS0001",
+              "mentionCount": 0,
+              "shouldSuppress": false
+            }
+          ]
+        },
+        {
+          "kind": "side",
+          "name": "quip-mention-clear",
+          "args": [
+            {
+              "channelId": "canvas-channel:FSTATUS0001"
+            }
+          ]
+        },
+        {
+          "kind": "side",
+          "name": "quip-derived-cleanup",
+          "args": [
+            {
+              "fileId": "FSTATUS0001"
+            }
+          ]
+        },
+        {
+          "kind": "side",
+          "name": "list-delete",
+          "args": [
+            {
+              "listsIds": []
+            }
+          ]
+        }
+      ],
+      "eventWrites": [
+        {
+          "rows": [
+            {
+              "id": "FSTATUS0001",
+              "mode": "tombstone",
+              "is_deleted": true
+            }
+          ],
+          "shard": null
+        }
+      ],
+      "lookup": {
+        "id": "FSTATUS0001",
+        "mode": "tombstone",
+        "is_deleted": true
+      },
+      "sameRow": true,
+      "lookupCalls": [],
+      "slug": {
+        "label": "Deleted canvas",
+        "labelResolverParams": {
+          "variant": "deleted",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Deleted canvas",
+          "plainTextSectionPreview": ""
+        },
+        "iconName": "trash",
+        "isDisabled": true,
+        "isLocked": false,
+        "isLoading": false
+      },
+      "op": {
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "id": "FSTATUS0001",
+        "label": "Deleted canvas",
+        "type": "canvas"
+      },
+      "formatCalls": [],
+      "rawToken": {
+        "type": "canvas",
+        "file_id": "FSTATUS0001",
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "style": {
+          "bold": true,
+          "italic": true
+        },
+        "opaque": {
+          "keep": 2
+        }
+      }
+    },
+    {
+      "name": "known-array-dedupe",
+      "before": {
+        "FSTATUS0001": {
+          "id": "FSTATUS0001",
+          "mode": "quip",
+          "filetype": "quip",
+          "title": "Original title",
+          "updated": 101,
+          "opaque": {
+            "old": true
+          }
+        },
+        "FOTHER001": {
+          "id": "FOTHER001",
+          "title": "Other"
+        }
+      },
+      "messages": [
+        {
+          "type": "file_deleted",
+          "file_ids": [
+            "FSTATUS0001",
+            "FSTATUS0001",
+            "FABSENT001",
+            null,
+            ""
+          ],
+          "file_id": "FOTHER001"
+        }
+      ],
+      "after": {
+        "FSTATUS0001": {
+          "id": "FSTATUS0001",
+          "mode": "tombstone",
+          "is_deleted": true
+        },
+        "FOTHER001": {
+          "id": "FOTHER001",
+          "title": "Other"
+        }
+      },
+      "eventCalls": [],
+      "eventEffects": [
+        {
+          "kind": "side",
+          "name": "clear-file-session",
+          "args": [
+            [
+              "FSTATUS0001",
+              "FABSENT001"
+            ]
+          ]
+        },
+        {
+          "kind": "manager-delete",
+          "teamId": "TEVENT",
+          "ids": [
+            "FSTATUS0001"
+          ]
+        },
+        {
+          "kind": "side",
+          "name": "detach-message-files",
+          "args": [
+            {
+              "fileIds": [
+                "FSTATUS0001"
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "side",
+          "name": "quip-mention-count",
+          "args": [
+            {
+              "channelId": "canvas-channel:FSTATUS0001",
+              "mentionCount": 0,
+              "shouldSuppress": false
+            }
+          ]
+        },
+        {
+          "kind": "side",
+          "name": "quip-mention-clear",
+          "args": [
+            {
+              "channelId": "canvas-channel:FSTATUS0001"
+            }
+          ]
+        },
+        {
+          "kind": "side",
+          "name": "quip-derived-cleanup",
+          "args": [
+            {
+              "fileId": "FSTATUS0001"
+            }
+          ]
+        },
+        {
+          "kind": "side",
+          "name": "list-delete",
+          "args": [
+            {
+              "listsIds": []
+            }
+          ]
+        }
+      ],
+      "eventWrites": [
+        {
+          "rows": [
+            {
+              "id": "FSTATUS0001",
+              "mode": "tombstone",
+              "is_deleted": true
+            }
+          ],
+          "shard": null
+        }
+      ],
+      "lookup": {
+        "id": "FSTATUS0001",
+        "mode": "tombstone",
+        "is_deleted": true
+      },
+      "sameRow": true,
+      "lookupCalls": [],
+      "slug": {
+        "label": "Deleted canvas",
+        "labelResolverParams": {
+          "variant": "deleted",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Deleted canvas",
+          "plainTextSectionPreview": ""
+        },
+        "iconName": "trash",
+        "isDisabled": true,
+        "isLocked": false,
+        "isLoading": false
+      },
+      "op": {
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "id": "FSTATUS0001",
+        "label": "Deleted canvas",
+        "type": "canvas"
+      },
+      "formatCalls": [],
+      "rawToken": {
+        "type": "canvas",
+        "file_id": "FSTATUS0001",
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "style": {
+          "bold": true,
+          "italic": true
+        },
+        "opaque": {
+          "keep": 2
+        }
+      }
+    },
+    {
+      "name": "already-tombstone",
+      "before": {
+        "FSTATUS0001": {
+          "id": "FSTATUS0001",
+          "mode": "tombstone",
+          "is_deleted": true
+        }
+      },
+      "messages": [
+        {
+          "type": "file_deleted",
+          "file_id": "FSTATUS0001"
+        }
+      ],
+      "after": {
+        "FSTATUS0001": {
+          "id": "FSTATUS0001",
+          "mode": "tombstone",
+          "is_deleted": true
+        }
+      },
+      "eventCalls": [],
+      "eventEffects": [
+        {
+          "kind": "side",
+          "name": "clear-file-session",
+          "args": [
+            [
+              "FSTATUS0001"
+            ]
+          ]
+        },
+        {
+          "kind": "manager-delete",
+          "teamId": "TEVENT",
+          "ids": [
+            "FSTATUS0001"
+          ]
+        },
+        {
+          "kind": "side",
+          "name": "detach-message-files",
+          "args": [
+            {
+              "fileIds": [
+                "FSTATUS0001"
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "side",
+          "name": "quip-mention-count",
+          "args": [
+            {
+              "channelId": "canvas-channel:FSTATUS0001",
+              "mentionCount": 0,
+              "shouldSuppress": false
+            }
+          ]
+        },
+        {
+          "kind": "side",
+          "name": "quip-mention-clear",
+          "args": [
+            {
+              "channelId": "canvas-channel:FSTATUS0001"
+            }
+          ]
+        },
+        {
+          "kind": "side",
+          "name": "quip-derived-cleanup",
+          "args": [
+            {
+              "fileId": "FSTATUS0001"
+            }
+          ]
+        },
+        {
+          "kind": "side",
+          "name": "list-delete",
+          "args": [
+            {
+              "listsIds": []
+            }
+          ]
+        }
+      ],
+      "eventWrites": [
+        {
+          "rows": [
+            {
+              "id": "FSTATUS0001",
+              "mode": "tombstone",
+              "is_deleted": true
+            }
+          ],
+          "shard": null
+        }
+      ],
+      "lookup": {
+        "id": "FSTATUS0001",
+        "mode": "tombstone",
+        "is_deleted": true
+      },
+      "sameRow": true,
+      "lookupCalls": [],
+      "slug": {
+        "label": "Deleted canvas",
+        "labelResolverParams": {
+          "variant": "deleted",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Deleted canvas",
+          "plainTextSectionPreview": ""
+        },
+        "iconName": "trash",
+        "isDisabled": true,
+        "isLocked": false,
+        "isLoading": false
+      },
+      "op": {
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "id": "FSTATUS0001",
+        "label": "Deleted canvas",
+        "type": "canvas"
+      },
+      "formatCalls": [],
+      "rawToken": {
+        "type": "canvas",
+        "file_id": "FSTATUS0001",
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "style": {
+          "bold": true,
+          "italic": true
+        },
+        "opaque": {
+          "keep": 2
+        }
+      }
+    },
+    {
+      "name": "unknown-source-row",
+      "before": {
+        "FSTATUS0001": {
+          "id": "FSTATUS0001",
+          "isUnknown": true
+        }
+      },
+      "messages": [
+        {
+          "type": "file_deleted",
+          "file_id": "FSTATUS0001"
+        }
+      ],
+      "after": {
+        "FSTATUS0001": {
+          "id": "FSTATUS0001",
+          "mode": "tombstone",
+          "is_deleted": true
+        }
+      },
+      "eventCalls": [],
+      "eventEffects": [
+        {
+          "kind": "side",
+          "name": "clear-file-session",
+          "args": [
+            [
+              "FSTATUS0001"
+            ]
+          ]
+        },
+        {
+          "kind": "manager-delete",
+          "teamId": "TEVENT",
+          "ids": [
+            "FSTATUS0001"
+          ]
+        },
+        {
+          "kind": "side",
+          "name": "detach-message-files",
+          "args": [
+            {
+              "fileIds": [
+                "FSTATUS0001"
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "side",
+          "name": "list-delete",
+          "args": [
+            {
+              "listsIds": []
+            }
+          ]
+        }
+      ],
+      "eventWrites": [
+        {
+          "rows": [
+            {
+              "id": "FSTATUS0001",
+              "mode": "tombstone",
+              "is_deleted": true
+            }
+          ],
+          "shard": null
+        }
+      ],
+      "lookup": {
+        "id": "FSTATUS0001",
+        "mode": "tombstone",
+        "is_deleted": true
+      },
+      "sameRow": true,
+      "lookupCalls": [],
+      "slug": {
+        "label": "Deleted canvas",
+        "labelResolverParams": {
+          "variant": "deleted",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Deleted canvas",
+          "plainTextSectionPreview": ""
+        },
+        "iconName": "trash",
+        "isDisabled": true,
+        "isLocked": false,
+        "isLoading": false
+      },
+      "op": {
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "id": "FSTATUS0001",
+        "label": "Deleted canvas",
+        "type": "canvas"
+      },
+      "formatCalls": [],
+      "rawToken": {
+        "type": "canvas",
+        "file_id": "FSTATUS0001",
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "style": {
+          "bold": true,
+          "italic": true
+        },
+        "opaque": {
+          "keep": 2
+        }
+      }
+    },
+    {
+      "name": "absent-does-not-publish",
+      "before": {},
+      "messages": [
+        {
+          "type": "file_deleted",
+          "file_id": "FSTATUS0001"
+        }
+      ],
+      "after": {},
+      "eventCalls": [],
+      "eventEffects": [
+        {
+          "kind": "side",
+          "name": "clear-file-session",
+          "args": [
+            [
+              "FSTATUS0001"
+            ]
+          ]
+        }
+      ],
+      "eventWrites": [],
+      "lookup": {
+        "id": "FSTATUS0001",
+        "isUnknown": true
+      },
+      "sameRow": false,
+      "lookupCalls": [
+        {
+          "kind": "unknown-hit",
+          "team": "TEVENT",
+          "id": "FSTATUS0001"
+        }
+      ],
+      "slug": {
+        "label": "Untitled",
+        "labelResolverParams": {
+          "variant": "normal",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Untitled",
+          "plainTextSectionPreview": ""
+        },
+        "iconName": "canvas-content",
+        "isDisabled": false,
+        "isLocked": false,
+        "isLoading": false
+      },
+      "op": {
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "id": "FSTATUS0001",
+        "label": "Deleted canvas",
+        "type": "canvas"
+      },
+      "formatCalls": [
+        {
+          "kind": "unknown-hit",
+          "team": "TEVENT",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "unknown-hit",
+          "team": "TEVENT",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "quip-title-read"
+        },
+        {
+          "kind": "untitled-fallback"
+        }
+      ],
+      "rawToken": {
+        "type": "canvas",
+        "file_id": "FSTATUS0001",
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "style": {
+          "bold": true,
+          "italic": true
+        },
+        "opaque": {
+          "keep": 2
+        }
+      }
+    },
+    {
+      "name": "empty-array-wins",
+      "before": {
+        "FSTATUS0001": {
+          "id": "FSTATUS0001",
+          "mode": "quip",
+          "filetype": "quip",
+          "title": "Original title",
+          "updated": 101,
+          "opaque": {
+            "old": true
+          }
+        }
+      },
+      "messages": [
+        {
+          "type": "file_deleted",
+          "file_ids": [],
+          "file_id": "FSTATUS0001"
+        }
+      ],
+      "after": {
+        "FSTATUS0001": {
+          "id": "FSTATUS0001",
+          "mode": "quip",
+          "filetype": "quip",
+          "title": "Original title",
+          "updated": 101,
+          "opaque": {
+            "old": true
+          }
+        }
+      },
+      "eventCalls": [],
+      "eventEffects": [],
+      "eventWrites": [],
+      "lookup": {
+        "id": "FSTATUS0001",
+        "mode": "quip",
+        "filetype": "quip",
+        "title": "Original title",
+        "updated": 101,
+        "opaque": {
+          "old": true
+        }
+      },
+      "sameRow": true,
+      "lookupCalls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TEVENT",
+          "id": "FSTATUS0001"
+        }
+      ],
+      "slug": {
+        "label": "Original title",
+        "labelResolverParams": {
+          "variant": "normal",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Original title",
+          "plainTextSectionPreview": ""
+        },
+        "iconName": "canvas-content",
+        "isDisabled": false,
+        "isLocked": false,
+        "isLoading": false
+      },
+      "op": {
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "id": "FSTATUS0001",
+        "label": "Original title",
+        "type": "canvas"
+      },
+      "formatCalls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TEVENT",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TEVENT",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "normal-title-text-adapter"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TEVENT",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TEVENT",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "normal-title-text-adapter"
+        }
+      ],
+      "rawToken": {
+        "type": "canvas",
+        "file_id": "FSTATUS0001",
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "style": {
+          "bold": true,
+          "italic": true
+        },
+        "opaque": {
+          "keep": 2
+        }
+      }
+    },
+    {
+      "name": "missing-id-no-op",
+      "before": {
+        "FSTATUS0001": {
+          "id": "FSTATUS0001",
+          "mode": "quip",
+          "filetype": "quip",
+          "title": "Original title",
+          "updated": 101,
+          "opaque": {
+            "old": true
+          }
+        }
+      },
+      "messages": [
+        {
+          "type": "file_deleted"
+        }
+      ],
+      "after": {
+        "FSTATUS0001": {
+          "id": "FSTATUS0001",
+          "mode": "quip",
+          "filetype": "quip",
+          "title": "Original title",
+          "updated": 101,
+          "opaque": {
+            "old": true
+          }
+        }
+      },
+      "eventCalls": [],
+      "eventEffects": [],
+      "eventWrites": [],
+      "lookup": {
+        "id": "FSTATUS0001",
+        "mode": "quip",
+        "filetype": "quip",
+        "title": "Original title",
+        "updated": 101,
+        "opaque": {
+          "old": true
+        }
+      },
+      "sameRow": true,
+      "lookupCalls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TEVENT",
+          "id": "FSTATUS0001"
+        }
+      ],
+      "slug": {
+        "label": "Original title",
+        "labelResolverParams": {
+          "variant": "normal",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Original title",
+          "plainTextSectionPreview": ""
+        },
+        "iconName": "canvas-content",
+        "isDisabled": false,
+        "isLocked": false,
+        "isLoading": false
+      },
+      "op": {
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "id": "FSTATUS0001",
+        "label": "Original title",
+        "type": "canvas"
+      },
+      "formatCalls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TEVENT",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TEVENT",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "normal-title-text-adapter"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TEVENT",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TEVENT",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "normal-title-text-adapter"
+        }
+      ],
+      "rawToken": {
+        "type": "canvas",
+        "file_id": "FSTATUS0001",
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "style": {
+          "bold": true,
+          "italic": true
+        },
+        "opaque": {
+          "keep": 2
+        }
+      }
+    },
+    {
+      "name": "nested-file-is-not-id",
+      "before": {
+        "FSTATUS0001": {
+          "id": "FSTATUS0001",
+          "mode": "quip",
+          "filetype": "quip",
+          "title": "Original title",
+          "updated": 101,
+          "opaque": {
+            "old": true
+          }
+        }
+      },
+      "messages": [
+        {
+          "type": "file_deleted",
+          "file": {
+            "id": "FSTATUS0001"
+          }
+        }
+      ],
+      "after": {
+        "FSTATUS0001": {
+          "id": "FSTATUS0001",
+          "mode": "quip",
+          "filetype": "quip",
+          "title": "Original title",
+          "updated": 101,
+          "opaque": {
+            "old": true
+          }
+        }
+      },
+      "eventCalls": [],
+      "eventEffects": [],
+      "eventWrites": [],
+      "lookup": {
+        "id": "FSTATUS0001",
+        "mode": "quip",
+        "filetype": "quip",
+        "title": "Original title",
+        "updated": 101,
+        "opaque": {
+          "old": true
+        }
+      },
+      "sameRow": true,
+      "lookupCalls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TEVENT",
+          "id": "FSTATUS0001"
+        }
+      ],
+      "slug": {
+        "label": "Original title",
+        "labelResolverParams": {
+          "variant": "normal",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Original title",
+          "plainTextSectionPreview": ""
+        },
+        "iconName": "canvas-content",
+        "isDisabled": false,
+        "isLocked": false,
+        "isLoading": false
+      },
+      "op": {
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "id": "FSTATUS0001",
+        "label": "Original title",
+        "type": "canvas"
+      },
+      "formatCalls": [
+        {
+          "kind": "conditional-hit",
+          "team": "TEVENT",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TEVENT",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "normal-title-text-adapter"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TEVENT",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TEVENT",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "normal-title-text-adapter"
+        }
+      ],
+      "rawToken": {
+        "type": "canvas",
+        "file_id": "FSTATUS0001",
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "style": {
+          "bold": true,
+          "italic": true
+        },
+        "opaque": {
+          "keep": 2
+        }
+      }
+    }
+  ],
+  "registration": [
+    "file_created",
+    "file_public",
+    "file_change",
+    "file_shared",
+    "file_unshared",
+    "file_permissions_removed",
+    "file_deleted",
+    "file_processing_failed",
+    "file_opened",
+    "file_closed",
+    "file_enable_link_sharing",
+    "file_disable_link_sharing",
+    "file_permissions_added",
+    "file_permissions_edited",
+    "file_undeleted"
+  ],
+  "reducerSource": "(e,t)=>t&&t.length&&(0,o.A)(t)?(maybeWriteToObjectStore(t,e[c.q]),(0,s.A)(t,(e,t)=>(t&&t.id&&(e[t.id]=t),e),{...e})):e",
+  "scope": "Actual retained xsCq factory registered file_deleted handler, /xid and HcWC factories, selected verbatim kbkl bulk reducer, Ltli/KhL1/pND. Closed dispatch, English translation and side-effect collectors; no socket routing/authentication/disk/network/DOM execution."
+}

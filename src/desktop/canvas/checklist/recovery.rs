@@ -10,6 +10,8 @@ use super_platinum_core::canvas::edit::structure::{
     },
 };
 
+pub(in crate::canvas) mod cancellation_fixture;
+pub(super) mod confirmed;
 pub(in crate::canvas) mod review;
 
 const WAIT: &str = "Checking saved canvas changes before editing…";
@@ -74,9 +76,17 @@ pub(super) struct State {
 #[derive(Clone)]
 pub(in crate::canvas) struct Ticket {
     owner: Owner,
-    receipt: Receipt,
+    receipt: Arc<Receipt>,
 }
-fn bypass(shell: &ShellState) -> bool {
+impl Ticket {
+    pub(super) fn receipt(&self) -> &Receipt {
+        &self.receipt
+    }
+    pub(super) fn same(&self, other: &Self) -> bool {
+        self.owner == other.owner && Arc::ptr_eq(&self.receipt, &other.receipt)
+    }
+}
+pub(super) fn bypass(shell: &ShellState) -> bool {
     (crate::fixture::is_fixture()
         && std::env::var_os("SUPER_PLATINUM_CANVAS_RECOVERY_DB").is_none())
         || (!crate::fixture::is_fixture()
@@ -228,9 +238,55 @@ pub(in crate::canvas) async fn reserve_structure_worker(
 pub(in crate::canvas) async fn reserve_replacement(
     state: Signal<ShellState>,
     attempt: &Attempt,
+    prepared: super_platinum_core::canvas::edit::structure::PreparedReplacement,
+) -> Result<
+    (
+        super_platinum_core::canvas::edit::structure::PreparedReplacement,
+        Ticket,
+    ),
+    &'static str,
+> {
+    if !replacement_preparation_current(&state.peek(), attempt, &prepared) {
+        return Err(FAILED);
+    }
+    let (prepared, checkpoint) = tokio::task::spawn_blocking(move || {
+        let checkpoint = prepared.checkpoint().map_err(|_| FAILED)?;
+        Ok::<_, &'static str>((prepared, checkpoint))
+    })
+    .await
+    .map_err(|_| FAILED)??;
+    if !replacement_preparation_current(&state.peek(), attempt, &prepared) {
+        return Err(FAILED);
+    }
+    let ticket = reserve_checkpoint(state, attempt, checkpoint).await?;
+    Ok((prepared, ticket))
+}
+pub(in crate::canvas::checklist) fn replacement_preparation_current(
+    shell: &ShellState,
+    attempt: &Attempt,
     prepared: &super_platinum_core::canvas::edit::structure::PreparedReplacement,
-) -> Result<Ticket, &'static str> {
-    reserve_checkpoint(state, attempt, prepared.checkpoint().map_err(|_| FAILED)?).await
+) -> bool {
+    dispatchable(shell, attempt)
+        && replacement_ops::replacement(attempt) == Some(prepared.replacement_section())
+        && prepared.target_section() == attempt.section
+        && prepared.file_id() == attempt.snapshot.file_id()
+        && prepared.thread_id() == attempt.snapshot.thread_id()
+        && prepared.document_id() == attempt.snapshot.document_id()
+        && shell.canvas_checklist.operations.iter().any(|op| {
+            op.attempt.serial == attempt.serial
+                && op.attempt.visit == attempt.visit
+                && op.attempt.read == attempt.read
+                && op.attempt.revision == attempt.revision
+                && op.attempt.section == attempt.section
+                && Arc::ptr_eq(&op.attempt.snapshot, &attempt.snapshot)
+                && replacement_ops::replacement(&op.attempt)
+                    == replacement_ops::replacement(attempt)
+                && op.stage == Stage::Preparing
+                && op.dispatched.is_none()
+                && op.accepted.is_none()
+                && op.durable.is_none()
+                && op.dispatched_after_read == attempt.read
+        })
 }
 /// Additional exact-attempt fence for the pure split preparation worker.
 pub(in crate::canvas) fn split_preparation_current(shell: &ShellState, attempt: &Attempt) -> bool {
@@ -332,7 +388,7 @@ async fn reserve_checkpoint(
     };
     let ticket = Ticket {
         owner: owner.clone(),
-        receipt: receipt.clone(),
+        receipt: Arc::new(receipt.clone()),
     };
     {
         let mut shell = state.write();
@@ -382,6 +438,7 @@ fn publish_retirement(shell: &mut ShellState, ticket: &Ticket, fence: Option<u64
     }
 }
 pub(in crate::canvas) async fn settle(mut state: Signal<ShellState>, read: &Read) {
+    super::replacement_ops::readback::verify(state, read).await;
     super::structure_ops::readback::verify(state, read).await;
     super::end_ops::readback::verify(state, read).await;
     super::split_ops::readback::verify(state, read).await;
@@ -391,20 +448,34 @@ pub(in crate::canvas) async fn settle(mut state: Signal<ShellState>, read: &Read
         if !read.current(&shell) {
             return;
         }
-        let Some(op) = shell
+        let Some(index) = shell
             .canvas_checklist
             .operations
-            .iter_mut()
-            .find(|op| op.durable_verified == Some(read.serial) && !op.durable_finishing)
+            .iter()
+            .position(|op| op.durable_verified == Some(read.serial) && !op.durable_finishing)
         else {
             return;
         };
+        let op = &shell.canvas_checklist.operations[index];
         let Some(ticket) = op.durable.clone() else {
             return;
         };
-        op.durable_finishing = true;
-        (op.attempt.clone(), ticket)
+        let token = if let Some(Accepted::Replacement(accepted)) = op.accepted.as_ref() {
+            let Some(token) = accepted.confirmed(&shell, read, op) else {
+                return;
+            };
+            Some(token)
+        } else {
+            None
+        };
+        let attempt = op.attempt.clone();
+        shell.canvas_checklist.operations[index].durable_finishing = true;
+        (attempt, ticket, token)
     };
+    if let Some(token) = pending.2 {
+        confirmed::settle(state, pending.0, pending.1, token).await;
+        return;
+    }
     let done = complete(state, &pending.1).await;
     let mut shell = state.write();
     finish_retirement(&mut shell, &pending.0, done);

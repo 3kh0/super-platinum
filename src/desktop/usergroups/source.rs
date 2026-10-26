@@ -65,6 +65,35 @@ pub(crate) fn enqueue(
         Err(_) => Admission::Unavailable,
     }
 }
+/// Only the shared manager's sealed settlement can enqueue terminal cleanup.
+pub(super) fn enqueue_missing(
+    shell: &mut ShellState,
+    owner: Arc<Context>,
+    missing: &source_core::unknown::Missing,
+) -> Admission {
+    if !owner.current(shell) {
+        return Admission::Unavailable;
+    }
+    let Ok(serial) = NEXT.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |n| n.checked_add(1))
+    else {
+        return Admission::Unavailable;
+    };
+    let Some(w) = shell.core.workspaces.get_mut(&owner.session.team_id) else {
+        return Admission::Unavailable;
+    };
+    match w.directory_usergroups.enqueue_missing(
+        missing,
+        &w.usergroups,
+        &format!("usergroup-missing-{serial}"),
+    ) {
+        Ok(ticket) => Admission::Tracked(Work {
+            owner,
+            ticket: Some(ticket),
+            metadata: true,
+        }),
+        Err(_) => Admission::Unavailable,
+    }
+}
 impl Work {
     fn current(&self, shell: &ShellState, current: &impl Fn(&ShellState) -> bool) -> bool {
         self.owner.current(shell)
@@ -129,12 +158,23 @@ impl Work {
                     )
                 })
     }
+    #[cfg(test)]
     fn finish(
         &mut self,
         shell: &mut ShellState,
         pending: source_core::Pending,
         reply: source_core::RendererReply,
         current: &impl Fn(&ShellState) -> bool,
+    ) -> Result<(), Error> {
+        self.finish_observed(shell, pending, reply, current, &|_| {})
+    }
+    fn finish_observed(
+        &mut self,
+        shell: &mut ShellState,
+        pending: source_core::Pending,
+        reply: source_core::RendererReply,
+        current: &impl Fn(&ShellState) -> bool,
+        published: &impl Fn(&ShellState),
     ) -> Result<(), Error> {
         if !self.pending_current(shell, &pending, current) {
             return Err(unavailable());
@@ -173,6 +213,7 @@ impl Work {
         w.directory_usergroups = source;
         w.usergroups = native;
         self.ticket.take();
+        published(shell);
         super::freshness::published(shell, self.owner.clone(), &fresh_ids);
         shell.refresh_from_core();
         Ok(())
@@ -180,9 +221,18 @@ impl Work {
     /// `current` retains the original GroupRead/panel/query guard. A successor
     /// request cannot lend this accepted operation a fresh account/socket owner.
     pub(crate) async fn run(
+        self,
+        state: Signal<ShellState>,
+        current: impl Fn(&ShellState) -> bool,
+    ) -> Result<(), Error> {
+        self.run_with_publication(state, current, |_| {}).await
+    }
+    /// Observer runs synchronously at the exact paired commit, before any await.
+    pub(super) async fn run_with_publication(
         mut self,
         mut state: Signal<ShellState>,
         current: impl Fn(&ShellState) -> bool,
+        published: impl Fn(&ShellState),
     ) -> Result<(), Error> {
         let pending = loop {
             if let Some(pending) = self.next(&state.peek(), &current)? {
@@ -205,7 +255,7 @@ impl Work {
         if !self.pending_current(&state.peek(), &pending, &current) {
             return Err(unavailable());
         }
-        self.finish(
+        self.finish_observed(
             &mut state.write(),
             pending,
             source_core::RendererReply {
@@ -215,6 +265,7 @@ impl Work {
                 locale: lowered.locale,
             },
             &current,
+            &published,
         )?;
         if self.owner.current(&state.peek()) {
             crate::bootstrap::persist_workspace_metadata(&state, &self.owner.session.team_id);

@@ -161,6 +161,10 @@ pub(in crate::canvas) async fn load(
                 "Checklist state could not refresh. Open in Slack to check it."
             }
         });
+        let result = match result {
+            Ok(fresh) => replacement_ops::readback::carry_for_read(state, &read, fresh).await,
+            Err(error) => Err(error),
+        };
         let successful = result.is_ok();
         let mut shell = state.write();
         if !successful {

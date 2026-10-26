@@ -1,11 +1,17 @@
 //! Captured g5os/quL6/NGtd App Home identity; no renderer or network authority.
 pub mod about;
 pub mod calendar;
+pub mod context;
 pub mod navigation;
+mod static_select;
+mod text;
 pub mod workflow;
+pub use crate::block_actions::form::home::CheckboxSelection;
 use crate::config::WorkspaceSession;
 use crate::slack::{Error, PreparedRequest, SlackClient};
 use serde_json::{Value, json};
+pub use static_select::StaticAction;
+pub use text::TextAction;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Home {
@@ -265,6 +271,19 @@ impl Button {
         current: &View,
         token: &str,
     ) -> Result<PreparedRequest, Error> {
+        self.prepare_with_context(client, workspace, current, token, None)
+    }
+    /// The caller owns the current Home context observation. This only prepares
+    /// the route; it does not grant account, visit, confirmation or dispatch authority.
+    /// As in AppHomeBlocks, an absent/empty context uses the installed team.
+    pub fn prepare_with_context(
+        &self,
+        client: &SlackClient,
+        workspace: &WorkspaceSession,
+        current: &View,
+        token: &str,
+        view_context_team_id: Option<&str>,
+    ) -> Result<PreparedRequest, Error> {
         if workspace.user_id != self.user
             || !self.same_view(current)
             || token.is_empty()
@@ -273,9 +292,13 @@ impl Button {
         {
             return Err(invalid());
         }
+        let service_team = view_context_team_id
+            .filter(|value| !value.is_empty())
+            .unwrap_or(&self.view.home.installed_team);
+        context::validate_identity(service_team)?;
         let mut fields = vec![
             ("app_id", self.view.home.app.clone()),
-            ("service_team_id", self.view.home.installed_team.clone()),
+            ("service_team_id", service_team.into()),
             (
                 "container",
                 json!({"type":"view","view_id":self.view.home.view_id}).to_string(),
@@ -316,6 +339,17 @@ pub fn opened(
     w: &WorkspaceSession,
     home: &Home,
 ) -> Result<PreparedRequest, Error> {
+    opened_with_context(client, w, home, Some(&home.installed_team))
+}
+/// A genuine Home-open event uses the selector's context directly: absent or
+/// empty context omits service_team_id (unlike suggestions/actions fallback).
+/// A context chooser change alone is not a new Home-open event.
+pub fn opened_with_context(
+    client: &SlackClient,
+    w: &WorkspaceSession,
+    home: &Home,
+    view_context_team_id: Option<&str>,
+) -> Result<PreparedRequest, Error> {
     if !home.enabled
         || ![
             home.channel.as_str(),
@@ -327,16 +361,16 @@ pub fn opened(
     {
         return Err(invalid());
     }
-    Ok(client.rest_form(
-        w,
-        "apps.home.dispatchOpenEvent",
-        vec![
-            ("id", home.channel.clone()),
-            ("type", "home".into()),
-            ("_x_reason", "app-home-logging".into()),
-            ("service_team_id", home.installed_team.clone()),
-        ],
-    ))
+    let mut fields = vec![
+        ("id", home.channel.clone()),
+        ("type", "home".into()),
+        ("_x_reason", "app-home-logging".into()),
+    ];
+    if let Some(team) = view_context_team_id.filter(|value| !value.is_empty()) {
+        context::validate_identity(team)?;
+        fields.push(("service_team_id", team.into()));
+    }
+    Ok(client.rest_form(w, "apps.home.dispatchOpenEvent", fields))
 }
 #[cfg(test)]
 mod tests;

@@ -21,7 +21,7 @@ fn raw_option_preserves_metadata_and_empty_value_is_not_null() {
     ] {
         let mut raw = raw.clone();
         raw[key] = value;
-        assert!(ExternalOption::parse(&raw).is_err());
+        assert_eq!(ExternalOption::parse(&raw).unwrap().raw(), &raw);
     }
     let mut raw = raw.clone();
     raw["text"]["type"] = json!("mrkdwn");
@@ -63,4 +63,55 @@ fn ordered_groups_retain_raw_and_reject_conflicting_values() {
     let mut conflicting = a.clone();
     conflicting["text"]["text"] = json!("Changed");
     assert!(ExternalSuggestions::parse(&json!({"options":[a,conflicting]})).is_err());
+}
+
+#[test]
+fn opaque_metadata_survives_query_groups_without_becoming_display_or_identity() {
+    let mut raw = option("v");
+    raw["opaque"] = json!({"kept":[null,false,7,{"nested":"exact"}]});
+    raw["url"] = json!("javascript:must-not-execute");
+    raw["html"] = json!("<img src=untrusted>");
+    let ExternalSuggestions::Options(options) =
+        ExternalSuggestions::parse(&json!({"options":[raw.clone()]})).unwrap()
+    else {
+        panic!()
+    };
+    assert_eq!(options[0].raw(), &raw);
+    assert_eq!(options[0].text(), "Exact &amp; text");
+    assert_eq!(options[0].description(), Some("Description"));
+    assert_eq!(options[0].value(), "v");
+    let ExternalSuggestions::Groups(groups) = ExternalSuggestions::parse(&json!({"option_groups":[{"label":{"type":"plain_text","text":"Group"},"options":[raw.clone()]}]})).unwrap() else {panic!()};
+    assert_eq!(groups[0].options[0].raw(), &raw);
+    let mut changed = raw.clone();
+    changed["opaque"]["kept"][2] = json!(8);
+    assert_ne!(
+        ExternalOption::parse(&raw).unwrap(),
+        ExternalOption::parse(&changed).unwrap()
+    );
+    assert!(ExternalSuggestions::parse(&json!({"options":[raw,changed]})).is_err());
+}
+
+#[test]
+fn opaque_metadata_cannot_replace_or_relax_known_field_validation() {
+    for (key, value) in [
+        ("text", json!({"type":"mrkdwn","text":"invalid"})),
+        (
+            "text",
+            json!({"type":"plain_text","text":"valid","emoji":"true"}),
+        ),
+        ("text", json!({"type":"plain_text","text":"x".repeat(76)})),
+        ("value", json!(null)),
+        ("value", json!(true)),
+        ("value", json!("x".repeat(151))),
+        ("description", json!({"type":"plain_text","text":""})),
+        (
+            "description",
+            json!({"type":"plain_text","text":"x".repeat(76)}),
+        ),
+    ] {
+        let mut raw = option("v");
+        raw["opaque"] = json!({"valid":true});
+        raw[key] = value;
+        assert!(ExternalOption::parse(&raw).is_err(), "{key}");
+    }
 }

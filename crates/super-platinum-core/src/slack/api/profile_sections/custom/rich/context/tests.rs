@@ -2,6 +2,7 @@ use super::*;
 use serde_json::json;
 
 mod files;
+mod sections;
 
 fn blocks(tokens: Vec<Value>) -> Vec<Value> {
     vec![json!({"type":"rich_text","elements":[{"type":"rich_text_section","elements":tokens}]})]

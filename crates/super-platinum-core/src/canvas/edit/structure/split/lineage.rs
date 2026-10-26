@@ -264,7 +264,9 @@ pub(in crate::canvas::edit::structure) use child_delete::{
     owner as child_delete_owner, tombstone as child_tombstone,
     transition as child_delete_transition,
 };
+pub(in crate::canvas::edit::structure) use gap::independent_history;
 pub(in crate::canvas::edit::structure) use gap::tombstone as gap_tombstone;
+pub(in crate::canvas::edit::structure) use gap::witnessed_independent_history;
 
 fn plain_descendants(
     doc: &Automerge,

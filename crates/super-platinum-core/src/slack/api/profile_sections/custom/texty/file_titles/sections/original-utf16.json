@@ -1,0 +1,1828 @@
+{
+  "scope": "Corrected explicit UTF8 decoding; direct-JS numeric labelUtf16 arrays cross-checked. Original strings remain vectors.json. No surrogate normalization.",
+  "vectors": [
+    {
+      "name": "ordinary",
+      "state": {
+        "team": "TSECTION",
+        "files": {
+          "FSTATUS0001": {
+            "id": "FSTATUS0001",
+            "mode": "quip",
+            "filetype": "quip",
+            "title": "Canvas title"
+          }
+        },
+        "canvasSectionRichText": {
+          "FSTATUS0001": {
+            "s1": {
+              "type": "rich_text",
+              "block_id": "section-block",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "Preview line",
+                      "style": {
+                        "bold": true
+                      },
+                      "opaque": {
+                        "keep": 7
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+      "options": {},
+      "labelUtf16": [
+        67,
+        97,
+        110,
+        118,
+        97,
+        115,
+        32,
+        116,
+        105,
+        116,
+        108,
+        101,
+        58,
+        32,
+        80,
+        114,
+        101,
+        118,
+        105,
+        101,
+        119,
+        32,
+        108,
+        105,
+        110,
+        101
+      ],
+      "previewUtf16": [
+        80,
+        114,
+        101,
+        118,
+        105,
+        101,
+        119,
+        32,
+        108,
+        105,
+        110,
+        101
+      ],
+      "deltaLabelUtf16": [
+        67,
+        97,
+        110,
+        118,
+        97,
+        115,
+        32,
+        116,
+        105,
+        116,
+        108,
+        101,
+        58,
+        32,
+        80,
+        114,
+        101,
+        118,
+        105,
+        101,
+        119,
+        32,
+        108,
+        105,
+        110,
+        101
+      ],
+      "variant": "section",
+      "iconName": "canvas-content",
+      "isDisabled": false,
+      "isLocked": false,
+      "isLoading": false
+    },
+    {
+      "name": "missing",
+      "state": {
+        "team": "TSECTION",
+        "files": {
+          "FSTATUS0001": {
+            "id": "FSTATUS0001",
+            "mode": "quip",
+            "filetype": "quip",
+            "title": "Canvas title"
+          }
+        },
+        "canvasSectionRichText": {
+          "FSTATUS0001": {}
+        }
+      },
+      "options": {},
+      "labelUtf16": [
+        67,
+        97,
+        110,
+        118,
+        97,
+        115,
+        32,
+        116,
+        105,
+        116,
+        108,
+        101,
+        58,
+        32,
+        8230
+      ],
+      "previewUtf16": [],
+      "deltaLabelUtf16": [
+        67,
+        97,
+        110,
+        118,
+        97,
+        115,
+        32,
+        116,
+        105,
+        116,
+        108,
+        101,
+        58,
+        32,
+        8230
+      ],
+      "variant": "section-missing",
+      "iconName": "canvas-content",
+      "isDisabled": false,
+      "isLocked": false,
+      "isLoading": false
+    },
+    {
+      "name": "empty-elements",
+      "state": {
+        "team": "TSECTION",
+        "files": {
+          "FSTATUS0001": {
+            "id": "FSTATUS0001",
+            "mode": "quip",
+            "filetype": "quip",
+            "title": "Canvas title"
+          }
+        },
+        "canvasSectionRichText": {
+          "FSTATUS0001": {
+            "s1": {
+              "type": "rich_text",
+              "elements": []
+            }
+          }
+        }
+      },
+      "options": {},
+      "labelUtf16": [
+        67,
+        97,
+        110,
+        118,
+        97,
+        115,
+        32,
+        116,
+        105,
+        116,
+        108,
+        101,
+        58,
+        32,
+        8230
+      ],
+      "previewUtf16": [],
+      "deltaLabelUtf16": [
+        67,
+        97,
+        110,
+        118,
+        97,
+        115,
+        32,
+        116,
+        105,
+        116,
+        108,
+        101,
+        58,
+        32,
+        8230
+      ],
+      "variant": "section-missing",
+      "iconName": "canvas-content",
+      "isDisabled": false,
+      "isLocked": false,
+      "isLoading": false
+    },
+    {
+      "name": "empty-first-section",
+      "state": {
+        "team": "TSECTION",
+        "files": {
+          "FSTATUS0001": {
+            "id": "FSTATUS0001",
+            "mode": "quip",
+            "filetype": "quip",
+            "title": "Canvas title"
+          }
+        },
+        "canvasSectionRichText": {
+          "FSTATUS0001": {
+            "s1": {
+              "type": "rich_text",
+              "block_id": "section-block",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "",
+                      "style": {
+                        "bold": true
+                      },
+                      "opaque": {
+                        "keep": 7
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+      "options": {},
+      "labelUtf16": [
+        67,
+        97,
+        110,
+        118,
+        97,
+        115,
+        32,
+        116,
+        105,
+        116,
+        108,
+        101,
+        58,
+        32
+      ],
+      "previewUtf16": [],
+      "deltaLabelUtf16": [
+        67,
+        97,
+        110,
+        118,
+        97,
+        115,
+        32,
+        116,
+        105,
+        116,
+        108,
+        101,
+        58,
+        32
+      ],
+      "variant": "section",
+      "iconName": "canvas-content",
+      "isDisabled": false,
+      "isLocked": false,
+      "isLoading": false
+    },
+    {
+      "name": "first-line",
+      "state": {
+        "team": "TSECTION",
+        "files": {
+          "FSTATUS0001": {
+            "id": "FSTATUS0001",
+            "mode": "quip",
+            "filetype": "quip",
+            "title": "Canvas title"
+          }
+        },
+        "canvasSectionRichText": {
+          "FSTATUS0001": {
+            "s1": {
+              "type": "rich_text",
+              "block_id": "section-block",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "First line\nSecond line",
+                      "style": {
+                        "bold": true
+                      },
+                      "opaque": {
+                        "keep": 7
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+      "options": {},
+      "labelUtf16": [
+        67,
+        97,
+        110,
+        118,
+        97,
+        115,
+        32,
+        116,
+        105,
+        116,
+        108,
+        101,
+        58,
+        32,
+        70,
+        105,
+        114,
+        115,
+        116,
+        32,
+        108,
+        105,
+        110,
+        101
+      ],
+      "previewUtf16": [
+        70,
+        105,
+        114,
+        115,
+        116,
+        32,
+        108,
+        105,
+        110,
+        101
+      ],
+      "deltaLabelUtf16": [
+        67,
+        97,
+        110,
+        118,
+        97,
+        115,
+        32,
+        116,
+        105,
+        116,
+        108,
+        101,
+        58,
+        32,
+        70,
+        105,
+        114,
+        115,
+        116,
+        32,
+        108,
+        105,
+        110,
+        101
+      ],
+      "variant": "section",
+      "iconName": "canvas-content",
+      "isDisabled": false,
+      "isLocked": false,
+      "isLoading": false
+    },
+    {
+      "name": "crlf-first-line",
+      "state": {
+        "team": "TSECTION",
+        "files": {
+          "FSTATUS0001": {
+            "id": "FSTATUS0001",
+            "mode": "quip",
+            "filetype": "quip",
+            "title": "Canvas title"
+          }
+        },
+        "canvasSectionRichText": {
+          "FSTATUS0001": {
+            "s1": {
+              "type": "rich_text",
+              "block_id": "section-block",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "First line\r\nSecond line",
+                      "style": {
+                        "bold": true
+                      },
+                      "opaque": {
+                        "keep": 7
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+      "options": {},
+      "labelUtf16": [
+        67,
+        97,
+        110,
+        118,
+        97,
+        115,
+        32,
+        116,
+        105,
+        116,
+        108,
+        101,
+        58,
+        32,
+        70,
+        105,
+        114,
+        115,
+        116,
+        32,
+        108,
+        105,
+        110,
+        101,
+        13
+      ],
+      "previewUtf16": [
+        70,
+        105,
+        114,
+        115,
+        116,
+        32,
+        108,
+        105,
+        110,
+        101,
+        13
+      ],
+      "deltaLabelUtf16": [
+        67,
+        97,
+        110,
+        118,
+        97,
+        115,
+        32,
+        116,
+        105,
+        116,
+        108,
+        101,
+        58,
+        32,
+        70,
+        105,
+        114,
+        115,
+        116,
+        32,
+        108,
+        105,
+        110,
+        101,
+        13
+      ],
+      "variant": "section",
+      "iconName": "canvas-content",
+      "isDisabled": false,
+      "isLocked": false,
+      "isLoading": false
+    },
+    {
+      "name": "exact25",
+      "state": {
+        "team": "TSECTION",
+        "files": {
+          "FSTATUS0001": {
+            "id": "FSTATUS0001",
+            "mode": "quip",
+            "filetype": "quip",
+            "title": "Canvas title"
+          }
+        },
+        "canvasSectionRichText": {
+          "FSTATUS0001": {
+            "s1": {
+              "type": "rich_text",
+              "block_id": "section-block",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "aaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "style": {
+                        "bold": true
+                      },
+                      "opaque": {
+                        "keep": 7
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+      "options": {},
+      "labelUtf16": [
+        67,
+        97,
+        110,
+        118,
+        97,
+        115,
+        32,
+        116,
+        105,
+        116,
+        108,
+        101,
+        58,
+        32,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97
+      ],
+      "previewUtf16": [
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97
+      ],
+      "deltaLabelUtf16": [
+        67,
+        97,
+        110,
+        118,
+        97,
+        115,
+        32,
+        116,
+        105,
+        116,
+        108,
+        101,
+        58,
+        32,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97
+      ],
+      "variant": "section",
+      "iconName": "canvas-content",
+      "isDisabled": false,
+      "isLocked": false,
+      "isLoading": false
+    },
+    {
+      "name": "over25",
+      "state": {
+        "team": "TSECTION",
+        "files": {
+          "FSTATUS0001": {
+            "id": "FSTATUS0001",
+            "mode": "quip",
+            "filetype": "quip",
+            "title": "Canvas title"
+          }
+        },
+        "canvasSectionRichText": {
+          "FSTATUS0001": {
+            "s1": {
+              "type": "rich_text",
+              "block_id": "section-block",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "aaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "style": {
+                        "bold": true
+                      },
+                      "opaque": {
+                        "keep": 7
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+      "options": {},
+      "labelUtf16": [
+        67,
+        97,
+        110,
+        118,
+        97,
+        115,
+        32,
+        116,
+        105,
+        116,
+        108,
+        101,
+        58,
+        32,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        8230
+      ],
+      "previewUtf16": [
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        8230
+      ],
+      "deltaLabelUtf16": [
+        67,
+        97,
+        110,
+        118,
+        97,
+        115,
+        32,
+        116,
+        105,
+        116,
+        108,
+        101,
+        58,
+        32,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        8230
+      ],
+      "variant": "section",
+      "iconName": "canvas-content",
+      "isDisabled": false,
+      "isLocked": false,
+      "isLoading": false
+    },
+    {
+      "name": "unicode-whole",
+      "state": {
+        "team": "TSECTION",
+        "files": {
+          "FSTATUS0001": {
+            "id": "FSTATUS0001",
+            "mode": "quip",
+            "filetype": "quip",
+            "title": "Canvas title"
+          }
+        },
+        "canvasSectionRichText": {
+          "FSTATUS0001": {
+            "s1": {
+              "type": "rich_text",
+              "block_id": "section-block",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "\u65e5\u672c\ud83d\ude00 section",
+                      "style": {
+                        "bold": true
+                      },
+                      "opaque": {
+                        "keep": 7
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+      "options": {},
+      "labelUtf16": [
+        67,
+        97,
+        110,
+        118,
+        97,
+        115,
+        32,
+        116,
+        105,
+        116,
+        108,
+        101,
+        58,
+        32,
+        26085,
+        26412,
+        55357,
+        56832,
+        32,
+        115,
+        101,
+        99,
+        116,
+        105,
+        111,
+        110
+      ],
+      "previewUtf16": [
+        26085,
+        26412,
+        55357,
+        56832,
+        32,
+        115,
+        101,
+        99,
+        116,
+        105,
+        111,
+        110
+      ],
+      "deltaLabelUtf16": [
+        67,
+        97,
+        110,
+        118,
+        97,
+        115,
+        32,
+        116,
+        105,
+        116,
+        108,
+        101,
+        58,
+        32,
+        26085,
+        26412,
+        55357,
+        56832,
+        32,
+        115,
+        101,
+        99,
+        116,
+        105,
+        111,
+        110
+      ],
+      "variant": "section",
+      "iconName": "canvas-content",
+      "isDisabled": false,
+      "isLocked": false,
+      "isLoading": false
+    },
+    {
+      "name": "unicode-split-surrogate",
+      "state": {
+        "team": "TSECTION",
+        "files": {
+          "FSTATUS0001": {
+            "id": "FSTATUS0001",
+            "mode": "quip",
+            "filetype": "quip",
+            "title": "Canvas title"
+          }
+        },
+        "canvasSectionRichText": {
+          "FSTATUS0001": {
+            "s1": {
+              "type": "rich_text",
+              "block_id": "section-block",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "aaaaaaaaaaaaaaaaaaaaaaaa\ud83d\ude00z",
+                      "style": {
+                        "bold": true
+                      },
+                      "opaque": {
+                        "keep": 7
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+      "options": {},
+      "labelUtf16": [
+        67,
+        97,
+        110,
+        118,
+        97,
+        115,
+        32,
+        116,
+        105,
+        116,
+        108,
+        101,
+        58,
+        32,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        55357,
+        8230
+      ],
+      "previewUtf16": [
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        55357,
+        8230
+      ],
+      "deltaLabelUtf16": [
+        67,
+        97,
+        110,
+        118,
+        97,
+        115,
+        32,
+        116,
+        105,
+        116,
+        108,
+        101,
+        58,
+        32,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        55357,
+        8230
+      ],
+      "variant": "section",
+      "iconName": "canvas-content",
+      "isDisabled": false,
+      "isLocked": false,
+      "isLoading": false
+    },
+    {
+      "name": "sanitize-after-truncate",
+      "state": {
+        "team": "TSECTION",
+        "files": {
+          "FSTATUS0001": {
+            "id": "FSTATUS0001",
+            "mode": "quip",
+            "filetype": "quip",
+            "title": "Canvas title"
+          }
+        },
+        "canvasSectionRichText": {
+          "FSTATUS0001": {
+            "s1": {
+              "type": "rich_text",
+              "block_id": "section-block",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "\u200bAB\u00a0CD\u00ad",
+                      "style": {
+                        "bold": true
+                      },
+                      "opaque": {
+                        "keep": 7
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+      "options": {},
+      "labelUtf16": [
+        67,
+        97,
+        110,
+        118,
+        97,
+        115,
+        32,
+        116,
+        105,
+        116,
+        108,
+        101,
+        58,
+        32,
+        65,
+        66,
+        32,
+        67,
+        68
+      ],
+      "previewUtf16": [
+        8203,
+        65,
+        66,
+        160,
+        67,
+        68,
+        173
+      ],
+      "deltaLabelUtf16": [
+        67,
+        97,
+        110,
+        118,
+        97,
+        115,
+        32,
+        116,
+        105,
+        116,
+        108,
+        101,
+        58,
+        32,
+        65,
+        66,
+        32,
+        67,
+        68
+      ],
+      "variant": "section",
+      "iconName": "canvas-content",
+      "isDisabled": false,
+      "isLocked": false,
+      "isLoading": false
+    },
+    {
+      "name": "hide-title",
+      "state": {
+        "team": "TSECTION",
+        "files": {
+          "FSTATUS0001": {
+            "id": "FSTATUS0001",
+            "mode": "quip",
+            "filetype": "quip",
+            "title": "Canvas title"
+          }
+        },
+        "canvasSectionRichText": {
+          "FSTATUS0001": {
+            "s1": {
+              "type": "rich_text",
+              "block_id": "section-block",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "Preview line",
+                      "style": {
+                        "bold": true
+                      },
+                      "opaque": {
+                        "keep": 7
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+      "options": {
+        "hideTitle": true
+      },
+      "labelUtf16": [
+        80,
+        114,
+        101,
+        118,
+        105,
+        101,
+        119,
+        32,
+        108,
+        105,
+        110,
+        101
+      ],
+      "previewUtf16": [
+        80,
+        114,
+        101,
+        118,
+        105,
+        101,
+        119,
+        32,
+        108,
+        105,
+        110,
+        101
+      ],
+      "deltaLabelUtf16": [
+        67,
+        97,
+        110,
+        118,
+        97,
+        115,
+        32,
+        116,
+        105,
+        116,
+        108,
+        101,
+        58,
+        32,
+        80,
+        114,
+        101,
+        118,
+        105,
+        101,
+        119,
+        32,
+        108,
+        105,
+        110,
+        101
+      ],
+      "variant": "section",
+      "iconName": "canvas-content",
+      "isDisabled": false,
+      "isLocked": false,
+      "isLoading": false
+    },
+    {
+      "name": "hide-missing",
+      "state": {
+        "team": "TSECTION",
+        "files": {
+          "FSTATUS0001": {
+            "id": "FSTATUS0001",
+            "mode": "quip",
+            "filetype": "quip",
+            "title": "Canvas title"
+          }
+        },
+        "canvasSectionRichText": {
+          "FSTATUS0001": {}
+        }
+      },
+      "options": {
+        "hideTitle": true
+      },
+      "labelUtf16": [
+        8230
+      ],
+      "previewUtf16": [],
+      "deltaLabelUtf16": [
+        67,
+        97,
+        110,
+        118,
+        97,
+        115,
+        32,
+        116,
+        105,
+        116,
+        108,
+        101,
+        58,
+        32,
+        8230
+      ],
+      "variant": "section-missing",
+      "iconName": "canvas-content",
+      "isDisabled": false,
+      "isLocked": false,
+      "isLoading": false
+    },
+    {
+      "name": "override",
+      "state": {
+        "team": "TSECTION",
+        "files": {
+          "FSTATUS0001": {
+            "id": "FSTATUS0001",
+            "mode": "quip",
+            "filetype": "quip",
+            "title": "Canvas title"
+          }
+        },
+        "canvasSectionRichText": {
+          "FSTATUS0001": {
+            "s1": {
+              "type": "rich_text",
+              "block_id": "section-block",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "Preview line",
+                      "style": {
+                        "bold": true
+                      },
+                      "opaque": {
+                        "keep": 7
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+      "options": {
+        "labelOverride": "Other"
+      },
+      "labelUtf16": [
+        79,
+        116,
+        104,
+        101,
+        114,
+        58,
+        32,
+        80,
+        114,
+        101,
+        118,
+        105,
+        101,
+        119,
+        32,
+        108,
+        105,
+        110,
+        101
+      ],
+      "previewUtf16": [
+        80,
+        114,
+        101,
+        118,
+        105,
+        101,
+        119,
+        32,
+        108,
+        105,
+        110,
+        101
+      ],
+      "deltaLabelUtf16": [
+        67,
+        97,
+        110,
+        118,
+        97,
+        115,
+        32,
+        116,
+        105,
+        116,
+        108,
+        101,
+        58,
+        32,
+        80,
+        114,
+        101,
+        118,
+        105,
+        101,
+        119,
+        32,
+        108,
+        105,
+        110,
+        101
+      ],
+      "variant": "section",
+      "iconName": "canvas-content",
+      "isDisabled": false,
+      "isLocked": false,
+      "isLoading": false
+    },
+    {
+      "name": "empty-override",
+      "state": {
+        "team": "TSECTION",
+        "files": {
+          "FSTATUS0001": {
+            "id": "FSTATUS0001",
+            "mode": "quip",
+            "filetype": "quip",
+            "title": "Canvas title"
+          }
+        },
+        "canvasSectionRichText": {
+          "FSTATUS0001": {
+            "s1": {
+              "type": "rich_text",
+              "block_id": "section-block",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "Preview line",
+                      "style": {
+                        "bold": true
+                      },
+                      "opaque": {
+                        "keep": 7
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+      "options": {
+        "labelOverride": ""
+      },
+      "labelUtf16": [
+        58,
+        32,
+        80,
+        114,
+        101,
+        118,
+        105,
+        101,
+        119,
+        32,
+        108,
+        105,
+        110,
+        101
+      ],
+      "previewUtf16": [
+        80,
+        114,
+        101,
+        118,
+        105,
+        101,
+        119,
+        32,
+        108,
+        105,
+        110,
+        101
+      ],
+      "deltaLabelUtf16": [
+        67,
+        97,
+        110,
+        118,
+        97,
+        115,
+        32,
+        116,
+        105,
+        116,
+        108,
+        101,
+        58,
+        32,
+        80,
+        114,
+        101,
+        118,
+        105,
+        101,
+        119,
+        32,
+        108,
+        105,
+        110,
+        101
+      ],
+      "variant": "section",
+      "iconName": "canvas-content",
+      "isDisabled": false,
+      "isLocked": false,
+      "isLoading": false
+    },
+    {
+      "name": "deleted",
+      "state": {
+        "team": "TSECTION",
+        "files": {
+          "FSTATUS0001": {
+            "id": "FSTATUS0001",
+            "mode": "tombstone",
+            "is_deleted": true
+          }
+        },
+        "canvasSectionRichText": {
+          "FSTATUS0001": {
+            "s1": {
+              "type": "rich_text",
+              "block_id": "section-block",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "SHOULD NOT BE LABEL",
+                      "style": {
+                        "bold": true
+                      },
+                      "opaque": {
+                        "keep": 7
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+      "options": {},
+      "labelUtf16": [
+        68,
+        101,
+        108,
+        101,
+        116,
+        101,
+        100,
+        32,
+        99,
+        97,
+        110,
+        118,
+        97,
+        115
+      ],
+      "previewUtf16": [
+        83,
+        72,
+        79,
+        85,
+        76,
+        68,
+        32,
+        78,
+        79,
+        84,
+        32,
+        66,
+        69,
+        32,
+        76,
+        65,
+        66,
+        69,
+        76
+      ],
+      "deltaLabelUtf16": null,
+      "variant": "deleted",
+      "iconName": "trash",
+      "isDisabled": true,
+      "isLocked": false,
+      "isLoading": false
+    },
+    {
+      "name": "private",
+      "state": {
+        "team": "TSECTION",
+        "files": {
+          "FSTATUS0001": {
+            "id": "FSTATUS0001",
+            "mode": "not_visible",
+            "file_access": "not_visible"
+          }
+        },
+        "canvasSectionRichText": {
+          "FSTATUS0001": {
+            "s1": {
+              "type": "rich_text",
+              "block_id": "section-block",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "SHOULD NOT BE LABEL",
+                      "style": {
+                        "bold": true
+                      },
+                      "opaque": {
+                        "keep": 7
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+      "options": {},
+      "labelUtf16": [
+        80,
+        114,
+        105,
+        118,
+        97,
+        116,
+        101,
+        32,
+        99,
+        97,
+        110,
+        118,
+        97,
+        115
+      ],
+      "previewUtf16": [
+        83,
+        72,
+        79,
+        85,
+        76,
+        68,
+        32,
+        78,
+        79,
+        84,
+        32,
+        66,
+        69,
+        32,
+        76,
+        65,
+        66,
+        69,
+        76
+      ],
+      "deltaLabelUtf16": null,
+      "variant": "hidden",
+      "iconName": "lock",
+      "isDisabled": false,
+      "isLocked": true,
+      "isLoading": false
+    },
+    {
+      "name": "template-private",
+      "state": {
+        "team": "TSECTION",
+        "files": {
+          "FSTATUS0001": {
+            "id": "FSTATUS0001",
+            "mode": "template_not_visible"
+          }
+        },
+        "canvasSectionRichText": {
+          "FSTATUS0001": {
+            "s1": {
+              "type": "rich_text",
+              "block_id": "section-block",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "SHOULD NOT BE LABEL",
+                      "style": {
+                        "bold": true
+                      },
+                      "opaque": {
+                        "keep": 7
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+      "options": {},
+      "labelUtf16": [
+        80,
+        114,
+        105,
+        118,
+        97,
+        116,
+        101,
+        32,
+        99,
+        97,
+        110,
+        118,
+        97,
+        115
+      ],
+      "previewUtf16": [
+        83,
+        72,
+        79,
+        85,
+        76,
+        68,
+        32,
+        78,
+        79,
+        84,
+        32,
+        66,
+        69,
+        32,
+        76,
+        65,
+        66,
+        69,
+        76
+      ],
+      "deltaLabelUtf16": null,
+      "variant": "hidden",
+      "iconName": "lock",
+      "isDisabled": false,
+      "isLocked": true,
+      "isLoading": false
+    }
+  ]
+}

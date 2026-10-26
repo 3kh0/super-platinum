@@ -186,6 +186,10 @@ def validate_native(fixture, nonce, pid, directory, receipt, stages_seen, platfo
 
 
 def validate_pointer_cleanup(pointer):
+    if pointer.get("mode") == "passive":
+        from passive_fixture_pointer import validate_passive_cleanup
+        validate_passive_cleanup(pointer)
+        return
     if (pointer.get("movement_observed") is not False or pointer.get("restore_observed") is not True
             or pointer.get("restore_attempted") is not True or pointer.get("restore_error")
             or pointer.get("restore_skipped")):
@@ -213,7 +217,19 @@ def validate_closed_log(path, expected, directory, admitted, expected_dimensions
                            receipts[0], closed_receipts(path, STAGE), expected_dimensions=expected_dimensions)
 
 
-def normalize(native, evidence, stack, process_api, handle, *, caption_timeout_ms=250):
+def record_cleanup(evidence, native):
+    """Report actual post-context cleanup, including unknown exit status."""
+    code = native.process.poll() if native.process is not None else None
+    evidence.update(processExited=code is not None, applicationExitCode=code,
+                    applicationExitCodeStatus="recorded" if code is not None else "unknown",
+                    cleanupErrors=list(native.cleanup_errors))
+    if evidence["cleanupErrors"]:
+        evidence["ok"] = False
+
+
+def normalize(native, evidence, stack, process_api, handle, *, caption_timeout_ms=250, pointer_mode="park"):
+    if pointer_mode not in ("park", "passive"):
+        raise RuntimeError("Unknown pointer guard mode")
     if sys.platform != "win32":
         evidence["normalization"] = {"enabled": False, "reason": "Windows helpers do not apply"}
         return None
@@ -231,10 +247,17 @@ def normalize(native, evidence, stack, process_api, handle, *, caption_timeout_m
     observe = lambda: visual["window_observation"](native.process.pid)
     evidence["placement"] = {}
     fit_work_area(observe, verify, evidence["placement"], position_policy="top-left")
-    pointer = FixturePointer(observe, verify, caption_timeout_ms=caption_timeout_ms)
+    if pointer_mode == "passive":
+        from passive_fixture_pointer import PassiveFixturePointer
+        pointer = PassiveFixturePointer(observe, verify, caption_timeout_ms=caption_timeout_ms)
+    else:
+        pointer = FixturePointer(observe, verify, caption_timeout_ms=caption_timeout_ms)
     stack.callback(pointer.close)  # Runs while the owned process/window still exists.
     evidence["pointer"] = pointer.data
-    pointer.park()
+    if pointer_mode == "passive":
+        pointer.arm()
+    else:
+        pointer.park()
     pointer.settle(native, visual["fingerprint"])
     pointer.check("before_ready", require_clear=True)
     evidence["expectedPngDimensions"] = evidence["placement"]["after"]["window_rect_physical"][2:]
@@ -281,7 +304,7 @@ def run(fixture, binary, captures):
                     if len(waiting) != 1:
                         raise RuntimeError("Duplicate readiness request")
                     validate_ready(waiting[0], expected)
-                    pointer = normalize(native, evidence, stack, process_api, handle)
+                    pointer = normalize(native, evidence, stack, process_api, handle, pointer_mode="passive")
                     publish_ready(directory, expected)
                     evidence["readiness"] = expected
                     deadline, sampled, stage_count = time.monotonic() + 120, 0., 0
@@ -316,9 +339,11 @@ def run(fixture, binary, captures):
                 except (OSError, RuntimeError, ValueError):
                     pass
                 raise
-        evidence["processExited"] = native.process.poll() is not None
+        record_cleanup(evidence, native)
         if not evidence["processExited"]:
             raise RuntimeError("Owned process did not exit")
+        if evidence["cleanupErrors"]:
+            raise RuntimeError("Owned fixture cleanup reported errors")
         if sys.platform == "win32":
             validate_pointer_cleanup(evidence.get("pointer", {}))
         evidence["pngDimensions"] = validate_closed_log(native.log, expected, directory, evidence["native"],
@@ -339,7 +364,7 @@ def run(fixture, binary, captures):
     finally:
         # This executes after pointer restoration and NativeFixture cleanup, so
         # failure receipts also retain their actual cleanup outcomes.
-        evidence["processExited"] = native.process is not None and native.process.poll() is not None
+        record_cleanup(evidence, native)
         if handle:
             try:
                 evidence["cleanupProcessIdentity"] = process_api.times(handle)

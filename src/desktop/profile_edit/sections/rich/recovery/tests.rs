@@ -30,6 +30,39 @@ fn duplicate_occurrences_share_read_without_changing_original_draft() {
     assert_eq!(collect(&captured.before).unwrap().len(), 2);
     assert!(captured.current(&shell));
 }
+
+#[test]
+fn section_opening_retains_original_socket_before_any_dependency_wait() {
+    let (mut shell, original) = prepared();
+    let blocks = vec![json!({"type":"rich_text","elements":[{
+        "type":"rich_text_section","elements":[{"type":"canvas",
+        "file_id":"FFILE0001","section_id":"temp:C:0123456789abcdef01234567"}]
+    }]})];
+    assert!(change_shell(
+        &mut shell,
+        original.visit,
+        original.serial,
+        "long",
+        SectionValue::LongText(blocks.clone())
+    ));
+    let captured =
+        MissingOpening::capture(&shell, original.visit, original.serial, "long", 91).unwrap();
+    assert!(captured.current(&shell));
+    let generation = shell
+        .core
+        .workspaces
+        .get_mut(&captured.token.owner.team)
+        .unwrap();
+    generation.rt_generation += 1;
+    assert!(!captured.current(&shell));
+    assert_eq!(captured.before, blocks);
+    // A later explicit opening may capture the new socket; the old continuation
+    // cannot borrow it after finishing file/member/policy work.
+    let next =
+        MissingOpening::capture(&shell, original.visit, original.serial, "long", 92).unwrap();
+    assert!(next.current(&shell));
+    assert_ne!(captured.section_socket, next.section_socket);
+}
 #[test]
 fn superseding_opening_or_edit_revokes_auto_resume() {
     let (mut shell, captured) = prepared();

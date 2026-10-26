@@ -15,6 +15,7 @@ mod effective;
 pub mod freshness;
 mod lifecycle;
 mod projection;
+pub mod unknown;
 pub use lifecycle::BootLease;
 #[cfg(test)]
 mod tests;
@@ -108,6 +109,7 @@ struct Queued {
     claimed: Arc<AtomicBool>,
     generation: String,
     operation: Operation,
+    terminal: Option<unknown::Authority>,
 }
 #[derive(Clone)]
 pub struct Store {
@@ -291,6 +293,7 @@ impl Pending {
                 .queue
                 .first()
                 .is_some_and(|q| Arc::ptr_eq(&q.token, &self.head.token))
+            && self.head.terminal.as_ref().is_none_or(|v| v.current())
     }
 }
 impl Drop for Pending {
@@ -407,6 +410,7 @@ impl Store {
             claimed: Arc::new(AtomicBool::new(false)),
             generation: generation.into(),
             operation,
+            terminal: None,
         };
         let bytes = serde_json::to_vec(&queued.operation)
             .map_err(|_| Error::Shape)?
@@ -463,6 +467,9 @@ impl Store {
         let Some(head) = self.queue.first() else {
             return Ok(None);
         };
+        if head.terminal.as_ref().is_some_and(|v| !v.current()) {
+            return Err(Error::Stale);
+        }
         let fields = projection::fields(
             &self.saved.as_ref().ok_or(Error::Unknown)?.rows,
             &head.operation,

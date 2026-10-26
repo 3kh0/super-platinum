@@ -20,6 +20,7 @@ pub(super) struct MissingOpening {
     groups: Vec<String>,
     absent_groups: Vec<String>,
     files: Vec<String>,
+    section_socket: Option<u64>,
 }
 impl MissingOpening {
     pub(super) fn capture(
@@ -42,7 +43,9 @@ impl MissingOpening {
         let mut ids = Vec::new();
         let mut groups = Vec::new();
         let mut files = Vec::new();
+        let mut has_section = false;
         for raw in collect(before).ok()? {
+            has_section |= files::sections::id(raw).is_some();
             if raw["type"] == "user" {
                 let id = raw["user_id"].as_str()?.to_owned();
                 if !ids.contains(&id) {
@@ -83,10 +86,18 @@ impl MissingOpening {
             groups,
             absent_groups,
             files,
+            section_socket: has_section.then_some(workspace.rt_generation),
         })
     }
     fn current(&self, shell: &ShellState) -> bool {
         self.token.current(shell)
+            && self.section_socket.is_none_or(|generation| {
+                shell
+                    .core
+                    .workspaces
+                    .get(&self.token.owner.team)
+                    .is_some_and(|w| w.rt_generation == generation)
+            })
             && editable(shell, self.visit, self.serial)
             && shell.profile_edit.sections.draft.as_ref().is_some_and(|d| {
                 d.token == self.token
@@ -211,6 +222,18 @@ impl MissingOpening {
             }
         }
         self.title_members(state, known).await?;
+        files::sections::ensure(state, &self.token, &self.before, |shell| {
+            self.current(shell)
+        })
+        .await?;
+        let snippets =
+            files::sections::Required::capture(&state.peek(), &self.token, &self.before)?;
+        snippets
+            .acquire_files(state, &self.token, |shell| self.current(shell))
+            .await?;
+        let dependencies = snippets.dependencies(&state.peek(), &self.token)?;
+        self.acquire_dependencies(state, known, dependencies)
+            .await?;
         let ids = if known {
             self.group_recovery_ids(&state.peek())?
         } else if let Some(owner) = &automatic_groups {
@@ -243,6 +266,26 @@ impl MissingOpening {
             return Ok(());
         }
         let dependencies = files::dependencies(&state.peek(), &self.token, &self.files)?;
+        self.acquire_dependencies(state, known, dependencies).await
+    }
+    async fn acquire_dependencies(
+        &self,
+        mut state: Signal<ShellState>,
+        known: bool,
+        dependencies: files::Dependencies,
+    ) -> Result<(), Error> {
+        let hits = {
+            let mut shell = state.write();
+            if !self.current(&shell) || !dependencies.current(&shell, &self.token) {
+                return Err(unavailable());
+            }
+            let mut hits = files::channel_hits(&mut shell, &self.token, &dependencies);
+            hits.extend(files::group_hits(&mut shell, &self.token, &dependencies));
+            hits
+        };
+        for hit in hits {
+            hit.schedule(state);
+        }
         let ids = &dependencies.ids;
         if ids.is_empty() {
             return Ok(());

@@ -7,7 +7,8 @@ fn invalid() -> FormError {
     FormError::InvalidView("Malformed message choices".into())
 }
 
-pub fn parse_message_multi(element: &Value) -> Result<FormField, FormError> {
+/// Shared option composition grammar only; no max, saved/null or validation policy.
+pub(super) fn choice_options(element: &Value) -> Result<Vec<OptionSpec>, FormError> {
     let checkbox = match element.get("type").and_then(Value::as_str) {
         Some("checkboxes") => true,
         Some("multi_static_select") => false,
@@ -33,6 +34,12 @@ pub fn parse_message_multi(element: &Value) -> Result<FormField, FormError> {
             }
         }
     }
+    Ok(options)
+}
+
+pub fn parse_message_multi(element: &Value) -> Result<FormField, FormError> {
+    let checkbox = element["type"] == "checkboxes";
+    let options = choice_options(element)?;
     let max = match element.get("max_selected_items") {
         None => None,
         Some(value) if !checkbox => Some(

@@ -6,10 +6,15 @@ use dioxus::desktop::DesktopContext;
 use serde_json::json;
 use std::time::Duration;
 mod channel_title;
+mod deleted_reference;
+mod deletion_event;
 mod files;
 mod group_title;
 mod groups;
 mod missing_channel;
+mod missing_group;
+mod section_reference;
+mod unavailable_reference;
 mod user_title;
 
 pub(super) async fn readiness(name: &str) -> Result<Value, String> {
@@ -74,6 +79,26 @@ pub(super) async fn readiness(name: &str) -> Result<Value, String> {
 }
 
 pub(crate) fn start(state: Signal<ShellState>, desktop: DesktopContext) {
+    if super::section_reference::named() {
+        section_reference::start(state, desktop);
+        return;
+    }
+    if super::deletion_event::named() {
+        deletion_event::start(state, desktop);
+        return;
+    }
+    if super::deleted_reference::named() {
+        deleted_reference::start(state, desktop);
+        return;
+    }
+    if super::unavailable_reference::named() {
+        unavailable_reference::start(state, desktop);
+        return;
+    }
+    if super::missing_group::named() {
+        missing_group::start(state, desktop);
+        return;
+    }
     if super::group_title::named() {
         group_title::start(state, desktop);
         return;
@@ -529,9 +554,10 @@ pub(super) async fn wait_dom(desktop: &DesktopContext, script: &str) -> Result<V
     let wrapped = format!(
         r#"(()=>{{let measured;try{{measured=({script});}}catch(error){{measured={{ok:false,error:String(error)}};}}
       const d=document.getElementById('shell-overlay-dialog'),e=document.getElementById('profile-section-rich');
+      const display=s=>s===undefined?s:Array.from(s,c=>c.length===1&&c.charCodeAt(0)>=0xd800&&c.charCodeAt(0)<=0xdfff?'\ufffd':c).join('');
       return{{ok:true,measured,diagnostic:{{dialog:!!d,visit:d?.dataset.dialogGeneration,serial:d?.dataset.sectionSerial,locked:d?.dataset.sectionLocked,
         richPane:!!document.getElementById('profile-section-rich-pane'),richEditor:!!e,richEditable:e?.isContentEditable,
-        text:e?.textContent?.slice(0,100),tokens:e?[...e.querySelectorAll('.rich-editor-token')].map(t=>t.textContent):[],
+        text:display(e?.textContent?.slice(0,100)),tokens:e?[...e.querySelectorAll('.rich-editor-token')].map(t=>display(t.textContent)):[],
         buttons:d?[...d.querySelectorAll('button')].map(b=>({{text:b.textContent,disabled:b.disabled}})):[],
         notices:d?[...d.querySelectorAll('.profile-edit-notice,.profile-edit-field-error,#profile-section-rich-status')].map(n=>n.textContent):[],
         choice:document.getElementById('profile-section-field-choice')?.value,
@@ -618,8 +644,9 @@ const LAYOUT: &str = r#"(()=>{
  const visible=e=>{const s=getComputedStyle(e),fragments=[...e.getClientRects()].filter(r=>r.width>0&&r.height>0);return s.visibility==='visible'&&s.display!=='none'&&fragments.length>0&&fragments.every(r=>{const hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);let unclipped=true;for(let p=e.parentElement;p;p=p.parentElement){const ps=getComputedStyle(p),pr=rect(p);if(/auto|scroll|hidden|clip/.test(ps.overflowY)&&(r.top<pr.top-1||r.bottom>pr.bottom+1))unclipped=false;if(/auto|scroll|hidden|clip/.test(ps.overflowX)&&(r.left<pr.left-1||r.right>pr.right+1))unclipped=false;}return unclipped&&r.left>=0&&r.top>=0&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1&&(hit===e||e.contains(hit));});};
  const controls=d?[...d.querySelectorAll('footer button,#profile-section-rich-pane > button')].map(e=>({text:e.textContent,disabled:e.disabled,visible:visible(e),rect:rect(e)})):[];
  const notices=d?[...d.querySelectorAll('.profile-edit-notice,.profile-edit-field-error,#profile-section-rich-status')].filter(e=>e.textContent.trim()).map(e=>({text:e.textContent,visible:visible(e),rect:rect(e)})):[];
- const tokens=e?[...e.querySelectorAll('.rich-editor-token')].map(e=>({text:e.textContent,editable:e.isContentEditable,fontWeight:getComputedStyle(e).fontWeight,fontStyle:getComputedStyle(e).fontStyle,visible:visible(e),rect:rect(e),fragments:[...e.getClientRects()].map(r=>({left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:r.width,height:r.height}))})):[];
+ const display=s=>Array.from(s,c=>c.length===1&&c.charCodeAt(0)>=0xd800&&c.charCodeAt(0)<=0xdfff?'\ufffd':c).join('');
  const native=e&&window.superPlatinumRichEditor.resolved(e),locked=document.getElementById('profile-section-field-locked');
+ const tokens=e?[...e.querySelectorAll('.rich-editor-token')].map((e,index)=>({text:display(e.textContent),...(Array.isArray(native?.tokens[index]?.labelUnits)?{labelUnits:Array.from({length:e.textContent.length},(_,i)=>e.textContent.charCodeAt(i))}:{}),editable:e.isContentEditable,fontWeight:getComputedStyle(e).fontWeight,fontStyle:getComputedStyle(e).fontStyle,visible:visible(e),rect:rect(e),fragments:[...e.getClientRects()].map(r=>({left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:r.width,height:r.height}))})):[];
  const noOverflow=document.documentElement.scrollWidth<=innerWidth+1&&(!d||d.scrollWidth<=d.clientWidth+1);
  return{ok:noOverflow&&(!d||visible(d))&&controls.every(e=>e.visible)&&notices.every(e=>e.visible)&&tokens.every((t,i)=>t.visible||(allowEmptyGroup&&t.text===''&&t.rect.width===0&&native?.tokens[i]?.label===''&&native?.tokens[i]?.value?.type==='usergroup')),
  viewport:[innerWidth,innerHeight],noOverflow,dialog:!!d,dialogRect:d?rect(d):null,controls,notices,tokens,

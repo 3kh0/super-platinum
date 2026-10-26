@@ -7,8 +7,10 @@ use crate::{
     },
 };
 
+mod deletion_event;
 pub(crate) mod display_metadata;
 pub(crate) mod display_reads;
+pub use deletion_event::FileDeletionEvent;
 pub use display_reads::{FileDisplayOverlay, FileDisplayRead};
 
 /// The small, non-secret subset a rendered attachment needs for file actions.

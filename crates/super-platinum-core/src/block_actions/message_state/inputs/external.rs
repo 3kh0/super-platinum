@@ -41,7 +41,7 @@ impl MessageInputs {
 mod tests {
     use super::*;
     fn option(value: &str) -> ExternalOption {
-        ExternalOption::parse(&json!({"text":{"type":"plain_text","text":value},"value":value}))
+        ExternalOption::parse(&json!({"text":{"type":"plain_text","text":value},"value":value,"opaque":{"source":value,"retained":[1,null,false]},"url":"https://example.test/not-navigation"}))
             .unwrap()
     }
     fn message() -> Message {

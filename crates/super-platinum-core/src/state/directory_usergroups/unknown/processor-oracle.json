@@ -1,0 +1,33 @@
+{
+  "ok": true,
+  "prior": {
+    "id": "SGROUP001",
+    "name": "Retained name",
+    "handle": "retained-handle",
+    "date_update": 101,
+    "user_count": 8
+  },
+  "raw": {
+    "id": "SGROUP001",
+    "isNonExistent": true
+  },
+  "canonical": {
+    "id": "SGROUP001",
+    "name": "Retained name",
+    "handle": "retained-handle",
+    "date_update": 101,
+    "user_count": 0,
+    "isNonExistent": true,
+    "is_usergroup": true
+  },
+  "canonicalUndefinedKeys": [
+    "_name_lc"
+  ],
+  "labels": {
+    "flattened": "Notes for @unknown-group",
+    "title": "Notes for @unknown-group",
+    "final": "Notes for @unknown-group"
+  },
+  "scope": "Executed original JJAw+0dhJ+0mwJ predicates and actual nested formatter. Synthetic thunk/dispatch/source host; direct processor application, NOT wrapper rejection outcome.",
+  "wrapperRejection": "Existing retained rows survive wrapper catch+concat, so this terminal-over-known input is separate from retained-wrapper-error."
+}

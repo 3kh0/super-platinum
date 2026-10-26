@@ -71,3 +71,54 @@ impl CanvasTitle {
         json!({"current":current,"descriptor":self.descriptor()})
     }
 }
+
+/// The application's English group token spelling, separate from account locale.
+#[derive(Clone, Copy)]
+pub(crate) struct GroupTitle;
+impl GroupTitle {
+    pub(crate) const fn english() -> Self {
+        Self
+    }
+    pub(crate) fn context(
+        self,
+    ) -> super_platinum_core::slack::api::custom::texty::file_titles::GroupTitle {
+        super_platinum_core::slack::api::custom::texty::file_titles::GroupTitle::english()
+    }
+    pub(crate) fn descriptor(self) -> Value {
+        json!({"locale":"en-US","namespace":"usergroup","value":"unknown-group","origin":"application-presentation"})
+    }
+}
+
+/// Explicit English Canvas status presentation; source status remains separately owned.
+#[derive(Clone, Copy)]
+pub(crate) struct PrivateCanvas;
+impl PrivateCanvas {
+    pub(crate) const fn english() -> Self {
+        Self
+    }
+    pub(crate) fn value(self) -> &'static str {
+        super_platinum_core::slack::api::custom::texty::file_titles::CanvasReferenceText::english()
+            .private_canvas()
+    }
+    pub(crate) fn descriptor(self) -> Value {
+        json!({"locale":"en-US","namespace":"canvas","source":"Private canvas","value":self.value(),
+            "origin":"application-presentation","token":{"kind":"private-canvas","icon":"lock","disabled":false}})
+    }
+}
+
+/// Explicit English Canvas status presentation; source status remains separately owned.
+#[derive(Clone, Copy)]
+pub(crate) struct DeletedCanvas;
+impl DeletedCanvas {
+    pub(crate) const fn english() -> Self {
+        Self
+    }
+    pub(crate) fn value(self) -> &'static str {
+        super_platinum_core::slack::api::custom::texty::file_titles::CanvasReferenceText::english()
+            .deleted_canvas()
+    }
+    pub(crate) fn descriptor(self) -> Value {
+        json!({"locale":"en-US","namespace":"canvas","source":"Deleted canvas","value":self.value(),
+            "origin":"application-presentation","token":{"kind":"deleted-canvas","icon":"delete","disabled":true}})
+    }
+}

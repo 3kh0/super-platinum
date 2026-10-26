@@ -1,7 +1,11 @@
 use super::*;
 use serde_json::json;
 mod channels;
+mod deleted;
+mod events;
 mod groups;
+mod reference;
+mod sections;
 
 fn setup() -> (ShellState, Token) {
     let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());

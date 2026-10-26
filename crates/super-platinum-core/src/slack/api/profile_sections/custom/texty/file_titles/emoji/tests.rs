@@ -108,7 +108,7 @@ fn unsupported_semantics_refuse_in_both_scanner_and_extractor() {
         json!({"type":"emoji","name":"poop"}),
         json!({"type":"emoji","name":"skin-tone-2"}),
     ];
-    for key in ["unicode", "skinTone", "skin_tone", "alias", "custom", "url"] {
+    for key in ["unicode", "alias", "custom", "url"] {
         for value in [Value::Null, json!(false), json!("value")] {
             let mut leaf = json!({"type":"emoji","name":"wave"});
             leaf[key] = value;
@@ -136,6 +136,8 @@ fn unsupported_semantics_refuse_in_both_scanner_and_extractor() {
         );
     }
 }
+
+mod tone;
 
 #[test]
 fn emoji_context_does_not_supply_fallback_quip_or_status_authority() {

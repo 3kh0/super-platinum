@@ -9,6 +9,7 @@ fn group(handle: &str, version: u64) -> Value {
 fn boot(shell: &mut ShellState, token: &Token) {
     let owner =
         crate::directory_member_fetches::Context::capture(shell, &token.owner.team).unwrap();
+    self_source(shell, token, false);
     let w = shell.core.workspaces.get_mut(&token.owner.team).unwrap();
     w.usergroups.clear();
     w.directory_usergroups = Store::fresh();
@@ -142,6 +143,8 @@ fn nested_group_rename_retires_opening_but_never_rewrites_mounted_label() {
         .insert(&wire, observed.label(&wire).unwrap())
         .unwrap();
     let witness = catalog::Witness {
+        label_units: None,
+        presentation: None,
         value: wire.clone(),
         label: "Notes for @design".into(),
     };
@@ -162,4 +165,121 @@ fn nested_group_rename_retires_opening_but_never_rewrites_mounted_label() {
         .handle = "forged".into();
     assert!(!current.current(&shell));
     assert!(Observation::capture(&shell, &token, "FFILE0001").is_err());
+}
+
+fn self_source(shell: &mut ShellState, token: &Token, restricted: bool) {
+    use super_platinum_core::{
+        block_actions::workflow_management::member_hydration::{Flags, RendererReply},
+        state::directory_members::{Origin, Store},
+    };
+    let o = crate::directory_member_fetches::Context::capture(shell, &token.owner.team).unwrap();
+    let w = shell.core.workspaces.get_mut(&token.owner.team).unwrap();
+    if w.directory_members
+        .subset(
+            &o.account,
+            &o.session,
+            o.epoch,
+            "group-self-test",
+            &std::collections::BTreeSet::from([o.session.user_id.clone()]),
+            &w.users,
+        )
+        .is_err()
+    {
+        w.directory_members = Store::default();
+        w.directory_members
+            .begin(&o.account, &o.session, &Default::default())
+            .unwrap();
+    }
+    w.directory_members
+        .enqueue(
+            &o.account,
+            &o.session,
+            Origin::Directory,
+            vec![json!({"id":o.session.user_id,"profile":{},"is_restricted":restricted})],
+            json!({}),
+        )
+        .unwrap();
+    let flags = Flags::decode(&json!({"ok":true,"assignments":{}})).unwrap();
+    let p = w
+        .directory_members
+        .prepare(
+            &o.account,
+            &o.session,
+            o.epoch,
+            "group-self-test",
+            flags.clone(),
+            &w.users,
+        )
+        .unwrap();
+    assert!(p.fields().iter().all(|v| v.is_ascii()));
+    let r = RendererReply {
+        generation: p.generation().into(),
+        operation: "ordinary-toLowerCase".into(),
+        fields: p.fields().to_vec(),
+        lowered: p.fields().iter().map(|v| v.to_ascii_lowercase()).collect(),
+    };
+    w.users = w
+        .directory_members
+        .adopt(
+            p,
+            r,
+            &flags,
+            &o.account,
+            &o.session,
+            o.epoch,
+            "group-self-test",
+            &w.users,
+        )
+        .unwrap()
+        .into_parts()
+        .1;
+}
+#[test]
+fn nested_missing_placeholder_needs_registered_source_and_keeps_mounted_label() {
+    let (mut shell, token) = setup();
+    boot(&mut shell, &token);
+    put(&mut shell, &token, &file());
+    assert!(Observation::capture(&shell, &token, "FFILE0001").is_err());
+    let deps = dependencies(&shell, &token, &["FFILE0001".into()]).unwrap();
+    assert_eq!(group_hits(&mut shell, &token, &deps).len(), 1);
+    let old = Observation::capture(&shell, &token, "FFILE0001").unwrap();
+    let wire = json!({"type":"canvas","file_id":"FFILE0001"});
+    assert_eq!(old.label(&wire).unwrap(), "Notes for @unknown-group");
+    publish(&mut shell, &token, group("found", 1));
+    assert!(!old.current(&shell));
+    assert_eq!(old.label(&wire).unwrap(), "Notes for @unknown-group");
+    assert_eq!(
+        Observation::capture(&shell, &token, "FFILE0001")
+            .unwrap()
+            .label(&wire)
+            .unwrap(),
+        "Notes for @found"
+    );
+}
+#[test]
+fn restricted_self_overrides_absent_and_existing_and_role_change_retires_opening() {
+    let (mut shell, token) = setup();
+    boot(&mut shell, &token);
+    self_source(&mut shell, &token, true);
+    put(&mut shell, &token, &file());
+    let deps = dependencies(&shell, &token, &["FFILE0001".into()]).unwrap();
+    assert!(group_hits(&mut shell, &token, &deps).is_empty());
+    let wire = json!({"type":"canvas","file_id":"FFILE0001"});
+    let absent = Observation::capture(&shell, &token, "FFILE0001").unwrap();
+    assert_eq!(absent.label(&wire).unwrap(), "Notes for @unknown-group");
+    publish(&mut shell, &token, group("secret-name", 1));
+    let known = Observation::capture(&shell, &token, "FFILE0001").unwrap();
+    assert_eq!(known.label(&wire).unwrap(), "Notes for @unknown-group");
+    assert!(group_hits(&mut shell, &token, &deps).is_empty());
+    self_source(&mut shell, &token, false);
+    assert!(!known.current(&shell));
+    assert!(!absent.current(&shell));
+    assert_eq!(known.label(&wire).unwrap(), "Notes for @unknown-group");
+    assert_eq!(
+        Observation::capture(&shell, &token, "FFILE0001")
+            .unwrap()
+            .label(&wire)
+            .unwrap(),
+        "Notes for @secret-name"
+    );
 }

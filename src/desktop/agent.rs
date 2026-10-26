@@ -52,6 +52,41 @@ pub async fn serve(
     crate::app_home::about::management::fixture::check::start(state, desktop.clone());
     crate::app_home::about::management::activity::fixture::check::start(state, desktop.clone());
     crate::app_home::channel_fetches::fixture::check::start(state, desktop.clone());
+    crate::app_home::inputs::external::fixture::check::start(state, desktop.clone());
+    crate::app_home::inputs::external::multi_fixture::check::start(state, desktop.clone());
+    crate::app_home::inputs::text::fixture::check::start(state, desktop.clone());
+    crate::app_home::inputs::static_select::wrappers::fixture::start(state, desktop.clone());
+    crate::app_home::inputs::static_select::multiple::fixture::start(state, desktop.clone());
+    crate::app_home::inputs::static_select::checkboxes::fixture::start(state, desktop.clone());
+    crate::app_home::inputs::static_select::radio::fixture::start(state, desktop.clone());
+    crate::app_home::inputs::native::date::fixture::start(state, desktop.clone());
+    crate::app_home::inputs::native::date::focus_fixture::start(state, desktop.clone());
+    crate::app_home::inputs::native::date::popup_fixture::start(state, desktop.clone());
+    crate::app_home::inputs::native::time::fixture::start(state, desktop.clone());
+    crate::app_home::inputs::native::time::focus_fixture::start(state, desktop.clone());
+    crate::app_home::inputs::native::datetime::editing_fixture::start(state, desktop.clone());
+    crate::app_home::inputs::native::datetime::popup_fixture::start(state, desktop.clone());
+    crate::app_home::inputs::native::datetime::fixture::start(state, desktop.clone());
+    crate::app_home::inputs::static_select::fixture::check::start(state, desktop.clone());
+    crate::app_home::inputs::static_select::fixture::check::remount::start(state, desktop.clone());
+    crate::app_home::inputs::text::fixture::focus::start(state, desktop.clone());
+    crate::app_home::inputs::text::button::fixture::check::start(state, desktop.clone());
+    crate::app_home::inputs::channels::conversation::fixture::check::start(state, desktop.clone());
+    crate::app_home::inputs::channels::conversation::fixture::multiple::check::start(
+        state,
+        desktop.clone(),
+    );
+    crate::app_home::inputs::channels::fixture::check::start(state, desktop.clone());
+    crate::app_home::inputs::channels::fixture::multiple::check::start(state, desktop.clone());
+    crate::app_home::inputs::users::dispatch::fixture::start(state, desktop.clone());
+    crate::app_home::inputs::external::dispatch::fixture::start(state, desktop.clone());
+    crate::app_home::inputs::external::multi_dispatch_fixture::start(state, desktop.clone());
+    crate::app_home::inputs::number_fixture::start(state, desktop.clone());
+    crate::app_home::inputs::email_fixture::start(state, desktop.clone());
+    crate::app_home::inputs::focus_fixture::start(state, desktop.clone());
+    crate::app_home::inputs::users::fixture::check::start(state, desktop.clone());
+    crate::app_home::inputs::users::fixture::multiple::check::start(state, desktop.clone());
+    crate::app_home::context::fixture::check::start(state, desktop.clone());
     crate::profile_edit::sections::fixture::mentions_check::start(state, desktop.clone());
     crate::profile_edit::sections::fixture::recovery_check::start(state, desktop.clone());
     crate::profile_edit::sections::fixture::group_recovery_check::start(state, desktop.clone());

@@ -11,12 +11,16 @@ use std::{collections::BTreeMap, sync::Arc};
 mod batch;
 mod candidate;
 mod category;
+mod deletion;
 mod info;
 mod order;
+mod reference;
 pub use batch::{BatchEntry, BatchReceipt, CandidateObservation, Collection};
 pub use category::{CategoryObservation, Exclusion};
+pub use deletion::{DeletionEvidence, DeletionPlan};
 pub use info::OrderedFileInfo;
 pub use order::ChannelMapOrder;
+pub use reference::{FileReferenceResponse, ReferenceObservation, ReferenceValue};
 
 const MAX_ROWS: usize = 128;
 const MAX_ROW_BYTES: usize = 1_048_576;
@@ -78,6 +82,8 @@ struct Row {
     effective: Option<Value>,
     candidate: Option<Value>,
     category: Option<Value>,
+    reference: Option<Value>,
+    deletion: Option<Arc<DeletionEvidence>>,
     channel_map_order: Option<Arc<Vec<String>>>,
     bytes: usize,
 }
@@ -161,6 +167,33 @@ impl Store {
             received
         };
         let incoming = raw.as_object().ok_or_else(malformed)?;
+        // 20Mt fetchFileById's normal positive envelope overrides is_deleted.
+        // Other outer response fields affect unported comments/content/shares,
+        // not this title-facts projection. Keep the original receipt separately.
+        let mut mapped = incoming.clone();
+        if info {
+            mapped.insert("is_deleted".into(), Value::Bool(false));
+        }
+        self.ingest_mapped(received, raw, &mapped, team, order, false)
+            .and_then(|available| {
+                if available {
+                    Ok(())
+                } else {
+                    Err(unavailable())
+                }
+            })
+    }
+
+    fn ingest_mapped(
+        &mut self,
+        received: &Value,
+        raw: &Value,
+        mapped: &Map<String, Value>,
+        team: Option<&str>,
+        order: Option<&[String]>,
+        deleted_response: bool,
+    ) -> Result<bool, Error> {
+        let incoming = raw.as_object().ok_or_else(malformed)?;
         let id = raw["id"]
             .as_str()
             .filter(|id| valid_id(id))
@@ -169,13 +202,6 @@ impl Store {
             return Err(malformed());
         }
         let previous = self.rows.get(id);
-        // 20Mt fetchFileById's normal positive envelope overrides is_deleted.
-        // Other outer response fields affect unported comments/content/shares,
-        // not this title-facts projection. Keep the original receipt separately.
-        let mut mapped = incoming.clone();
-        if info {
-            mapped.insert("is_deleted".into(), Value::Bool(false));
-        }
         let effective = if previous.is_some_and(|row| row.effective.is_none()) {
             None
         } else {
@@ -199,6 +225,7 @@ impl Store {
             previous.and_then(|row| row.channel_map_order.clone())
         };
         let category = category::project(&mapped, previous.map(AsRef::as_ref));
+        let reference = reference::project(mapped, previous.map(AsRef::as_ref), deleted_response);
         let bytes = received.to_string().len()
             + raw.to_string().len()
             + effective
@@ -209,6 +236,7 @@ impl Store {
                 .as_ref()
                 .map_or(0, |value| value.to_string().len());
         let bytes = bytes + category.as_ref().map_or(0, |v| v.to_string().len());
+        let bytes = bytes + reference.as_ref().map_or(0, |v| v.to_string().len());
         let retained: usize = self
             .rows
             .iter()
@@ -230,15 +258,13 @@ impl Store {
                 effective,
                 candidate,
                 category,
+                reference,
+                deletion: None,
                 channel_map_order,
                 bytes,
             }),
         );
-        if available {
-            Ok(())
-        } else {
-            Err(unavailable())
-        }
+        Ok(available)
     }
     pub fn row(&self, id: &str) -> Result<Observation, Error> {
         let row = self
@@ -282,6 +308,22 @@ fn project(incoming: &Map<String, Value>, previous: Option<&Value>) -> Result<Va
             return Err(unavailable());
         }
     }
+    let effective = merge_title_fields(incoming, previous);
+    ordinary(&raw, false)?;
+    ordinary(&effective, true)?;
+    let canvas = effective["mode"] == "quip" || effective["filetype"] == "quip";
+    let list = (effective["mode"] == "list" || effective["filetype"] == "list")
+        && effective["subtype"] != "poll";
+    if !canvas && !list {
+        return Err(unavailable());
+    }
+    Ok(effective)
+}
+
+/// Supported 4OY3 field merge, independent of normal-title admission. A
+/// reference may retain blocked access without a normal Canvas/List kind.
+fn merge_title_fields(incoming: &Map<String, Value>, previous: Option<&Value>) -> Value {
+    let raw = Value::Object(incoming.clone());
     let mut effective = previous
         .and_then(Value::as_object)
         .cloned()
@@ -310,16 +352,7 @@ fn project(incoming: &Map<String, Value>, previous: Option<&Value>) -> Result<Va
         effective.insert("isUnknown".into(), Value::Bool(false));
         effective.insert("isNonExistent".into(), Value::Bool(false));
     }
-    let effective = Value::Object(effective);
-    ordinary(&raw, false)?;
-    ordinary(&effective, true)?;
-    let canvas = effective["mode"] == "quip" || effective["filetype"] == "quip";
-    let list = (effective["mode"] == "list" || effective["filetype"] == "list")
-        && effective["subtype"] != "poll";
-    if !canvas && !list {
-        return Err(unavailable());
-    }
-    Ok(effective)
+    Value::Object(effective)
 }
 
 fn ordinary(row: &Value, require_known: bool) -> Result<(), Error> {

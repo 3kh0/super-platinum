@@ -2,24 +2,28 @@
 use super::*;
 use serde_json::{Value, json};
 pub(crate) fn install(s: &mut ShellState) {
+    s.core
+        .active_account
+        .get_or_insert_with(|| "00000000-0000-4000-8000-000000000091".into());
     let team = s.core.active_team.clone().unwrap();
     let user = s.core.workspaces[&team].self_user_id.clone();
     let session = super_platinum_core::config::WorkspaceSession {
         team_id: team.clone(),
         user_id: user,
-        enterprise_id: None,
+        enterprise_id: (crate::app_home::inputs::channels::fixture::requested()
+            && (crate::app_home::inputs::channels::fixture::case() == "retirement"
+                || (crate::app_home::inputs::channels::conversation::fixture::requested()
+                    && matches!(
+                        crate::app_home::inputs::channels::conversation::fixture::case().as_str(),
+                        "filter" | "recovery"
+                    ))))
+        .then(|| "EHOME0001".into()),
         name: "Home fixture".into(),
         url: "https://example.test".into(),
         token: "synthetic-home-token".into(),
     };
     s.core.session = Some(super_platinum_core::config::Session {
-        unified_user_client_enabled:
-            if crate::app_home::about::management::fixture::first_publish::confirmation::requested()
-            {
-                [(team.clone(), false)].into()
-            } else {
-                Default::default()
-            },
+        unified_user_client_enabled: [(team.clone(), false)].into(),
         d_cookie: "synthetic".into(),
         workspaces: [(team.clone(), session)].into(),
     });
@@ -126,6 +130,9 @@ pub(crate) fn install_calendar(s: &mut ShellState) {
     inputs::hydrate(s);
 }
 pub(super) fn activate(s: &mut ShellState, b: &Button) {
+    activate_with_context(s, b, None)
+}
+pub(super) fn activate_with_context(s: &mut ShellState, b: &Button, context: Option<&str>) {
     let Some(h) = s
         .app_home
         .surface
@@ -140,7 +147,13 @@ pub(super) fn activate(s: &mut ShellState, b: &Button) {
     else {
         return;
     };
-    let Ok(req) = b.prepare(&owner.ctx.client, &owner.ctx.session, &view, &token.token) else {
+    let Ok(req) = b.prepare_with_context(
+        &owner.ctx.client,
+        &owner.ctx.session,
+        &view,
+        &token.token,
+        context,
+    ) else {
         return;
     };
     record(s, req);

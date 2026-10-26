@@ -1,8 +1,10 @@
 //! hGZA input-block mode publishes local selections inline, without an action.
 use super::user_choices::{SelectedUsers, UserChoices};
-use crate::{app_modal::users, state::ShellState};
+use crate::state::ShellState;
 use dioxus::prelude::*;
 use super_platinum_core::block_actions::form::{FormField, InputKey, InputKind, InputValue};
+mod owner;
+use owner as users;
 
 #[component]
 pub(crate) fn ModalUsers(
@@ -11,10 +13,11 @@ pub(crate) fn ModalUsers(
     field: FormField,
     id: String,
     locked: bool,
+    #[props(default = false)] home: bool,
 ) -> Element {
     let mut suppress_focus = use_signal(|| false);
     let shell = state.read();
-    let ticket = users::Ticket::capture(&shell, &input_key);
+    let ticket = users::Ticket::capture(&shell, &input_key, home);
     let search = ticket.as_ref().and_then(|t| users::presentation(&shell, t));
     let channel = matches!(
         field.kind,
@@ -25,7 +28,7 @@ pub(crate) fn ModalUsers(
             field.kind,
             InputKind::Conversation | InputKind::MultiConversation { .. }
         );
-    let unavailable = users::unavailable(&shell, &field.raw);
+    let unavailable = users::unavailable(&shell, &field.raw, home);
     let multiple = matches!(
         field.kind,
         InputKind::MultiUser { .. }
@@ -41,11 +44,37 @@ pub(crate) fn ModalUsers(
         }
         _ => vec![],
     };
-    let selected = ticket
+    let selected = if home {
+        users::display(&shell, &input_key).unwrap_or_default()
+    } else {
+        ticket
+            .as_ref()
+            .map(|t| users::labels(&shell, t, &values))
+            .unwrap_or_else(|| values.into_iter().map(|id| (id.clone(), id)).collect())
+    };
+    let multi_status = home
+        .then(|| {
+            crate::app_home::inputs::users::multiple::presentation(&shell, &input_key)
+                .map(|p| (p.invalid, p.text))
+                .or_else(|| {
+                    crate::app_home::inputs::channels::multiple::presentation(&shell, &input_key)
+                        .map(|p| (p.invalid, p.text))
+                })
+        })
+        .flatten();
+    let parent_error = if home {
+        crate::app_home::inputs::presentation_error(&shell, &input_key)
+    } else {
+        field.error.clone()
+    };
+    let invalid = multi_status
         .as_ref()
-        .map(|t| users::labels(&shell, t, &values))
-        .unwrap_or_else(|| values.into_iter().map(|id| (id.clone(), id)).collect());
-    let disabled = locked || ticket.as_ref().is_none_or(|t| !t.current(&shell));
+        .map_or(parent_error.is_some(), |p| p.0);
+    let disabled = locked
+        || ticket.as_ref().is_none_or(|t| !t.current(&shell))
+        || (home
+            && (crate::app_home::inputs::users::dispatch::disabled(&shell, &input_key)
+                || crate::app_home::inputs::channels::dispatch::disabled(&shell, &input_key)));
     drop(shell);
     let open_ticket = ticket.clone();
     let click_ticket = ticket.clone();
@@ -53,7 +82,11 @@ pub(crate) fn ModalUsers(
     let remove_ticket = ticket.clone();
     let key_ticket = ticket.clone();
     let label_id = format!("{id}-label");
-    let described_by = format!("{id}-hint {id}-error");
+    let described_by = if home && parent_error.is_none() {
+        format!("{id}-hint")
+    } else {
+        format!("{id}-hint {id}-error")
+    };
     let expanded = search.is_some();
     let generation = ticket.as_ref().map_or(0, users::Ticket::generation);
     let query_value = search.as_ref().map(|s| s.query.clone()).unwrap_or_default();
@@ -104,13 +137,14 @@ pub(crate) fn ModalUsers(
             }}
             input {id:"{id}",r#type:"search",autocomplete:"off",disabled,placeholder:"{placeholder}",
                 value:query_value,
-                "aria-labelledby":"{label_id}","aria-describedby":"{described_by}","aria-invalid":field.error.is_some().to_string(),
+                "aria-labelledby":"{label_id}","aria-describedby":"{described_by}","aria-invalid":invalid.to_string(),
                 "aria-required":(!field.optional).to_string(),"aria-expanded":expanded.to_string(),
                 onfocus:move |_|{if *suppress_focus.peek(){suppress_focus.set(false);}else if let Some(ticket)=open_ticket.clone(){users::open(state,ticket);}},
                 onclick:move |_|if let Some(ticket)=click_ticket.clone(){users::open(state,ticket);},
                 oninput:move |event|if let Some(ticket)=input_ticket.clone(){users::search(state,ticket,event.value());},
                 onkeydown:move |event|if event.key()==Key::Enter {event.prevent_default();event.stop_propagation();}
             }
+            if let Some(text)=multi_status.and_then(|p|p.1) {p {class:"app-modal-hint",role:"status","data-home-users-limit":"true","{text}"}}
             if let Some(reason)=unavailable {p {class:"app-modal-hint",role:"status","{reason}"}}
             if let (Some(search),Some(ticket))=(search,ticket) {
                 {let serial=search.serial;let revision=search.query_revision;let choice_ticket=ticket.clone();let retry_ticket=ticket.clone();let done_ticket=ticket;
@@ -141,9 +175,9 @@ fn collapse_selection(
     mut suppress_focus: Signal<bool>,
     id: &str,
 ) {
-    if !ticket.current(&state.peek()) {
+    let Some(ticket) = ticket.after_edit(&state.peek()) else {
         return;
-    }
+    };
     let generation = ticket.generation();
     suppress_focus.set(true);
     users::collapse(state, ticket);

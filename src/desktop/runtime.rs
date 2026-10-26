@@ -29,6 +29,11 @@ pub async fn ticks(mut state: Signal<ShellState>) {
         let mut observations_ready = None;
         let mut changed = profile_clock.poll(&shell);
         changed |= crate::app_modal::poll(&mut shell);
+        changed |= crate::app_home::inputs::external::poll(&mut shell);
+        changed |= crate::app_home::inputs::users::poll(&mut shell);
+        changed |= crate::app_home::inputs::channels::poll(&mut shell);
+        changed |= crate::app_home::inputs::text::poll(&mut shell);
+        changed |= crate::app_home::inputs::static_select::poll(&mut shell);
         changed |= crate::self_status::poll(&mut shell);
         changed |= crate::profile_edit::poll(&mut shell);
         changed |= crate::profile_title::poll(&mut shell);

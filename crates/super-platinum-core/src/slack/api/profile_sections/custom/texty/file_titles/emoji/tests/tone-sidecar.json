@@ -1,0 +1,1879 @@
+{
+  "ok": true,
+  "count": 38,
+  "cases": [
+    {
+      "name": "desktop-tone-initial",
+      "desktop": true,
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skinTone": 3,
+                    "skin_tone": 6
+                  },
+                  {
+                    "type": "text",
+                    "text": " Project plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": ":wave::skin-tone-3: Project plan",
+        "label": "Project plan",
+        "finalLabel": "Project plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "desktop-tone-renamed",
+      "desktop": true,
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skinTone": 4,
+                    "skin_tone": 6
+                  },
+                  {
+                    "type": "text",
+                    "text": " "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skinTone": 0
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave::skin-tone-4: :wave: plan",
+        "label": "Project :wave::skin-tone-4: :wave: plan",
+        "finalLabel": "Project :wave::skin-tone-4: :wave: plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "desktop-tone-empty-initial",
+      "desktop": true,
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": 2
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": ":wave::skin-tone-2:",
+        "label": "",
+        "finalLabel": ""
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "desktop-tone-empty-renamed",
+      "desktop": true,
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skinTone": null
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skinTone": 0,
+                    "skin_tone": 5
+                  },
+                  {
+                    "type": "text",
+                    "text": " Plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": ":wave::wave::skin-tone-5: Plan",
+        "label": ":wave::skin-tone-5: Plan",
+        "finalLabel": ":wave::skin-tone-5: Plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "number-0",
+      "toneLiteral": "-0.0",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skin_tone": 0,
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave: plan",
+        "label": "Project :wave: plan",
+        "finalLabel": "Project :wave: plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "number-1",
+      "toneLiteral": "1.0",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skin_tone": 1,
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave::skin-tone-1: plan",
+        "label": "Project :wave::skin-tone-1: plan",
+        "finalLabel": "Project :wave::skin-tone-1: plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "number-2",
+      "toneLiteral": "2.5",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skin_tone": 2.5,
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave::skin-tone-2.5: plan",
+        "label": "Project :wave::skin-tone-2.5: plan",
+        "finalLabel": "Project :wave::skin-tone-2.5: plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "number-3",
+      "toneLiteral": "-1",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skin_tone": -1,
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave::skin-tone--1: plan",
+        "label": "Project :wave::skin-tone--1: plan",
+        "finalLabel": "Project :wave::skin-tone--1: plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "number-4",
+      "toneLiteral": "1e-7",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skin_tone": 1e-7,
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave::skin-tone-1e-7: plan",
+        "label": "Project :wave::skin-tone-1e-7: plan",
+        "finalLabel": "Project :wave::skin-tone-1e-7: plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "number-5",
+      "toneLiteral": "1e-6",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skin_tone": 0.000001,
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave::skin-tone-0.000001: plan",
+        "label": "Project :wave::skin-tone-0.000001: plan",
+        "finalLabel": "Project :wave::skin-tone-0.000001: plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "number-6",
+      "toneLiteral": "9.999999999999999e-7",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skin_tone": 0.000001,
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave::skin-tone-0.000001: plan",
+        "label": "Project :wave::skin-tone-0.000001: plan",
+        "finalLabel": "Project :wave::skin-tone-0.000001: plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "number-7",
+      "toneLiteral": "1e20",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skin_tone": 100000000000000000000,
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave::skin-tone-100000000000000000000: plan",
+        "label": "Project :wave::skin-tone-100000000000000000000: plan",
+        "finalLabel": "Project :wave::skin-tone-100000000000000000000: plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "number-8",
+      "toneLiteral": "1e21",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skin_tone": 1e+21,
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave::skin-tone-1e+21: plan",
+        "label": "Project :wave::skin-tone-1e+21: plan",
+        "finalLabel": "Project :wave::skin-tone-1e+21: plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "number-9",
+      "toneLiteral": "1e23",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skin_tone": 1e+23,
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave::skin-tone-1e+23: plan",
+        "label": "Project :wave::skin-tone-1e+23: plan",
+        "finalLabel": "Project :wave::skin-tone-1e+23: plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "number-10",
+      "toneLiteral": "1.2345678901234567",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skin_tone": 1.2345678901234567,
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave::skin-tone-1.2345678901234567: plan",
+        "label": "Project :wave::skin-tone-1.2345678901234567: plan",
+        "finalLabel": "Project :wave::skin-tone-1.2345678901234567: plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "number-11",
+      "toneLiteral": "1.0000000000000002",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skin_tone": 1.0000000000000002,
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave::skin-tone-1.0000000000000002: plan",
+        "label": "Project :wave::skin-tone-1.0000000000000002: plan",
+        "finalLabel": "Project :wave::skin-tone-1.0000000000000002: plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "number-12",
+      "toneLiteral": "1000000000000000128",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skin_tone": 1000000000000000100,
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave::skin-tone-1000000000000000100: plan",
+        "label": "Project :wave::skin-tone-1000000000000000100: plan",
+        "finalLabel": "Project :wave::skin-tone-1000000000000000100: plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "number-13",
+      "toneLiteral": "9007199254740993",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skin_tone": 9007199254740992,
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave::skin-tone-9007199254740992: plan",
+        "label": "Project :wave::skin-tone-9007199254740992: plan",
+        "finalLabel": "Project :wave::skin-tone-9007199254740992: plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "number-14",
+      "toneLiteral": "18446744073709551615",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skin_tone": 18446744073709552000,
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave::skin-tone-18446744073709552000: plan",
+        "label": "Project :wave::skin-tone-18446744073709552000: plan",
+        "finalLabel": "Project :wave::skin-tone-18446744073709552000: plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "number-15",
+      "toneLiteral": "-9223372036854775808",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skin_tone": -9223372036854776000,
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave::skin-tone--9223372036854776000: plan",
+        "label": "Project :wave::skin-tone--9223372036854776000: plan",
+        "finalLabel": "Project :wave::skin-tone--9223372036854776000: plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "number-16",
+      "toneLiteral": "2.2250738585072014e-308",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skin_tone": 2.2250738585072014e-308,
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave::skin-tone-2.2250738585072014e-308: plan",
+        "label": "Project :wave::skin-tone-2.2250738585072014e-308: plan",
+        "finalLabel": "Project :wave::skin-tone-2.2250738585072014e-308: plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "number-17",
+      "toneLiteral": "5e-324",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skin_tone": 5e-324,
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave::skin-tone-5e-324: plan",
+        "label": "Project :wave::skin-tone-5e-324: plan",
+        "finalLabel": "Project :wave::skin-tone-5e-324: plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "number-18",
+      "toneLiteral": "1.7976931348623157e308",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skin_tone": 1.7976931348623157e+308,
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave::skin-tone-1.7976931348623157e+308: plan",
+        "label": "Project :wave::skin-tone-1.7976931348623157e+308: plan",
+        "finalLabel": "Project :wave::skin-tone-1.7976931348623157e+308: plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "empty-array",
+      "toneLiteral": "[]",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skin_tone": [],
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave::skin-tone-: plan",
+        "label": "Project :wave::skin-tone-: plan",
+        "finalLabel": "Project :wave::skin-tone-: plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "nested-array",
+      "toneLiteral": "[null,[3,null],false,{}]",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skin_tone": [
+                      null,
+                      [
+                        3,
+                        null
+                      ],
+                      false,
+                      {}
+                    ],
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave::skin-tone-,3,,false,[object Object]: plan",
+        "label": "Project :wave::skin-tone-,3,,false,[object Object]: plan",
+        "finalLabel": "Project :wave::skin-tone-,3,,false,[object Object]: plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "empty-object",
+      "toneLiteral": "{}",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skin_tone": {},
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave::skin-tone-[object Object]: plan",
+        "label": "Project :wave::skin-tone-[object Object]: plan",
+        "finalLabel": "Project :wave::skin-tone-[object Object]: plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "own-valueOf",
+      "toneLiteral": "{\"valueOf\":3}",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skin_tone": {
+                      "valueOf": 3
+                    },
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave::skin-tone-[object Object]: plan",
+        "label": "Project :wave::skin-tone-[object Object]: plan",
+        "finalLabel": "Project :wave::skin-tone-[object Object]: plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "own-toString-null",
+      "toneLiteral": "{\"toString\":null}",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skin_tone": {
+                      "toString": null
+                    },
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "errorName": "TypeError",
+        "error": "Cannot convert object to primitive value"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "own-toString-string",
+      "toneLiteral": "{\"toString\":\"3\"}",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skin_tone": {
+                      "toString": "3"
+                    },
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "errorName": "TypeError",
+        "error": "Cannot convert object to primitive value"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "nested-own-toString",
+      "toneLiteral": "[{\"toString\":3}]",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skin_tone": [
+                      {
+                        "toString": 3
+                      }
+                    ],
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "errorName": "TypeError",
+        "error": "Cannot convert object to primitive value"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "string-delimiters",
+      "toneLiteral": "\"3: test\"",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skin_tone": "3: test",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave::skin-tone-3: test: plan",
+        "label": "Project :wave::skin-tone-3: test: plan",
+        "finalLabel": "Project :wave::skin-tone-3: test: plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "false",
+      "toneLiteral": "false",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skin_tone": false,
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave: plan",
+        "label": "Project :wave: plan",
+        "finalLabel": "Project :wave: plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "null",
+      "toneLiteral": "null",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skin_tone": null,
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave: plan",
+        "label": "Project :wave: plan",
+        "finalLabel": "Project :wave: plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "camel-empty-array",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skinTone": [],
+                    "skin_tone": 6
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave::skin-tone-: plan",
+        "label": "Project :wave::skin-tone-: plan",
+        "finalLabel": "Project :wave::skin-tone-: plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "camel-null",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skinTone": null,
+                    "skin_tone": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave::skin-tone-4: plan",
+        "label": "Project :wave::skin-tone-4: plan",
+        "finalLabel": "Project :wave::skin-tone-4: plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "camel-false",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skinTone": false,
+                    "skin_tone": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave::skin-tone-4: plan",
+        "label": "Project :wave::skin-tone-4: plan",
+        "finalLabel": "Project :wave::skin-tone-4: plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "camel-empty",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skinTone": "",
+                    "skin_tone": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave::skin-tone-4: plan",
+        "label": "Project :wave::skin-tone-4: plan",
+        "finalLabel": "Project :wave::skin-tone-4: plan"
+      },
+      "inputUnchanged": true
+    },
+    {
+      "name": "ignored-bad-object",
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "skinTone": 3,
+                    "skin_tone": {
+                      "toString": null
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "flattened": "Project :wave::skin-tone-3: plan",
+        "label": "Project :wave::skin-tone-3: plan",
+        "finalLabel": "Project :wave::skin-tone-3: plan"
+      },
+      "inputUnchanged": true
+    }
+  ],
+  "host": "Unchanged retained title host/no-map en-US; new numbers parsed from exact toneLiteral before actual original formatter; TypeError retained as expected original outcome",
+  "usedModules": [
+    "+BgX",
+    "+EB+",
+    "+Li8",
+    "/PGw",
+    "09IQ",
+    "0bmO",
+    "0gHG",
+    "0jGF",
+    "1neI",
+    "2pvT",
+    "3+SO",
+    "3MHn",
+    "3qOO",
+    "46OM",
+    "4IHO",
+    "5+Zh",
+    "5aTY",
+    "6AoN",
+    "7KNd",
+    "9UHZ",
+    "9j8p",
+    "A8gZ",
+    "AAsy",
+    "AGfT",
+    "AWJv",
+    "AY7U",
+    "Ad4Y",
+    "AeUD",
+    "Aj9d",
+    "AkOy",
+    "CtFl",
+    "EACB",
+    "EyJs",
+    "GGeq",
+    "H4Wf",
+    "HSTN",
+    "HsCr",
+    "Hu4T",
+    "I5lA",
+    "ILYW",
+    "IhIt",
+    "J3F/",
+    "JCh1",
+    "Kg8K",
+    "KhL1",
+    "L7LR",
+    "LFws",
+    "LGum",
+    "M5WD",
+    "MDwo",
+    "MI1U",
+    "N8wa",
+    "NURx",
+    "P/Dz",
+    "PI3W",
+    "PT2i",
+    "PXih",
+    "Q+fg",
+    "Q+om",
+    "QExg",
+    "QFH5",
+    "QIRz",
+    "Qlm1",
+    "R+z5",
+    "RqNB",
+    "Ud4l",
+    "VPjS",
+    "Wb/p",
+    "WooI",
+    "WzJ+",
+    "Y6yP",
+    "Yeb6",
+    "ZOnG",
+    "aBXg",
+    "bQFi",
+    "bepp",
+    "blJ7",
+    "cj/Q",
+    "dsJr",
+    "e4Wr",
+    "e9O9",
+    "fc85",
+    "froO",
+    "g+IT",
+    "hSFS",
+    "hWCs",
+    "hfna",
+    "idWM",
+    "imgk",
+    "ivgy",
+    "izwF",
+    "jgxy",
+    "kN/G",
+    "l4EU",
+    "lWGk",
+    "lXQd",
+    "laT0",
+    "mZ4t",
+    "nVsM",
+    "nbro",
+    "nrLU",
+    "nv/P",
+    "nz6C",
+    "oyjU",
+    "pH4l",
+    "pqm5",
+    "qBuu",
+    "qIOO",
+    "qsce",
+    "rC7M",
+    "splE",
+    "tLIY",
+    "um92",
+    "uwSV",
+    "v9zf",
+    "vda4",
+    "vpKW",
+    "wYp7"
+  ]
+}

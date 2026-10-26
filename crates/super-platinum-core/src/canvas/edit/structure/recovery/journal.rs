@@ -8,6 +8,8 @@ use std::{fs::OpenOptions, path::Path, time::Duration};
 const MAX_RECEIPTS: i64 = 32;
 const MAX_BODY: usize = crate::canvas::wire::MAX_BYTES * 5 + 128 * 1024;
 
+mod confirmed;
+pub use confirmed::ReplacementRestore;
 pub mod annotations;
 mod comments;
 pub mod replies;
@@ -89,7 +91,7 @@ impl Journal {
         conn.execute_batch("PRAGMA synchronous=FULL; PRAGMA journal_mode=DELETE;")?;
         let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
         let version: i64 = tx.query_row("PRAGMA user_version", [], |r| r.get(0))?;
-        if !matches!(version, 0 | 1 | 2 | 3 | 4 | 5) {
+        if !matches!(version, 0 | 1 | 2 | 3 | 4 | 5 | 6) {
             return Err(invalid());
         }
         if version >= 4 {
@@ -102,12 +104,17 @@ impl Journal {
                 return Err(invalid());
             }
         }
-        if version == 5 {
+        if version >= 5 {
             // Missing current-version tables are corruption, not a fresh store.
             tx.query_row("SELECT count(*) FROM annotation_attempts", [], |r| {
                 r.get::<_, i64>(0)
             })?;
             tx.query_row("SELECT count(*) FROM annotation_history", [], |r| {
+                r.get::<_, i64>(0)
+            })?;
+        }
+        if version == 6 {
+            tx.query_row("SELECT count(*) FROM confirmed_replacements", [], |r| {
                 r.get::<_, i64>(0)
             })?;
         }
@@ -133,7 +140,9 @@ impl Journal {
           CREATE TABLE IF NOT EXISTS annotation_attempts(workspace TEXT NOT NULL,user TEXT NOT NULL,file TEXT NOT NULL,id TEXT NOT NULL UNIQUE,body TEXT NOT NULL,PRIMARY KEY(workspace,user,file));
           CREATE TABLE IF NOT EXISTS annotation_history(workspace TEXT NOT NULL,user TEXT NOT NULL,file TEXT NOT NULL,id TEXT PRIMARY KEY,body TEXT NOT NULL,status TEXT NOT NULL,observed TEXT NOT NULL);
           CREATE INDEX IF NOT EXISTS annotation_history_owner ON annotation_history(workspace,user,file,id);
-          PRAGMA user_version=5;")?;
+          CREATE TABLE IF NOT EXISTS confirmed_replacements(workspace TEXT NOT NULL,user TEXT NOT NULL,file TEXT NOT NULL,
+          operation TEXT NOT NULL UNIQUE,body TEXT NOT NULL,PRIMARY KEY(workspace,user,file));
+          PRAGMA user_version=6;")?;
         tx.execute("INSERT OR IGNORE INTO identity VALUES(1,?1)", [&owner])?;
         let actual: String =
             tx.query_row("SELECT account FROM identity WHERE singleton=1", [], |r| {

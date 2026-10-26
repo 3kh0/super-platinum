@@ -168,6 +168,9 @@ pub struct Checkpoint {
     draft: String,
     sections: Vec<Vec<u8>>,
     request: Vec<u8>,
+    /// Inert historic evidence only; decoding never restores a writable certificate.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    provenance: Option<provenance::Evidence>,
 }
 impl Checkpoint {
     pub(super) fn capture(intent: &StructureIntent, data: &RawMessage) -> Result<Self, Error> {
@@ -206,6 +209,7 @@ impl Checkpoint {
                 .map(|s| s.raw().raw().to_vec())
                 .collect(),
             request: data.raw().to_vec(),
+            provenance: intent.inventory.provenance_evidence(),
         };
         result.validate()?;
         Ok(result)
@@ -385,13 +389,22 @@ impl Checkpoint {
             .iter()
             .map(|b| Section::decode(b))
             .collect::<Result<Vec<_>, _>>()?;
+        if let Some(proof) = &self.provenance {
+            proof.validate(&self.scope, &self.thread, &self.document, &source_rows)?;
+        }
         for row in &source_rows {
             if row.deleted()? == Some(true) {
                 if row.crdt()?.is_some_and(|wire| wire.has(10)) {
                     super::owner_delete::tombstone(&source_rows, row)?;
                 } else {
                     if super::split::child_tombstone(&source_rows, row, 0).is_err() {
-                        super::split::gap_tombstone(&source_rows, row)?;
+                        super::split::gap_tombstone(&source_rows, row).or_else(|_| {
+                            self.provenance
+                                .as_ref()
+                                .filter(|p| p.allows(row))
+                                .map(|_| ())
+                                .ok_or(Error::Unsupported)
+                        })?;
                     }
                 }
             }

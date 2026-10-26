@@ -1,0 +1,44 @@
+{
+  "version": "Exact retained library version unidentified; no guessed package version",
+  "license": "MIT",
+  "licenseSource": "https://raw.githubusercontent.com/iamkun/dayjs/dev/LICENSE",
+  "modules": [
+    {
+      "library": "Day.js",
+      "factory": "Wgwc",
+      "sourceAsset": {
+        "path": "tmp/list-continuation-prep/current-assets/gantry-v2-vendors.f664f7e05b9621ce.min.js",
+        "sha256": "ce2c3d1108749cc714bb01b704b76dcbc607eedb539da0614a45c64e12c19e60"
+      },
+      "startUtf16": 255427,
+      "endUtf16": 262396,
+      "factorySha256": "f8a547dbca19ad99efabcea0219cc2c5f1c1065370bdb50268d5f1cdd261e947",
+      "file": "dayjs.js",
+      "sha256": "0c493d617553f8ff7d5d2b7f3b595cdce24468a7979c8de133774d4faa965d0a",
+      "transform": "Remove module-name wrapper; evaluate exact factory body in private exports scope. No Slack module loader or other dependency code."
+    },
+    {
+      "library": "Day.js",
+      "factory": "+QaA",
+      "sourceAsset": {
+        "path": "tmp/list-continuation-prep/current-assets/gantry-v2-vendors.f664f7e05b9621ce.min.js",
+        "sha256": "ce2c3d1108749cc714bb01b704b76dcbc607eedb539da0614a45c64e12c19e60"
+      },
+      "startUtf16": 275999,
+      "endUtf16": 279502,
+      "factorySha256": "e90653d4edbe0f2bee13234797072b47170d6cc6f6c4034709d4664971778813",
+      "file": "custom-parse-format.js",
+      "sha256": "ac4e9285d93fb45f21335c3c8076d2a7eb406c5296284c23fd3a7c5718432d59",
+      "transform": "Remove module-name wrapper; evaluate exact factory body in private exports scope. No Slack module loader or other dependency code."
+    }
+  ],
+  "derivedData": {
+    "normalization": "Unicode width/Cyrillic mapping data and Lodash deburr mapping, translated from retained J3F/,kN/G,LFws; no Slack loader embedded",
+    "normalizationLicense": "LICENSE-LODASH",
+    "formatter": "Exact Dayjs locale meridiem functions and scalar format tables from executed NIxh/SOLS label vectors; private Dayjs instance only",
+    "referenceLabelVectors": {
+      "path": "tmp/app-home-time-dispatch-20261025/reference/label-vectors.json",
+      "sha256": "cdbc54c4502b1561b0165797bd4297bf16d4a27af6bb99266a62a9b0bd67a8d6"
+    }
+  }
+}

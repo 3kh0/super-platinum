@@ -191,7 +191,11 @@ async fn read(
         return Err(unavailable());
     }
     let result = if crate::fixture::is_fixture() {
-        fixture::user_title::policy_read(state, &request).await
+        if fixture::section_reference::named() {
+            fixture::section_reference::rich::policy_read(state, &request).await
+        } else {
+            fixture::user_title::policy_read(state, &request).await
+        }
     } else {
         context.transport.execute_current(request, current).await
     };

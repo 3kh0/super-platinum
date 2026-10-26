@@ -21,6 +21,7 @@ pub(crate) mod autocomplete;
 pub(crate) mod calendar;
 pub(crate) mod cfm_lifecycle;
 pub(crate) mod channel_fetches;
+pub(crate) mod context;
 pub(crate) mod fixture;
 pub(crate) mod inputs;
 pub(crate) mod navigation;
@@ -57,6 +58,12 @@ pub(crate) struct Root {
         super_platinum_core::block_actions::form::home::HomeForm,
     >,
     native: inputs::native::State,
+    text: inputs::text::State,
+    static_select: inputs::static_select::State,
+    external: inputs::external::State,
+    users: inputs::users::State,
+    channels: inputs::channels::State,
+    context: context::State,
     input_revisions: std::collections::BTreeMap<inputs::FormOwner, u64>,
     cooldowns: std::collections::BTreeMap<(u64, String), Option<Instant>>,
 }
@@ -69,7 +76,7 @@ struct Surface {
     view: Option<View>,
     notice: Option<String>,
     opened: bool,
-    confirmation: Option<Button>,
+    confirmation: Option<(Button, context::Witness)>,
     calendar_confirmation: Option<calendar::Origin>,
     fixture: bool,
 }
@@ -175,11 +182,17 @@ fn failure(s: &mut ShellState, ctx: &Context, e: &Error) {
                 }
             })
             .or_insert(deadline);
+        inputs::text::observe_cooling(s);
+        inputs::static_select::observe_cooling(s);
     }
     s.report_failure(e,"Reconnect to load this app.",||"The app request could not be confirmed. Try a read-only refresh when the connection is available.".into());
 }
 pub(crate) async fn refresh(mut state: Signal<ShellState>) {
-    let (owner, id, revision, initial) = {
+    if context::fixture::named() {
+        context::fixture::refresh_cached(state).await;
+        return;
+    }
+    let (owner, id, revision) = {
         let mut s = state.write();
         if s.overlay.is_some() || workflows::locked(&s) {
             return;
@@ -219,7 +232,7 @@ pub(crate) async fn refresh(mut state: Signal<ShellState>) {
         h.confirmation = None;
         h.calendar_confirmation = None;
         h.notice = None;
-        (h.owner.clone(), h.id, h.revision, !h.opened)
+        (h.owner.clone(), h.id, h.revision)
     };
     let posting = crate::bootstrap::posting_ingress::capture(
         &state,
@@ -295,12 +308,7 @@ pub(crate) async fn refresh(mut state: Signal<ShellState>) {
                 } else {
                     None
                 };
-                if initial && home.enabled {
-                    h.opened = true;
-                    Some(home)
-                } else {
-                    None
-                }
+                if home.enabled { Some(home) } else { None }
             }
             Err(_) => {
                 h.notice =
@@ -311,26 +319,86 @@ pub(crate) async fn refresh(mut state: Signal<ShellState>) {
     };
     inputs::hydrate(&mut state.write());
     if let Some(home) = opened {
-        if !current(&state.peek(), id) {
+        notify_opened(state, owner, id, revision, home).await;
+    }
+}
+/// A genuine tab opening uses one captured context through final dispatch.
+/// Context chooser updates never invoke this boundary.
+async fn notify_opened(
+    mut state: Signal<ShellState>,
+    owner: Owner,
+    id: u64,
+    revision: u64,
+    home: Home,
+) {
+    if !current(&state.peek(), id) {
+        return;
+    }
+    let route = match context::ensure(state, &owner).await {
+        Ok(route) => route,
+        Err(_) => {
+            let mut s = state.write();
+            if current(&s, id)
+                && s.app_home
+                    .surface
+                    .as_ref()
+                    .is_some_and(|h| h.revision == revision)
+            {
+                s.app_home.surface.as_mut().unwrap().notice = Some("Workspace context is unavailable. Your inputs are retained. Refresh to retry loading the context.".into());
+            }
             return;
         }
-        let result = match home::opened(&owner.ctx.client, &owner.ctx.session, &home) {
-            Ok(req) => owner.ctx.transport.execute_block_interaction(req).await,
-            Err(e) => Err(e),
-        };
+    };
+    {
         let mut s = state.write();
-        if !current(&s, id) {
+        if !route.current(&s)
+            || s.app_home
+                .surface
+                .as_ref()
+                .is_none_or(|h| h.revision != revision)
+        {
             return;
         }
-        if let Err(e) = &result {
-            failure(&mut s, &owner.ctx, e)
-        }
-        if !result
-            .as_ref()
-            .is_ok_and(|r| r.get("ok").and_then(serde_json::Value::as_bool) == Some(true))
+        let h = s.app_home.surface.as_mut().unwrap();
+        if h.notice.as_deref()
+            == Some(
+                "Workspace context is unavailable. Your inputs are retained. Refresh to retry loading the context.",
+            )
         {
-            s.app_home.surface.as_mut().unwrap().notice=Some("The app's Home-open notification was not confirmed. It will not be repeated on refresh.".into());
+            h.notice = None;
         }
+        if h.opened {
+            return;
+        }
+        h.opened = true;
+    }
+    let result = match home::opened_with_context(
+        &owner.ctx.client,
+        &owner.ctx.session,
+        &home,
+        route.team_id(),
+    ) {
+        Ok(req) => {
+            if context::fixture::named() || inputs::external::multi_fixture::unified() {
+                context::fixture::accept_open(&mut state.write(), &route, req)
+            } else {
+                owner.ctx.transport.execute_block_interaction(req).await
+            }
+        }
+        Err(e) => Err(e),
+    };
+    let mut s = state.write();
+    if !current(&s, id) {
+        return;
+    }
+    if let Err(e) = &result {
+        failure(&mut s, &owner.ctx, e)
+    }
+    if !result
+        .as_ref()
+        .is_ok_and(|r| r.get("ok").and_then(serde_json::Value::as_bool) == Some(true))
+    {
+        s.app_home.surface.as_mut().unwrap().notice=Some("The app's Home-open notification was not confirmed. It will not be repeated on refresh.".into());
     }
 }
 /// Socket caller supplies the accepted account's realtime generation. A home

@@ -11,14 +11,19 @@ mod inventory;
 mod owner_delete;
 pub(super) mod position;
 mod prepared;
+mod provenance;
 pub mod recovery;
 mod replacement;
+mod retained;
+pub(crate) use provenance::ReplacementProvenance;
+pub use provenance::carry_replacement_provenance;
 mod split;
 mod start_typing;
 use inventory::Inventory;
 pub use prepared::{AcceptedStructure, PreparedStructureEdit};
 pub use replacement::{
-    AcceptedReplacement, PreparedReplacement, ReplacementIntent, can_replace_main_canvas,
+    AcceptedReplacement, ConfirmedReplacement, PreparedReplacement, ReplacementIntent,
+    can_replace_main_canvas,
 };
 pub use split::{AcceptedSplit, PreparedSplitEdit, SplitIntent, SplitSequenceTarget, SplitWitness};
 pub(super) use split::{same_split_lineage, split_child, split_parent_history};
@@ -68,6 +73,8 @@ pub struct ParagraphActions {
     pub insert_before: bool,
     pub insert_after: bool,
     pub delete: bool,
+    /// Main Canvas presentation only; a consumed intent revalidates authority.
+    pub replace_main_canvas: bool,
 }
 pub fn paragraph_actions(
     snapshot: &CanvasCollabSnapshot,
@@ -87,6 +94,10 @@ pub fn paragraph_actions(
         .enumerate()
         .map(|(index, id)| (id.as_str(), index))
         .collect();
+    let rows = inventory.sections.values().collect::<Vec<_>>();
+    let replacement = replacement::eligibility::last_live(&rows)
+        .ok()
+        .map(Section::id);
     targets
         .iter()
         .map(|id| {
@@ -98,6 +109,8 @@ pub fn paragraph_actions(
                 insert_before: inventory.insertion_position_at(index, Side::Before).is_ok(),
                 insert_after: inventory.insertion_position_at(index, Side::After).is_ok(),
                 delete: inventory.safe_delete(id).is_ok(),
+                replace_main_canvas: replacement == Some(*id)
+                    && inventory.insertion_position_at(index, Side::After).is_ok(),
             })
         })
         .collect()

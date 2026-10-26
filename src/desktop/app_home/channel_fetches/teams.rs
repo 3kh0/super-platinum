@@ -1,4 +1,5 @@
 //! Read-only accepted team facts. This grants no picker or mutation authority.
+pub(crate) use super::payload::home_context::Observation as HomeContextObservation;
 use super::*;
 
 #[derive(Clone)]

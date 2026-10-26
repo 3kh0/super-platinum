@@ -1,9 +1,12 @@
-//! Profile-owned title observations. This new nonpersistent cache starts empty;
-//! it is neither the typed file browser nor Slack's complete file collection.
+//! Profile opening/read custody over the shared credential-owned file source.
+//! The local cache retains read stamps and fixture predecessors, not a second
+//! authority capable of overriding a newer shared event.
 use super::*;
 use std::collections::BTreeMap;
 mod channels;
 mod groups;
+mod metadata;
+pub(crate) mod sections;
 mod users;
 use super_platinum_core::slack::{
     PreparedRequest,
@@ -26,7 +29,8 @@ pub(in crate::profile_edit::sections) struct Cache {
 pub(super) struct Observation {
     token: Token,
     id: String,
-    row: source::Observation,
+    row: source::ReferenceObservation,
+    metadata: metadata::Metadata,
     quip: Option<crate::canvas::quip_titles::Observation>,
     socket: u64,
     revision: u64,
@@ -34,6 +38,7 @@ pub(super) struct Observation {
     channels: Option<channels::Channels>,
     groups: Option<groups::Groups>,
     emoji: super::title_locale::EmojiTitle,
+    section: Option<sections::Preview>,
 }
 fn socket(shell: &ShellState, token: &Token) -> Option<u64> {
     token
@@ -49,21 +54,19 @@ fn socket(shell: &ShellState, token: &Token) -> Option<u64> {
 }
 impl Observation {
     pub(super) fn capture(shell: &ShellState, token: &Token, id: &str) -> Result<Self, Error> {
-        let cache = shell
-            .profile_edit
-            .sections
-            .file_titles
-            .as_ref()
-            .ok_or_else(unavailable)?;
-        let (generation, revision) = *cache.reads.get(id).ok_or_else(unavailable)?;
-        let row = cache.store.row(id).map_err(|_| unavailable())?;
+        let metadata = metadata::Metadata::capture(shell, token, id)?;
+        let (generation, revision) = (metadata.socket, metadata.revision);
+        let row = metadata.row.clone();
         // File metadata does not establish the independent editor-title state.
         // Only block-title Canvas labels consume that runtime observation.
-        let dependencies = title_dependencies(row.effective())?;
+        let dependencies = reference_dependencies(&row)?;
         let members = users::Members::capture(shell, token, &dependencies.users)?;
         let channels = channels::Channels::capture(shell, token, &dependencies.channels)?;
         let groups = groups::Groups::capture(shell, token, &dependencies.groups)?;
-        let quip = if has_canvas_blocks(row.effective()) && dependencies.users.is_empty() {
+        let quip = if matches!(row.value(), source::ReferenceValue::Normal(_))
+            && has_canvas_blocks(row.effective())
+            && dependencies.users.is_empty()
+        {
             Some(
                 crate::canvas::quip_titles::Observation::capture(shell, id)
                     .ok_or_else(unavailable)?,
@@ -75,6 +78,7 @@ impl Observation {
             token: token.clone(),
             id: id.into(),
             row,
+            metadata,
             quip,
             socket: generation,
             revision,
@@ -82,6 +86,7 @@ impl Observation {
             channels,
             groups,
             emoji: super::title_locale::EmojiTitle::english(),
+            section: None,
         };
         observed
             .current(shell)
@@ -89,7 +94,10 @@ impl Observation {
             .ok_or_else(unavailable)
     }
     pub(super) fn current(&self, shell: &ShellState) -> bool {
-        socket(shell, &self.token) == Some(self.socket)
+        self.section
+            .as_ref()
+            .is_none_or(|s| s.current(shell, &self.token))
+            && socket(shell, &self.token) == Some(self.socket)
             && self
                 .members
                 .as_ref()
@@ -103,31 +111,28 @@ impl Observation {
                 .groups
                 .as_ref()
                 .is_none_or(|g| g.current(shell, &self.token))
-            && !crate::file_events::changed_since(
-                shell,
-                &self.token.owner.team,
-                &self.id,
-                self.revision,
-            )
-            && shell
-                .core
-                .workspaces
-                .get(&self.token.owner.team)
-                .is_some_and(|w| !w.deleted_files.contains(&self.id))
-            && shell
-                .profile_edit
-                .sections
-                .file_titles
-                .as_ref()
-                .is_some_and(|cache| {
-                    cache.token == self.token
-                        && cache.reads.get(&self.id) == Some(&(self.socket, self.revision))
-                        && self.row.current(&cache.store)
-                })
+            && self.metadata.current(shell, &self.token)
     }
     pub(super) fn label(&self, raw: &Value) -> Result<String, Error> {
         if raw["file_id"].as_str() != Some(self.id.as_str()) {
             return Err(unavailable());
+        }
+        if self.private_canvas() || self.deleted_canvas() {
+            if raw["type"] != "canvas" {
+                return Err(unavailable());
+            }
+            let label = if self.deleted_canvas() {
+                super::title_locale::DeletedCanvas::english().value()
+            } else {
+                super::title_locale::PrivateCanvas::english().value()
+            }
+            .to_owned();
+            let mut context = protocol::RichTextContext::new_ordered(
+                &self.token.owner.team,
+                &self.token.owner.user,
+            )?;
+            context.file(raw, label.clone())?;
+            return Ok(label);
         }
         let effective = self.row.effective();
         let canvas = effective["mode"] == "quip" || effective["filetype"] == "quip";
@@ -173,11 +178,34 @@ impl Observation {
         context.file(raw, label.clone())?;
         Ok(label)
     }
+    pub(super) fn private_canvas(&self) -> bool {
+        matches!(self.row.value(), source::ReferenceValue::PrivateCanvas)
+    }
+    pub(super) fn deleted_canvas(&self) -> bool {
+        matches!(self.row.value(), source::ReferenceValue::DeletedCanvas)
+    }
     pub(super) fn channel_ids(&self) -> impl Iterator<Item = &String> {
-        self.channels.iter().flat_map(|channels| channels.ids())
+        self.channels
+            .iter()
+            .flat_map(|channels| channels.ids())
+            .chain(
+                self.section
+                    .iter()
+                    .flat_map(|section| section.channel_ids()),
+            )
     }
 }
 
+fn reference_dependencies(
+    row: &source::ReferenceObservation,
+) -> Result<file_titles::TitleDependencies, Error> {
+    match row.value() {
+        source::ReferenceValue::Normal(effective) => title_dependencies(effective),
+        source::ReferenceValue::PrivateCanvas | source::ReferenceValue::DeletedCanvas => {
+            Ok(file_titles::TitleDependencies::default())
+        }
+    }
+}
 fn title_user_ids(effective: &Value) -> Result<std::collections::BTreeSet<String>, Error> {
     Ok(title_dependencies(effective)?.users)
 }
@@ -204,34 +232,12 @@ fn has_canvas_blocks(effective: &Value) -> bool {
 
 /// File receipt readiness is separate from nested member/policy display custody.
 fn metadata_current(shell: &ShellState, token: &Token, id: &str) -> bool {
-    shell
-        .profile_edit
-        .sections
-        .file_titles
-        .as_ref()
-        .is_some_and(|cache| {
-            cache.token == *token
-                && token.current(shell)
-                && cache.store.row(id).is_ok()
-                && cache.reads.get(id).is_some_and(|(generation, revision)| {
-                    socket(shell, token) == Some(*generation)
-                        && !crate::file_events::changed_since(
-                            shell,
-                            &token.owner.team,
-                            id,
-                            *revision,
-                        )
-                })
-                && shell
-                    .core
-                    .workspaces
-                    .get(&token.owner.team)
-                    .is_some_and(|w| !w.deleted_files.contains(id))
-        })
+    metadata::Metadata::capture(shell, token, id).is_ok()
 }
 fn reuse_metadata(shell: &ShellState, token: &Token, id: &str, force: bool) -> bool {
     metadata_current(shell, token, id)
-        && (!force
+        && (metadata::Metadata::capture(shell, token, id).is_ok_and(|m| m.row.is_event_deletion())
+            || !force
             || dependencies(shell, token, &[id.to_owned()])
                 .is_ok_and(|v| !v.ids.is_empty() || !v.channels.is_empty() || !v.groups.is_empty()))
 }
@@ -239,22 +245,13 @@ pub(super) struct Dependencies {
     pub(super) ids: Vec<String>,
     pub(super) channels: std::collections::BTreeSet<String>,
     pub(super) groups: std::collections::BTreeSet<String>,
-    rows: Vec<(String, source::Observation, Arc<()>)>,
+    rows: Vec<metadata::Metadata>,
+    sections: Vec<super::search::file_source::sections::Observation>,
 }
 impl Dependencies {
     pub(super) fn current(&self, shell: &ShellState, token: &Token) -> bool {
-        shell
-            .profile_edit
-            .sections
-            .file_titles
-            .as_ref()
-            .is_some_and(|cache| {
-                self.rows.iter().all(|(id, row, stamp)| {
-                    metadata_current(shell, token, id)
-                        && row.current(&cache.store)
-                        && cache.changes.get(id).is_some_and(|v| Arc::ptr_eq(v, stamp))
-                })
-            })
+        self.rows.iter().all(|row| row.current(shell, token))
+            && self.sections.iter().all(|row| row.current(shell))
     }
 }
 pub(super) fn dependencies(
@@ -262,33 +259,24 @@ pub(super) fn dependencies(
     token: &Token,
     ids: &[String],
 ) -> Result<Dependencies, Error> {
-    let cache = shell
-        .profile_edit
-        .sections
-        .file_titles
-        .as_ref()
-        .ok_or_else(unavailable)?;
     let mut users = std::collections::BTreeSet::new();
     let mut channels = std::collections::BTreeSet::new();
     let mut groups = std::collections::BTreeSet::new();
     let mut rows = Vec::new();
     for id in ids {
-        if !metadata_current(shell, token, id) {
-            return Err(unavailable());
-        }
-        let row = cache.store.row(id).map_err(|_| unavailable())?;
-        let needed = title_dependencies(row.effective())?;
+        let metadata = metadata::Metadata::capture(shell, token, id)?;
+        let needed = reference_dependencies(&metadata.row)?;
         users.extend(needed.users);
         channels.extend(needed.channels);
         groups.extend(needed.groups);
-        let stamp = cache.changes.get(id).ok_or_else(unavailable)?.clone();
-        rows.push((id.clone(), row, stamp));
+        rows.push(metadata);
     }
     Ok(Dependencies {
         ids: users.into_iter().collect(),
         channels,
         groups,
         rows,
+        sections: Vec::new(),
     })
 }
 
@@ -331,24 +319,26 @@ pub(super) fn channel_hits(
 
 /// Existing shared group history, not a typed cache entry, owns this selector hit.
 pub(super) fn group_hits(
-    shell: &ShellState,
+    shell: &mut ShellState,
     token: &Token,
     dependencies: &Dependencies,
 ) -> Vec<opening::Hit> {
-    if !dependencies.current(shell, token) {
+    if !dependencies.current(shell, token) || dependencies.groups.is_empty() {
+        return vec![];
+    }
+    let Ok(policy) = groups::Policy::capture(shell, token) else {
+        return vec![];
+    };
+    if policy.restricted() {
         return vec![];
     }
     dependencies
         .groups
         .iter()
         .filter_map(|id| {
-            let observed = groups::Groups::capture(
-                shell,
-                token,
-                &std::collections::BTreeSet::from([id.clone()]),
-            )
-            .ok()??;
-            Some(observed.hit(id))
+            crate::usergroups::unknown::select(shell, &token.owner.team, id)
+                .ok()
+                .map(opening::Hit::MissingGroup)
         })
         .collect()
 }
@@ -416,17 +406,37 @@ pub(super) async fn recover(
                 .or_insert_with(|| Arc::new(()))
                 .clone()
         };
+        let shared_read = metadata::read(&mut state.write(), token, id)?;
         let request = request(&context, id);
+        let owns = || {
+            let shell = state.peek();
+            current(&shell)
+                && socket(&shell, token) == Some(generation)
+                && !crate::file_events::changed_since(&shell, &token.owner.team, id, revision)
+                && read_current(&shell, token, id, &stamp)
+                && shared_read.as_ref().is_none_or(|read| read.current(&shell))
+        };
         let result = if crate::fixture::is_fixture() {
-            fixture::files::read(state, &request).await
+            fixture::files::read(state, &request).await.and_then(|raw| {
+                source::FileReferenceResponse::decode(
+                    id,
+                    &serde_json::to_vec(&raw).map_err(|_| unavailable())?,
+                )
+            })
         } else {
-            context.transport.execute(request).await
+            context
+                .transport
+                .execute_file_reference_current(request, owns)
+                .await
         };
         let mut shell = state.write();
         if !current(&shell)
             || socket(&shell, token) != Some(generation)
             || crate::file_events::changed_since(&shell, &token.owner.team, id, revision)
             || !read_current(&shell, token, id, &stamp)
+            || shared_read
+                .as_ref()
+                .is_some_and(|read| !read.current(&shell))
         {
             return Err(unavailable());
         }
@@ -440,7 +450,15 @@ pub(super) async fn recover(
             entry.retry_at = entry.retry_at.max(cooldown(&error));
             error
         })?;
-        install(&mut shell, token, id, generation, revision, &raw)?;
+        install_response_with_read(
+            &mut shell,
+            token,
+            id,
+            generation,
+            revision,
+            &raw,
+            shared_read,
+        )?;
     }
     Ok(())
 }
@@ -473,35 +491,75 @@ pub(crate) fn fixture_observe(shell: &mut ShellState, raw: &Value) -> Result<(),
     install(shell, &token, id, generation, revision, raw)
 }
 
+/// The bounded fixture drives the same read/receipt path while a mounted editor
+/// retains its own Catalog. No source/cache marker is injected.
+pub(crate) async fn fixture_refresh(state: Signal<ShellState>) -> Result<(), Error> {
+    if !(fixture::unavailable_reference::named()
+        || fixture::deleted_reference::named()
+        || fixture::deletion_event::named())
+        || !fixture::files::enabled(&state.peek())
+    {
+        return Err(unavailable());
+    }
+    let token = Token::capture(&state.peek()).ok_or_else(unavailable)?;
+    recover(state, &token, &[fixture::files::ID.into()], true, |shell| {
+        token.current(shell)
+    })
+    .await
+}
 pub(crate) fn fixture_status(shell: &ShellState, id: &str) -> Value {
     if !fixture::files::enabled(shell) {
         return Value::Null;
     }
-    let Some(cache) = &shell.profile_edit.sections.file_titles else {
+    let Some(token) = Token::capture(shell) else {
         return Value::Null;
     };
-    match cache.store.row(id) {
+    let observed = metadata::Metadata::capture(shell, &token, id)
+        .map(|m| m.row)
+        .or_else(|_| {
+            shell
+                .profile_edit
+                .sections
+                .file_titles
+                .as_ref()
+                .ok_or_else(unavailable)?
+                .store
+                .reference(id)
+        });
+    match observed {
         Ok(row) => {
             let mut value = serde_json::json!({"source":row.source(),"effective":row.effective(),
-                "current":Observation::capture(shell,&cache.token,id).is_ok()});
+                "current":Observation::capture(shell,&token,id).is_ok()});
+            if matches!(row.value(), source::ReferenceValue::DeletedCanvas) {
+                value["reference"] = serde_json::json!({"status":"deleted-canvas","receipt":row.receipt(),
+                    "presentation":super::title_locale::DeletedCanvas::english().descriptor(),
+                    "dependencies":{"users":[],"channels":[],"groups":[]},"quip":null});
+                return value;
+            }
+            if matches!(row.value(), source::ReferenceValue::PrivateCanvas) {
+                value["reference"] = serde_json::json!({"status":"private-canvas","receipt":row.receipt(),
+                    "presentation":super::title_locale::PrivateCanvas::english().descriptor(),
+                    "dependencies":{"users":[],"channels":[],"groups":[]},"quip":null});
+                return value;
+            }
             if row.effective()["mode"] == "quip" || row.effective()["filetype"] == "quip" {
                 value["canvasFallback"] = super::title_locale::CanvasTitle::english()
-                    .proof(Observation::capture(shell, &cache.token, id).is_ok());
+                    .proof(Observation::capture(shell, &token, id).is_ok());
                 value["emojiText"] = super::title_locale::EmojiTitle::english()
-                    .proof(Observation::capture(shell, &cache.token, id).is_ok());
-                if let Ok(observed) = Observation::capture(shell, &cache.token, id)
+                    .proof(Observation::capture(shell, &token, id).is_ok());
+                if let Ok(observed) = Observation::capture(shell, &token, id)
                     && let Some(channels) = observed.channels.as_ref()
                 {
                     value["titleChannels"] = channels.snapshot();
                 }
             }
-            if let Ok(observed) = Observation::capture(shell, &cache.token, id)
+            if let Ok(observed) = Observation::capture(shell, &token, id)
                 && let Some(groups) = observed.groups.as_ref()
             {
                 value["titleGroups"] = groups.snapshot();
             }
             if let Ok(Some(members)) = title_user_ids(row.effective())
-                .and_then(|ids| users::Members::capture(shell, &cache.token, &ids))
+                .and_then(|ids| users::Members::capture(shell, &token, &ids))
             {
                 value["titleUsers"] = members.snapshot();
             }
@@ -531,20 +589,64 @@ fn install(
     revision: u64,
     raw: &Value,
 ) -> Result<(), Error> {
-    if !token.current(shell)
-        || socket(shell, token) != Some(generation)
-        || raw["ok"] != true
-        || raw["file"]["id"].as_str() != Some(id)
-    {
+    let response = source::FileReferenceResponse::decode(
+        id,
+        &serde_json::to_vec(raw).map_err(|_| unavailable())?,
+    )?;
+    install_response(shell, token, id, generation, revision, &response)
+}
+fn install_response(
+    shell: &mut ShellState,
+    token: &Token,
+    id: &str,
+    generation: u64,
+    revision: u64,
+    response: &source::FileReferenceResponse,
+) -> Result<(), Error> {
+    let shared_read = metadata::read(shell, token, id)?;
+    install_response_with_read(
+        shell,
+        token,
+        id,
+        generation,
+        revision,
+        response,
+        shared_read,
+    )
+}
+fn install_response_with_read(
+    shell: &mut ShellState,
+    token: &Token,
+    id: &str,
+    generation: u64,
+    revision: u64,
+    response: &source::FileReferenceResponse,
+    shared_read: Option<super::search::file_source::reference::ReferenceRead>,
+) -> Result<(), Error> {
+    if !token.current(shell) || socket(shell, token) != Some(generation) || response.id() != id {
         return Err(unavailable());
     }
+    let shared_store = shared_read
+        .map(|read| read.publish(shell, response))
+        .transpose()?;
     let cache = cache(shell, token)?;
-    // Native adaptation uses a current singleton receipt; it does not mint a
-    // complete global file inventory or reset a poisoned predecessor.
-    let result = cache.store.ingest(raw).map_err(|_| unavailable());
+    // This typed result certifies the exact newly committed receipt, never an
+    // old category left behind by a malformed/error no-op ingestion.
+    let observed = if let Some(store) = shared_store {
+        cache.store = store;
+        cache.store.reference(id).map_err(|_| unavailable())
+    } else {
+        cache
+            .store
+            .ingest_reference(&token.owner.team, response)
+            .map_err(|_| unavailable())
+    };
     cache.reads.remove(id);
     cache.changes.insert(id.into(), Arc::new(()));
-    result?;
+    let observed = observed?;
+    if !observed.current(&cache.store) || observed.receipt() != response.raw() {
+        return Err(unavailable());
+    }
     cache.reads.insert(id.into(), (generation, revision));
     Ok(())
 }

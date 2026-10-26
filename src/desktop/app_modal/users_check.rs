@@ -8,17 +8,69 @@ mod multi_channel;
 mod multi_conversation;
 mod single;
 
+fn passive_prefix() -> Option<&'static str> {
+    if !crate::fixture::is_fixture() {
+        return None;
+    }
+    if fixture::single_enabled()
+        && std::env::var("SUPER_PLATINUM_APP_MODAL_USER_PASSIVE_CHECK").as_deref() == Ok("1")
+    {
+        Some("app-modal-user-check")
+    } else if super::channel_fixture::enabled()
+        && std::env::var("SUPER_PLATINUM_APP_MODAL_CHANNEL_PASSIVE_CHECK").as_deref() == Ok("1")
+    {
+        Some("app-modal-channel-check")
+    } else if super::conversation_fixture::enabled()
+        && std::env::var("SUPER_PLATINUM_APP_MODAL_CONVERSATION_PASSIVE_CHECK").as_deref()
+            == Ok("1")
+    {
+        Some("app-modal-conversation-check")
+    } else if super::multi_conversation_fixture::enabled()
+        && std::env::var("SUPER_PLATINUM_APP_MODAL_MULTI_CONVERSATION_PASSIVE_CHECK").as_deref()
+            == Ok("1")
+    {
+        Some("app-modal-multi-conversation-check")
+    } else if super::multi_channel_fixture::enabled()
+        && std::env::var("SUPER_PLATINUM_APP_MODAL_MULTI_CHANNEL_PASSIVE_CHECK").as_deref()
+            == Ok("1")
+    {
+        Some("app-modal-multi-channel-check")
+    } else if std::env::var("SUPER_PLATINUM_APP_MODAL_USERS_CHECK").as_deref() == Ok("1")
+        && std::env::var("SUPER_PLATINUM_APP_MODAL_USERS_PASSIVE_CHECK").as_deref() == Ok("1")
+        && matches!(
+            std::env::var("SUPER_PLATINUM_FIXTURE").as_deref(),
+            Ok("app-modal-users" | "app-modal-users-narrow")
+        )
+    {
+        Some("app-modal-users-check")
+    } else {
+        None
+    }
+}
+
 pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::DesktopContext) {
     if !fixture::enabled() {
         return;
     }
     dioxus::core::spawn_forever(async move {
+        let readiness = if let Some(prefix) = passive_prefix() {
+            let name = std::env::var("SUPER_PLATINUM_FIXTURE").unwrap();
+            match crate::app_home::inputs::external::fixture::capture::readiness(&name).await {
+                Ok(marker) => Some(marker),
+                Err(error) => {
+                    eprintln!("{prefix}: {}", json!({"ok":false,"error":error}));
+                    return;
+                }
+            }
+        } else {
+            None
+        };
         let single = fixture::single_enabled();
         let conversation = super::conversation_fixture::enabled();
         let channel = super::channel_fixture::enabled();
         let multi_channel = super::multi_channel_fixture::enabled();
         let multi_conversation = super::multi_conversation_fixture::enabled();
-        let result = match if multi_conversation {
+        let mut result = match if multi_conversation {
             multi_conversation::run(state, &desktop).await
         } else if multi_channel {
             multi_channel::run(state, &desktop).await
@@ -34,6 +86,9 @@ pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::Desktop
             Ok(v) => v,
             Err(error) => json!({"ok":false,"error":error}),
         };
+        if let Some(marker) = readiness {
+            result["passiveReadiness"] = marker;
+        }
         let prefix = if multi_conversation {
             "app-modal-multi-conversation-check"
         } else if multi_channel {
@@ -290,6 +345,29 @@ async fn capture(
     eval(d,"(()=>{window.__modalUserPaint=false;requestAnimationFrame(()=>requestAnimationFrame(()=>window.__modalUserPaint=true));return {ok:true};})()").await?;
     wait(d, "({ok:window.__modalUserPaint===true})").await?;
     let name = std::env::var("SUPER_PLATINUM_FIXTURE").unwrap();
+    if passive_prefix().is_some() {
+        let directory = std::path::PathBuf::from(directory);
+        let shared = std::env::var_os("SUPER_PLATINUM_UI_CAPTURE_DIR")
+            .map(std::path::PathBuf::from)
+            .ok_or("Passive modal capture directory required")?;
+        if !directory.is_absolute() || directory != shared {
+            return Err("Passive modal capture directories differ".into());
+        }
+        let mut geometry = json!({});
+        let mut captures = serde_json::Map::new();
+        crate::app_home::inputs::external::fixture::capture::capture_image(
+            d,
+            &name,
+            stage,
+            &mut geometry,
+            &mut captures,
+        )
+        .await?;
+        return captures[stage]
+            .as_str()
+            .map(|path| Some(path.to_owned()))
+            .ok_or_else(|| "Passive modal capture path missing".into());
+    }
     let path = std::path::PathBuf::from(directory).join(format!("{name}-{stage}.png"));
     let (path, _, _) =
         crate::agent::capture::window(Some(path.to_string_lossy().into_owned()), d).await?;

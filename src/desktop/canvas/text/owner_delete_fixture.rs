@@ -16,6 +16,7 @@ pub(crate) mod check;
 mod child_delete;
 mod completion;
 pub(super) mod gap;
+pub(super) mod last_live_replacement;
 mod live_rich;
 mod owner_first;
 mod owner_rich;
@@ -36,6 +37,7 @@ pub(in crate::canvas) struct State {
     pub(super) writes: Vec<Value>,
     pub(super) acknowledgements: Vec<Value>,
     pub(super) reservations: usize,
+    last_live: last_live_replacement::Evidence,
 }
 pub(in crate::canvas) fn requested() -> bool {
     crate::fixture::is_fixture()
@@ -54,7 +56,13 @@ pub(in crate::canvas) fn requested() -> bool {
                 | "canvas-retained-pair-delete"
                 | "canvas-retained-pair-delete-narrow"
                 | "canvas-owner-first-pair-delete"
-                | "canvas-owner-first-pair-delete-narrow")
+                | "canvas-owner-first-pair-delete-narrow"
+                | "canvas-last-live-replacement"
+                | "canvas-last-live-replacement-narrow"
+                | "canvas-confirmed-provenance"
+                | "canvas-confirmed-provenance-narrow"
+                | "canvas-retirement-cancellation"
+                | "canvas-retirement-cancellation-narrow")
         )
 }
 pub(in crate::canvas) fn enabled(shell: &ShellState) -> bool {
@@ -193,13 +201,24 @@ pub(in crate::canvas) async fn install(mut state: Signal<ShellState>, mut reader
         return;
     }
     let result = tokio::task::spawn_blocking(move || {
-        if matches!(
-            phase.as_str(),
-            "restart" | "review" | "storage-failure" | "reviewed"
-        ) {
-            seed::restored(&serde_json::from_slice::<Value>(&std::fs::read(path).unwrap()).unwrap())
+        if last_live_replacement::confirmed::cold()
+            || matches!(
+                phase.as_str(),
+                "restart" | "review" | "storage-failure" | "reviewed"
+            )
+        {
+            let source = seed::restored(
+                &serde_json::from_slice::<Value>(&std::fs::read(path).unwrap()).unwrap(),
+            );
+            if last_live_replacement::confirmed::requested() {
+                last_live_replacement::confirmed::imported(source)
+            } else {
+                source
+            }
         } else {
-            let s = if owner_first::requested() {
+            let s = if last_live_replacement::requested() {
+                last_live_replacement::seed()
+            } else if owner_first::requested() {
                 owner_first::seed(&c, &mode)
             } else if retained_pair::requested() {
                 retained_pair::seed(&c, &mode)
@@ -250,6 +269,14 @@ pub(in crate::canvas) async fn install(mut state: Signal<ShellState>, mut reader
 }
 pub(in crate::canvas) async fn reload(mut state: Signal<ShellState>) {
     if !enabled(&state.peek()) {
+        return;
+    }
+    if last_live_replacement::retirement_cancellation::requested() {
+        last_live_replacement::retirement_cancellation::reload(state).await;
+        return;
+    }
+    if last_live_replacement::confirmed::requested() {
+        last_live_replacement::confirmed::reload(state).await;
         return;
     }
     let source = snapshot(&state.peek());

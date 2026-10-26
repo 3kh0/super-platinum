@@ -2,6 +2,7 @@
 use super::*;
 use super_platinum_core::state::{cfm_payload as source, directory_members};
 mod auxiliary;
+pub(super) mod home_context;
 pub(crate) mod plan_info;
 pub(super) fn kick(mut state: Signal<ShellState>, owner: Owner) {
     plan_info::persist(state, &owner);
@@ -31,6 +32,7 @@ pub(super) fn kick(mut state: Signal<ShellState>, owner: Owner) {
 }
 
 pub(super) struct State {
+    home_context: home_context::State,
     plan_info: plan_info::State,
     auxiliary: auxiliary::State,
     group_work: Vec<crate::usergroups::source::Work>,
@@ -60,6 +62,7 @@ impl Default for State {
         // Electron's missing accessibility bridge yields undefined -> !!false;
         // retain that provenance instead of claiming an OS observation.
         Self {
+            home_context: home_context::State::default(),
             plan_info: plan_info::State::default(),
             auxiliary: auxiliary::State::default(),
             group_work: vec![],
@@ -193,6 +196,7 @@ pub(super) fn dispatch(
     };
     let settlement = payload.dispatch(&mut sink);
     let success = settlement.result().is_ok();
+    home_context::settled(sink.shell, owner, &settlement);
     let slot = sink
         .shell
         .app_home

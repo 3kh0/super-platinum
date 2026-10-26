@@ -1,0 +1,24 @@
+{
+  "scope": "Independently implemented Home Date formatter/parser and editable adapter; compact factual locale table.",
+  "contract": {
+    "path": "tmp/app-home-date-focus-20261026/reference/contract.json",
+    "sha256": "f407358f041bf773e009f72398affe57bcf8468acc1ac4299ea9851c7c21a97d"
+  },
+  "formatterData": {
+    "path": "tmp/app-home-date-focus-20261026/reference/formatter-data.json",
+    "sha256": "3e6c501e43929edc982d27350089e939782869649d38a8a1388ae9d3c5120fff",
+    "transform": "Keep twelve locale months/monthsShort/day and month ordinal scalar arrays and the selected first/nonfirst Home format. Add source finite-parser ordered month alias factual map and locale numeric order."
+  },
+  "library": "Reuses ../time/vendor/dayjs.js and custom-parse-format.js unchanged, with existing MIT license/provenance; ../time/normalize.js unchanged with existing Lodash attribution. No Moment or application module loader embedded.",
+  "icon": {
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/calendar_month/materialsymbolsrounded/calendar_month_24px.svg",
+    "destination": "src/desktop/icons.rs Icon::CalendarMonth"
+  },
+  "limits": [
+    "English Today/Tomorrow matches the retained translation host; no unexecuted locale-relative translation claim.",
+    "Native Date fallback depends on WebView engine/timezone.",
+    "Auxiliary native picker is a product adapter, not original calendar grid. showPicker success is not physical popup proof; synthetic denial/unavailability is reported without breaking text editing.",
+    "Escape resets/selects/closes adapter state; no standard closePicker API exists, so OS-popup closure remains unverified.",
+    "Samevisit source/field revisions and Reset preserve logical focus history as previously accepted product adaptation."
+  ]
+}

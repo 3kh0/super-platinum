@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Profile Canvas section references: scripts/check-profile-canvas-section-native.py (success/missing/failure/cancel/retirement; normal/narrow).
+# Profile Canvas deletion events: scripts/check-profile-canvas-deletion-event-native.py (known/mounted/held/retirement/plural; normal/narrow).
+# Profile deleted Canvas reference lifecycle: scripts/check-profile-canvas-deleted-native.py
 # Known nested usergroup titles: check-profile-usergroup-title-native.py (known/failure/cancel/retirement).
 # Shared missing nested channel acquisition: check-profile-missing-channel-title-native.py
 # --case positive|omission|failure|cancel|retirement (normal/narrow; closed owned transport).
@@ -101,6 +104,9 @@ FIXTURES=(
   canvas-live-split-child-delete canvas-live-split-child-delete-narrow
   canvas-retained-pair-delete canvas-retained-pair-delete-narrow
   canvas-owner-first-pair-delete canvas-owner-first-pair-delete-narrow
+  canvas-last-live-replacement canvas-last-live-replacement-narrow
+  canvas-confirmed-provenance canvas-confirmed-provenance-narrow
+  canvas-retirement-cancellation canvas-retirement-cancellation-narrow
   canvas-structure-mixed canvas-structure-mixed-narrow
   canvas-replacement canvas-replacement-narrow
   canvas-structure-text canvas-structure-text-narrow
@@ -170,6 +176,49 @@ FIXTURES=(
   app-calendar app-calendar-narrow app-calendar-modern app-calendar-modern-narrow
   app-calendar-connect app-calendar-connect-narrow app-calendar-uncertain app-calendar-uncertain-narrow
   app-home-inputs app-home-inputs-narrow
+  app-home-external-select app-home-external-select-narrow
+  app-home-external-dispatch app-home-external-dispatch-narrow
+  app-home-multi-external-dispatch app-home-multi-external-dispatch-narrow
+  app-home-number-input app-home-number-input-narrow
+  app-home-email-input app-home-email-input-narrow
+  app-home-focus-on-load app-home-focus-on-load-narrow
+  app-home-multi-channel-select app-home-multi-channel-select-narrow
+  # Ordered Home channels: check-app-home-multi-channel-select-native.py.
+  app-home-conversation-select app-home-conversation-select-narrow
+  app-home-multi-conversation-select app-home-multi-conversation-select-narrow
+  app-home-text-dispatch app-home-text-dispatch-narrow
+  app-home-text-button-sync app-home-text-button-sync-narrow
+  app-home-text-focus app-home-text-focus-narrow
+  app-home-static-dispatch app-home-static-dispatch-narrow
+  app-home-static-remount app-home-static-remount-narrow
+  app-home-static-wrappers app-home-static-wrappers-narrow
+  app-home-multi-static-dispatch app-home-multi-static-dispatch-narrow
+  app-home-checkbox-dispatch app-home-checkbox-dispatch-narrow
+  app-home-radio-dispatch app-home-radio-dispatch-narrow
+  app-home-date-dispatch app-home-date-dispatch-narrow
+  app-home-date-focus app-home-date-focus-narrow
+  app-home-date-popup app-home-date-popup-narrow
+  app-home-time-focus app-home-time-focus-narrow
+  app-home-datetime-editing app-home-datetime-editing-narrow
+  app-home-datetime-popup app-home-datetime-popup-narrow
+  app-home-time-dispatch app-home-time-dispatch-narrow
+  app-home-datetime-dispatch app-home-datetime-dispatch-narrow
+  app-home-channel-select app-home-channel-select-narrow
+  # Public channel Home: check-app-home-channel-select-native.py.
+  app-home-user-dispatch app-home-user-dispatch-narrow
+  app-home-multi-user-dispatch app-home-multi-user-dispatch-narrow
+  app-home-channel-dispatch app-home-channel-dispatch-narrow
+  app-home-multi-channel-dispatch app-home-multi-channel-dispatch-narrow
+  app-home-conversation-dispatch app-home-conversation-dispatch-narrow
+  app-home-multi-conversation-dispatch app-home-multi-conversation-dispatch-narrow
+  app-home-user-select app-home-user-select-narrow
+  app-home-multi-user-select app-home-multi-user-select-narrow
+  # Stateful known-member coverage: check-app-home-user-select-native.py.
+  # Ordered Home people: check-app-home-multi-user-select-native.py.
+  app-home-multi-external-select app-home-multi-external-select-narrow
+  # Stateful multi coverage: check-app-home-multi-external-select-native.py.
+  app-home-unified-context app-home-unified-context-narrow
+  # Stateful coverage uses check-app-home-external-select-native.py with exact closed flags.
   app-home-calendar app-home-calendar-narrow
   app-modal-form app-modal-form-narrow app-modal-lifecycle app-modal-lifecycle-narrow
   app-modal-users app-modal-users-narrow
@@ -340,6 +389,15 @@ owned_fixture_route() {
     canvas-retained-pair-delete|canvas-retained-pair-delete-narrow)
       owned_route="Use python scripts/check-canvas-retained-pair-delete-native.py --binary <verified-binary> --captures <new-absolute-directory> --fixture $1; this runner initializes both retained histories, private journal and capture ACKs."
       return 0 ;;
+    canvas-retirement-cancellation|canvas-retirement-cancellation-narrow)
+      owned_route="Use the isolated canvas-retirement-cancellation passive checker with its private journal and capture ACKs; the legacy Canvas launcher is not supported."
+      return 0 ;;
+    canvas-confirmed-provenance|canvas-confirmed-provenance-narrow)
+      owned_route="Use the confirmed-provenance milestone isolated native checker with linked closed DB/snapshot phases and passive 250ms guards."
+      ;;
+    canvas-last-live-replacement|canvas-last-live-replacement-narrow)
+      owned_route="Use the milestone isolated check-canvas-last-live-replacement-native.py with a verified binary, fresh captures and private journal; this fixture requires passive 250ms readiness and capture-edge guards."
+      return 0 ;;
     canvas-live-split-child-delete|canvas-live-split-child-delete-narrow)
       owned_route="Use python scripts/check-canvas-live-split-child-delete-native.py --binary <verified-binary> --captures <new-absolute-directory> --fixture $1; this runner initializes the saved pair, private journal and capture ACKs."
       ;;
@@ -462,7 +520,7 @@ for fixture in "${FIXTURES[@]}"; do
   fi
 done
 
-echo "agent-ui-check: building the locked Dioxus desktop shell…"
+echo "agent-ui-check: building the locked Dioxus desktop shellâ€¦"
 cargo build --manifest-path "$MANIFEST" --locked
 
 # A sleeping display has no composited window surface, so `screencapture -l`
@@ -502,7 +560,7 @@ for fixture in "${FIXTURES[@]}"; do
   rm -f "$socket" "$png"
   cleanup_socket="$socket"
 
-  echo "agent-ui-check: launching ${fixture}…"
+  echo "agent-ui-check: launching ${fixture}â€¦"
   SUPER_PLATINUM_FIXTURE="$fixture" \
     SUPER_PLATINUM_AGENT=1 \
     SUPER_PLATINUM_AGENT_SOCK="$socket" \
@@ -562,3 +620,8 @@ ls -la "$SUPER_PLATINUM_UI_CAPTURE_DIR"
 # Mixed same-label Save: check-list-plain-mixed-save-native.py --case own-edit-plain-mixed-{tie,group} (normal/narrow).
 
 # Native Enter split: check-canvas-split-native.py --scenario success|stale|partial --fixture canvas-structure[-narrow] --binary <built-binary>.
+
+# profile-sections-mentions[-narrow]: check-profile-missing-usergroup-title-native.py drives shared missing group titles (positive/omission/failure/cancel/retirement/restricted).
+
+# Profile private Canvas references: scripts/check-profile-canvas-unavailable-native.py
+# Exact files.info status carriers; template recovery, sticky access, failure, Cancel, and retirement.

@@ -1,113 +1,94 @@
 //! Read-only search endpoints from WNgx / 53BY / vAgx. No DM-open/join call.
 use super::*;
 use super_platinum_core::slack::models::Channel;
-async fn request(ctx: &Context, path: &str, body: Value) -> Result<Value, Error> {
-    let req = ctx
-        .client
-        .edge_json(&ctx.session, path, body)
-        .map_err(|_| Error::Api("conversation_search_unavailable".into()))?;
-    ctx.transport.execute(req).await
-}
+pub(crate) mod aggregate;
 fn results(value: &Value) -> Result<&Vec<Value>, Error> {
     value
         .get("results")
         .and_then(Value::as_array)
         .ok_or_else(|| Error::Api("conversation_search_invalid".into()))
 }
-pub(super) async fn fetch(
+/// Shared users-only read preparation. Surface owners supply dispatch/currentness.
+pub(crate) fn prepare_users(
+    ctx: &Context,
+    query: &str,
+) -> Result<super_platinum_core::slack::client::PreparedRequest, Error> {
+    users_request(ctx, query, None)
+}
+fn users_request(
     ctx: &Context,
     query: &str,
     filter: Option<&super::super::conversations::Filter>,
-) -> Result<(Vec<User>, Vec<Channel>), Error> {
-    let users = async {
-        if filter.is_some_and(|f| !f.allows("im")) {
-            return Ok(Vec::new());
-        }
-        let mut body = serde_json::json!({"query":query,"count":24,"fuzz":1,"enable_workspace_ranking":true,"filter":"NOT deactivated"});
-        if let Some(team) = filter.and_then(|f| f.only_from_team_id.as_ref()) {
-            body["external_team"] = serde_json::json!(team);
-            body["filter"] = serde_json::json!(if ctx.session.enterprise_id.is_some() {
-                "NOT deactivated AND NOT org"
-            } else {
-                "NOT deactivated AND NOT team"
-            });
-        }
-        let value = request(ctx, "users/search", body).await?;
-        Ok(results(&value)?
-            .iter()
-            .take(24)
-            .filter_map(|v| serde_json::from_value::<User>(v.clone()).ok())
-            .collect::<Vec<_>>())
-    };
-    let channels = async {
-        let Some(f) = filter.filter(|f| f.allows("public") || f.allows("private")) else {
-            return Ok(Vec::new());
-        };
-        let mut body =
-            serde_json::json!({"query":query,"count":24,"fuzz":1,"include_record_channels":true});
+) -> Result<super_platinum_core::slack::client::PreparedRequest, Error> {
+    let mut body = serde_json::json!({"query":query,"count":24,"fuzz":1,"enable_workspace_ranking":true,"filter":"NOT deactivated"});
+    if let Some(team) = filter.and_then(|f| f.only_from_team_id.as_ref()) {
+        body["external_team"] = serde_json::json!(team);
+        body["filter"] = serde_json::json!(if ctx.session.enterprise_id.is_some() {
+            "NOT deactivated AND NOT org"
+        } else {
+            "NOT deactivated AND NOT team"
+        });
+    }
+    ctx.client
+        .edge_json(&ctx.session, "users/search", body)
+        .map_err(|_| Error::Api("conversation_search_unavailable".into()))
+}
+/// Home channels use the original internal-team parameters, distinct from external_team.
+pub(crate) fn prepare_channels(
+    ctx: &Context,
+    query: &str,
+    policy: &super_platinum_core::block_actions::form::home::ChannelTeamPolicy,
+) -> Result<super_platinum_core::slack::client::PreparedRequest, Error> {
+    channels_request(ctx, query, None, Some(policy))
+}
+fn channels_request(
+    ctx: &Context,
+    query: &str,
+    filter: Option<&super::super::conversations::Filter>,
+    policy: Option<&super_platinum_core::block_actions::form::home::ChannelTeamPolicy>,
+) -> Result<super_platinum_core::slack::client::PreparedRequest, Error> {
+    let mut body = serde_json::json!({"query":query,"count":24,"fuzz":1});
+    if let Some(f) = filter {
+        body["include_record_channels"] = serde_json::json!(true);
         if f.exclude_external_shared_channels {
             body["filter"] = serde_json::json!("NOT shared");
         }
         if let Some(team) = &f.only_from_team_id {
             body["external_team"] = serde_json::json!(team);
         }
-        let value = request(ctx, "channels/search", body).await?;
-        Ok(results(&value)?
-            .iter()
-            .take(24)
-            .filter_map(|v| serde_json::from_value::<Channel>(v.clone()).ok())
-            .collect::<Vec<_>>())
-    };
-    let mpims = async {
-        if filter.is_none_or(|f| !f.allows("mpim")) {
-            return Ok(Vec::new());
-        }
-        // vAgx normalizes a comma followed by whitespace, not arbitrary spaces.
-        let query = normalize_mpim_query(query);
-        let value = request(
-            ctx,
-            "mpims/search",
-            serde_json::json!({"query":query,"count":24,"fuzz":1}),
-        )
-        .await?;
-        let list = value
-            .get("mpims")
-            .or_else(|| value.get("results"))
-            .and_then(Value::as_array)
-            .ok_or_else(|| Error::Api("conversation_search_invalid".into()))?;
-        Ok(list.iter().take(24).filter_map(mpim).collect::<Vec<_>>())
-    };
-    let (users, channels, mpims) = tokio::join!(users, channels, mpims);
-    // Multiple independent endpoints may cool down together. Keep the longest
-    // server deadline rather than losing it to an unrelated branch's failure.
-    let delay = [
-        users.as_ref().err(),
-        channels.as_ref().err(),
-        mpims.as_ref().err(),
-    ]
-    .into_iter()
-    .flatten()
-    .filter_map(|e| {
-        if let Error::RateLimited {
-            retry_after_secs: Some(seconds),
-            ..
-        } = e
-        {
-            Some(*seconds)
-        } else {
-            None
-        }
-    })
-    .max();
-    if let Some(seconds) = delay {
-        return Err(Error::RateLimited {
-            retry_after_secs: Some(seconds),
-        });
     }
-    let mut channels = channels?;
-    channels.extend(mpims?);
-    Ok((users?, channels))
+    if let Some(policy) = policy {
+        body.as_object_mut()
+            .unwrap()
+            .extend(policy.request_fields().as_object().unwrap().clone());
+    }
+    ctx.client
+        .edge_json(&ctx.session, "channels/search", body)
+        .map_err(|_| Error::Api("conversation_search_unavailable".into()))
 }
+pub(crate) fn decode_channels(value: &Value) -> Result<Vec<Channel>, Error> {
+    Ok(results(value)?
+        .iter()
+        .take(24)
+        .filter_map(|v| serde_json::from_value(v.clone()).ok())
+        .collect())
+}
+pub(crate) fn decode_users(value: &Value) -> Result<Vec<User>, Error> {
+    Ok(results(value)?
+        .iter()
+        .take(24)
+        .filter_map(|v| serde_json::from_value::<User>(v.clone()).ok())
+        .collect())
+}
+pub(super) async fn fetch(
+    ctx: &Context,
+    query: &str,
+    filter: Option<&super::super::conversations::Filter>,
+) -> Result<(Vec<User>, Vec<Channel>), Error> {
+    let requests = aggregate::prepare(ctx, query, filter);
+    aggregate::execute(ctx, requests).await
+}
+
 pub(crate) fn normalize_mpim_query(query: &str) -> String {
     let mut result = String::new();
     let mut chars = query.chars().peekable();
@@ -152,6 +133,38 @@ pub(crate) fn mpim(value: &Value) -> Option<Channel> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn shared_users_request_preserves_account_route_and_bounded_decode() {
+        let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
+        crate::app_home::fixture::install_inputs(&mut shell);
+        let mut ctx = Context::capture(&shell).unwrap();
+        for enterprise in [None, Some("EFIXTURE1".to_owned())] {
+            ctx.session.enterprise_id = enterprise.clone();
+            let req = prepare_users(&ctx, " Ada ").unwrap();
+            assert_eq!(req.method, "POST");
+            let cache = enterprise.as_deref().unwrap_or(&ctx.session.team_id);
+            assert_eq!(
+                req.url.split('?').next().unwrap(),
+                format!("https://edgeapi.slack.com/cache/{cache}/users/search")
+            );
+            let super_platinum_core::slack::client::RequestBody::Json(mut body) = req.body else {
+                panic!("Expected JSON")
+            };
+            assert_eq!(body["token"], ctx.session.token);
+            body.as_object_mut().unwrap().remove("token");
+            body.as_object_mut().unwrap().remove("enterprise_token");
+            let mut expected = serde_json::json!({"query":" Ada ","count":24,"fuzz":1,"enable_workspace_ranking":true,"filter":"NOT deactivated"});
+            if let Some(id) = enterprise {
+                expected["enterprise_id"] = serde_json::json!(id);
+            }
+            assert_eq!(body, expected);
+        }
+        let row = serde_json::json!({"id":"UREMOTE01","profile":{"display_name":"Remote"},"opaque":{"keep":true}});
+        let result = decode_users(&serde_json::json!({"results":vec![row.clone();25]})).unwrap();
+        assert_eq!(result.len(), 24);
+        assert_eq!(result[0].extra["opaque"], row["opaque"]);
+        assert!(decode_users(&serde_json::json!({"results":null})).is_err());
+    }
     #[test]
     fn mpim_requires_typed_metadata_and_preserves_members() {
         assert_eq!(

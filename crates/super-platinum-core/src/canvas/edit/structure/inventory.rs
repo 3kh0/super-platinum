@@ -33,6 +33,7 @@ pub(super) struct Inventory {
     pub sections: BTreeMap<String, Section>,
     pub ordered: Vec<String>,
     review_only: bool,
+    pub(super) provenance: Option<std::sync::Arc<ReplacementProvenance>>,
     init: RawMessage,
     thread: RawMessage,
     document: RawMessage,
@@ -85,6 +86,9 @@ impl Inventory {
                 return Err(Error::Unsupported);
             }
         }
+        if let Some(proof) = &snapshot.replacement_provenance {
+            proof.validate(snapshot)?;
+        }
         for section in sections.values() {
             validate_placement(section, &sections)?;
             if !review_only && section.deleted()? == Some(true) {
@@ -92,7 +96,14 @@ impl Inventory {
                     owner_delete::tombstone(sections.values(), section)?;
                 } else {
                     if super::split::child_tombstone(sections.values(), section, 0).is_err() {
-                        super::split::gap_tombstone(sections.values(), section)?;
+                        super::split::gap_tombstone(sections.values(), section).or_else(|_| {
+                            snapshot
+                                .replacement_provenance
+                                .as_ref()
+                                .filter(|p| p.allows(section))
+                                .map(|_| ())
+                                .ok_or(Error::Unsupported)
+                        })?;
                     }
                 }
             }
@@ -102,14 +113,38 @@ impl Inventory {
             sections,
             ordered: positions.into_values().collect(),
             review_only,
+            provenance: snapshot.replacement_provenance.clone(),
             init: snapshot.init.options().clone(),
             thread: snapshot.thread.clone(),
             document: snapshot.document.clone(),
         })
     }
+    pub(super) fn provenance_evidence(&self) -> Option<provenance::Evidence> {
+        self.provenance.as_ref().map(|p| p.evidence().clone())
+    }
+    pub(super) fn carry(
+        &self,
+        snapshot: &CanvasCollabSnapshot,
+    ) -> Result<CanvasCollabSnapshot, Error> {
+        let mut result = snapshot.clone();
+        if let Some(proof) = &self.provenance {
+            proof.validate(snapshot)?;
+            if snapshot
+                .replacement_provenance
+                .as_ref()
+                .is_some_and(|p| p != proof)
+            {
+                return Err(Error::Changed);
+            }
+            result.replacement_provenance = Some(proof.clone());
+        }
+        Ok(result)
+    }
     pub fn revalidate(&self, snapshot: &CanvasCollabSnapshot) -> Result<(), Error> {
-        let fresh = Self::capture_policy(snapshot, self.review_only)?;
-        if self.owner != fresh.owner
+        let carried = self.carry(snapshot)?;
+        let fresh = Self::capture_policy(&carried, self.review_only)?;
+        if self.provenance != fresh.provenance
+            || self.owner != fresh.owner
             || self.sections != fresh.sections
             || self.ordered != fresh.ordered
             || self.init != fresh.init

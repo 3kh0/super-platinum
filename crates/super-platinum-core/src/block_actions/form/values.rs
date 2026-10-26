@@ -5,6 +5,8 @@ use std::collections::HashSet;
 pub(super) fn wire_type(kind: &InputKind) -> &str {
     match kind {
         InputKind::Text { .. } => "plain_text_input",
+        InputKind::Number { .. } => "number_input",
+        InputKind::Email => "email_text_input",
         InputKind::ExternalSelect { .. } => "external_select",
         InputKind::MultiExternalSelect { .. } => "multi_external_select",
         InputKind::StaticSelect {
@@ -34,6 +36,8 @@ pub(super) fn matches(kind: &InputKind, value: &InputValue) -> bool {
                 InputValue::ExternalOptions(_)
             )
             | (InputKind::Text { .. }, InputValue::Text(_))
+            | (InputKind::Number { .. }, InputValue::Number(_))
+            | (InputKind::Email, InputValue::Email(_))
             | (
                 InputKind::StaticSelect { .. }
                     | InputKind::Checkboxes { .. }
@@ -90,7 +94,9 @@ pub(super) fn error(field: &FormField) -> Option<String> {
         InputValue::Users(values)
         | InputValue::Channels(values)
         | InputValue::Conversations(values) => values.is_empty(),
-        InputValue::Conversation(value)
+        InputValue::Email(value)
+        | InputValue::Number(value)
+        | InputValue::Conversation(value)
         | InputValue::Channel(value)
         | InputValue::User(value)
         | InputValue::Date(value)
@@ -210,6 +216,12 @@ pub(super) fn error(field: &FormField) -> Option<String> {
 pub(super) fn wire(field: &FormField) -> Value {
     let mut value = json!({"type":wire_type(&field.kind)});
     match &field.value {
+        InputValue::Email(email) => {
+            if let Some(email) = email {
+                value["value"] = json!(email);
+            }
+        }
+        InputValue::Number(number) => value["value"] = json!(number),
         InputValue::Text(text) => {
             value["value"] = if text.is_empty() {
                 Value::Null
@@ -309,6 +321,11 @@ pub(super) fn from_wire(kind: &InputKind, value: &Value) -> Result<InputValue, F
                 .transpose()?,
         ),
         InputKind::Text { .. } => InputValue::Text(string("value")?.unwrap_or_default()),
+        InputKind::Number { .. } => InputValue::Number(string("value")?),
+        InputKind::Email => InputValue::Email(match value.get("value") {
+            None => None,
+            Some(v) => Some(v.as_str().ok_or_else(invalid)?.to_owned()),
+        }),
         InputKind::Conversation => InputValue::Conversation(string("selected_conversation")?),
         InputKind::Channel => InputValue::Channel(string("selected_channel")?),
         InputKind::User => InputValue::User(string("selected_user")?),

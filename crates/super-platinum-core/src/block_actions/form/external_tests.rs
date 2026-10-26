@@ -1,6 +1,6 @@
 use super::*;
 fn option(value: &str) -> Value {
-    json!({"text":{"type":"plain_text","text":format!("Option {value}"),"emoji":true},"value":value})
+    json!({"text":{"type":"plain_text","text":format!("Option {value}"),"emoji":true},"value":value,"opaque":{"source":value,"retained":[true,null,7]},"url":"https://example.test/not-navigation"})
 }
 fn key() -> InputKey {
     InputKey {
@@ -87,4 +87,24 @@ fn unsupported_external_contexts_and_bad_settings_stay_blocked() {
         element["min_query_length"] = json!(0);
         assert!(parse_message_external(&element).is_ok());
     }
+}
+
+#[test]
+fn opaque_remote_option_survives_modal_dirty_refresh_and_exact_submission() {
+    let mut raw = view(true);
+    let mut form = ModalForm::parse(&raw).unwrap();
+    let remote = ExternalOption::parse(&option("remote")).unwrap();
+    form.set_value(&key(), InputValue::External(Some(remote.clone())))
+        .unwrap();
+    raw["hash"] = json!("new");
+    raw["blocks"][0]["element"]["initial_option"] = option("server");
+    form.reconcile(&raw).unwrap();
+    assert_eq!(
+        form.fields[&key()].value,
+        InputValue::External(Some(remote.clone()))
+    );
+    assert_eq!(
+        form.submission().unwrap()["values"]["b"]["a"]["selected_option"],
+        *remote.raw()
+    );
 }

@@ -2,6 +2,8 @@
 //! Their order is visual; they never become members of split lineage.
 use super::*;
 mod history;
+pub(in crate::canvas::edit::structure) use history::independent as independent_history;
+pub(in crate::canvas::edit::structure) use history::witnessed as witnessed_independent_history;
 
 pub(super) fn between(
     rows: &[&Section],

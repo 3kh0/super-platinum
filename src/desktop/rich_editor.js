@@ -29,7 +29,35 @@
     element.setAttribute('aria-label', 'Canvas');
     element.append(icon.cloneNode(true));
   }
-  function mount(id, blocks, labels = {}, autofocus = true, expectedGeneration = null, allowUnderline = false) {
+  function referencePresentation(element, value, presentation, model) {
+    if (!presentation) return;
+    const deleted=presentation.kind==='deleted-canvas'&&presentation.icon==='delete'&&presentation.disabled===true;
+    const privateCanvas=presentation.kind==='private-canvas'&&presentation.icon==='lock'&&presentation.disabled===false;
+    const section=presentation.kind==='canvas-section'&&presentation.icon==='description'&&presentation.disabled===false;
+    const template=deleted?model.deletedIcon:section?model.sectionIcon:model.privateIcon;
+    if (value.type!=='canvas'||Object.keys(presentation).sort().join(',')!=='disabled,icon,kind'||(!deleted&&!privateCanvas&&!section)||!template)
+      throw new Error('The Canvas presentation is unavailable.');
+    const icon=template.cloneNode(true),className=deleted?'rich-editor-deleted-canvas':section?'rich-editor-section-canvas':'rich-editor-private-canvas';
+    icon.setAttribute('aria-hidden','true');
+    element.classList.add(className);
+    element.setAttribute('aria-disabled',String(deleted));
+    element.prepend(icon);
+    model.tokenPresentations.set(element,{descriptor:{kind:presentation.kind,icon:presentation.icon,disabled:deleted},className,icon,markup:icon.outerHTML});
+  }
+  function checkedPresentation(element, model) {
+    const owned=model.tokenPresentations.get(element);
+    if (!owned) {
+      if (element.matches('.rich-editor-private-canvas,.rich-editor-deleted-canvas,.rich-editor-section-canvas') || element.querySelector('.rich-editor-private-symbol,.rich-editor-deleted-symbol,.rich-editor-section-symbol'))
+        throw new Error('The Canvas presentation lost its source.');
+      return null;
+    }
+    const other=owned.descriptor.disabled?'rich-editor-private-canvas':'rich-editor-deleted-canvas';
+    if (owned.icon.parentNode!==element || owned.icon.outerHTML!==owned.markup ||
+        element.querySelectorAll('svg').length!==1 || !element.classList.contains(owned.className) || element.classList.contains(other) || ['rich-editor-private-canvas','rich-editor-deleted-canvas','rich-editor-section-canvas'].some(c=>c!==owned.className&&element.classList.contains(c)) || element.getAttribute('aria-disabled')!==String(owned.descriptor.disabled))
+      throw new Error('The Canvas presentation changed. Undo the change before saving.');
+    return clone(owned.descriptor);
+  }
+  function mount(id, blocks, labels = {}, autofocus = true, expectedGeneration = null, allowUnderline = false, presentations = {}, labelUnits = {}) {
     const root = document.getElementById(id);
     // Delayed native evals may arrive after a different cell reuses this ID.
     // Check ownership before the WeakMap can claim the newer DOM element.
@@ -40,7 +68,10 @@
     const originals = new WeakMap();
     const initial = clone(blocks);
     const canvasIcon = root.closest('.rich-editor')?.querySelector(':scope > .rich-editor-canvas-icon > svg')?.cloneNode(true) || null;
-    const model = { allowUnderline, originals, canvasIcon, tokenLabels: new WeakMap(), completionAtoms: new WeakSet(), initial, dirty: false, revision: 0, composing: false, expectedGeneration, previousFocus: document.activeElement };
+    const privateIcon = root.closest('.rich-editor')?.querySelector(':scope > .rich-editor-private-icon > svg')?.cloneNode(true) || null;
+    const deletedIcon = root.closest('.rich-editor')?.querySelector(':scope > .rich-editor-deleted-icon > svg')?.cloneNode(true) || null;
+    const sectionIcon = root.closest('.rich-editor')?.querySelector(':scope > .rich-editor-section-icon > svg')?.cloneNode(true) || null;
+    const model = { allowUnderline, originals, canvasIcon, privateIcon, deletedIcon, sectionIcon, tokenUnits: new WeakMap(), tokenPresentations: new WeakMap(), tokenLabels: new WeakMap(), completionAtoms: new WeakSet(), initial, dirty: false, revision: 0, composing: false, expectedGeneration, previousFocus: document.activeElement };
     editors.set(root, model);
     const remember = (element, value) => { originals.set(element, clone(value)); return element; };
     function inline(value) {
@@ -65,8 +96,15 @@
         || value.fallback || value.text || (value.type === 'emoji' ? `:${value.name}:`
           : value.type === 'user' ? `@${value.user_id}` : value.type === 'channel' ? `#${value.channel_id}`
           : value.type === 'broadcast' ? `@${value.range}` : 'Embedded content');
+      const units=labelUnits[JSON.stringify(value)];
+      if(units!==undefined){
+        if(value.type!=='canvas'||typeof value.section_id!=='string'||!value.section_id||!Array.isArray(units)||units.length>1048576||units.some(u=>!Number.isInteger(u)||u<0||u>65535))throw new Error('The Canvas section label is unavailable.');
+        let exact='';for(let i=0;i<units.length;i+=4096)exact+=String.fromCharCode(...units.slice(i,i+4096));
+        element.textContent=exact;model.tokenUnits.set(element,units.slice());
+      }
       model.tokenLabels.set(element,element.textContent);
       decorateEmptyCanvas(element, value, element.textContent, model.canvasIcon);
+      referencePresentation(element,value,presentations[JSON.stringify(value)],model);
       return element;
     }
     function block(value) {
@@ -297,7 +335,13 @@
         if(raw&&child.contentEditable==='false'){
           const label=model.tokenLabels.get(child);
           if(typeof label!=='string')throw new Error('The rich label is unavailable.');
-          tokens.push({value:clone(raw),label});
+          const presentation=checkedPresentation(child,model);
+          const units=model.tokenUnits.get(child);
+          if(units){
+            const visible=[...Array(child.textContent.length)].map((_,i)=>child.textContent.charCodeAt(i));
+            if(JSON.stringify(visible)!==JSON.stringify(units))throw new Error('The Canvas section label changed. Undo the change before saving.');
+          }
+          tokens.push({value:clone(raw),...(units?{labelUnits:units.slice()}:{label}),...(presentation?{presentation}:{})});
         }else if(child.nodeType===Node.ELEMENT_NODE)visit(child);
       }
     }
@@ -410,7 +454,7 @@
     for(let i=0;i<matches.length;i++){
       const node=matches[i];node.removeAttribute('data-rich-completion-insert');
       model.originals.set(node,clone(pending.runs[i].value));pending.runs[i].node=node;
-      if(pending.runs[i].atomic){model.tokenLabels.set(node,pending.runs[i].resolvedLabel??pending.runs[i].label);model.completionAtoms.add(node);node.contentEditable='false';}
+      if(pending.runs[i].atomic){model.tokenLabels.set(node,pending.runs[i].resolvedLabel??pending.runs[i].label);if(pending.runs[i].labelUnits)model.tokenUnits.set(node,pending.runs[i].labelUnits.slice());model.completionAtoms.add(node);node.contentEditable='false';referencePresentation(node,pending.runs[i].value,pending.runs[i].presentation,model);}
     }
     pending.accepted=true;placeAfterCompletionAtom(root,model);
   }
@@ -493,7 +537,8 @@
       const markStart=runs.length,run=original?retain(element,original,atomic):null;
       if(atomic){
         const label=model.tokenLabels.get(source);if(typeof label!=='string')throw new Error('Completion prefix label lost its provenance.');
-        run.resolvedLabel=label;
+        run.resolvedLabel=label;run.labelUnits=model.tokenUnits.get(source)?.slice();
+        run.presentation=checkedPresentation(source,model);
       }
       if(atomic){
         if(source===start)throw new Error('Completion starts inside an opaque token.');

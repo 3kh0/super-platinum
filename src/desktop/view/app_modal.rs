@@ -141,27 +141,71 @@ pub(crate) fn ModalField(
     let label_id = format!("{id}-label");
     let hint_id = format!("{id}-hint");
     let error_id = format!("{id}-error");
-    let described_by = format!("{hint_id} {error_id}");
-    let invalid = field.error.is_some().to_string();
+    let shown_error = if home.is_some() {
+        crate::app_home::inputs::presentation_error(&state.read(), &input_key)
+    } else {
+        field.error.clone()
+    };
+    let described_by = if home.is_some() && shown_error.is_none() {
+        hint_id.clone()
+    } else {
+        format!("{hint_id} {error_id}")
+    };
+    let invalid = shown_error.is_some().to_string();
     let required = (!field.optional).to_string();
     let placeholder = field.placeholder.as_deref().unwrap_or_default();
+    let home_focus = home
+        .and_then(|_| crate::app_home::inputs::focus::config(&state.read(), &input_key))
+        .map(|v| v.to_string());
     let control = match &field.kind {
+        InputKind::Email => {
+            if let Some(visit) = home {
+                rsx! {span {class:"home-email-control",
+                    {crate::icons::icon(crate::icons::Icon::Mail,"home-email-icon")}
+                    crate::app_home::inputs::text::Control {state,visit,input_key:input_key.clone(),multiline:false,initial:String::new(),
+                    id:id.clone(),label:label_id.clone(),description:described_by.clone(),required:required.clone(),invalid:invalid.clone(),
+                    placeholder:field.placeholder.clone().filter(|v|!v.is_empty()).unwrap_or_else(||"Enter an email address".into()),locked}
+                }}
+            } else {
+                rsx! {p {class:"app-modal-hint","This field is not supported yet."}}
+            }
+        }
+        InputKind::Number { .. } => {
+            if let Some(visit) = home {
+                rsx! {crate::app_home::inputs::text::Control {state,visit,input_key:input_key.clone(),multiline:false,initial:String::new(),
+                id:id.clone(),label:label_id.clone(),description:described_by.clone(),required:required.clone(),invalid:invalid.clone(),
+                placeholder:field.placeholder.clone().unwrap_or_else(|| "Enter a number".into()),locked}}
+            } else {
+                rsx! {p {class:"app-modal-hint","This field is not supported yet."}}
+            }
+        }
         InputKind::Text { multiline, .. } => {
             let text = match seed {
                 InputValue::Text(text) => text,
                 _ => String::new(),
             };
             let key = input_key.clone();
-            if *multiline {
+            if let Some(visit) = home
+                .filter(|_| crate::app_home::inputs::text::dispatching(&state.read(), &input_key))
+            {
+                rsx! {crate::app_home::inputs::text::Control {state,visit,input_key:input_key.clone(),multiline:*multiline,initial:text,
+                id:id.clone(),label:label_id.clone(),description:described_by.clone(),required:required.clone(),invalid:invalid.clone(),placeholder:placeholder.to_owned(),locked}}
+            } else if *multiline {
+                let focus_key = key.clone();
                 rsx! {
                     textarea {id:"{id}",name:"{id}",initial_value:"{text}",placeholder:"{placeholder}",
+                        "data-home-focus":home_focus,
+                        onmounted:move |_|if home.is_some(){crate::app_home::inputs::focus::mount_quiet(state,&focus_key);},
                         disabled:locked,"aria-labelledby":"{label_id}","aria-describedby":"{described_by}",
                         "aria-invalid":"{invalid}","aria-required":"{required}",
                         oninput:move |event|set_value(state,home,key.clone(),InputValue::Text(event.value()))}
                 }
             } else {
+                let focus_key = key.clone();
                 rsx! {
                     input {id:"{id}",name:"{id}",r#type:"text",initial_value:"{text}",placeholder:"{placeholder}",
+                        "data-home-focus":home_focus,
+                        onmounted:move |_|if home.is_some(){crate::app_home::inputs::focus::mount_quiet(state,&focus_key);},
                         autocorrect:"off",autocapitalize:"off",disabled:locked,
                         "aria-labelledby":"{label_id}","aria-describedby":"{described_by}",
                         "aria-invalid":"{invalid}","aria-required":"{required}",
@@ -176,19 +220,47 @@ pub(crate) fn ModalField(
             let key = input_key.clone();
             let name = id.clone();
             let choices = options.clone();
-            rsx! {select {id:"{id}",name:"{id}",multiple:*multiple,
-                size:if *multiple {options.len().clamp(3,6)}else{1},disabled:locked,
-                "aria-labelledby":"{label_id}","aria-describedby":"{described_by}",
-                "aria-invalid":"{invalid}","aria-required":"{required}",
-                onchange:move |event|set_value(state,home,key.clone(),InputValue::Selected(selected_values(&event,&name,&choices))),
-                if !*multiple {option {value:"",initial_selected:selected.is_empty(),"{placeholder}"}}
-                for (index,option) in options.iter().enumerate() {
-                    option {key:"{option.value}",value:"option-{index}",initial_selected:selected.contains(&option.value),
-                        if let Some(group)=option.group.as_ref() {"{group} — "}
-                        "{option.text}"
-                    }
+            if let Some(visit) = home.filter(|_| {
+                crate::app_home::inputs::static_select::dispatching(&state.read(), &input_key)
+            }) {
+                if *multiple {
+                    rsx! {crate::app_home::inputs::static_select::multiple::Control {state,visit,input_key:input_key.clone(),id:id.clone(),label:label_id.clone(),description:described_by.clone(),required:required.clone(),invalid:invalid.clone(),locked}}
+                } else {
+                    rsx! {crate::app_home::inputs::static_select::Control {state,visit,input_key:input_key.clone(),id:id.clone(),label:label_id.clone(),description:described_by.clone(),required:required.clone(),invalid:invalid.clone(),placeholder:placeholder.to_owned(),locked}}
                 }
-            }}
+            } else {
+                rsx! {select {id:"{id}",name:"{id}",multiple:*multiple,
+                    size:if *multiple {options.len().clamp(3,6)}else{1},disabled:locked,
+                    "aria-labelledby":"{label_id}","aria-describedby":"{described_by}",
+                    "aria-invalid":"{invalid}","aria-required":"{required}",
+                    onchange:move |event|set_value(state,home,key.clone(),InputValue::Selected(selected_values(&event,&name,&choices))),
+                    if !*multiple {option {value:"",initial_selected:selected.is_empty(),"{placeholder}"}}
+                    for (index,option) in options.iter().enumerate() {
+                        option {key:"{option.value}",value:"option-{index}",initial_selected:selected.contains(&option.value),
+                            if let Some(group)=option.group.as_ref() {"{group} — "}
+                            "{option.text}"
+                        }
+                    }
+                }}
+            }
+        }
+        InputKind::Checkboxes { .. }
+            if home.is_some()
+                && crate::app_home::inputs::static_select::checkboxes::supported(
+                    &state.read(),
+                    &input_key,
+                ) =>
+        {
+            rsx! {crate::app_home::inputs::static_select::checkboxes::Control {state,visit:home.unwrap(),input_key:input_key.clone(),id:id.clone(),label:label_id.clone(),description:described_by.clone(),required:required.clone(),invalid:invalid.clone(),locked}}
+        }
+        InputKind::Radio { .. }
+            if home.is_some()
+                && crate::app_home::inputs::static_select::radio::supported(
+                    &state.read(),
+                    &input_key,
+                ) =>
+        {
+            rsx! {crate::app_home::inputs::static_select::radio::Control {state,visit:home.unwrap(),input_key:input_key.clone(),id:id.clone(),label:label_id.clone(),description:described_by.clone(),required:required.clone(),invalid:invalid.clone(),locked}}
         }
         InputKind::Checkboxes { options } | InputKind::Radio { options } => {
             let selected = selected(&seed);
@@ -223,7 +295,8 @@ pub(crate) fn ModalField(
                     label{id:"{label_id}",r#for:"{id}",class:"app-modal-label","{field.label}",span{class:"app-modal-required",if field.optional{"Optional"}else{"Required"}}}
                     crate::app_home::inputs::native::Control{state,visit,input_key:input_key.clone(),kind:kind.clone(),initial,id:id.clone(),label:label_id.clone(),description:described_by.clone(),required:required.clone(),invalid:invalid.clone(),locked}
                     p{id:"{hint_id}",class:"app-modal-hint",if let Some(hint)=field.hint.as_ref(){"{hint}"}if let InputKind::Time{timezone:Some(timezone)}=&field.kind {" ({timezone})"}}
-                    p{id:"{error_id}",class:"app-modal-error",role:"alert",if let Some(error)=field.error.as_ref(){"{error}"}}
+                    if let Some(error)=shown_error.as_ref(){p{id:"{error_id}",class:"app-modal-error",role:"alert","{error}"}}
+                    if matches!(kind,InputKind::Date|InputKind::Time{..}|InputKind::DateTime) {if let Some(status)=crate::app_home::inputs::static_select::status(&state.read(),&input_key.block_id){p{class:"app-home-notice",role:"status","{status}"}}}
                 }};
             };
 
@@ -245,7 +318,7 @@ pub(crate) fn ModalField(
         }
         InputKind::ExternalSelect { .. } | InputKind::MultiExternalSelect { .. } => {
             if home.is_some() {
-                rsx! {p{class:"app-modal-hint","Home option lookup is not supported here yet."}}
+                rsx! {crate::app_home::inputs::external::HomeExternal {state,input_key:input_key.clone(),field:field.clone(),id:id.clone(),locked}}
             } else {
                 rsx! {super::app_modal_external::ModalExternal {state,input_key:input_key.clone(),field:field.clone(),id:id.clone(),locked}}
             }
@@ -257,7 +330,19 @@ pub(crate) fn ModalField(
         | InputKind::Conversation
         | InputKind::Channel => {
             if home.is_some() {
-                rsx! {p{class:"app-modal-hint","Home people and conversation lookup is not supported here yet."}}
+                if matches!(
+                    field.kind,
+                    InputKind::User
+                        | InputKind::MultiUser { .. }
+                        | InputKind::Channel
+                        | InputKind::MultiChannel { .. }
+                        | InputKind::Conversation
+                        | InputKind::MultiConversation { .. }
+                ) {
+                    rsx! {super::app_modal_users::ModalUsers {state,input_key:input_key.clone(),field:field.clone(),id:id.clone(),locked,home:true}}
+                } else {
+                    rsx! {p{class:"app-modal-hint","Home people and conversation lookup is not supported here yet."}}
+                }
             } else {
                 rsx! {super::app_modal_users::ModalUsers {
                     state,input_key:input_key.clone(),field:field.clone(),id:id.clone(),locked,
@@ -276,7 +361,9 @@ pub(crate) fn ModalField(
             if let Some(hint)=field.hint.as_ref() {"{hint}"}
             if let InputKind::Time{timezone:Some(timezone)}=&field.kind {" ({timezone})"}
         }
-        p {id:"{error_id}",class:"app-modal-error",role:"alert",if let Some(error)=field.error.as_ref(){"{error}"}}
+        if home.is_none() || shown_error.is_some() {p {id:"{error_id}",class:"app-modal-error",role:"alert",if let Some(error)=shown_error.as_ref(){"{error}"}}}
+        if home.is_some() {if let Some(status)=crate::app_home::inputs::static_select::status(&state.read(),&input_key.block_id) {p {class:"app-home-notice",role:"status","data-home-static-status":input_key.block_id.clone(),"{status}"}}}
+        if home.is_some() {if let Some(status)=crate::app_home::inputs::text::status(&state.read(),&input_key.block_id) {p {class:"app-home-notice",role:"status","data-home-text-status":input_key.block_id.clone(),"{status}"}}}
     }}
 }
 
@@ -345,6 +432,8 @@ pub(crate) fn control_shape(kind: &InputKind) -> String {
         InputKind::Date => "date",
         InputKind::Time { .. } => "time",
         InputKind::DateTime => "datetime",
+        InputKind::Number { .. } => "number",
+        InputKind::Email => "email",
         InputKind::Unsupported { .. } => "unsupported",
     };
     // Option insertion/removal/reordering changes native option identity. Seed

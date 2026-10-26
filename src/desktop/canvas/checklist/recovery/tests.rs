@@ -4,7 +4,7 @@ use super::*;
 use crate::canvas::text::structure_fixture;
 use super_platinum_core::canvas::edit::text::TextDraft;
 
-struct Store(std::path::PathBuf);
+pub(super) struct Store(pub(super) std::path::PathBuf);
 impl Store {
     fn reserve(path: std::path::PathBuf) -> std::io::Result<Self> {
         // Own the name atomically before Journal::open can create/reopen it.
@@ -16,7 +16,7 @@ impl Store {
         drop(file);
         Ok(Self(path))
     }
-    fn new() -> Self {
+    pub(super) fn new() -> Self {
         use std::sync::atomic::{AtomicU64, Ordering};
         static NEXT: AtomicU64 = AtomicU64::new(0);
         for _ in 0..256 {
@@ -101,7 +101,7 @@ fn reserve_sync(owner: &Owner, prepared: &PreparedStructureEdit) -> Ticket {
     };
     Ticket {
         owner: owner.clone(),
-        receipt,
+        receipt: Arc::new(receipt),
     }
 }
 #[test]
@@ -116,7 +116,7 @@ fn disk_read_loading_error_owner_and_unresolved_each_block_shared_edit_gate() {
     state.error = true;
     assert_eq!(state.reason_for(Some(owner.clone())), Some(FAILED));
     state.error = false;
-    state.receipt = Some(ticket.receipt);
+    state.receipt = Some((*ticket.receipt).clone());
     assert_eq!(state.reason_for(Some(owner.clone())), Some(UNRESOLVED));
     let mut other = owner.clone();
     other.account = "other".into();
@@ -204,7 +204,7 @@ fn opened_b_after_reserving_a() -> (ShellState, Owner, Ticket, Owner, Store) {
 #[test]
 fn late_a_reservation_success_preserves_loaded_b_slot_and_original_a_ticket() {
     let (mut shell, owner_a, ticket, owner_b, _store) = opened_b_after_reserving_a();
-    publish_reservation(&mut shell, &owner_a, Ok(ticket.receipt.clone()));
+    publish_reservation(&mut shell, &owner_a, Ok((*ticket.receipt).clone()));
     assert_eq!(
         shell.canvas_checklist.recovery.reason_for(Some(owner_b)),
         None
@@ -296,7 +296,7 @@ fn held_empty_load_cannot_clear_later_reservation_after_cleanup_failure() {
     let read = begin_read(&mut shell).unwrap();
     let held = begin_load(&mut shell, &owner); // Its DB query observed None.
     let ticket = reserve_sync(&owner, &prepared); // Begin commits after that query.
-    publish_reservation(&mut shell, &owner, Ok(ticket.receipt.clone()));
+    publish_reservation(&mut shell, &owner, Ok((*ticket.receipt).clone()));
     assert!(!cancel_preflight(&mut shell, &old_attempt));
     // Cleanup did not commit. The earlier empty result must not erase the lock.
     publish_load(&mut shell, &read, owner.clone(), held, Ok(None));
@@ -344,7 +344,7 @@ fn successful_retirement_fences_old_receipt_load_and_keeps_slot_loaded() {
         &read,
         owner.clone(),
         held,
-        Ok(Some(ticket.receipt)),
+        Ok(Some((*ticket.receipt).clone())),
     );
     assert_eq!(
         shell.canvas_checklist.recovery.reason_for(Some(owner)),
@@ -385,7 +385,7 @@ fn old_ticket_retirement_cannot_clear_a_newer_reservation_error() {
         begin_load(&mut shell, &owner);
         let ticket = reserve_sync(&owner, &prepared);
         if retain_old_receipt {
-            publish_reservation(&mut shell, &owner, Ok(ticket.receipt.clone()));
+            publish_reservation(&mut shell, &owner, Ok((*ticket.receipt).clone()));
         }
         let fence = retirement_fence(&shell, &ticket);
         let mut journal = Journal::open(owner.path.as_ref().unwrap(), &owner.account).unwrap();
@@ -410,14 +410,14 @@ fn old_retirement_cannot_hide_a_new_reservation_behind_a_newer_loading_slot() {
     let read = begin_read(&mut shell).unwrap();
     begin_load(&mut shell, &owner);
     let old = reserve_sync(&owner, &prepared);
-    publish_reservation(&mut shell, &owner, Ok(old.receipt.clone()));
+    publish_reservation(&mut shell, &owner, Ok((*old.receipt).clone()));
     let fence = retirement_fence(&shell, &old);
     let mut journal = Journal::open(owner.path.as_ref().unwrap(), &owner.account).unwrap();
     assert!(journal.complete(&old.receipt).unwrap());
     // Old delete committed; a later independently reserved receipt and a later
     // load now own the slot before the old worker's UI continuation resumes.
     let replacement = reserve_sync(&owner, &prepared);
-    publish_reservation(&mut shell, &owner, Ok(replacement.receipt.clone()));
+    publish_reservation(&mut shell, &owner, Ok((*replacement.receipt).clone()));
     let loading = begin_load(&mut shell, &owner);
     publish_retirement(&mut shell, &old, fence);
     assert_eq!(shell.canvas_checklist.recovery.generation, loading);
@@ -433,7 +433,7 @@ fn old_retirement_cannot_hide_a_new_reservation_behind_a_newer_loading_slot() {
         &read,
         owner.clone(),
         loading,
-        Ok(Some(replacement.receipt)),
+        Ok(Some((*replacement.receipt).clone())),
     );
     assert_eq!(
         shell.canvas_checklist.recovery.reason_for(Some(owner)),

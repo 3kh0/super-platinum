@@ -4,6 +4,10 @@ use crate::canvas::text::check::{checked, click, editor_layout, set_draft, wait}
 use std::sync::atomic::{AtomicBool, Ordering};
 static STARTED: AtomicBool = AtomicBool::new(false);
 pub(crate) fn start(state: Signal<ShellState>, desktop: dioxus::desktop::DesktopContext) {
+    if last_live_replacement::requested() {
+        last_live_replacement::start(state, desktop);
+        return;
+    }
     if owner_first::requested() {
         owner_first::start(state, desktop);
         return;

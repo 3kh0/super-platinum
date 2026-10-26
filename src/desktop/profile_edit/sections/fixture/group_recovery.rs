@@ -38,7 +38,7 @@ pub(crate) fn named() -> bool {
         )
 }
 pub(crate) fn enabled() -> bool {
-    if super::group_title::named() {
+    if super::group_title::named() || super::missing_group::named() {
         return true;
     }
     cfg!(any(test, feature = "protected-native-fixture"))

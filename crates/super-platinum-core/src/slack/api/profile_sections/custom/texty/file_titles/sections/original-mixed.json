@@ -1,0 +1,659 @@
+{
+  "ok": true,
+  "count": 3,
+  "vectors": [
+    {
+      "name": "mixed-known",
+      "state": {
+        "team": "TSECTION",
+        "files": {
+          "FSECTION001": {
+            "id": "FSECTION001",
+            "mode": "quip",
+            "filetype": "quip",
+            "title": "Canvas title"
+          },
+          "FNESTED01": {
+            "id": "FNESTED01",
+            "mode": "quip",
+            "filetype": "quip",
+            "title": "N"
+          }
+        },
+        "canvasSectionRichText": {
+          "FSECTION001": {
+            "temp:C:0123456789abcdef01234567": {
+              "type": "rich_text",
+              "opaque": {
+                "keep": "block"
+              },
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "user",
+                      "user_id": "USECTION01",
+                      "style": {
+                        "bold": true
+                      },
+                      "opaque": {
+                        "keep": 7
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "text": " "
+                    },
+                    {
+                      "type": "channel",
+                      "channel_id": "CSECTION01",
+                      "style": {
+                        "bold": true
+                      },
+                      "opaque": {
+                        "keep": 7
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "text": " "
+                    },
+                    {
+                      "type": "usergroup",
+                      "usergroup_id": "SSECTION01",
+                      "style": {
+                        "bold": true
+                      },
+                      "opaque": {
+                        "keep": 7
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "text": " "
+                    },
+                    {
+                      "type": "emoji",
+                      "name": "wave",
+                      "style": {
+                        "bold": true
+                      },
+                      "opaque": {
+                        "keep": 7
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "text": " "
+                    },
+                    {
+                      "type": "canvas",
+                      "file_id": "FNESTED01",
+                      "section_id": "nested:must-strip",
+                      "url": "https://example.test/nested",
+                      "style": {
+                        "bold": true
+                      },
+                      "opaque": {
+                        "keep": 7
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "discarded"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "members": {
+          "USECTION01": {
+            "id": "USECTION01",
+            "profile": {
+              "display_name": "U"
+            }
+          }
+        },
+        "channels": {
+          "CSECTION01": {
+            "id": "CSECTION01",
+            "is_channel": true,
+            "is_member": true,
+            "name": "c"
+          }
+        },
+        "userGroups": {
+          "SSECTION01": {
+            "id": "SSECTION01",
+            "handle": "g"
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "stripped": {
+        "type": "rich_text",
+        "opaque": {
+          "keep": "block"
+        },
+        "elements": [
+          {
+            "type": "rich_text_section",
+            "elements": [
+              {
+                "type": "user",
+                "user_id": "USECTION01",
+                "style": {
+                  "bold": true
+                },
+                "opaque": {
+                  "keep": 7
+                }
+              },
+              {
+                "type": "text",
+                "text": " "
+              },
+              {
+                "type": "channel",
+                "channel_id": "CSECTION01",
+                "style": {
+                  "bold": true
+                },
+                "opaque": {
+                  "keep": 7
+                }
+              },
+              {
+                "type": "text",
+                "text": " "
+              },
+              {
+                "type": "usergroup",
+                "usergroup_id": "SSECTION01",
+                "style": {
+                  "bold": true
+                },
+                "opaque": {
+                  "keep": 7
+                }
+              },
+              {
+                "type": "text",
+                "text": " "
+              },
+              {
+                "type": "emoji",
+                "name": "wave",
+                "style": {
+                  "bold": true
+                },
+                "opaque": {
+                  "keep": 7
+                }
+              },
+              {
+                "type": "text",
+                "text": " "
+              },
+              {
+                "type": "canvas",
+                "file_id": "FNESTED01",
+                "url": "https://example.test/nested",
+                "style": {
+                  "bold": true
+                },
+                "opaque": {
+                  "keep": 7
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "@U #c @g :wave: N",
+      "slug": {
+        "label": "Canvas title: @U #c @g :wave: N",
+        "labelResolverParams": {
+          "variant": "section",
+          "fileId": "FSECTION001",
+          "sectionId": "temp:C:0123456789abcdef01234567",
+          "plainTextCanvasName": "Canvas title",
+          "plainTextSectionPreview": "@U #c @g :wave: N"
+        },
+        "iconName": "canvas",
+        "isDisabled": false,
+        "isLocked": false,
+        "isLoading": false
+      },
+      "labelUtf16": [
+        67,
+        97,
+        110,
+        118,
+        97,
+        115,
+        32,
+        116,
+        105,
+        116,
+        108,
+        101,
+        58,
+        32,
+        64,
+        85,
+        32,
+        35,
+        99,
+        32,
+        64,
+        103,
+        32,
+        58,
+        119,
+        97,
+        118,
+        101,
+        58,
+        32,
+        78
+      ],
+      "calls": [
+        {
+          "kind": "channel-hit",
+          "team": "TSECTION",
+          "id": "CSECTION01"
+        },
+        {
+          "kind": "channel-conditional",
+          "team": "TSECTION",
+          "id": "CSECTION01"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSECTION",
+          "id": "SSECTION01"
+        },
+        {
+          "kind": "plain-whole-title-adapter"
+        },
+        {
+          "kind": "plain-whole-title-adapter"
+        },
+        {
+          "kind": "channel-hit",
+          "team": "TSECTION",
+          "id": "CSECTION01"
+        },
+        {
+          "kind": "channel-conditional",
+          "team": "TSECTION",
+          "id": "CSECTION01"
+        },
+        {
+          "kind": "conditional-hit",
+          "team": "TSECTION",
+          "id": "SSECTION01"
+        },
+        {
+          "kind": "plain-whole-title-adapter"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "list-ordered-first",
+      "state": {
+        "team": "TSECTION",
+        "files": {
+          "FSECTION001": {
+            "id": "FSECTION001",
+            "mode": "quip",
+            "filetype": "quip",
+            "title": "Canvas title"
+          },
+          "FNESTED01": {
+            "id": "FNESTED01",
+            "mode": "quip",
+            "filetype": "quip",
+            "title": "N"
+          }
+        },
+        "canvasSectionRichText": {
+          "FSECTION001": {
+            "temp:C:0123456789abcdef01234567": {
+              "type": "rich_text",
+              "opaque": {
+                "keep": "block"
+              },
+              "elements": [
+                {
+                  "type": "rich_text_list",
+                  "style": "ordered",
+                  "indent": 0,
+                  "elements": [
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "First"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "Second"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "discarded"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "members": {
+          "USECTION01": {
+            "id": "USECTION01",
+            "profile": {
+              "display_name": "U"
+            }
+          }
+        },
+        "channels": {
+          "CSECTION01": {
+            "id": "CSECTION01",
+            "is_channel": true,
+            "is_member": true,
+            "name": "c"
+          }
+        },
+        "userGroups": {
+          "SSECTION01": {
+            "id": "SSECTION01",
+            "handle": "g"
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "stripped": {
+        "type": "rich_text",
+        "opaque": {
+          "keep": "block"
+        },
+        "elements": [
+          {
+            "type": "rich_text_list",
+            "style": "ordered",
+            "indent": 0,
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "First"
+                  }
+                ]
+              },
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Second"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "1. First.\n2. Second.",
+      "slug": {
+        "label": "Canvas title: 1. First.",
+        "labelResolverParams": {
+          "variant": "section",
+          "fileId": "FSECTION001",
+          "sectionId": "temp:C:0123456789abcdef01234567",
+          "plainTextCanvasName": "Canvas title",
+          "plainTextSectionPreview": "1. First."
+        },
+        "iconName": "canvas",
+        "isDisabled": false,
+        "isLocked": false,
+        "isLoading": false
+      },
+      "labelUtf16": [
+        67,
+        97,
+        110,
+        118,
+        97,
+        115,
+        32,
+        116,
+        105,
+        116,
+        108,
+        101,
+        58,
+        32,
+        49,
+        46,
+        32,
+        70,
+        105,
+        114,
+        115,
+        116,
+        46
+      ],
+      "calls": [
+        {
+          "kind": "plain-whole-title-adapter"
+        }
+      ],
+      "inputUnchanged": true
+    },
+    {
+      "name": "list-bullet-first",
+      "state": {
+        "team": "TSECTION",
+        "files": {
+          "FSECTION001": {
+            "id": "FSECTION001",
+            "mode": "quip",
+            "filetype": "quip",
+            "title": "Canvas title"
+          },
+          "FNESTED01": {
+            "id": "FNESTED01",
+            "mode": "quip",
+            "filetype": "quip",
+            "title": "N"
+          }
+        },
+        "canvasSectionRichText": {
+          "FSECTION001": {
+            "temp:C:0123456789abcdef01234567": {
+              "type": "rich_text",
+              "opaque": {
+                "keep": "block"
+              },
+              "elements": [
+                {
+                  "type": "rich_text_list",
+                  "style": "bullet",
+                  "indent": 0,
+                  "elements": [
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "First"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "Second"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "members": {
+          "USECTION01": {
+            "id": "USECTION01",
+            "profile": {
+              "display_name": "U"
+            }
+          }
+        },
+        "channels": {
+          "CSECTION01": {
+            "id": "CSECTION01",
+            "is_channel": true,
+            "is_member": true,
+            "name": "c"
+          }
+        },
+        "userGroups": {
+          "SSECTION01": {
+            "id": "SSECTION01",
+            "handle": "g"
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "stripped": {
+        "type": "rich_text",
+        "opaque": {
+          "keep": "block"
+        },
+        "elements": [
+          {
+            "type": "rich_text_list",
+            "style": "bullet",
+            "indent": 0,
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "First"
+                  }
+                ]
+              },
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Second"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flattened": "• First.\n• Second.",
+      "slug": {
+        "label": "Canvas title: • First.",
+        "labelResolverParams": {
+          "variant": "section",
+          "fileId": "FSECTION001",
+          "sectionId": "temp:C:0123456789abcdef01234567",
+          "plainTextCanvasName": "Canvas title",
+          "plainTextSectionPreview": "• First."
+        },
+        "iconName": "canvas",
+        "isDisabled": false,
+        "isLocked": false,
+        "isLoading": false
+      },
+      "labelUtf16": [
+        67,
+        97,
+        110,
+        118,
+        97,
+        115,
+        32,
+        116,
+        105,
+        116,
+        108,
+        101,
+        58,
+        32,
+        8226,
+        32,
+        70,
+        105,
+        114,
+        115,
+        116,
+        46
+      ],
+      "calls": [
+        {
+          "kind": "plain-whole-title-adapter"
+        }
+      ],
+      "inputUnchanged": true
+    }
+  ],
+  "limits": [
+    "Actual bQFi/KhL1/vHuS and rLUS/group/channel formatter composition. Synthetic known source maps; explicit English presentation and plain whole-Canvas title markdown adapter.",
+    "Actual extracted EmXR.getChannelByIdSelector body with map/cache-hit/conditional ledger adapters; no real manager or network.",
+    "No full Profile mount, transport, authorization or formatting mutations executed."
+  ]
+}

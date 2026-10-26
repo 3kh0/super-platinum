@@ -265,7 +265,9 @@ impl Store {
                 project(&title_input, previous.and_then(|r| r.effective.as_ref())).ok()
             };
             let category = category::project(incoming, previous.map(AsRef::as_ref));
+            let reference = reference::project(&title_input, previous.map(AsRef::as_ref), false);
             let bytes = category.as_ref().map_or(0, |v| v.to_string().len())
+                + reference.as_ref().map_or(0, |v| v.to_string().len())
                 + carrier_bytes
                 + raw.to_string().len()
                 + effective.as_ref().map_or(0, |v| v.to_string().len())
@@ -276,6 +278,8 @@ impl Store {
                 effective,
                 candidate,
                 category,
+                reference,
+                deletion: None,
                 channel_map_order,
                 bytes,
             });

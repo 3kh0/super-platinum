@@ -1,0 +1,564 @@
+{
+  "ok": true,
+  "count": 7,
+  "vectors": [
+    {
+      "name": "positive-first-block",
+      "initial": {},
+      "response": {
+        "value": {
+          "ok": true,
+          "sections": [
+            {
+              "id": "s1",
+              "rich_text_blocks": [
+                {
+                  "type": "rich_text",
+                  "elements": [
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "First"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text",
+                  "elements": [
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "Ignored second"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "requests": [
+        {
+          "method": "quip.getCanvasBulkSectionIdsData",
+          "args": {
+            "file_id": "FSTATUS0001",
+            "section_ids": [
+              "s1"
+            ]
+          },
+          "reason": "conditional-fetching"
+        }
+      ],
+      "actions": [
+        {
+          "kind": "action",
+          "name": "Store the rich text snippet associated with a given canvas section",
+          "payload": {
+            "fileId": "FSTATUS0001",
+            "sectionId": "s1",
+            "richText": {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "First"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "after": {
+        "FSTATUS0001": {
+          "s1": {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "First"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "ownUndefinedSections": [],
+      "scope": "Actual7nvy/uGgu/LYxw+Th7G reducer callbacks; API dispatch/Redux registration synthetic"
+    },
+    {
+      "name": "omission-retains-existing",
+      "initial": {
+        "FSTATUS0001": {
+          "s1": {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Old"
+                  }
+                ]
+              }
+            ]
+          },
+          "s2": {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Sibling"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "response": {
+        "value": {
+          "ok": true,
+          "sections": []
+        }
+      },
+      "requests": [
+        {
+          "method": "quip.getCanvasBulkSectionIdsData",
+          "args": {
+            "file_id": "FSTATUS0001",
+            "section_ids": [
+              "s1"
+            ]
+          },
+          "reason": "conditional-fetching"
+        }
+      ],
+      "actions": [],
+      "after": {
+        "FSTATUS0001": {
+          "s1": {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Old"
+                  }
+                ]
+              }
+            ]
+          },
+          "s2": {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Sibling"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "ownUndefinedSections": [],
+      "scope": "Actual7nvy/uGgu/LYxw+Th7G reducer callbacks; API dispatch/Redux registration synthetic"
+    },
+    {
+      "name": "missing-sections-property-retains-existing",
+      "initial": {
+        "FSTATUS0001": {
+          "s1": {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Old"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "response": {
+        "value": {
+          "ok": true
+        }
+      },
+      "requests": [
+        {
+          "method": "quip.getCanvasBulkSectionIdsData",
+          "args": {
+            "file_id": "FSTATUS0001",
+            "section_ids": [
+              "s1"
+            ]
+          },
+          "reason": "conditional-fetching"
+        }
+      ],
+      "actions": [],
+      "after": {
+        "FSTATUS0001": {
+          "s1": {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Old"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "ownUndefinedSections": [],
+      "scope": "Actual7nvy/uGgu/LYxw+Th7G reducer callbacks; API dispatch/Redux registration synthetic"
+    },
+    {
+      "name": "error-clears-entire-file-only",
+      "initial": {
+        "FSTATUS0001": {
+          "s1": {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Old"
+                  }
+                ]
+              }
+            ]
+          },
+          "s2": {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Sibling"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "FOTHER": {
+          "s1": {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Other"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "response": {
+        "reject": {
+          "data": {
+            "error": "internal_error"
+          }
+        }
+      },
+      "requests": [
+        {
+          "method": "quip.getCanvasBulkSectionIdsData",
+          "args": {
+            "file_id": "FSTATUS0001",
+            "section_ids": [
+              "s1"
+            ]
+          },
+          "reason": "conditional-fetching"
+        }
+      ],
+      "actions": [
+        {
+          "kind": "action",
+          "name": "Remove all rich text snippets associated with a given canvas (fileId)",
+          "payload": {
+            "fileId": "FSTATUS0001"
+          }
+        }
+      ],
+      "after": {
+        "FOTHER": {
+          "s1": {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Other"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "ownUndefinedSections": [],
+      "scope": "Actual7nvy/uGgu/LYxw+Th7G reducer callbacks; API dispatch/Redux registration synthetic"
+    },
+    {
+      "name": "partial-then-malformed-clears-file",
+      "initial": {
+        "FSTATUS0001": {
+          "s2": {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Sibling"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "response": {
+        "value": {
+          "ok": true,
+          "sections": [
+            {
+              "id": "s1",
+              "rich_text_blocks": [
+                {
+                  "type": "rich_text",
+                  "elements": [
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "New"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "bad"
+            }
+          ]
+        }
+      },
+      "requests": [
+        {
+          "method": "quip.getCanvasBulkSectionIdsData",
+          "args": {
+            "file_id": "FSTATUS0001",
+            "section_ids": [
+              "s1"
+            ]
+          },
+          "reason": "conditional-fetching"
+        }
+      ],
+      "actions": [
+        {
+          "kind": "action",
+          "name": "Store the rich text snippet associated with a given canvas section",
+          "payload": {
+            "fileId": "FSTATUS0001",
+            "sectionId": "s1",
+            "richText": {
+              "type": "rich_text",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "New"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "kind": "action",
+          "name": "Remove all rich text snippets associated with a given canvas (fileId)",
+          "payload": {
+            "fileId": "FSTATUS0001"
+          }
+        }
+      ],
+      "after": {},
+      "ownUndefinedSections": [],
+      "scope": "Actual7nvy/uGgu/LYxw+Th7G reducer callbacks; API dispatch/Redux registration synthetic"
+    },
+    {
+      "name": "empty-rich-block-list-own-undefined",
+      "initial": {
+        "FSTATUS0001": {
+          "s1": {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Old"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "response": {
+        "value": {
+          "ok": true,
+          "sections": [
+            {
+              "id": "s1",
+              "rich_text_blocks": []
+            }
+          ]
+        }
+      },
+      "requests": [
+        {
+          "method": "quip.getCanvasBulkSectionIdsData",
+          "args": {
+            "file_id": "FSTATUS0001",
+            "section_ids": [
+              "s1"
+            ]
+          },
+          "reason": "conditional-fetching"
+        }
+      ],
+      "actions": [
+        {
+          "kind": "action",
+          "name": "Store the rich text snippet associated with a given canvas section",
+          "payload": {
+            "fileId": "FSTATUS0001",
+            "sectionId": "s1"
+          }
+        }
+      ],
+      "after": {
+        "FSTATUS0001": {}
+      },
+      "ownUndefinedSections": [
+        {
+          "file": "FSTATUS0001",
+          "section": "s1"
+        }
+      ],
+      "scope": "Actual7nvy/uGgu/LYxw+Th7G reducer callbacks; API dispatch/Redux registration synthetic"
+    },
+    {
+      "name": "ensure-skips-truthy-cached-section",
+      "requests": [
+        {
+          "method": "quip.getCanvasBulkSectionIdsData",
+          "args": {
+            "file_id": "FSTATUS0001",
+            "section_ids": [
+              "s2"
+            ]
+          },
+          "reason": "conditional-fetching"
+        }
+      ],
+      "after": {
+        "FSTATUS0001": {
+          "s1": {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Cached"
+                  }
+                ]
+              }
+            ]
+          },
+          "s2": {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Missing fetched"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "limits": [
+    "Thunk and reducer callbacks original; scheduler/HTTP/response ingress host adapters.",
+    "Request at apiCall boundary: exact method and snake_case args; auth/envelope/HTTP encoding not executed.",
+    "No server absence claim from omission/error; no app mount."
+  ]
+}

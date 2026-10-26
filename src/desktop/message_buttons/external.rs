@@ -94,36 +94,45 @@ impl Cooldowns {
 pub(crate) enum Owner {
     Message(super::inputs::external::Ticket),
     Modal(crate::app_modal::external::Ticket),
+    Home(crate::app_home::inputs::external::Ticket),
 }
 impl Owner {
+    pub(crate) fn retains_choices(&self) -> bool {
+        matches!(self, Self::Home(_))
+    }
     pub(crate) fn selected(&self, shell: &ShellState) -> Option<Vec<ExternalOption>> {
         match self {
             Self::Message(t) => t.selected(shell),
             Self::Modal(t) => t.selected(shell),
+            Self::Home(t) => t.selected(shell),
         }
     }
     pub(crate) fn id(&self) -> u64 {
         match self {
             Self::Message(t) => t.id(),
             Self::Modal(t) => t.id(),
+            Self::Home(t) => t.id(),
         }
     }
     fn current(&self, shell: &ShellState) -> bool {
         match self {
             Self::Message(t) => t.current(shell),
             Self::Modal(t) => t.current(shell),
+            Self::Home(t) => t.current(shell),
         }
     }
     fn context(&self) -> Option<Arc<Context>> {
         match self {
             Self::Message(t) => t.context.clone(),
             Self::Modal(t) => t.context.clone(),
+            Self::Home(t) => t.context.clone(),
         }
     }
     pub(super) fn route(&self) -> &api::SuggestionsContext {
         match self {
             Self::Message(t) => &t.route,
             Self::Modal(t) => &t.route,
+            Self::Home(t) => &t.route,
         }
     }
     pub(crate) fn query<'a>(&self, shell: &'a ShellState) -> Option<&'a Query> {
@@ -133,6 +142,7 @@ impl Owner {
         match self {
             Self::Message(t) => t.query(shell),
             Self::Modal(t) => t.query(shell),
+            Self::Home(t) => t.query(shell),
         }
     }
     fn query_mut<'a>(&self, shell: &'a mut ShellState) -> Option<&'a mut Query> {
@@ -142,12 +152,14 @@ impl Owner {
         match self {
             Self::Message(t) => t.query_mut(shell),
             Self::Modal(t) => t.query_mut(shell),
+            Self::Home(t) => t.query_mut(shell),
         }
     }
     fn remember(&self, shell: &mut ShellState, options: &[Row]) {
         match self {
             Self::Message(t) => t.remember(shell, options),
             Self::Modal(t) => t.remember(shell, options),
+            Self::Home(t) => t.remember(shell, options),
         }
     }
 }
@@ -156,6 +168,7 @@ impl PartialEq for Owner {
         match (self, other) {
             (Self::Message(a), Self::Message(b)) => a.id() == b.id(),
             (Self::Modal(a), Self::Modal(b)) => a.same_authority(b),
+            (Self::Home(a), Self::Home(b)) => a.same_authority(b),
             _ => false,
         }
     }
@@ -164,12 +177,14 @@ pub(crate) fn remove(state: Signal<ShellState>, owner: Owner, value: String) {
     match owner {
         Owner::Message(_) => super::inputs::external::remove(state, owner, value),
         Owner::Modal(_) => crate::app_modal::external::remove(state, owner, value),
+        Owner::Home(_) => crate::app_home::inputs::external::remove(state, owner, value),
     }
 }
 pub(crate) fn choose(state: Signal<ShellState>, owner: Owner, revision: u64, index: usize) {
     match owner {
         Owner::Message(_) => super::inputs::external::choose(state, owner, revision, index),
         Owner::Modal(_) => crate::app_modal::external::choose(state, owner, revision, index),
+        Owner::Home(_) => crate::app_home::inputs::external::choose(state, owner, revision, index),
     }
 }
 pub(crate) fn more(mut state: Signal<ShellState>, owner: Owner) {
@@ -261,7 +276,9 @@ pub(crate) fn search(
         query.cancel();
         query.text = text.clone();
         query.revision = super::next_id();
-        query.rows.clear();
+        if !owner.retains_choices() {
+            query.rows.clear();
+        }
         query.visible = 50;
         query.error = None;
         query.loading = false;
@@ -299,6 +316,11 @@ pub(crate) fn search(
             return;
         }
         let request = async {
+            if let Some(result) =
+                crate::app_home::inputs::external::fixture::suggestions(state, &owner, &text).await
+            {
+                return result;
+            }
             if let Some(result) = super::external_fixture::suggestions(state, &owner, &text).await {
                 return result;
             }
@@ -362,6 +384,10 @@ pub(crate) fn complete(
             owner.remember(shell, &rows);
             let query = owner.query_mut(shell).unwrap();
             query.rows = rows;
+            // Retained Home rows and replacement rows must not share a click identity.
+            if owner.retains_choices() {
+                query.revision = super::next_id();
+            }
             query.loading = false;
             query.error = None;
         }

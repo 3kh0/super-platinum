@@ -66,6 +66,8 @@ fn nested_channel_feedback_does_not_admit_a_fabricated_outer_channel() {
     assert!(catalog.contains_any(&["C12345678".into()]));
     assert!(!catalog.contains_any(&["COTHER001".into(), "FFILE0001".into()]));
     let mut witness = catalog::Witness {
+        label_units: None,
+        presentation: None,
         value: raw.clone(),
         label: "In #at-opening".into(),
     };
@@ -88,6 +90,8 @@ fn nested_channel_feedback_does_not_admit_a_fabricated_outer_channel() {
         catalog
             .context(
                 &[catalog::Witness {
+                    label_units: None,
+                    presentation: None,
                     value: raw,
                     label: "In #at-opening".into()
                 }],

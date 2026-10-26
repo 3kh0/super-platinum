@@ -1,3 +1,4 @@
+pub(crate) mod unknown;
 use crate::media::MediaUri;
 use crate::state::{ChannelOpen, ShellState};
 use dioxus::prelude::*;

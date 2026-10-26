@@ -70,14 +70,18 @@ fn malformed_unknown_and_dispatching_controls_cannot_silently_omit_state() {
     for mode in 0..5 {
         let mut v = raw();
         match mode {
-            0 => v["blocks"][0]["dispatch_action"] = json!(true),
+            0 => {
+                v["blocks"][2]["dispatch_action"] = json!(true);
+                v["blocks"][2]["element"]["type"] = json!("datetimepicker");
+                v["blocks"][2]["element"]["confirm"] = json!({});
+            }
             1 => v["blocks"][0]["element"]["confirm"] = json!({}),
             2 => v["blocks"][0]["element"]["type"] = json!("rich_text_input"),
             3 => {
                 v["state"] =
                     json!({"values":{"unknown":{"x":{"type":"plain_text_input","value":"kept"}}}})
             }
-            _ => v["blocks"][0]["element"] = json!({"type":"users_select","action_id":"a"}),
+            _ => v["blocks"][0]["element"] = json!({"type":"future_lookup_select","action_id":"a"}),
         }
         let f = HomeForm::parse(&v).unwrap();
         assert!(f.state().is_err());

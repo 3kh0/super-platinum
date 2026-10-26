@@ -61,7 +61,7 @@ async fn requests(count: usize, completed: usize, held: bool) -> Result<(), Stri
 fn invalidate(mut state: Signal<ShellState>) -> Result<(), String> {
     let mut shell = state.write();
     let team = shell.core.active_team.clone().ok_or("Missing team")?;
-    cache::invalidate(&mut shell, &team, source::ID);
+    crate::file_events::invalidate(&mut shell, &team, source::ID);
     Ok(())
 }
 async fn message(desktop: &DesktopContext, loading: bool) -> Result<(), String> {

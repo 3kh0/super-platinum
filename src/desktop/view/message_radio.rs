@@ -100,7 +100,7 @@ pub(crate) fn MessageRadioGroup(
     }}
 }
 
-pub(super) fn composition(
+pub(crate) fn composition(
     state: Signal<ShellState>,
     value: Option<&Value>,
     fallback: &str,

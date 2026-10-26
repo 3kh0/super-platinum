@@ -156,6 +156,7 @@ pub(super) fn known_recovery_ids(
         .collect())
 }
 pub(super) enum Hit {
+    MissingGroup(Arc<crate::usergroups::unknown::Selection>),
     MissingChannel(Arc<crate::app_home::channel_fetches::unknown::Selection>),
     Channel {
         source: Arc<canonical::Canonical>,
@@ -172,6 +173,7 @@ impl Hit {
         // Scheduling is the selector's side effect, not new authority for the
         // returned row or a reason to erase an already admitted description.
         match self {
+            Self::MissingGroup(selected) => selected.schedule(state),
             Self::MissingChannel(selected) => selected.schedule(state),
             Self::Channel { source, id } => {
                 let _ = canonical::hit(state, &source, &id);
@@ -292,6 +294,21 @@ fn prepare(
             }
         }
     }
+    if let Ok(required) = files::sections::Required::capture(shell, &token, &before) {
+        if let Ok(dependencies) = required.dependencies(shell, &token) {
+            hits.extend(files::channel_hits(shell, &token, &dependencies));
+            hits.extend(files::group_hits(shell, &token, &dependencies));
+            for id in dependencies.ids.into_iter().filter(|_| automatic_members) {
+                if let Ok(hit) = crate::directory_member_fetches::automatic::observe(
+                    shell,
+                    &token.owner.team,
+                    &id,
+                ) {
+                    hits.push(Hit::Member(hit));
+                }
+            }
+        }
+    }
     let source = if tokens.iter().any(|v| v["type"] == "channel") {
         Some(canonical::capture(shell, &token.owner.team)?)
     } else {
@@ -335,15 +352,34 @@ fn prepare(
         )
     }) {
         if matches!(raw["type"].as_str(), Some("file" | "canvas")) {
-            let observed = files::Observation::capture(
+            if files::sections::id(raw).is_some() {
+                search::file_source::sections::initialize(shell, &token.owner.team)?;
+            }
+            let mut observed = files::Observation::capture(
                 shell,
                 &token,
                 raw["file_id"].as_str().ok_or_else(unavailable)?,
             )?;
-            let label = observed.label(raw)?;
+            if files::sections::id(raw).is_some() {
+                let units = observed.section_label(shell, raw)?;
+                // This fallback string is never authoritative or sent back in
+                // the section witness. JS receives the exact sidecar units.
+                labels.insert(
+                    raw.to_string(),
+                    Value::String(String::from_utf16_lossy(&units)),
+                );
+                catalog.insert_section(raw, &units)?;
+            } else {
+                let label = observed.label(raw)?;
+                labels.insert(raw.to_string(), Value::String(label.clone()));
+                catalog.insert(raw, label)?;
+            }
             catalog.channel_dependencies(observed.channel_ids().cloned());
-            labels.insert(raw.to_string(), Value::String(label.clone()));
-            catalog.insert(raw, label)?;
+            if observed.private_canvas() {
+                catalog.private_canvas(raw)?;
+            } else if observed.deleted_canvas() {
+                catalog.deleted_canvas(raw)?;
+            }
             files.push(observed);
             continue;
         }

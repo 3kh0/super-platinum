@@ -63,6 +63,7 @@ impl Checkpoint {
                 .map(|s| s.raw().raw().to_vec())
                 .collect(),
             request: data.raw().to_vec(),
+            provenance: inventory.provenance_evidence(),
         };
         result.validate()?;
         Ok(result)

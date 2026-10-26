@@ -55,6 +55,9 @@ impl Client {
             let shell = state.peek();
             if crate::profile_edit::sections::fixture::completion::files::enabled(&shell)
                 || crate::profile_edit::sections::fixture::group_recovery::enabled()
+                || (crate::profile_edit::sections::fixture::section_reference::named()
+                    && crate::profile_edit::sections::fixture::section_reference::case()
+                        == "success")
             {
                 // Mixed file/group reopening may need metadata while all USER rows
                 // are already settled. This grants no member dispatcher access:

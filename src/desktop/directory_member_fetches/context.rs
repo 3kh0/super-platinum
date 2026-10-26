@@ -31,6 +31,10 @@ impl Context {
             rt_generation: workspace.rt_generation,
         })
     }
+    /// Captured socket generation; reading it grants no current-owner authority.
+    pub(crate) fn realtime_generation(&self) -> u64 {
+        self.rt_generation
+    }
     pub(crate) fn current(&self, shell: &ShellState) -> bool {
         self.account_current(shell)
             && shell

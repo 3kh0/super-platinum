@@ -12,7 +12,7 @@ use crate::fixture::fixture_core;
 use crate::media::MediaRegistry;
 use crate::model::*;
 
-/// Fixture reaction pill — resolves the glyph the same way live messages do.
+/// Fixture reaction pill â€” resolves the glyph the same way live messages do.
 fn reaction(name: &str, count: u32, own: bool) -> ReactionVm {
     let others = [("U1", "Maya Chen"), ("U2", "Jules")];
     let reactors = own
@@ -474,6 +474,7 @@ impl ShellState {
             canvas_creation: Default::default(),
             app_home: Default::default(),
             directory_member_fetches: Default::default(),
+            group_unknown: Default::default(),
             group_freshness: Default::default(),
             app_modal: None,
             message_buttons: crate::message_buttons::State::default(),
@@ -635,6 +636,7 @@ impl ShellState {
             canvas_creation: Default::default(),
             app_home: Default::default(),
             directory_member_fetches: Default::default(),
+            group_unknown: Default::default(),
             group_freshness: Default::default(),
             app_modal: None,
             message_buttons: crate::message_buttons::State::default(),
@@ -779,7 +781,7 @@ impl ShellState {
             avatar: Some(jules_avatar),
             body: vec![
                 RichNode::Text("I measured the warm path:".into()),
-                RichNode::Code("cache → render → background refresh".into()),
+                RichNode::Code("cache â†’ render â†’ background refresh".into()),
                 RichNode::Quote(vec![RichNode::Text(
                     "Cached content stays visible if refresh fails.".into(),
                 )]),
@@ -811,7 +813,7 @@ impl ShellState {
                 RichNode::Text("The multiline composer and custom emoji fixture both pass ".into()),
                 RichNode::Emoji {
                     name: "ship".into(),
-                    glyph: "🚢".into(),
+                    glyph: "ðŸš¢".into(),
                 },
             ],
             ..Default::default()
@@ -990,6 +992,7 @@ impl ShellState {
             canvas_creation: Default::default(),
             app_home: Default::default(),
             directory_member_fetches: Default::default(),
+            group_unknown: Default::default(),
             group_freshness: Default::default(),
             app_modal: None,
             message_buttons: crate::message_buttons::State::default(),
@@ -1394,6 +1397,111 @@ impl ShellState {
             "app-home-calendar" | "app-home-calendar-narrow" => {
                 crate::app_home::fixture::install_calendar(&mut state)
             }
+            "app-home-checkbox-dispatch" | "app-home-checkbox-dispatch-narrow" => {
+                crate::app_home::inputs::static_select::checkboxes::fixture::install(&mut state)
+            }
+            "app-home-date-popup" | "app-home-date-popup-narrow" => {
+                crate::app_home::inputs::native::date::popup_fixture::install(&mut state)
+            }
+            "app-home-date-focus" | "app-home-date-focus-narrow" => {
+                crate::app_home::inputs::native::date::focus_fixture::install(&mut state)
+            }
+            "app-home-date-dispatch" | "app-home-date-dispatch-narrow" => {
+                crate::app_home::inputs::native::date::fixture::install(&mut state)
+            }
+            "app-home-datetime-popup" | "app-home-datetime-popup-narrow" => {
+                crate::app_home::inputs::native::datetime::popup_fixture::install(&mut state)
+            }
+            "app-home-datetime-editing" | "app-home-datetime-editing-narrow" => {
+                crate::app_home::inputs::native::datetime::editing_fixture::install(&mut state)
+            }
+            "app-home-time-focus" | "app-home-time-focus-narrow" => {
+                crate::app_home::inputs::native::time::focus_fixture::install(&mut state)
+            }
+            "app-home-time-dispatch" | "app-home-time-dispatch-narrow" => {
+                crate::app_home::inputs::native::time::fixture::install(&mut state)
+            }
+            "app-home-datetime-dispatch" | "app-home-datetime-dispatch-narrow" => {
+                crate::app_home::inputs::native::datetime::fixture::install(&mut state)
+            }
+            "app-home-radio-dispatch" | "app-home-radio-dispatch-narrow" => {
+                crate::app_home::inputs::static_select::radio::fixture::install(&mut state)
+            }
+            "app-home-multi-static-dispatch" | "app-home-multi-static-dispatch-narrow" => {
+                crate::app_home::inputs::static_select::multiple::fixture::install(&mut state)
+            }
+            "app-home-static-wrappers" | "app-home-static-wrappers-narrow" => {
+                crate::app_home::inputs::static_select::wrappers::fixture::install(&mut state)
+            }
+            "app-home-static-dispatch"
+            | "app-home-static-dispatch-narrow"
+            | "app-home-static-remount"
+            | "app-home-static-remount-narrow" => {
+                crate::app_home::inputs::static_select::fixture::install(&mut state)
+            }
+            "app-home-text-focus" | "app-home-text-focus-narrow" => {
+                crate::app_home::inputs::text::fixture::focus::install(&mut state)
+            }
+            "app-home-text-button-sync" | "app-home-text-button-sync-narrow" => {
+                crate::app_home::inputs::text::button::fixture::install(&mut state)
+            }
+            "app-home-text-dispatch" | "app-home-text-dispatch-narrow" => {
+                crate::app_home::inputs::text::fixture::install(&mut state)
+            }
+            "app-home-unified-context" | "app-home-unified-context-narrow" => {
+                crate::app_home::context::fixture::install(&mut state)
+            }
+            "app-home-multi-conversation-select"
+            | "app-home-multi-conversation-select-narrow"
+            | "app-home-conversation-select"
+            | "app-home-conversation-select-narrow"
+            | "app-home-channel-select"
+            | "app-home-channel-select-narrow"
+            | "app-home-multi-channel-select"
+            | "app-home-multi-channel-select-narrow" => {
+                crate::app_home::inputs::channels::fixture::install(&mut state)
+            }
+            "app-home-multi-conversation-dispatch"
+            | "app-home-multi-conversation-dispatch-narrow"
+            | "app-home-conversation-dispatch"
+            | "app-home-conversation-dispatch-narrow"
+            | "app-home-multi-channel-dispatch"
+            | "app-home-multi-channel-dispatch-narrow"
+            | "app-home-channel-dispatch"
+            | "app-home-channel-dispatch-narrow"
+            | "app-home-user-dispatch"
+            | "app-home-user-dispatch-narrow"
+            | "app-home-multi-user-dispatch"
+            | "app-home-multi-user-dispatch-narrow" => {
+                crate::app_home::inputs::users::dispatch::fixture::install(&mut state)
+            }
+            "app-home-user-select"
+            | "app-home-user-select-narrow"
+            | "app-home-multi-user-select"
+            | "app-home-multi-user-select-narrow" => {
+                crate::app_home::inputs::users::fixture::install(&mut state)
+            }
+            "app-home-multi-external-select" | "app-home-multi-external-select-narrow" => {
+                crate::app_home::inputs::external::multi_fixture::install(&mut state)
+            }
+            "app-home-focus-on-load" | "app-home-focus-on-load-narrow" => {
+                crate::app_home::inputs::focus_fixture::install(&mut state)
+            }
+            "app-home-email-input" | "app-home-email-input-narrow" => {
+                crate::app_home::inputs::email_fixture::install(&mut state)
+            }
+            "app-home-number-input" | "app-home-number-input-narrow" => {
+                crate::app_home::inputs::number_fixture::install(&mut state)
+            }
+            "app-home-multi-external-dispatch" | "app-home-multi-external-dispatch-narrow" => {
+                crate::app_home::inputs::external::multi_dispatch_fixture::install(&mut state)
+            }
+            "app-home-external-dispatch" | "app-home-external-dispatch-narrow" => {
+                crate::app_home::inputs::external::dispatch::fixture::install(&mut state)
+            }
+            "app-home-external-select" | "app-home-external-select-narrow" => {
+                crate::app_home::inputs::external::fixture::install(&mut state)
+            }
             "app-home-inputs" | "app-home-inputs-narrow" => {
                 crate::app_home::fixture::install_inputs(&mut state)
             }
@@ -1714,7 +1822,7 @@ impl ShellState {
                 workspace.usergroups.insert(group.id.clone(), group);
                 for messages in workspace.messages.values_mut() {
                     if let Some(message) = messages.messages.last_mut() {
-                        message.text = Some("<!subteam^S1> let’s ship this!".into());
+                        message.text = Some("<!subteam^S1> letâ€™s ship this!".into());
                         message.blocks.clear();
                     }
                 }
@@ -1757,7 +1865,7 @@ impl ShellState {
                     (
                         "C_COLD",
                         None,
-                        "A saved draft survives a missing conversation cache. 🚀",
+                        "A saved draft survives a missing conversation cache. ðŸš€",
                     ),
                     (
                         "C2",
@@ -1798,7 +1906,7 @@ impl ShellState {
                 } else {
                     vec![serde_json::from_value(serde_json::json!({
                     "id":"DrFixture","date_scheduled":super_platinum_core::state::now_secs()+86400,"destinations":[{"channel_id":"C2","thread_ts":"1790000000.000001"}],"file_ids":["Ffixture"],
-                    "blocks":[{"type":"rich_text","elements":[{"type":"rich_text_section","elements":[{"type":"text","text":"Release review 🚀","style":{"bold":true}},{"type":"text","text":"\nCheck the final changes before we ship. The report is attached."}]}]}]
+                    "blocks":[{"type":"rich_text","elements":[{"type":"rich_text_section","elements":[{"type":"text","text":"Release review ðŸš€","style":{"bold":true}},{"type":"text","text":"\nCheck the final changes before we ship. The report is attached."}]}]}]
                 })).unwrap()]
                 };
                 state.core.scheduled.apply(
@@ -1845,7 +1953,7 @@ impl ShellState {
                 let items=serde_json::from_value(serde_json::json!([
                     {"id":"Bk1","title":"Design system","link":"https://vercel.com/geist/introduction","type":"link","rank":"a"},
                     {"id":"Bk2","title":"Launch references","type":"local_folder","rank":"b"},
-                    {"id":"Bk3","title":"Release checklist · 日本語","link":"https://example.com/release","type":"link","parent_id":"Bk2","rank":"c"},
+                    {"id":"Bk3","title":"Release checklist Â· æ—¥æœ¬èªž","link":"https://example.com/release","type":"link","parent_id":"Bk2","rank":"c"},
                     {"id":"Bk4","title":"Product handbook and the decisions behind our next release","link":"https://example.com/docs/handbook","type":"link","rank":"d"}
                 ])).unwrap();
                 store.apply(g, items);
@@ -2000,6 +2108,12 @@ impl ShellState {
             | "canvas-retained-pair-delete-narrow"
             | "canvas-owner-first-pair-delete"
             | "canvas-owner-first-pair-delete-narrow"
+            | "canvas-last-live-replacement"
+            | "canvas-last-live-replacement-narrow"
+            | "canvas-confirmed-provenance"
+            | "canvas-confirmed-provenance-narrow"
+            | "canvas-retirement-cancellation"
+            | "canvas-retirement-cancellation-narrow"
             | "canvas-structure-text"
             | "canvas-structure-text-narrow"
             | "canvas-local-review"
@@ -2044,7 +2158,7 @@ impl ShellState {
                     vec![
                         serde_json::json!({"id":"F1","title":"Super Platinum interface review.pdf","filetype":"pdf","pretty_type":"PDF","size":184200,"user":"U1","created":1791763200}),
                         serde_json::json!({"id":"F2","title":"Product decisions and launch notes","filetype":"quip","pretty_type":"Canvas","user":"U2","created":1791676800}),
-                        serde_json::json!({"id":"F3","title":"Screenshot — compact thread layout.png","filetype":"png","pretty_type":"PNG","size":294100,"user":"U1","created":1791590400}),
+                        serde_json::json!({"id":"F3","title":"Screenshot â€” compact thread layout.png","filetype":"png","pretty_type":"PNG","size":294100,"user":"U1","created":1791590400}),
                         serde_json::json!({"id":"F4","title":"A long file name that still stays on one line and leaves room for useful metadata when the window is narrow.csv","filetype":"csv","pretty_type":"CSV","size":12200,"user":"U2","created":1791504000}),
                     ]
                 };
@@ -2134,9 +2248,9 @@ impl ShellState {
                     vec![]
                 } else {
                     vec![
-                        serde_json::json!({"url":"https://vercel.com/geist/introduction","title":"Geist — a precise design system","timestamp":"1791763200.000001"}),
+                        serde_json::json!({"url":"https://vercel.com/geist/introduction","title":"Geist â€” a precise design system","timestamp":"1791763200.000001"}),
                         serde_json::json!({"url":"https://example.com/notes/a-long-url-that-should-truncate-without-pushing-message-actions-outside-the-window","title":"A long shared link title that remains compact and keeps its original message within reach","timestamp":"1791676800.000001"}),
-                        serde_json::json!({"url":"https://example.com/launch","title":"Launch notes 🚀","timestamp":"1791590400.000001"}),
+                        serde_json::json!({"url":"https://example.com/launch","title":"Launch notes ðŸš€","timestamp":"1791590400.000001"}),
                     ]
                 };
                 state.core.channel_links.apply(generation,serde_json::from_value(serde_json::json!({"items":items,"pagination":{"page":1,"page_count":if items.is_empty(){1}else{6},"total_count":if items.is_empty(){0}else{104}}})).unwrap());
@@ -2739,7 +2853,7 @@ impl ShellState {
                             RichNode::Text("The second paragraph wraps independently with ".into()),
                             RichNode::Emoji {
                                 name: "ship".into(),
-                                glyph: "🚢".into(),
+                                glyph: "ðŸš¢".into(),
                             },
                         ]),
                         RichNode::Paragraph(vec![RichNode::Text(
@@ -2815,7 +2929,7 @@ impl ShellState {
                         kind: Some("message".into()),
                         ts: Some(message_ts.clone()),
                         client_msg_id: Some("fixture-upload-1".into()),
-                        text: Some("Shipping the capture with a file…".into()),
+                        text: Some("Shipping the capture with a fileâ€¦".into()),
                         channel: Some("C2".into()),
                         ..Default::default()
                     };
@@ -2832,7 +2946,7 @@ impl ShellState {
                         thread_ts: None,
                         message_ts,
                         client_msg_id: "fixture-upload-1".into(),
-                        text: "Shipping the capture with a file…".into(),
+                        text: "Shipping the capture with a fileâ€¦".into(),
                         attachments: vec![attachment],
                     },
                 );
@@ -2977,7 +3091,7 @@ impl ShellState {
                 state.append_projected_fixture_messages(&[out_of_context_message()], false);
                 // A cold boot: every source is registered, no bytes have landed
                 // yet. The avatar column must fall back to initials and inline
-                // images to skeleton boxes — never a broken-image icon.
+                // images to skeleton boxes â€” never a broken-image icon.
                 let media = state.media.clone();
                 for (index, message) in state.messages.iter_mut().enumerate() {
                     message.avatar = Some(media.register_avatar(
@@ -3120,7 +3234,7 @@ fn out_of_context_message() -> serde_json::Value {
             "channel_id": "C1",
             "channel_team": "T1",
             "color": "D0D0D0",
-            "fallback": "[…] 6.1 inches is crazy",
+            "fallback": "[â€¦] 6.1 inches is crazy",
             "footer": "Thread in Slack Conversation",
             "from_url": "https://example.test/archives/C1/p1719800900000100",
             "is_msg_unfurl": true,

@@ -1,0 +1,468 @@
+{
+  "selector": [
+    {
+      "name": "nonunified-ignores-explicit",
+      "input": {
+        "selfTeamIds": {
+          "internalWorkspaceIds": [
+            "TWORK0001",
+            "TWORK0002",
+            "TWORK0003"
+          ],
+          "teamId": "TWORK0002",
+          "defaultWorkspaceId": "TWORK0003"
+        },
+        "channels": {
+          "DHOME001": {
+            "is_im": true,
+            "user": "UBOT0001"
+          }
+        },
+        "members": {
+          "UBOT0001": {
+            "enterprise_user": {
+              "teams": [
+                "TWORK0002",
+                "TWORK0003"
+              ]
+            }
+          }
+        },
+        "appHomeContextTeam": {
+          "DHOME001": "TOVERRIDE"
+        },
+        "selectedFilter": {
+          "type": "Workspace",
+          "workspace": {
+            "id": "TWORK0003"
+          }
+        }
+      },
+      "isUnified": false,
+      "possible": [
+        "TWORK0002",
+        "TWORK0003"
+      ],
+      "context": null,
+      "contextWasUndefined": true,
+      "serviceTeamId": "TINSTALL1"
+    },
+    {
+      "name": "unified-explicit-outside-candidates",
+      "input": {
+        "selfTeamIds": {
+          "internalWorkspaceIds": [
+            "TWORK0001",
+            "TWORK0002",
+            "TWORK0003"
+          ],
+          "teamId": "TWORK0002",
+          "defaultWorkspaceId": "TWORK0003"
+        },
+        "channels": {
+          "DHOME001": {
+            "is_im": true,
+            "user": "UBOT0001"
+          }
+        },
+        "members": {
+          "UBOT0001": {
+            "enterprise_user": {
+              "teams": [
+                "TWORK0002",
+                "TWORK0003"
+              ]
+            }
+          }
+        },
+        "appHomeContextTeam": {
+          "DHOME001": "TOVERRIDE"
+        },
+        "selectedFilter": {
+          "type": "Workspace",
+          "workspace": {
+            "id": "TWORK0003"
+          }
+        }
+      },
+      "isUnified": true,
+      "possible": [
+        "TWORK0002",
+        "TWORK0003"
+      ],
+      "context": "TOVERRIDE",
+      "contextWasUndefined": false,
+      "serviceTeamId": "TOVERRIDE"
+    },
+    {
+      "name": "unified-active",
+      "input": {
+        "selfTeamIds": {
+          "internalWorkspaceIds": [
+            "TWORK0001",
+            "TWORK0002",
+            "TWORK0003"
+          ],
+          "teamId": "TWORK0002",
+          "defaultWorkspaceId": "TWORK0003"
+        },
+        "channels": {
+          "DHOME001": {
+            "is_im": true,
+            "user": "UBOT0001"
+          }
+        },
+        "members": {
+          "UBOT0001": {
+            "enterprise_user": {
+              "teams": [
+                "TWORK0002",
+                "TWORK0003"
+              ]
+            }
+          }
+        },
+        "appHomeContextTeam": {},
+        "selectedFilter": {
+          "type": "Workspace",
+          "workspace": {
+            "id": "TWORK0003"
+          }
+        }
+      },
+      "isUnified": true,
+      "possible": [
+        "TWORK0002",
+        "TWORK0003"
+      ],
+      "context": "TWORK0002",
+      "contextWasUndefined": false,
+      "serviceTeamId": "TWORK0002"
+    },
+    {
+      "name": "unified-selected",
+      "input": {
+        "selfTeamIds": {
+          "internalWorkspaceIds": [
+            "TWORK0001",
+            "TWORK0002",
+            "TWORK0003"
+          ],
+          "teamId": "EORG00001",
+          "defaultWorkspaceId": "TWORK0003"
+        },
+        "channels": {
+          "DHOME001": {
+            "is_im": true,
+            "user": "UBOT0001"
+          }
+        },
+        "members": {
+          "UBOT0001": {
+            "enterprise_user": {
+              "teams": [
+                "TWORK0002",
+                "TWORK0003"
+              ]
+            }
+          }
+        },
+        "appHomeContextTeam": {},
+        "selectedFilter": {
+          "type": "Workspace",
+          "workspace": {
+            "id": "TWORK0003"
+          }
+        }
+      },
+      "isUnified": true,
+      "possible": [
+        "TWORK0002",
+        "TWORK0003"
+      ],
+      "context": "TWORK0003",
+      "contextWasUndefined": false,
+      "serviceTeamId": "TWORK0003"
+    },
+    {
+      "name": "unified-default",
+      "input": {
+        "selfTeamIds": {
+          "internalWorkspaceIds": [
+            "TWORK0001",
+            "TWORK0002",
+            "TWORK0003"
+          ],
+          "teamId": "EORG00001",
+          "defaultWorkspaceId": "TWORK0003"
+        },
+        "channels": {
+          "DHOME001": {
+            "is_im": true,
+            "user": "UBOT0001"
+          }
+        },
+        "members": {
+          "UBOT0001": {
+            "enterprise_user": {
+              "teams": [
+                "TWORK0002",
+                "TWORK0003"
+              ]
+            }
+          }
+        },
+        "appHomeContextTeam": {},
+        "selectedFilter": {
+          "type": "All"
+        }
+      },
+      "isUnified": true,
+      "possible": [
+        "TWORK0002",
+        "TWORK0003"
+      ],
+      "context": "TWORK0003",
+      "contextWasUndefined": false,
+      "serviceTeamId": "TWORK0003"
+    },
+    {
+      "name": "unified-first",
+      "input": {
+        "selfTeamIds": {
+          "internalWorkspaceIds": [
+            "TWORK0001",
+            "TWORK0002",
+            "TWORK0003"
+          ],
+          "teamId": "EORG00001"
+        },
+        "channels": {
+          "DHOME001": {
+            "is_im": true,
+            "user": "UBOT0001"
+          }
+        },
+        "members": {
+          "UBOT0001": {
+            "enterprise_user": {
+              "teams": [
+                "TWORK0002",
+                "TWORK0003"
+              ]
+            }
+          }
+        },
+        "appHomeContextTeam": {},
+        "selectedFilter": {
+          "type": "All"
+        }
+      },
+      "isUnified": true,
+      "possible": [
+        "TWORK0002",
+        "TWORK0003"
+      ],
+      "context": "TWORK0002",
+      "contextWasUndefined": false,
+      "serviceTeamId": "TWORK0002"
+    },
+    {
+      "name": "unified-empty-intersection-fallback",
+      "input": {
+        "selfTeamIds": {
+          "internalWorkspaceIds": [
+            "TWORK0001",
+            "TWORK0002",
+            "TWORK0003"
+          ],
+          "teamId": "TWORK0002",
+          "defaultWorkspaceId": "TWORK0003"
+        },
+        "channels": {
+          "DHOME001": {
+            "is_im": true,
+            "user": "UBOT0001"
+          }
+        },
+        "members": {
+          "UBOT0001": {
+            "enterprise_user": {
+              "teams": [
+                "TOTHER001"
+              ]
+            }
+          }
+        },
+        "appHomeContextTeam": {},
+        "selectedFilter": {
+          "type": "Workspace",
+          "workspace": {
+            "id": "TWORK0003"
+          }
+        }
+      },
+      "isUnified": true,
+      "possible": [
+        "TWORK0001",
+        "TWORK0002",
+        "TWORK0003"
+      ],
+      "context": "TWORK0002",
+      "contextWasUndefined": false,
+      "serviceTeamId": "TWORK0002"
+    },
+    {
+      "name": "unified-no-channel-fallback",
+      "input": {
+        "selfTeamIds": {
+          "internalWorkspaceIds": [
+            "TWORK0001",
+            "TWORK0002",
+            "TWORK0003"
+          ],
+          "teamId": "TWORK0002",
+          "defaultWorkspaceId": "TWORK0003"
+        },
+        "channels": {},
+        "members": {
+          "UBOT0001": {
+            "enterprise_user": {
+              "teams": [
+                "TWORK0002",
+                "TWORK0003"
+              ]
+            }
+          }
+        },
+        "appHomeContextTeam": {},
+        "selectedFilter": {
+          "type": "Workspace",
+          "workspace": {
+            "id": "TWORK0003"
+          }
+        }
+      },
+      "isUnified": true,
+      "possible": [
+        "TWORK0001",
+        "TWORK0002",
+        "TWORK0003"
+      ],
+      "context": "TWORK0002",
+      "contextWasUndefined": false,
+      "serviceTeamId": "TWORK0002"
+    },
+    {
+      "name": "unified-no-candidates",
+      "input": {
+        "selfTeamIds": {
+          "internalWorkspaceIds": [],
+          "teamId": "TWORK0002",
+          "defaultWorkspaceId": "TWORK0003"
+        },
+        "channels": {
+          "DHOME001": {
+            "is_im": true,
+            "user": "UBOT0001"
+          }
+        },
+        "members": {
+          "UBOT0001": {
+            "enterprise_user": {
+              "teams": [
+                "TWORK0002",
+                "TWORK0003"
+              ]
+            }
+          }
+        },
+        "appHomeContextTeam": {},
+        "selectedFilter": {
+          "type": "Workspace",
+          "workspace": {
+            "id": "TWORK0003"
+          }
+        }
+      },
+      "isUnified": true,
+      "possible": [],
+      "context": null,
+      "contextWasUndefined": true,
+      "serviceTeamId": "TINSTALL1"
+    }
+  ],
+  "filters": [
+    {
+      "name": "filter-absent",
+      "pref": null,
+      "prefAbsent": true,
+      "filter": {
+        "type": "all"
+      },
+      "context": "TWORK0003"
+    },
+    {
+      "name": "filter-all",
+      "pref": "all",
+      "prefAbsent": false,
+      "filter": {
+        "type": "all"
+      },
+      "context": "TWORK0003"
+    },
+    {
+      "name": "filter-unknown-id",
+      "pref": "TOTHER001",
+      "prefAbsent": false,
+      "filter": {
+        "type": "all"
+      },
+      "context": "TWORK0003"
+    },
+    {
+      "name": "filter-empty",
+      "pref": "",
+      "prefAbsent": false,
+      "filter": {
+        "type": "all"
+      },
+      "context": "TWORK0003"
+    },
+    {
+      "name": "filter-object-not-id",
+      "pref": {
+        "id": "TWORK0002"
+      },
+      "prefAbsent": false,
+      "filter": {
+        "type": "all"
+      },
+      "context": "TWORK0003"
+    },
+    {
+      "name": "filter-known-id",
+      "pref": "TWORK0002",
+      "prefAbsent": false,
+      "filter": {
+        "type": "workspace",
+        "workspace": {
+          "id": "TWORK0002",
+          "type": "internal"
+        }
+      },
+      "context": "TWORK0002"
+    },
+    {
+      "name": "filter-valid-but-not-bot-candidate",
+      "filter": {
+        "type": "workspace",
+        "workspace": {
+          "id": "TWORK0001",
+          "type": "internal"
+        }
+      },
+      "context": "TWORK0003"
+    }
+  ]
+}

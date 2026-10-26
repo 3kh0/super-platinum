@@ -13,7 +13,9 @@ mod typing;
 pub(in crate::canvas::edit::structure) use checkpoint::validate_checkpoint_split;
 mod lineage;
 pub(in crate::canvas::edit::structure) use lineage::gap_tombstone;
+pub(in crate::canvas::edit::structure) use lineage::independent_history;
 pub(in crate::canvas::edit::structure) use lineage::retained_owner_child;
+pub(in crate::canvas::edit::structure) use lineage::witnessed_independent_history;
 pub(in crate::canvas::edit::structure) use lineage::{
     child_delete_owner, child_delete_transition, child_tombstone,
 };

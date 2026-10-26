@@ -1,9 +1,12 @@
 //! Main Canvas replacement shares the exact account/view/file-wide edit lock.
 use super::*;
+pub(in crate::canvas) mod readback;
 use super_platinum_core::canvas::edit::structure::{
     AcceptedReplacement, PreparedReplacement, ReplacementIntent,
 };
 
+pub(in crate::canvas) mod preparation;
+#[cfg(test)]
 pub(in crate::canvas) fn begin_replacement(
     shell: &mut ShellState,
     visit: u64,
@@ -11,24 +14,9 @@ pub(in crate::canvas) fn begin_replacement(
     target: &str,
     now: u64,
 ) -> Result<(Attempt, ReplacementIntent), &'static str> {
-    // presentation is owned only by Overlay::Canvas, never preview/flexpane.
-    let view = presentation(shell)
-        .filter(|view| view.visit == visit && view.read == read)
-        .ok_or("This canvas view changed. Cancel and refresh.")?;
-    let snapshot = view.snapshot.ok_or("Refresh this canvas before editing.")?;
-    let intent = ReplacementIntent::main_canvas(&snapshot, target, now)
-        .map_err(|_| "This paragraph cannot be replaced here. Cancel and refresh.")?;
-    let mut attempt = begin(shell, visit, read, target, false)?;
-    attempt.mutation = Mutation::Replacement {
-        replacement: intent.replacement_section().into(),
-    };
-    shell
-        .canvas_checklist
-        .operations
-        .last_mut()
-        .expect("begin owns operation")
-        .attempt = attempt.clone();
-    Ok((attempt, intent))
+    preparation::begin(shell, visit, read, target, now)?
+        .run()?
+        .publish(shell)
 }
 pub(in crate::canvas) fn replacement(attempt: &Attempt) -> Option<&str> {
     match &attempt.mutation {
@@ -106,7 +94,9 @@ pub(in crate::canvas) fn finish_replacement(
         Stage::Uncertain
     };
     if matches {
-        operation.accepted = Some(Accepted::Replacement(accepted));
+        operation.accepted = Some(Accepted::Replacement(readback::AcceptedState::new(
+            accepted,
+        )));
     }
     true
 }

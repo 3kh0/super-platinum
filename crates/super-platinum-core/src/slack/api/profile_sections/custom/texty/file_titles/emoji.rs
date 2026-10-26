@@ -1,7 +1,8 @@
-//! bQFi/aBXg ordinary name-only emoji, under explicit caller presentation.
+//! bQFi/aBXg canonical-name emoji and JSON tone fields, with explicit presentation.
 use super::Unavailable;
 use serde_json::Value;
 mod canonical_names;
+mod tone;
 
 /// Deliberately separate from canvas/Untitled. This is an application display
 /// choice, not evidence that a Slack account has no emoji translation map.
@@ -16,12 +17,15 @@ pub(super) fn text(leaf: &Value, context: Option<EmojiText>) -> Result<String, U
     };
     let fields = leaf.as_object().ok_or(Unavailable::UnsupportedTitle)?;
     // Formatting and opaque original payload survive unchanged in the source.
-    // Any additional semantic field is outside the proven name-only branch,
-    // including null/false unicode, skinTone/skin_tone, custom or alias fields.
+    // Unicode/catalog/alias semantics remain outside this caller's authority.
+    // Tone values are interpolated by aBXg, not validated as a 2..6 enum.
     if leaf["type"] != "emoji"
-        || fields
-            .keys()
-            .any(|key| !matches!(key.as_str(), "type" | "name" | "style" | "opaque"))
+        || fields.keys().any(|key| {
+            !matches!(
+                key.as_str(),
+                "type" | "name" | "style" | "opaque" | "skinTone" | "skin_tone"
+            )
+        })
     {
         return Err(Unavailable::UnsupportedTitle);
     }
@@ -29,7 +33,15 @@ pub(super) fn text(leaf: &Value, context: Option<EmojiText>) -> Result<String, U
     if canonical_names::NAMES.binary_search(&name).is_err() {
         return Err(Unavailable::UnsupportedTitle);
     }
-    Ok(format!(":{name}:"))
+    let selected = leaf
+        .get("skinTone")
+        .filter(|value| tone::truthy(value))
+        .or_else(|| leaf.get("skin_tone"));
+    if let Some(value) = selected.filter(|value| tone::truthy(value)) {
+        Ok(format!(":{name}::skin-tone-{}:", tone::string(value)?))
+    } else {
+        Ok(format!(":{name}:"))
+    }
 }
 
 #[cfg(test)]

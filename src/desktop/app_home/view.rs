@@ -33,6 +33,7 @@ pub(crate) fn panel(state: Signal<ShellState>) -> Element {
                 shown.insert(key.clone());
                 blocks.push(HomeBlock::Input(key));
             } else if let Some(w) = s.core.workspaces.get(&h.owner.ctx.session.team_id) {
+                shown.extend(inputs::static_select::wrappers::shown_keys(&s, block));
                 blocks.push(HomeBlock::Display(crate::blocks::block_nodes(
                     crate::blocks::BlockCtx::new(w, &s.media),
                     block,
@@ -52,14 +53,14 @@ pub(crate) fn panel(state: Signal<ShellState>) -> Element {
     let confirm = h
         .confirmation
         .as_ref()
-        .and_then(|b| b.raw().get("confirm"))
+        .and_then(|(b, _)| b.raw().get("confirm"))
         .cloned()
         .or_else(|| calendar::confirmation(h));
     let epoch = s.media_epoch;
     let locked = loading || workflows::locked(&s) || confirm.is_some() || cooling(&s, &h.owner.ctx);
     drop(s);
     rsx! {section{id:"app-home",class:"app-home","aria-label":"App Home","data-visit":key.visit,"data-revision":key.revision,
-     div{class:"app-home-toolbar",h2{"Home"}span{class:"spacer"}button{disabled:locked,onclick:move |_|{dioxus::core::spawn_forever(refresh(state));},"Refresh"}}
+     div{class:"app-home-toolbar",h2{"Home"}context::ContextChooser{state,locked}span{class:"spacer"}button{disabled:locked,onclick:move |_|{dioxus::core::spawn_forever(refresh(state));},"Refresh"}}
      div{class:"app-home-content","aria-busy":loading,
       if loading{p{role:"status","Loading Home…"}}
       form{onsubmit:move |event|event.prevent_default(),

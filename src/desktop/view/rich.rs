@@ -305,7 +305,11 @@ fn rich_node_with_source(
                 .filter(|label| !label.trim().is_empty())
                 .unwrap_or(label);
             if let Some(key) = home {
-                crate::app_home::view::button(state,key,metadata.as_ref().clone(),label.clone(),accessible_label.to_owned(),*style)
+                if let Some(control)=crate::app_home::inputs::static_select::wrappers::render(state,key,metadata) {
+                    control
+                } else {
+                    crate::app_home::view::button(state,key,metadata.as_ref().clone(),label.clone(),accessible_label.to_owned(),*style)
+                }
             } else if let Some(source) = source.filter(|_| {
                 matches!(
                     metadata.source,

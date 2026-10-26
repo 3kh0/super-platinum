@@ -59,6 +59,20 @@ pub(crate) fn retain(eval: dioxus::document::Eval) -> Release {
     }));
     release
 }
+/// Keep the evaluator alive until the actual JS release has run. Used by short
+/// text-dispatch leases; the existing Button lease behavior remains unchanged.
+pub(crate) fn retain_acknowledged(mut eval: dioxus::document::Eval) -> Release {
+    let (release, released) = pair();
+    dioxus::core::spawn_forever(async move {
+        let _ = released.await;
+        if eval.send(()).is_ok() {
+            let _ =
+                tokio::time::timeout(std::time::Duration::from_secs(3), eval.recv::<bool>()).await;
+            let _ = eval.send(());
+        }
+    });
+    release
+}
 
 #[cfg(test)]
 pub(crate) fn test_pair() -> (Release, oneshot::Receiver<()>) {

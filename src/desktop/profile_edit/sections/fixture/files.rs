@@ -61,6 +61,18 @@ pub(crate) fn source_label() -> &'static str {
     }
 }
 pub(crate) fn mounted_label() -> &'static str {
+    if super::deletion_event::named() {
+        return super::deletion_event::NORMAL;
+    }
+    if super::deleted_reference::named() {
+        return super::deleted_reference::DELETED;
+    }
+    if super::unavailable_reference::named() {
+        return super::unavailable_reference::PRIVATE;
+    }
+    if super::missing_group::named() {
+        return super::missing_group::ORIGINAL;
+    }
     if super::group_title::named() {
         return super::group_title::ORIGINAL;
     }
@@ -91,6 +103,9 @@ pub(crate) fn mounted_label() -> &'static str {
     }
 }
 pub(crate) fn renamed_label() -> &'static str {
+    if super::missing_group::named() {
+        return super::missing_group::final_label();
+    }
     if super::group_title::named() {
         return super::group_title::RENAMED;
     }
@@ -118,6 +133,18 @@ pub(crate) fn renamed_label() -> &'static str {
     }
 }
 pub(crate) fn raw(renamed: bool) -> Value {
+    if super::section_reference::named() {
+        return super::section_reference::file_response();
+    }
+    if super::deletion_event::named() {
+        return super::deletion_event::response();
+    }
+    if super::deleted_reference::named() {
+        return super::deleted_reference::response();
+    }
+    if super::unavailable_reference::named() {
+        return super::unavailable_reference::response();
+    }
     let mut raw = json!({"ok":true,"file":{"id":ID,"mode":if list(){"list"}else{"quip"},
         "filetype":if list(){"list"}else{"quip"},"created":101,"updated":if renamed{102}else{101},
         "title":if renamed{renamed_label()}else{source_label()},"name":"wrong-name-fallback",
@@ -140,6 +167,9 @@ pub(crate) fn raw(renamed: bool) -> Value {
 /// Formatting and unknown fields survive in source/effective metadata; the
 /// canonical title extractor treats these text values literally.
 pub(crate) fn title_blocks(renamed: bool) -> Value {
+    if super::missing_group::named() {
+        return super::missing_group::blocks();
+    }
     if super::group_title::named() {
         return super::group_title::blocks();
     }
@@ -172,6 +202,9 @@ pub(crate) fn title_blocks(renamed: bool) -> Value {
         ]}]}])
 }
 pub(crate) fn blocks(text: &str) -> Vec<Value> {
+    if super::section_reference::named() {
+        return super::section_reference::blocks(text);
+    }
     let token = |occurrence, style| {
         json!({"type":kind(),"file_id":ID,"text":URL,"url":URL,
         "fixture_occurrence":occurrence,"style":style,"opaque":{"keep":[occurrence,"original"]}})
@@ -200,6 +233,11 @@ pub(crate) fn release() -> Value {
         || super::channel_title::named()
         || super::missing_channel::named()
         || super::group_title::named()
+        || super::missing_group::named()
+        || super::unavailable_reference::named()
+        || super::deleted_reference::named()
+        || super::deletion_event::named()
+        || super::section_reference::named()
         || super::link_title::named()
         || super::emoji_title::named())
         && held.is_some()
@@ -315,6 +353,11 @@ pub(crate) async fn read(
         || super::channel_title::named()
         || super::missing_channel::named()
         || super::group_title::named()
+        || super::missing_group::named()
+        || super::unavailable_reference::named()
+        || super::deleted_reference::named()
+        || super::deletion_event::named()
+        || super::section_reference::named()
     {
         if let Some(row) = ledger().lock().unwrap().requests.last_mut() {
             row["response"] = match &result {

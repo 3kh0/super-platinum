@@ -1,0 +1,50 @@
+const home=document.getElementById('app-home')||document.querySelector('.app-home');if(!home)return{ok:false};
+const current=x.authority?.homeCurrent===true,items=[],fields=[];
+if(current){
+ if(home.dataset.visit!==String(x.authority.homeVisit)||home.dataset.revision!==String(x.authority.homeRevision))return{ok:false};
+ for(const f of x.domFields){
+  const n=document.getElementById(f.id),wrap=n?.closest('.app-modal-field');if(!n||!home.contains(n)||!wrap||n.disabled!==f.disabled)return{ok:false};
+  const error=wrap.querySelector(':scope > .app-modal-error')?.textContent||null;if(error!==(f.error||null))return{ok:false};
+  if(f.kind==='external'||f.kind==='externals'){
+   const control=n.closest('[data-home-external]');if(!control)return{ok:false};
+   const q=x.pickerBlock===f.block?x.suggestions.query:null,raw=f.kind==='external'?(f.selected?[f.selected]:[]):(f.multiSelected||[]);
+   const chips=[...control.querySelectorAll('.message-multi-selected-option')],selectedLabels=chips.map(e=>e.querySelector('span')?.textContent);
+   if(JSON.stringify(selectedLabels)!==JSON.stringify(raw.map(o=>o.text?.text)))return{ok:false};
+   const removes=[...control.querySelectorAll('button[aria-label="Clear selected option"],button[data-option-value]')];
+   if(removes.length!==(f.kind==='external'&&!f.optional?0:raw.length)||removes.some(e=>e.disabled!==f.disabled))return{ok:false};
+   const rows=[...control.querySelectorAll('[data-option-index]')],search=control.querySelector('[data-external-search]');
+   if(!!q!==!!search)return{ok:false};
+   if(q){
+    if(n.type!=='search'||n.value!==q.text||search.dataset.queryRevision!==String(q.revision)||rows.length!==q.rows.length)return{ok:false};
+    for(let i=0;i<rows.length;i++){const e=rows[i],r=q.rows[i],entry=e.closest('.message-multi-entry');
+     if(e.dataset.optionIndex!==String(i)||entry.querySelector('.block-radio-label')?.textContent!==r.option.text.text||(entry.querySelector('.block-radio-description')?.textContent||null)!==(r.option.description?.text||null))return{ok:false};
+     const group=(i===0||q.rows[i-1].group!==r.group)?r.group:null;if((entry.querySelector('.message-multi-group')?.textContent||null)!==(group||null))return{ok:false};
+     if(e.disabled!==f.disabled)return{ok:false};
+    }
+   }else if(n.dataset.externalOpen!=='true'||rows.length)return{ok:false};
+   const status=control.querySelector('[data-home-multi-status]');
+   if(f.kind==='externals'&&(control.getAttribute('aria-invalid')!==String(f.multiStatus.invalid)||(status?.textContent||null)!==f.multiStatus.text||status?.getAttribute('data-warning')!==String(f.multiStatus.warning)))return{ok:false};
+   fields.push({block:f.block,id:f.id,selectedLabels,disabled:n.disabled,expanded:!!q,query:q?.text||'',removable:removes.length,error,multiple:f.kind==='externals',invalid:f.kind==='externals'?f.multiStatus.invalid:null,limitText:status?.textContent||null});
+   items.push({key:'input-'+f.block,node:n});chips.forEach((node,i)=>items.push({key:'selected-'+f.block+'-'+i,node}));
+   rows.forEach((node,i)=>items.push({key:'row-'+f.block+'-'+i,node:node.matches('input')?node.closest('label'):node}));
+   if(status)items.push({key:'limit-'+f.block,node:status});
+   if(q){for(const[i,node]of [...control.querySelectorAll('[data-external-done],[data-external-retry],[role=status]')].filter(e=>e.textContent.trim()&&!e.hasAttribute('data-home-multi-status')).entries())items.push({key:'query-'+f.block+'-'+i,node});}
+  }else{
+   if(n.value!==(f.value||''))return{ok:false};
+   fields.push({block:f.block,id:f.id,value:n.value,disabled:n.disabled,error});
+   items.push({key:'field-'+f.block,node:wrap});
+  }
+  if(error)items.push({key:'error-'+f.block,node:wrap.querySelector(':scope > .app-modal-error')});
+ }
+ const native=[...home.querySelectorAll('[data-home-native-mount]')];if(native.length!==1)return{ok:false};
+ for(const m of x.nativeMounts||[]){const e=window.__spHomeCalendarNative?.entries.get(m.id);if(!e||e.closed||e.mount!==m.mount||e.seq!==m.seq||e.acked!==m.seq||e.pending||e.lease||!e.editableDate||!e.nativeCurrent()||e.node.type!=='text'||e.picker.type!=='date'||e.node.parentNode!==e.host||e.picker.parentNode!==e.host||e.snapshotValue()!==m.value||e.ackedValue!==m.value)return{ok:false};}
+ const button=[...home.querySelectorAll('button')].find(n=>n.textContent.trim()==='Send form');if(!button)return{ok:false};items.push({key:'button-send',node:button});
+ for(const [i,node]of [...home.querySelectorAll('[data-home-static-status]')].entries())items.push({key:'status-'+node.dataset.homeStaticStatus+'-'+i,node});
+}else{if(home.hasAttribute('data-visit'))return{ok:false};items.push({key:'empty',node:home.querySelector('button')});}
+if(items.some(i=>!i.node)||new Set(items.map(i=>i.key)).size!==items.length)return{ok:false};
+const measure=n=>{if(!n)return{visible:false};const r=n.getBoundingClientRect(),s=getComputedStyle(n);let visible=r.width>0&&r.height>0&&r.left>=0&&r.top>=0&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1&&s.visibility==='visible'&&s.display!=='none';for(let p=n.parentElement;p;p=p.parentElement){const q=p.getBoundingClientRect(),z=getComputedStyle(p);if(/auto|scroll|hidden|clip/.test(z.overflowY)&&(r.top<q.top-1||r.bottom>q.bottom+1))visible=false;if(/auto|scroll|hidden|clip/.test(z.overflowX)&&(r.left<q.left-1||r.right>q.right+1))visible=false;}const hit=visible&&[[r.left+r.width/2,r.top+r.height/2],[r.left+1,r.top+r.height/2],[r.right-1,r.top+r.height/2],[r.left+r.width/2,r.top+1],[r.left+r.width/2,r.bottom-1]].every(([x,y])=>{const h=document.elementFromPoint(x,y);return h===n||n.contains(h);});return{visible:visible&&hit,hit,rect:{x:r.x,y:r.y,width:r.width,height:r.height}};};
+const target=focus?items.find(i=>i.key===focus):items[0];if(!target)return{ok:false};target.node.scrollIntoView({block:'center'});
+const rows=items.map(i=>({key:i.key,text:i.node.textContent,geometry:measure(i.node)}));
+const inventory={coverageMode:'user-controls',captureTargets:items.map(i=>({key:i.key,text:i.node.textContent})),fields,statuses:[...home.querySelectorAll('[data-home-static-status]')].map(n=>({block:n.dataset.homeStaticStatus,text:n.textContent}))};
+const focusVisible=measure(target.node).visible,noOverflow=document.documentElement.scrollWidth<=innerWidth+1;
+return{ok:focusVisible&&noOverflow,viewport:{width:innerWidth,height:innerHeight},homeVisit:home.dataset.visit||null,homeRevision:home.dataset.revision||null,inventory,rows,focusKey:focus,focusVisible,noOverflow,requiredViews:focus?[]:rows.filter(r=>!r.geometry.visible).map(r=>r.key)};

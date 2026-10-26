@@ -70,3 +70,10 @@
 .rich-link-error { color:var(--text); font-size:var(--text-sm); margin:4px 0 0; }
 
 .rich-code-status { color: var(--muted); font-size: var(--text-sm); margin: 4px 0; }
+
+.rich-editor-private-canvas > .rich-editor-private-symbol { width: 1em; height: 1em; display: inline-block; vertical-align: -.125em; margin-right: .25em; }
+
+.rich-editor-deleted-canvas > .rich-editor-deleted-symbol { width: 1em; height: 1em; display: inline-block; vertical-align: -.125em; margin-right: .25em; }
+.rich-editor-deleted-canvas { color: var(--muted); }
+
+.rich-editor-section-canvas > .rich-editor-section-symbol { width: 1em; height: 1em; display: inline-block; vertical-align: -.125em; margin-right: .25em; }

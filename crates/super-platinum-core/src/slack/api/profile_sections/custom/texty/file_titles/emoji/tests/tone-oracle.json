@@ -1,0 +1,3383 @@
+{
+  "ok": true,
+  "count": 43,
+  "cases": [
+    {
+      "name": "skinTone-2",
+      "shape": "embedded",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skinTone": 2
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skinTone": 2
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-2:",
+      "localizedEmoji": ":wave::skin-tone-2:",
+      "flattened": "Project :wave::skin-tone-2: plan",
+      "userIds": [],
+      "label": "Project :wave::skin-tone-2: plan",
+      "finalLabel": "Project :wave::skin-tone-2: plan",
+      "inputUnchanged": true
+    },
+    {
+      "name": "skinTone-3",
+      "shape": "embedded",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skinTone": 3
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skinTone": 3
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-3:",
+      "localizedEmoji": ":wave::skin-tone-3:",
+      "flattened": "Project :wave::skin-tone-3: plan",
+      "userIds": [],
+      "label": "Project :wave::skin-tone-3: plan",
+      "finalLabel": "Project :wave::skin-tone-3: plan",
+      "inputUnchanged": true
+    },
+    {
+      "name": "skinTone-4",
+      "shape": "embedded",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skinTone": 4
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skinTone": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-4:",
+      "localizedEmoji": ":wave::skin-tone-4:",
+      "flattened": "Project :wave::skin-tone-4: plan",
+      "userIds": [],
+      "label": "Project :wave::skin-tone-4: plan",
+      "finalLabel": "Project :wave::skin-tone-4: plan",
+      "inputUnchanged": true
+    },
+    {
+      "name": "skinTone-5",
+      "shape": "embedded",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skinTone": 5
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skinTone": 5
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-5:",
+      "localizedEmoji": ":wave::skin-tone-5:",
+      "flattened": "Project :wave::skin-tone-5: plan",
+      "userIds": [],
+      "label": "Project :wave::skin-tone-5: plan",
+      "finalLabel": "Project :wave::skin-tone-5: plan",
+      "inputUnchanged": true
+    },
+    {
+      "name": "skinTone-6",
+      "shape": "embedded",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skinTone": 6
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skinTone": 6
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-6:",
+      "localizedEmoji": ":wave::skin-tone-6:",
+      "flattened": "Project :wave::skin-tone-6: plan",
+      "userIds": [],
+      "label": "Project :wave::skin-tone-6: plan",
+      "finalLabel": "Project :wave::skin-tone-6: plan",
+      "inputUnchanged": true
+    },
+    {
+      "name": "skin_tone-2",
+      "shape": "embedded",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": 2
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": 2
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-2:",
+      "localizedEmoji": ":wave::skin-tone-2:",
+      "flattened": "Project :wave::skin-tone-2: plan",
+      "userIds": [],
+      "label": "Project :wave::skin-tone-2: plan",
+      "finalLabel": "Project :wave::skin-tone-2: plan",
+      "inputUnchanged": true
+    },
+    {
+      "name": "skin_tone-3",
+      "shape": "embedded",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": 3
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": 3
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-3:",
+      "localizedEmoji": ":wave::skin-tone-3:",
+      "flattened": "Project :wave::skin-tone-3: plan",
+      "userIds": [],
+      "label": "Project :wave::skin-tone-3: plan",
+      "finalLabel": "Project :wave::skin-tone-3: plan",
+      "inputUnchanged": true
+    },
+    {
+      "name": "skin_tone-4",
+      "shape": "embedded",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": 4
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-4:",
+      "localizedEmoji": ":wave::skin-tone-4:",
+      "flattened": "Project :wave::skin-tone-4: plan",
+      "userIds": [],
+      "label": "Project :wave::skin-tone-4: plan",
+      "finalLabel": "Project :wave::skin-tone-4: plan",
+      "inputUnchanged": true
+    },
+    {
+      "name": "skin_tone-5",
+      "shape": "embedded",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": 5
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": 5
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-5:",
+      "localizedEmoji": ":wave::skin-tone-5:",
+      "flattened": "Project :wave::skin-tone-5: plan",
+      "userIds": [],
+      "label": "Project :wave::skin-tone-5: plan",
+      "finalLabel": "Project :wave::skin-tone-5: plan",
+      "inputUnchanged": true
+    },
+    {
+      "name": "skin_tone-6",
+      "shape": "embedded",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": 6
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": 6
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-6:",
+      "localizedEmoji": ":wave::skin-tone-6:",
+      "flattened": "Project :wave::skin-tone-6: plan",
+      "userIds": [],
+      "label": "Project :wave::skin-tone-6: plan",
+      "finalLabel": "Project :wave::skin-tone-6: plan",
+      "inputUnchanged": true
+    },
+    {
+      "name": "composed-leading-nullish",
+      "shape": "leading",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": 3
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": 3
+                  },
+                  {
+                    "type": "text",
+                    "text": " Project plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-3:",
+      "localizedEmoji": ":wave::skin-tone-3:",
+      "flattened": ":wave::skin-tone-3: Project plan",
+      "userIds": [],
+      "label": "Project plan",
+      "finalLabel": "Project plan",
+      "inputUnchanged": true
+    },
+    {
+      "name": "composed-leading-empty",
+      "shape": "leading",
+      "overrideName": "empty",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": 3
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": 3
+                  },
+                  {
+                    "type": "text",
+                    "text": " Project plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {
+          "FTONETITLE1": {
+            "titleString": ""
+          }
+        },
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-3:",
+      "localizedEmoji": ":wave::skin-tone-3:",
+      "flattened": ":wave::skin-tone-3: Project plan",
+      "userIds": [],
+      "label": "",
+      "finalLabel": "",
+      "inputUnchanged": true
+    },
+    {
+      "name": "composed-leading-text",
+      "shape": "leading",
+      "overrideName": "text",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": 3
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": 3
+                  },
+                  {
+                    "type": "text",
+                    "text": " Project plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {
+          "FTONETITLE1": {
+            "titleString": "Independent title"
+          }
+        },
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-3:",
+      "localizedEmoji": ":wave::skin-tone-3:",
+      "flattened": ":wave::skin-tone-3: Project plan",
+      "userIds": [],
+      "label": "Independent title",
+      "finalLabel": "Independent title",
+      "inputUnchanged": true
+    },
+    {
+      "name": "composed-embedded-nullish",
+      "shape": "embedded",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": 3
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": 3
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-3:",
+      "localizedEmoji": ":wave::skin-tone-3:",
+      "flattened": "Project :wave::skin-tone-3: plan",
+      "userIds": [],
+      "label": "Project :wave::skin-tone-3: plan",
+      "finalLabel": "Project :wave::skin-tone-3: plan",
+      "inputUnchanged": true
+    },
+    {
+      "name": "composed-embedded-empty",
+      "shape": "embedded",
+      "overrideName": "empty",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": 3
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": 3
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {
+          "FTONETITLE1": {
+            "titleString": ""
+          }
+        },
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-3:",
+      "localizedEmoji": ":wave::skin-tone-3:",
+      "flattened": "Project :wave::skin-tone-3: plan",
+      "userIds": [],
+      "label": "",
+      "finalLabel": "",
+      "inputUnchanged": true
+    },
+    {
+      "name": "composed-embedded-text",
+      "shape": "embedded",
+      "overrideName": "text",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": 3
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": 3
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {
+          "FTONETITLE1": {
+            "titleString": "Independent title"
+          }
+        },
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-3:",
+      "localizedEmoji": ":wave::skin-tone-3:",
+      "flattened": "Project :wave::skin-tone-3: plan",
+      "userIds": [],
+      "label": "Independent title",
+      "finalLabel": "Independent title",
+      "inputUnchanged": true
+    },
+    {
+      "name": "composed-only-nullish",
+      "shape": "only",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": 3
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": 3
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-3:",
+      "localizedEmoji": ":wave::skin-tone-3:",
+      "flattened": ":wave::skin-tone-3:",
+      "userIds": [],
+      "label": "",
+      "finalLabel": "",
+      "inputUnchanged": true
+    },
+    {
+      "name": "composed-only-empty",
+      "shape": "only",
+      "overrideName": "empty",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": 3
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": 3
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {
+          "FTONETITLE1": {
+            "titleString": ""
+          }
+        },
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-3:",
+      "localizedEmoji": ":wave::skin-tone-3:",
+      "flattened": ":wave::skin-tone-3:",
+      "userIds": [],
+      "label": "",
+      "finalLabel": "",
+      "inputUnchanged": true
+    },
+    {
+      "name": "composed-only-text",
+      "shape": "only",
+      "overrideName": "text",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": 3
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": 3
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {
+          "FTONETITLE1": {
+            "titleString": "Independent title"
+          }
+        },
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-3:",
+      "localizedEmoji": ":wave::skin-tone-3:",
+      "flattened": ":wave::skin-tone-3:",
+      "userIds": [],
+      "label": "Independent title",
+      "finalLabel": "Independent title",
+      "inputUnchanged": true
+    },
+    {
+      "name": "composed-duplicate-nullish",
+      "shape": "duplicate",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": 3
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": 3
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": 3
+                  },
+                  {
+                    "type": "text",
+                    "text": " Plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-3:",
+      "localizedEmoji": ":wave::skin-tone-3:",
+      "flattened": ":wave::skin-tone-3::wave::skin-tone-3: Plan",
+      "userIds": [],
+      "label": ":wave::skin-tone-3: Plan",
+      "finalLabel": ":wave::skin-tone-3: Plan",
+      "inputUnchanged": true
+    },
+    {
+      "name": "composed-duplicate-empty",
+      "shape": "duplicate",
+      "overrideName": "empty",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": 3
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": 3
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": 3
+                  },
+                  {
+                    "type": "text",
+                    "text": " Plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {
+          "FTONETITLE1": {
+            "titleString": ""
+          }
+        },
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-3:",
+      "localizedEmoji": ":wave::skin-tone-3:",
+      "flattened": ":wave::skin-tone-3::wave::skin-tone-3: Plan",
+      "userIds": [],
+      "label": "",
+      "finalLabel": "",
+      "inputUnchanged": true
+    },
+    {
+      "name": "composed-duplicate-text",
+      "shape": "duplicate",
+      "overrideName": "text",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": 3
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": 3
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": 3
+                  },
+                  {
+                    "type": "text",
+                    "text": " Plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {
+          "FTONETITLE1": {
+            "titleString": "Independent title"
+          }
+        },
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-3:",
+      "localizedEmoji": ":wave::skin-tone-3:",
+      "flattened": ":wave::skin-tone-3::wave::skin-tone-3: Plan",
+      "userIds": [],
+      "label": "Independent title",
+      "finalLabel": "Independent title",
+      "inputUnchanged": true
+    },
+    {
+      "name": "composed-user-nullish",
+      "shape": "user",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": 3
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Review "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": 3
+                  },
+                  {
+                    "type": "text",
+                    "text": " "
+                  },
+                  {
+                    "type": "user",
+                    "user_id": "UTONETITLE1"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-3:",
+      "localizedEmoji": ":wave::skin-tone-3:",
+      "flattened": "Review :wave::skin-tone-3: @Dana",
+      "userIds": [
+        "UTONETITLE1"
+      ],
+      "label": "Review :wave::skin-tone-3: @Dana",
+      "finalLabel": "Review :wave::skin-tone-3: @Dana",
+      "inputUnchanged": true
+    },
+    {
+      "name": "composed-user-empty",
+      "shape": "user",
+      "overrideName": "empty",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": 3
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Review "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": 3
+                  },
+                  {
+                    "type": "text",
+                    "text": " "
+                  },
+                  {
+                    "type": "user",
+                    "user_id": "UTONETITLE1"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {
+          "FTONETITLE1": {
+            "titleString": ""
+          }
+        },
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-3:",
+      "localizedEmoji": ":wave::skin-tone-3:",
+      "flattened": "Review :wave::skin-tone-3: @Dana",
+      "userIds": [
+        "UTONETITLE1"
+      ],
+      "label": "Review :wave::skin-tone-3: @Dana",
+      "finalLabel": "Review :wave::skin-tone-3: @Dana",
+      "inputUnchanged": true
+    },
+    {
+      "name": "composed-user-text",
+      "shape": "user",
+      "overrideName": "text",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": 3
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Review "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": 3
+                  },
+                  {
+                    "type": "text",
+                    "text": " "
+                  },
+                  {
+                    "type": "user",
+                    "user_id": "UTONETITLE1"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {
+          "FTONETITLE1": {
+            "titleString": "Independent title"
+          }
+        },
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-3:",
+      "localizedEmoji": ":wave::skin-tone-3:",
+      "flattened": "Review :wave::skin-tone-3: @Dana",
+      "userIds": [
+        "UTONETITLE1"
+      ],
+      "label": "Review :wave::skin-tone-3: @Dana",
+      "finalLabel": "Review :wave::skin-tone-3: @Dana",
+      "inputUnchanged": true
+    },
+    {
+      "name": "boundary-camel-wins",
+      "shape": "embedded",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skinTone": 2,
+        "skin_tone": 6
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skinTone": 2,
+                    "skin_tone": 6
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-2:",
+      "localizedEmoji": ":wave::skin-tone-2:",
+      "flattened": "Project :wave::skin-tone-2: plan",
+      "userIds": [],
+      "label": "Project :wave::skin-tone-2: plan",
+      "finalLabel": "Project :wave::skin-tone-2: plan",
+      "inputUnchanged": true
+    },
+    {
+      "name": "boundary-camel-zero-falls-through",
+      "shape": "embedded",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skinTone": 0,
+        "skin_tone": 4
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skinTone": 0,
+                    "skin_tone": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-4:",
+      "localizedEmoji": ":wave::skin-tone-4:",
+      "flattened": "Project :wave::skin-tone-4: plan",
+      "userIds": [],
+      "label": "Project :wave::skin-tone-4: plan",
+      "finalLabel": "Project :wave::skin-tone-4: plan",
+      "inputUnchanged": true
+    },
+    {
+      "name": "boundary-absent",
+      "shape": "embedded",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        }
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave:",
+      "localizedEmoji": ":wave:",
+      "flattened": "Project :wave: plan",
+      "userIds": [],
+      "label": "Project :wave: plan",
+      "finalLabel": "Project :wave: plan",
+      "inputUnchanged": true
+    },
+    {
+      "name": "boundary-null",
+      "shape": "embedded",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": null
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": null
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave:",
+      "localizedEmoji": ":wave:",
+      "flattened": "Project :wave: plan",
+      "userIds": [],
+      "label": "Project :wave: plan",
+      "finalLabel": "Project :wave: plan",
+      "inputUnchanged": true
+    },
+    {
+      "name": "boundary-false",
+      "shape": "embedded",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": false
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": false
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave:",
+      "localizedEmoji": ":wave:",
+      "flattened": "Project :wave: plan",
+      "userIds": [],
+      "label": "Project :wave: plan",
+      "finalLabel": "Project :wave: plan",
+      "inputUnchanged": true
+    },
+    {
+      "name": "boundary-zero",
+      "shape": "embedded",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": 0
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": 0
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave:",
+      "localizedEmoji": ":wave:",
+      "flattened": "Project :wave: plan",
+      "userIds": [],
+      "label": "Project :wave: plan",
+      "finalLabel": "Project :wave: plan",
+      "inputUnchanged": true
+    },
+    {
+      "name": "boundary-empty",
+      "shape": "embedded",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": ""
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": ""
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave:",
+      "localizedEmoji": ":wave:",
+      "flattened": "Project :wave: plan",
+      "userIds": [],
+      "label": "Project :wave: plan",
+      "finalLabel": "Project :wave: plan",
+      "inputUnchanged": true
+    },
+    {
+      "name": "boundary-string-three",
+      "shape": "embedded",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": "3"
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": "3"
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-3:",
+      "localizedEmoji": ":wave::skin-tone-3:",
+      "flattened": "Project :wave::skin-tone-3: plan",
+      "userIds": [],
+      "label": "Project :wave::skin-tone-3: plan",
+      "finalLabel": "Project :wave::skin-tone-3: plan",
+      "inputUnchanged": true
+    },
+    {
+      "name": "boundary-negative",
+      "shape": "embedded",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": -1
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": -1
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone--1:",
+      "localizedEmoji": ":wave::skin-tone--1:",
+      "flattened": "Project :wave::skin-tone--1: plan",
+      "userIds": [],
+      "label": "Project :wave::skin-tone--1: plan",
+      "finalLabel": "Project :wave::skin-tone--1: plan",
+      "inputUnchanged": true
+    },
+    {
+      "name": "boundary-one",
+      "shape": "embedded",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": 1
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": 1
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-1:",
+      "localizedEmoji": ":wave::skin-tone-1:",
+      "flattened": "Project :wave::skin-tone-1: plan",
+      "userIds": [],
+      "label": "Project :wave::skin-tone-1: plan",
+      "finalLabel": "Project :wave::skin-tone-1: plan",
+      "inputUnchanged": true
+    },
+    {
+      "name": "boundary-seven",
+      "shape": "embedded",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": 7
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": 7
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-7:",
+      "localizedEmoji": ":wave::skin-tone-7:",
+      "flattened": "Project :wave::skin-tone-7: plan",
+      "userIds": [],
+      "label": "Project :wave::skin-tone-7: plan",
+      "finalLabel": "Project :wave::skin-tone-7: plan",
+      "inputUnchanged": true
+    },
+    {
+      "name": "boundary-fraction",
+      "shape": "embedded",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": 2.5
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": 2.5
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-2.5:",
+      "localizedEmoji": ":wave::skin-tone-2.5:",
+      "flattened": "Project :wave::skin-tone-2.5: plan",
+      "userIds": [],
+      "label": "Project :wave::skin-tone-2.5: plan",
+      "finalLabel": "Project :wave::skin-tone-2.5: plan",
+      "inputUnchanged": true
+    },
+    {
+      "name": "boundary-boolean",
+      "shape": "embedded",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": true
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": true
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-true:",
+      "localizedEmoji": ":wave::skin-tone-true:",
+      "flattened": "Project :wave::skin-tone-true: plan",
+      "userIds": [],
+      "label": "Project :wave::skin-tone-true: plan",
+      "finalLabel": "Project :wave::skin-tone-true: plan",
+      "inputUnchanged": true
+    },
+    {
+      "name": "boundary-array",
+      "shape": "embedded",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": [
+          3
+        ]
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": [
+                      3
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-3:",
+      "localizedEmoji": ":wave::skin-tone-3:",
+      "flattened": "Project :wave::skin-tone-3: plan",
+      "userIds": [],
+      "label": "Project :wave::skin-tone-3: plan",
+      "finalLabel": "Project :wave::skin-tone-3: plan",
+      "inputUnchanged": true
+    },
+    {
+      "name": "boundary-object",
+      "shape": "embedded",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": {}
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": {}
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-[object Object]:",
+      "localizedEmoji": ":wave::skin-tone-[object Object]:",
+      "flattened": "Project :wave::skin-tone-[object Object]: plan",
+      "userIds": [],
+      "label": "Project :wave::skin-tone-[object Object]: plan",
+      "finalLabel": "Project :wave::skin-tone-[object Object]: plan",
+      "inputUnchanged": true
+    },
+    {
+      "name": "boundary-thumbsup-oracle",
+      "shape": "embedded",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "thumbsup",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": 3
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "thumbsup",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": 3
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":thumbsup::skin-tone-3:",
+      "localizedEmoji": ":thumbsup::skin-tone-3:",
+      "flattened": "Project :thumbsup::skin-tone-3: plan",
+      "userIds": [],
+      "label": "Project :thumbsup::skin-tone-3: plan",
+      "finalLabel": "Project :thumbsup::skin-tone-3: plan",
+      "inputUnchanged": true
+    },
+    {
+      "name": "boundary-unicode-falsey-null",
+      "shape": "embedded",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": 3,
+        "unicode": null
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": 3,
+                    "unicode": null
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-3:",
+      "localizedEmoji": ":wave::skin-tone-3:",
+      "flattened": "Project :wave::skin-tone-3: plan",
+      "userIds": [],
+      "label": "Project :wave::skin-tone-3: plan",
+      "finalLabel": "Project :wave::skin-tone-3: plan",
+      "inputUnchanged": true
+    },
+    {
+      "name": "boundary-unicode-falsey-empty",
+      "shape": "embedded",
+      "overrideName": "nullish",
+      "token": {
+        "type": "emoji",
+        "name": "wave",
+        "style": {
+          "bold": true
+        },
+        "opaque": {
+          "keep": 1
+        },
+        "skin_tone": 3,
+        "unicode": ""
+      },
+      "file": {
+        "id": "FTONETITLE1",
+        "mode": "quip",
+        "title": "MISLEADING FALLBACK",
+        "title_blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "kept-block",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "Project "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "wave",
+                    "style": {
+                      "bold": true
+                    },
+                    "opaque": {
+                      "keep": 1
+                    },
+                    "skin_tone": 3,
+                    "unicode": ""
+                  },
+                  {
+                    "type": "text",
+                    "text": " plan"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "state": {
+        "quipTitle": {},
+        "members": {
+          "UTONETITLE1": {
+            "id": "UTONETITLE1",
+            "profile": {
+              "display_name": "Dana"
+            }
+          }
+        },
+        "hiddenUsers": {},
+        "enterprisePrefs": {
+          "locked_prefs": {
+            "hide_person_opt_out": false
+          }
+        }
+      },
+      "renderedEmoji": ":wave::skin-tone-3:",
+      "localizedEmoji": ":wave::skin-tone-3:",
+      "flattened": "Project :wave::skin-tone-3: plan",
+      "userIds": [],
+      "label": "Project :wave::skin-tone-3: plan",
+      "finalLabel": "Project :wave::skin-tone-3: plan",
+      "inputUnchanged": true
+    }
+  ],
+  "host": {
+    "locale": "en-US adapter",
+    "translationMaps": "Original HSTN empty maps; none installed",
+    "member": "Explicit Dana row",
+    "file": "Synthetic current known normal Canvas",
+    "quip": "Original selector explicit nullish/empty/text inputs",
+    "dependencies": "Inherited existing title host adapters, unexercised semantic imports throw"
+  },
+  "limits": [
+    "Offline extracted original factory execution, not full Slack React mount or HTTP.",
+    "No truthy Unicode resolution, custom catalog or alias ownership, installed locale map, native editor/Save or live source lifetime proved.",
+    "Malformed method inputs expose coercion only; they do not establish admissible public parser grammar."
+  ]
+}

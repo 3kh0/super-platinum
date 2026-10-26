@@ -607,9 +607,15 @@ fn apply_in_view_with_groups(
         return;
     }
     if let RtEvent::Unknown(raw) = &event
-        && let Some(id) = super_platinum_core::file_actions::deleted_event(raw)
+        && raw.kind == "file_deleted"
     {
-        core.remove_file(team, id);
+        if let Ok(raw) = serde_json::to_value(raw)
+            && let Ok(deletion) = super_platinum_core::file_actions::FileDeletionEvent::decode(&raw)
+        {
+            for id in deletion.ids() {
+                core.remove_file(team, id);
+            }
+        }
         return;
     }
     if core.active_team.as_deref() == Some(team)

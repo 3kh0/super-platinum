@@ -33,6 +33,21 @@
 .app-modal-field input:focus-visible, .app-modal-field textarea:focus-visible,
 .app-modal-field select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .app-modal-field [aria-invalid="true"] { border-color: var(--danger); }
+/* Email keeps the source envelope affordance with the shared rounded icon. */
+.home-email-control { position: relative; display: block; min-width: 0; }
+.home-email-control .home-email-icon { position: absolute; left: var(--space-3); top: 50%; width: 18px; height: 18px; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.app-modal-field .home-email-control input[type="email"] { padding-left: calc(var(--space-3) + 18px + var(--space-2)); }
+/* Home Time keeps an editable draft and an independently selected wall time. */
+.home-time-control { position: relative; display: block; min-width: 0; }
+.home-time-selected { position: absolute; inset: 0; padding: 9px 13px; color: var(--text); pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.home-time-control .home-time-masked { color: transparent !important; }
+.home-time-control .home-time-masked::placeholder { color: transparent; }
+.home-time-options { position: absolute; box-sizing: border-box; top: calc(100% + 4px); left: 0; right: 0; z-index: 40; max-height: 240px; overflow: auto; overscroll-behavior: contain; padding: var(--space-1); background: var(--surface-raised); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-popover); }
+.home-time-options.above { top: auto; bottom: calc(100% + 4px); }
+.home-time-options[hidden], .home-time-selected[hidden] { display: none; }
+.home-time-option { display: block; width: 100%; min-height: var(--control-height); padding: var(--space-2) var(--space-3); text-align: left; color: var(--text); background: transparent; border: 0; border-radius: var(--radius-sm); font: inherit; white-space: nowrap; }
+.home-time-option:hover, .home-time-option.active { background: var(--hover-overlay); }
+.home-time-option[aria-selected="true"] { font-weight: 600; }
 .app-modal-options { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; min-width: 0; }
 .app-modal-option { display: flex; align-items: flex-start; gap: 8px; line-height: 1.5; cursor: pointer; }
 .app-modal-option input { flex: 0 0 auto; margin-top: 4px; accent-color: var(--accent); }
@@ -116,3 +131,40 @@
 .app-home-workflow .app-modal-body button:hover:not(:disabled) { background: var(--surface-raised); }
 .app-home-workflow footer { flex-wrap: wrap; justify-content: flex-end; }
 .app-home-workflow footer .primary { min-width: 128px; }
+
+/* One epoch owner with date and editable time leaves. Both shrink inside Home. */
+.home-datetime-control { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-2); min-width: 0; }
+.home-datetime-date { display: block; min-width: 0; }
+.home-datetime-date input, .home-datetime-control .home-time-control { width: 100%; min-width: 0; }
+.home-datetime-zone { grid-column: 1 / -1; margin: 0; }
+
+/* One editable Date field with its native calendar affordance. The chooser is
+   an actual separately attested input; its text is clipped, never a proxy. */
+.home-date-control { position: relative; display: block; min-width: 0; }
+.home-date-control .home-date-icon { position: absolute; right: var(--space-3); top: 50%; width: 18px; height: 18px; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.app-modal-field .home-date-control input[type="text"] { padding-right: calc(var(--space-3) + 18px + var(--space-2)); }
+.app-modal-field .home-date-control input.home-date-picker { position: absolute; right: 4px; top: 2px; width: 32px; height: calc(100% - 4px); min-height: 0; padding: 0; opacity: 0; cursor: pointer; }
+.home-date-control:has(.home-date-picker:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-md); }
+/* Ordinary Date owns an app calendar; Datetime retains its separate chooser. */
+.app-modal-field .home-date-control:has(> .home-date-popup-trigger) input.home-date-picker { pointer-events: none; }
+.home-date-popup-trigger { position: absolute; right: 4px; top: 2px; width: 32px; height: calc(100% - 4px); padding: 0; border: 0; background: transparent; color: var(--muted); z-index: 1; }
+.home-date-popup-trigger .home-date-icon { position: static; transform: none; width: 18px; height: 18px; }
+.home-date-popup-trigger:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: var(--radius-sm); }
+.home-date-popup { position: fixed; z-index: 40; box-sizing: border-box; overflow: auto; overscroll-behavior: contain; padding: var(--space-2); background: var(--surface-raised); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-popover); color: var(--text); }
+.home-date-popup[hidden] { display: none; }
+.home-date-popup-header { display: grid; grid-template-columns: 28px 28px minmax(0, 1fr) 28px 28px; align-items: center; gap: 2px; }
+.home-date-popup-header > span { text-align: center; font-size: var(--text-sm); font-weight: 600; overflow-wrap: anywhere; }
+.home-date-popup button { font: inherit; color: var(--text); background: transparent; border: 0; border-radius: var(--radius-sm); cursor: pointer; }
+.home-date-popup-navigation { height: var(--control-height); display: flex; align-items: center; justify-content: center; padding: 0; }
+.home-date-popup-navigation .icon { width: 16px; height: 16px; flex: 0 1 16px; }
+.home-date-popup-navigation.previous .icon { transform: rotate(180deg); }
+.home-date-popup-grid { margin-top: var(--space-1); }
+.home-date-popup-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.home-date-popup-week [role="columnheader"] { text-align: center; font-size: var(--text-xs); color: var(--muted); line-height: 24px; }
+.home-date-popup-week [role="gridcell"] { min-height: 32px; }
+.home-date-popup-day { display: block; width: 100%; height: 32px; padding: 0; font-size: var(--text-sm); font-variant-numeric: tabular-nums; }
+.home-date-popup [aria-selected="true"] > button { background: var(--hover-overlay); font-weight: 600; }
+.home-date-popup [aria-current="date"] > button { text-decoration: underline; text-underline-offset: 3px; }
+.home-date-popup button:hover { background: var(--hover-overlay); }
+.home-date-popup button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.home-date-popup-clear { margin-top: var(--space-2); min-height: var(--control-height); width: 100%; padding: var(--space-1) var(--space-2); text-align: left; }

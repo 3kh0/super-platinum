@@ -1,0 +1,68 @@
+{
+  "name": "nested-id-strip-before-preview",
+  "input": {
+    "type": "rich_text",
+    "block_id": "section-block",
+    "elements": [
+      {
+        "type": "rich_text_section",
+        "elements": [
+          {
+            "type": "canvas",
+            "file_id": "FSTATUS0001",
+            "section_id": "nested",
+            "url": "https://example.test/canvas/FSTATUS0001",
+            "style": {
+              "bold": true,
+              "italic": true
+            },
+            "opaque": {
+              "keep": 9
+            }
+          },
+          {
+            "type": "text",
+            "text": " tail"
+          }
+        ]
+      },
+      {
+        "type": "rich_text_section",
+        "elements": [
+          {
+            "type": "text",
+            "text": "discarded second block section"
+          }
+        ]
+      }
+    ]
+  },
+  "output": {
+    "type": "rich_text",
+    "block_id": "section-block",
+    "elements": [
+      {
+        "type": "rich_text_section",
+        "elements": [
+          {
+            "type": "canvas",
+            "file_id": "FSTATUS0001",
+            "url": "https://example.test/canvas/FSTATUS0001",
+            "style": {
+              "bold": true,
+              "italic": true
+            },
+            "opaque": {
+              "keep": 9
+            }
+          },
+          {
+            "type": "text",
+            "text": " tail"
+          }
+        ]
+      }
+    ]
+  },
+  "inputUnchanged": true
+}

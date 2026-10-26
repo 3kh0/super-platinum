@@ -29,7 +29,7 @@ pub(super) fn submit(
     let Some(now) = checklist::save::now_usec() else {
         return;
     };
-    let (attempt, intent) = match checklist::replacement_ops::begin_replacement(
+    let job = match checklist::replacement_ops::preparation::begin(
         &mut state.write(),
         captured.0,
         captured.1,
@@ -48,8 +48,55 @@ pub(super) fn submit(
             return;
         }
     };
+    let attempt = job.attempt().clone();
     if let Some(d) = draft.write().as_mut() {
         d.pending = Some(attempt.clone());
+    }
+    dioxus::core::spawn_forever(async move {
+        let result = tokio::task::spawn_blocking(move || job.run()).await;
+        let draft_current = draft.try_read().ok().is_some_and(|d| {
+            d.as_ref().is_some_and(|d| {
+                d.generation == generation
+                    && d.pending
+                        .as_ref()
+                        .is_some_and(|p| p.serial == attempt.serial)
+            })
+        });
+        if !draft_current {
+            checklist::cancel_preflight(&mut state.write(), &attempt);
+            return;
+        }
+        let result = match result {
+            Ok(Ok(ready)) => ready.publish(&mut state.write()),
+            Ok(Err(reason)) => Err(reason),
+            Err(_) => Err("Could not prepare the replacement. Cancel and refresh."),
+        };
+        let (attempt, intent) = match result {
+            Ok(value) => value,
+            Err(reason) => {
+                reject(state, draft, generation, &attempt, reason);
+                return;
+            }
+        };
+        if let Some(d) = draft.write().as_mut() {
+            d.pending = Some(attempt.clone());
+        }
+        dispatch_prepared_intent(state, reader, draft, generation, attempt, intent);
+    });
+}
+fn dispatch_prepared_intent(
+    mut state: Signal<ShellState>,
+    reader: Signal<Reader>,
+    mut draft: Signal<Option<Draft>>,
+    generation: u64,
+    attempt: checklist::Attempt,
+    intent: super_platinum_core::canvas::edit::structure::ReplacementIntent,
+) {
+    if super::owner_delete_fixture::last_live_replacement::requested() {
+        super::owner_delete_fixture::last_live_replacement::dispatch(
+            state, draft, generation, attempt, intent,
+        );
+        return;
     }
     if super::replacement_fixture::enabled(&state.peek()) {
         super::replacement_fixture::dispatch(state, draft, generation, attempt, intent);
@@ -96,16 +143,38 @@ pub(super) fn submit(
                 return;
             }
         };
-        let prepared = if checklist::dispatchable(&state.peek(), &attempt) {
-            checklist::save::now_usec()
-                .map(|now| intent.prepare(&fresh, now))
-                .transpose()
-        } else {
-            Ok(None)
+        if !checklist::dispatchable(&state.peek(), &attempt) {
+            reject(
+                state,
+                draft,
+                generation,
+                &attempt,
+                "This canvas view changed before the edit was sent.",
+            );
+            return;
+        }
+        let source = attempt.snapshot.clone();
+        let Some(now) = checklist::save::now_usec() else {
+            reject(
+                state,
+                draft,
+                generation,
+                &attempt,
+                "Could not check the edit time. Cancel and refresh.",
+            );
+            return;
         };
-        let prepared = match prepared {
-            Ok(Some(prepared)) => prepared,
-            Err(super_platinum_core::canvas::edit::Error::Unchanged) => {
+        let prepared = tokio::task::spawn_blocking(move || {
+            let fresh = super_platinum_core::canvas::edit::structure::carry_replacement_provenance(
+                &source, &fresh,
+            )?;
+            let prepared = intent.prepare(&fresh, now)?;
+            Ok::<_, super_platinum_core::canvas::edit::Error>((fresh, prepared))
+        })
+        .await;
+        let (fresh, prepared) = match prepared {
+            Ok(Ok(value)) if checklist::dispatchable(&state.peek(), &attempt) => value,
+            Ok(Err(super_platinum_core::canvas::edit::Error::Unchanged)) => {
                 cancel(state, draft, generation);
                 return;
             }
@@ -120,8 +189,8 @@ pub(super) fn submit(
                 return;
             }
         };
-        let ticket =
-            match checklist::recovery::reserve_replacement(state, &attempt, &prepared).await {
+        let (prepared, ticket) =
+            match checklist::recovery::reserve_replacement(state, &attempt, prepared).await {
                 Ok(ticket) => ticket,
                 Err(reason) => {
                     reject(state, draft, generation, &attempt, reason);

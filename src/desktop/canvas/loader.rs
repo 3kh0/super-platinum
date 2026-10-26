@@ -147,6 +147,12 @@ pub(super) async fn read_pair(
             "Canvas state could not refresh. Try again or open it in Slack."
         }
     });
+    let canonical = match canonical {
+        Ok(fresh) => {
+            checklist::replacement_ops::readback::carry_for_read(state, &read, fresh).await
+        }
+        Err(error) => Err(error),
+    };
     let export = export.map_err(|error| {
         if error.is_offline() {
             "Reconnect to load this canvas. Your current view is still here."

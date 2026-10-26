@@ -12,6 +12,8 @@ use super_platinum_core::slack::{
     api::custom::texty::{file_title_source as source, files},
 };
 mod observation;
+pub(crate) mod reference;
+pub(crate) mod sections;
 mod singleton;
 #[cfg(test)]
 mod tests;
@@ -53,6 +55,7 @@ pub(in crate::profile_edit::sections) struct State {
 struct Slot {
     identity: Arc<()>,
     store: source::Store,
+    section_titles: super_platinum_core::canvas::section_titles::Store,
     stamps: BTreeMap<String, Stamp>,
     invalidated: BTreeSet<String>,
     revision: u64,

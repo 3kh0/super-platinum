@@ -102,6 +102,35 @@ impl RichTextContext {
             },
         )
     }
+    /// Explicit section-label custody. Unlike `file`, this admits a nonempty
+    /// Canvas section identity. Authoritative label units remain in the slug
+    /// identity; a lossy UTF-8 copy is used ONLY by the existing length reducer.
+    /// Each unpaired surrogate consumes one UTF-16 unit before and after that
+    /// internal conversion. The renderer/catalog must compare exact units.
+    pub fn canvas_section(&mut self, token: &Value, label_units: &[u16]) -> Result<(), Error> {
+        if token["type"] != "canvas"
+            || token["file_id"].as_str().is_none_or(str::is_empty)
+            || token["section_id"].as_str().is_none_or(str::is_empty)
+            || !absent_or_falsey(token.get("is_skill_invocation"))
+            || token.get("style").is_some_and(|style| !style.is_object())
+            || label_units.len() > super::MAX_BYTES / 2
+        {
+            return Err(invalid("This canvas section is unavailable."));
+        }
+        let label = String::from_utf16_lossy(label_units);
+        let mut slug = serde_json::json!({"type":"canvas","id":token["file_id"],
+            "secondaryObjectId":token["section_id"],"labelUtf16":label_units});
+        if let Some(url) = token.get("url") {
+            slug["url"] = url.clone();
+        }
+        self.push(
+            token,
+            label,
+            Kind::Slug {
+                identity: slug.to_string(),
+            },
+        )
+    }
     fn push(&mut self, token: &Value, label: String, kind: Kind) -> Result<(), Error> {
         let mut budget = (super::MAX_NODES, super::MAX_BYTES);
         super::bounded(token, 0, &mut budget)?;

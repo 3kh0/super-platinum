@@ -169,11 +169,36 @@ pub(crate) fn prepare(
         return None;
     }
     let scope = Scope::capture(&shell.core, team, generation)?;
-    let deleted_id = match event {
-        RtEvent::Unknown(raw) => policy::deleted_event(raw),
-        _ => None,
-    };
-    let id = deleted_id.or_else(|| changed_id(event))?;
+    if let RtEvent::Unknown(raw) = event
+        && raw.kind == "file_deleted"
+    {
+        let raw = serde_json::to_value(raw).ok()?;
+        let event = policy::FileDeletionEvent::decode(&raw).ok()?;
+        for id in event.ids() {
+            crate::file_preview::refresh::changed(shell, team, id);
+            crate::canvas::checklist::invalidate(shell, team, id);
+            let tracker = &mut shell.file_events;
+            if tracker.scope.as_ref().is_none_or(|(epoch, transport)| {
+                *epoch != scope.epoch
+                    || transport
+                        .upgrade()
+                        .is_none_or(|old| !Arc::ptr_eq(&old, &scope.transport))
+            }) {
+                tracker.latest_events.clear();
+                tracker.pending.clear();
+                tracker.scope = Some((scope.epoch, Arc::downgrade(&scope.transport)));
+            }
+            tracker.serial = tracker.serial.wrapping_add(1);
+            let key = (team.into(), id.clone());
+            tracker.latest_events.insert(key.clone(), tracker.serial);
+            tracker.pending.remove(&key);
+        }
+        crate::profile_edit::sections::rich::search::file_source::reference::deletion(
+            shell, team, generation, &event,
+        );
+        return None;
+    }
+    let id = changed_id(event)?;
     crate::file_preview::refresh::changed(shell, team, id);
     // Retire canonical/preflight reads before applying this validated event.
     crate::canvas::checklist::invalidate(shell, team, id);
@@ -194,10 +219,6 @@ pub(crate) fn prepare(
     let revision = tracker.serial;
     let key = (team.into(), id.into());
     tracker.latest_events.insert(key.clone(), revision);
-    if deleted_id.is_some() {
-        tracker.pending.remove(&key);
-        return None;
-    }
     if shell.core.workspaces.get(team)?.deleted_files.contains(id) {
         return None;
     }

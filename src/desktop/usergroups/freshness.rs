@@ -159,19 +159,39 @@ pub(crate) fn hit(
     owner: Arc<Context>,
     id: &str,
 ) -> Result<(), Error> {
+    hit_with(state, owner, id, |shell, owner, id| {
+        shell
+            .core
+            .workspaces
+            .get(&owner.session.team_id)
+            .and_then(|w| w.usergroups.get(id))
+            .is_some_and(|g| g.id == id && g.profile_label().is_some())
+    })
+}
+/// rLUS observes existing canonical rows even when their effective flags hide
+/// the handle. The sealed selector, not raw marker shape, owns this hit.
+pub(super) fn hit_observed(
+    state: Signal<ShellState>,
+    selected: Arc<super::unknown::Selection>,
+) -> Result<(), Error> {
+    let owner = selected.owner();
+    let id = selected.lookup().id().to_owned();
+    hit_with(state, owner, &id, |shell, _, _| {
+        selected.current(shell) && selected.lookup().is_source_hit()
+    })
+}
+fn hit_with(
+    mut state: Signal<ShellState>,
+    owner: Arc<Context>,
+    id: &str,
+    admitted: impl Fn(&ShellState, &Context, &str) -> bool,
+) -> Result<(), Error> {
     if !enabled() {
         return Ok(());
     }
     let wake = {
         let mut shell = state.write();
-        if !owner.current(&shell)
-            || !shell
-                .core
-                .workspaces
-                .get(&owner.session.team_id)
-                .and_then(|w| w.usergroups.get(id))
-                .is_some_and(|g| g.id == id && g.profile_label().is_some())
-        {
+        if !owner.current(&shell) || !admitted(&shell, &owner, id) {
             return Err(unavailable());
         }
         let observation = facts(&mut shell, &owner.session.team_id)?;

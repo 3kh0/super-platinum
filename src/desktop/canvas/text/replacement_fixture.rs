@@ -71,9 +71,13 @@ pub(super) fn dispatch(
             .canonical
             .clone()
             .unwrap();
-        let prepared = match intent.prepare(&fresh, checklist::save::now_usec().unwrap()) {
-            Ok(p) => p,
-            Err(_) => {
+        let prepared = match tokio::task::spawn_blocking(move || {
+            intent.prepare(&fresh, checklist::save::now_usec().unwrap())
+        })
+        .await
+        {
+            Ok(Ok(p)) => p,
+            _ => {
                 replacement_save::reject(
                     state,
                     draft,
@@ -84,8 +88,8 @@ pub(super) fn dispatch(
                 return;
             }
         };
-        let ticket =
-            match checklist::recovery::reserve_replacement(state, &attempt, &prepared).await {
+        let (prepared, ticket) =
+            match checklist::recovery::reserve_replacement(state, &attempt, prepared).await {
                 Ok(t) => t,
                 Err(reason) => {
                     replacement_save::reject(state, draft, generation, &attempt, reason);

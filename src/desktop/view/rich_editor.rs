@@ -46,6 +46,8 @@ pub(crate) fn RichEditor(
     label: String,
     #[props(default = "[]".into())] blocks: String,
     #[props(default = "{}".into())] labels: String,
+    #[props(default = "{}".into())] presentations: String,
+    #[props(default = "{}".into())] label_units: String,
     #[props(default)] disabled: bool,
     #[props(default = true)] allow_lists: bool,
     #[props(default)] allow_underline: bool,
@@ -60,13 +62,22 @@ pub(crate) fn RichEditor(
         div { class: "rich-editor",
             onmounted: move |_| {
                 let id = serde_json::to_string(id).unwrap();
-                dioxus::document::eval(&format!("{EDITOR}\nwindow.superPlatinumRichEditor.mount({id},{blocks},{labels},{autofocus},{generation},{allow_underline});"));
+                dioxus::document::eval(&format!("{EDITOR}\nwindow.superPlatinumRichEditor.mount({id},{blocks},{labels},{autofocus},{generation},{allow_underline},{presentations},{label_units});"));
             },
             label {id: "{label_id}", "{label}"}
             // The DOM editor clones this typed, local icon only for a Canvas
             // whose canonical title is empty. It contributes no title text.
             span { class: "rich-editor-canvas-icon", hidden: true,
                 {icon(Icon::Description, "rich-editor-canvas-symbol")}
+            }
+            span { class: "rich-editor-section-icon", hidden: true,
+                {icon(Icon::Description, "rich-editor-section-symbol")}
+            }
+            span { class: "rich-editor-private-icon", hidden: true,
+                {icon(Icon::Lock, "rich-editor-private-symbol")}
+            }
+            span { class: "rich-editor-deleted-icon", hidden: true,
+                {icon(Icon::Delete, "rich-editor-deleted-symbol")}
             }
             div {class: "format-toolbar", role: "toolbar", "aria-label": "Text formatting",
                 for (name, command, symbol) in [("Bold", "bold", Icon::FormatBold), ("Italic", "italic", Icon::FormatItalic), ("Underline", "underline", Icon::FormatUnderlined), ("Strikethrough", "strikeThrough", Icon::FormatStrike), ("Bulleted list", "insertUnorderedList", Icon::FormatListBulleted), ("Numbered list", "insertOrderedList", Icon::FormatListNumbered)].into_iter().filter(|(_, command, _)| (allow_lists || !matches!(*command, "insertUnorderedList" | "insertOrderedList")) && (allow_underline || *command != "underline")) {

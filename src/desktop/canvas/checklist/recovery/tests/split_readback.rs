@@ -13,7 +13,10 @@ fn setup_split_sequence() -> (Context, Ticket, Store) {
     let Begin::Started(receipt) = journal.begin(context.checkpoint.clone()).unwrap() else {
         panic!("duplicate isolated split sequence receipt")
     };
-    let ticket = Ticket { owner, receipt };
+    let ticket = Ticket {
+        owner,
+        receipt: Arc::new(receipt),
+    };
     context.shell.canvas_checklist.operations[0].durable = Some(ticket.clone());
     (context, ticket, store)
 }

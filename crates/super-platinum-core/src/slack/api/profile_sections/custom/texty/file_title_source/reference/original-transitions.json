@@ -1,0 +1,611 @@
+{
+  "ok": true,
+  "count": 3,
+  "cases": [
+    {
+      "name": "not-visible-filetype",
+      "errorData": {
+        "error": "not_visible",
+        "filetype": "quip",
+        "title": "SECRET ERROR TITLE"
+      },
+      "initial": {
+        "mapped": {
+          "id": "FSTATUS0001",
+          "mode": "quip",
+          "filetype": "quip",
+          "title": "Initial known",
+          "updated": 100,
+          "is_deleted": false
+        },
+        "row": {
+          "ims": [],
+          "groups": [],
+          "id": "FSTATUS0001",
+          "is_tombstoned": false,
+          "mode": "quip",
+          "filetype": "quip",
+          "title": "Initial known",
+          "updated": 100,
+          "is_deleted": false,
+          "actions": [],
+          "channels": [],
+          "is_starred": false,
+          "is_shared": false,
+          "comments_count": 0,
+          "isNonExistent": false,
+          "isUnknown": false,
+          "localUpdated": 1792800000000
+        },
+        "label": "Initial known"
+      },
+      "unavailable": {
+        "mapped": {
+          "id": "FSTATUS0001",
+          "mode": "quip",
+          "title": "SECRET ERROR TITLE",
+          "file_access": "not_visible"
+        },
+        "row": {
+          "id": "FSTATUS0001",
+          "mode": "quip",
+          "title": "SECRET ERROR TITLE",
+          "file_access": "not_visible"
+        },
+        "label": "Private canvas"
+      },
+      "ordinary": {
+        "mapped": {
+          "id": "FSTATUS0001",
+          "mode": "quip",
+          "filetype": "quip",
+          "title": "Recovered known",
+          "updated": 102,
+          "is_deleted": false
+        },
+        "row": {
+          "ims": [],
+          "groups": [],
+          "id": "FSTATUS0001",
+          "mode": "quip",
+          "title": "Recovered known",
+          "file_access": "not_visible",
+          "is_tombstoned": false,
+          "filetype": "quip",
+          "updated": 102,
+          "is_deleted": false,
+          "actions": [],
+          "channels": [],
+          "is_starred": false,
+          "is_shared": false,
+          "comments_count": 0,
+          "isNonExistent": false,
+          "isUnknown": false,
+          "localUpdated": 1792800000000
+        },
+        "label": "Private canvas"
+      },
+      "explicit": {
+        "mapped": {
+          "id": "FSTATUS0001",
+          "mode": "quip",
+          "filetype": "quip",
+          "title": "Explicit recovered",
+          "updated": 103,
+          "file_access": "visible",
+          "is_deleted": false
+        },
+        "row": {
+          "ims": [],
+          "groups": [],
+          "id": "FSTATUS0001",
+          "mode": "quip",
+          "title": "Explicit recovered",
+          "file_access": "visible",
+          "is_tombstoned": false,
+          "filetype": "quip",
+          "updated": 103,
+          "is_deleted": false,
+          "actions": [],
+          "channels": [],
+          "is_starred": false,
+          "is_shared": false,
+          "comments_count": 0,
+          "isNonExistent": false,
+          "isUnknown": false,
+          "localUpdated": 1792800000000
+        },
+        "label": "Explicit recovered"
+      },
+      "ledger": [
+        {
+          "request": {
+            "kind": "api",
+            "method": "files.info",
+            "args": {
+              "file": "FSTATUS0001",
+              "page": 1,
+              "count": 500,
+              "truncate": true,
+              "skip_shares": true
+            },
+            "reason": "bounded-status-reference"
+          },
+          "response": {
+            "envelope": {
+              "ok": true,
+              "file": {
+                "id": "FSTATUS0001",
+                "mode": "quip",
+                "filetype": "quip",
+                "title": "Initial known",
+                "updated": 100,
+                "is_deleted": true
+              }
+            }
+          }
+        },
+        {
+          "request": {
+            "kind": "api",
+            "method": "files.info",
+            "args": {
+              "file": "FSTATUS0001",
+              "page": 1,
+              "count": 500,
+              "truncate": true,
+              "skip_shares": true
+            },
+            "reason": "bounded-status-reference"
+          },
+          "response": {
+            "error": {
+              "error": "not_visible",
+              "filetype": "quip",
+              "title": "SECRET ERROR TITLE"
+            }
+          }
+        },
+        {
+          "request": {
+            "kind": "api",
+            "method": "files.info",
+            "args": {
+              "file": "FSTATUS0001",
+              "page": 1,
+              "count": 500,
+              "truncate": true,
+              "skip_shares": true
+            },
+            "reason": "bounded-status-reference"
+          },
+          "response": {
+            "envelope": {
+              "ok": true,
+              "file": {
+                "id": "FSTATUS0001",
+                "mode": "quip",
+                "filetype": "quip",
+                "title": "Recovered known",
+                "updated": 102
+              }
+            }
+          }
+        },
+        {
+          "request": {
+            "kind": "api",
+            "method": "files.info",
+            "args": {
+              "file": "FSTATUS0001",
+              "page": 1,
+              "count": 500,
+              "truncate": true,
+              "skip_shares": true
+            },
+            "reason": "bounded-status-reference"
+          },
+          "response": {
+            "envelope": {
+              "ok": true,
+              "file": {
+                "id": "FSTATUS0001",
+                "mode": "quip",
+                "filetype": "quip",
+                "title": "Explicit recovered",
+                "updated": 103,
+                "file_access": "visible"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "not-visible-no-filetype",
+      "errorData": {
+        "error": "not_visible",
+        "title": "SECRET ERROR TITLE"
+      },
+      "initial": {
+        "mapped": {
+          "id": "FSTATUS0001",
+          "mode": "quip",
+          "filetype": "quip",
+          "title": "Initial known",
+          "updated": 100,
+          "is_deleted": false
+        },
+        "row": {
+          "ims": [],
+          "groups": [],
+          "id": "FSTATUS0001",
+          "is_tombstoned": false,
+          "mode": "quip",
+          "filetype": "quip",
+          "title": "Initial known",
+          "updated": 100,
+          "is_deleted": false,
+          "actions": [],
+          "channels": [],
+          "is_starred": false,
+          "is_shared": false,
+          "comments_count": 0,
+          "isNonExistent": false,
+          "isUnknown": false,
+          "localUpdated": 1792800000000
+        },
+        "label": "Initial known"
+      },
+      "unavailable": {
+        "mapped": {
+          "id": "FSTATUS0001",
+          "title": "SECRET ERROR TITLE",
+          "file_access": "not_visible"
+        },
+        "row": {
+          "id": "FSTATUS0001",
+          "title": "SECRET ERROR TITLE",
+          "file_access": "not_visible"
+        },
+        "label": "Private canvas"
+      },
+      "ordinary": {
+        "mapped": {
+          "id": "FSTATUS0001",
+          "mode": "quip",
+          "filetype": "quip",
+          "title": "Recovered known",
+          "updated": 102,
+          "is_deleted": false
+        },
+        "row": {
+          "ims": [],
+          "groups": [],
+          "id": "FSTATUS0001",
+          "mode": "quip",
+          "title": "Recovered known",
+          "file_access": "not_visible",
+          "is_tombstoned": false,
+          "filetype": "quip",
+          "updated": 102,
+          "is_deleted": false,
+          "actions": [],
+          "channels": [],
+          "is_starred": false,
+          "is_shared": false,
+          "comments_count": 0,
+          "isNonExistent": false,
+          "isUnknown": false,
+          "localUpdated": 1792800000000
+        },
+        "label": "Private canvas"
+      },
+      "explicit": {
+        "mapped": {
+          "id": "FSTATUS0001",
+          "mode": "quip",
+          "filetype": "quip",
+          "title": "Explicit recovered",
+          "updated": 103,
+          "file_access": "visible",
+          "is_deleted": false
+        },
+        "row": {
+          "ims": [],
+          "groups": [],
+          "id": "FSTATUS0001",
+          "mode": "quip",
+          "title": "Explicit recovered",
+          "file_access": "visible",
+          "is_tombstoned": false,
+          "filetype": "quip",
+          "updated": 103,
+          "is_deleted": false,
+          "actions": [],
+          "channels": [],
+          "is_starred": false,
+          "is_shared": false,
+          "comments_count": 0,
+          "isNonExistent": false,
+          "isUnknown": false,
+          "localUpdated": 1792800000000
+        },
+        "label": "Explicit recovered"
+      },
+      "ledger": [
+        {
+          "request": {
+            "kind": "api",
+            "method": "files.info",
+            "args": {
+              "file": "FSTATUS0001",
+              "page": 1,
+              "count": 500,
+              "truncate": true,
+              "skip_shares": true
+            },
+            "reason": "bounded-status-reference"
+          },
+          "response": {
+            "envelope": {
+              "ok": true,
+              "file": {
+                "id": "FSTATUS0001",
+                "mode": "quip",
+                "filetype": "quip",
+                "title": "Initial known",
+                "updated": 100,
+                "is_deleted": true
+              }
+            }
+          }
+        },
+        {
+          "request": {
+            "kind": "api",
+            "method": "files.info",
+            "args": {
+              "file": "FSTATUS0001",
+              "page": 1,
+              "count": 500,
+              "truncate": true,
+              "skip_shares": true
+            },
+            "reason": "bounded-status-reference"
+          },
+          "response": {
+            "error": {
+              "error": "not_visible",
+              "title": "SECRET ERROR TITLE"
+            }
+          }
+        },
+        {
+          "request": {
+            "kind": "api",
+            "method": "files.info",
+            "args": {
+              "file": "FSTATUS0001",
+              "page": 1,
+              "count": 500,
+              "truncate": true,
+              "skip_shares": true
+            },
+            "reason": "bounded-status-reference"
+          },
+          "response": {
+            "envelope": {
+              "ok": true,
+              "file": {
+                "id": "FSTATUS0001",
+                "mode": "quip",
+                "filetype": "quip",
+                "title": "Recovered known",
+                "updated": 102
+              }
+            }
+          }
+        },
+        {
+          "request": {
+            "kind": "api",
+            "method": "files.info",
+            "args": {
+              "file": "FSTATUS0001",
+              "page": 1,
+              "count": 500,
+              "truncate": true,
+              "skip_shares": true
+            },
+            "reason": "bounded-status-reference"
+          },
+          "response": {
+            "envelope": {
+              "ok": true,
+              "file": {
+                "id": "FSTATUS0001",
+                "mode": "quip",
+                "filetype": "quip",
+                "title": "Explicit recovered",
+                "updated": 103,
+                "file_access": "visible"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "template-not-visible",
+      "errorData": {
+        "error": "template_not_visible"
+      },
+      "initial": {
+        "mapped": {
+          "id": "FSTATUS0001",
+          "mode": "quip",
+          "filetype": "quip",
+          "title": "Initial known",
+          "updated": 100,
+          "is_deleted": false
+        },
+        "row": {
+          "ims": [],
+          "groups": [],
+          "id": "FSTATUS0001",
+          "is_tombstoned": false,
+          "mode": "quip",
+          "filetype": "quip",
+          "title": "Initial known",
+          "updated": 100,
+          "is_deleted": false,
+          "actions": [],
+          "channels": [],
+          "is_starred": false,
+          "is_shared": false,
+          "comments_count": 0,
+          "isNonExistent": false,
+          "isUnknown": false,
+          "localUpdated": 1792800000000
+        },
+        "label": "Initial known"
+      },
+      "unavailable": {
+        "mapped": {
+          "id": "FSTATUS0001",
+          "filetype": "quip",
+          "mode": "template_not_visible"
+        },
+        "row": {
+          "id": "FSTATUS0001",
+          "filetype": "quip",
+          "mode": "template_not_visible"
+        },
+        "label": "Private canvas"
+      },
+      "ordinary": {
+        "mapped": {
+          "id": "FSTATUS0001",
+          "mode": "quip",
+          "filetype": "quip",
+          "title": "Recovered known",
+          "updated": 102,
+          "is_deleted": false
+        },
+        "row": {
+          "ims": [],
+          "groups": [],
+          "id": "FSTATUS0001",
+          "filetype": "quip",
+          "mode": "quip",
+          "is_tombstoned": false,
+          "title": "Recovered known",
+          "updated": 102,
+          "is_deleted": false,
+          "actions": [],
+          "channels": [],
+          "is_starred": false,
+          "is_shared": false,
+          "comments_count": 0,
+          "isNonExistent": false,
+          "isUnknown": false,
+          "localUpdated": 1792800000000
+        },
+        "label": "Recovered known"
+      },
+      "explicit": null,
+      "ledger": [
+        {
+          "request": {
+            "kind": "api",
+            "method": "files.info",
+            "args": {
+              "file": "FSTATUS0001",
+              "page": 1,
+              "count": 500,
+              "truncate": true,
+              "skip_shares": true
+            },
+            "reason": "bounded-status-reference"
+          },
+          "response": {
+            "envelope": {
+              "ok": true,
+              "file": {
+                "id": "FSTATUS0001",
+                "mode": "quip",
+                "filetype": "quip",
+                "title": "Initial known",
+                "updated": 100,
+                "is_deleted": true
+              }
+            }
+          }
+        },
+        {
+          "request": {
+            "kind": "api",
+            "method": "files.info",
+            "args": {
+              "file": "FSTATUS0001",
+              "page": 1,
+              "count": 500,
+              "truncate": true,
+              "skip_shares": true
+            },
+            "reason": "bounded-status-reference"
+          },
+          "response": {
+            "error": {
+              "error": "template_not_visible"
+            }
+          }
+        },
+        {
+          "request": {
+            "kind": "api",
+            "method": "files.info",
+            "args": {
+              "file": "FSTATUS0001",
+              "page": 1,
+              "count": 500,
+              "truncate": true,
+              "skip_shares": true
+            },
+            "reason": "bounded-status-reference"
+          },
+          "response": {
+            "envelope": {
+              "ok": true,
+              "file": {
+                "id": "FSTATUS0001",
+                "mode": "quip",
+                "filetype": "quip",
+                "title": "Recovered known",
+                "updated": 102
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "executed": [
+    "20Mt.PF response/error mapping",
+    "4OY3.b/processFile merge/early-return",
+    "Ltli.Lp",
+    "KhL1.V/label status chain"
+  ],
+  "adapters": [
+    "Synthetic promise success/error transport responses, no HTTP",
+    "Exact returned upsert rows assigned to synthetic state.files; original reducer not executed",
+    "Frozen Date.now for localUpdated",
+    "Thunk wrapper, mark-fresh ledger; no real cache/freshness runtime",
+    "Explicit file_access visible recovery is synthetic input accepted by actual predicate, not proof server emits it"
+  ],
+  "limits": [
+    "No mounted Profile editor or Save/server/realtime execution",
+    "Cannot assume absent field clears prior file_access; direct result demonstrates it does not"
+  ]
+}

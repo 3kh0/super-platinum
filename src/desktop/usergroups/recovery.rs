@@ -225,3 +225,30 @@ pub(crate) async fn recover(
     // reopens through the existing full-token capture after this publication.
     Ok(())
 }
+
+/// Shared selector acquisition reuses the guarded raw reader, but never borrows
+/// a Profile opening lease or publishes through the legacy typed fallback.
+pub(super) async fn acquire_unknown(
+    state: Signal<ShellState>,
+    owner: Arc<Context>,
+    ids: &[String],
+    current: impl Fn(&ShellState) -> bool,
+) -> Result<(Vec<Value>, usize), Error> {
+    if crate::fixture::is_fixture()
+        && !crate::profile_edit::sections::fixture::group_recovery::enabled()
+    {
+        return Err(unavailable());
+    }
+    let request = GroupRead::capture(&state.peek(), owner, ids).ok_or_else(unavailable)?;
+    let attempt = Attempt {
+        request,
+        ids: ids.to_vec(),
+        quiet: true,
+        progress: RefreshProgress::default(),
+    };
+    let received = read::acquire(state, &attempt, &current).await?;
+    if !attempt.current(&state.peek(), &current) {
+        return Err(unavailable());
+    }
+    Ok((received.ordered_rows, received.errors.len()))
+}

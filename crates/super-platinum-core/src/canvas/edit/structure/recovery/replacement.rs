@@ -24,6 +24,7 @@ impl Checkpoint {
             || deletion.scope != insertion.scope
             || deletion.thread != insertion.thread
             || deletion.document != insertion.document
+            || deletion.provenance != insertion.provenance
             || deletion.sections != insertion.sections
             || deletion.session != insertion.session
             || insertion.draft != TextDraft::default().rtml()?
@@ -61,7 +62,7 @@ impl Checkpoint {
         else {
             return Err(Error::Unsupported);
         };
-        if self.version != 2 || self.sections.len() != 2 || replacement == &self.target {
+        if self.version != 2 || replacement == &self.target {
             return Err(Error::Unsupported);
         }
         let sections = self
@@ -69,20 +70,10 @@ impl Checkpoint {
             .iter()
             .map(|b| Section::decode(b))
             .collect::<Result<Vec<_>, _>>()?;
-        let old = sections
-            .iter()
-            .find(|s| s.id() == self.target)
-            .ok_or(Error::Unsupported)?;
-        let title = sections
-            .iter()
-            .find(|s| s.id() != self.target)
-            .ok_or(Error::Unsupported)?;
-        if old.section_type()?.unwrap_or(0) != 0
-            || old.style()?.unwrap_or(0) != 0
-            || old.read_only()? == Some(true)
-            || old.attributes()?.is_some_and(|a| a.has(29))
-            || title.section_type()? != Some(64)
-            || title.style()? != Some(48)
+        let rows = sections.iter().collect::<Vec<_>>();
+        let old = super::super::replacement::eligibility::last_live(&rows)?;
+        if old.id() != self.target
+            || sections.iter().any(|s| s.id() == replacement)
             || text::canonical_draft(old)?.rtml()? != self.draft
         {
             return Err(Error::Unsupported);
@@ -101,9 +92,14 @@ impl Checkpoint {
             }
         }
         let old_position = old.raw().string(8)?.ok_or(Error::Unsupported)?;
-        if title.raw().string(8)?.ok_or(Error::Unsupported)? >= old_position
-            || position::between(Some(old_position), None)? != *inserted_position
-        {
+        let successor = sections
+            .iter()
+            .map(|row| row.raw().string(8)?.ok_or(Error::Unsupported))
+            .collect::<Result<Vec<_>, Error>>()?
+            .into_iter()
+            .filter(|pos| *pos > old_position)
+            .min();
+        if position::between(Some(old_position), successor)? != *inserted_position {
             return Err(Error::Unsupported);
         }
         let data = RawMessage::decode(&self.request)?;

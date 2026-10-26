@@ -5,6 +5,7 @@ use scraper::{ElementRef, Html, Node, Selector};
 pub mod comments;
 pub mod creation;
 pub mod edit;
+pub mod section_titles;
 pub mod titles;
 pub mod wire;
 

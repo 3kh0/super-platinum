@@ -7,6 +7,8 @@ use super_platinum_core::{
     state::Workspace,
 };
 mod discovery;
+pub(crate) use discovery::aggregate;
+pub(crate) use discovery::{decode_channels, decode_users, prepare_channels, prepare_users};
 pub(crate) use discovery::{mpim as decode_mpim, normalize_mpim_query};
 mod policy;
 use discovery::fetch;

@@ -99,10 +99,7 @@ impl Prepared {
                 CanonicalItem {
                     intent: intent.map(Arc::new),
                     annotation,
-                    replacement: level.is_none()
-                        && super_platinum_core::canvas::edit::structure::can_replace_main_canvas(
-                            snapshot, id, now,
-                        ),
+                    replacement: structure.as_ref().is_some_and(|a| a.replace_main_canvas),
                     structure,
                     blocks,
                 },

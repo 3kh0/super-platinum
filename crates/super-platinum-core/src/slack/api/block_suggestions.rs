@@ -9,6 +9,7 @@ use crate::block_actions::{
 use crate::config::WorkspaceSession;
 use crate::slack::models::Message;
 use serde_json::{Value, json};
+mod home;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct SuggestionsContext {

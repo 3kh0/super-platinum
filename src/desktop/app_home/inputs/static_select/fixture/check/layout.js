@@ -1,0 +1,17 @@
+const home=document.getElementById('app-home')||document.querySelector('.app-home');
+if(!home)return{ok:false};
+const current=x.authority?.homeCurrent===true;
+if(current){
+ if(home.dataset.visit!==String(x.authority.homeVisit)||home.dataset.revision!==String(x.authority.homeRevision))return{ok:false};
+ for(const f of x.domFields){const n=document.getElementById(f.id);if(!n||!home.contains(n)||n.value!==f.value||n.disabled!==f.disabled)return{ok:false};const error=n.closest('.app-modal-field')?.querySelector(':scope > .app-modal-error')?.textContent||null;if(error!==(f.error||null))return{ok:false};}
+ for(const m of x.mounts){const e=window.__spHomeStatic?.entries.get(m.mount);if(!e||e.closed||!e.host.isConnected||e.node.parentNode!==e.host||e.seq!==m.seq||e.acked!==m.seq||e.lease)return{ok:false};const f=x.domFields.find(f=>f.block===m.block);if(e.node.value!==f?.value)return{ok:false};}
+ const hosts=[...home.querySelectorAll('[data-home-native-mount]')];if(hosts.length!==1)return{ok:false};
+ for(const h of hosts){const e=[...(window.__spHomeCalendarNative?.entries.values()||[])].find(e=>e.host===h);if(!e||e.pending||e.lease||e.closed||e.acked!==e.seq||e.node.value!==e.ackedValue)return{ok:false};}
+}else if(home.hasAttribute('data-visit')||home.hasAttribute('data-revision'))return{ok:false};
+const items=current?[...x.domFields.map(f=>({key:'field-'+f.block,node:document.getElementById(f.id).closest('.app-modal-field')})),...[...home.querySelectorAll('[data-home-static-status]')].map(n=>({key:'status-'+n.dataset.homeStaticStatus,node:n}))]:[{key:'empty',node:home.querySelector('button')}];
+const measure=n=>{if(!n)return{visible:false};const r=n.getBoundingClientRect(),s=getComputedStyle(n);let visible=r.width>0&&r.height>0&&r.left>=0&&r.top>=0&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1&&s.visibility==='visible'&&s.display!=='none';for(let p=n.parentElement;p;p=p.parentElement){const q=p.getBoundingClientRect(),z=getComputedStyle(p);if(/auto|scroll|hidden|clip/.test(z.overflowY)&&(r.top<q.top-1||r.bottom>q.bottom+1))visible=false;if(/auto|scroll|hidden|clip/.test(z.overflowX)&&(r.left<q.left-1||r.right>q.right+1))visible=false;}const hit=visible&&[[r.left+r.width/2,r.top+r.height/2],[r.left+1,r.top+r.height/2],[r.right-1,r.top+r.height/2],[r.left+r.width/2,r.top+1],[r.left+r.width/2,r.bottom-1]].every(([x,y])=>{const h=document.elementFromPoint(x,y);return h===n||n.contains(h);});return{visible:visible&&hit,hit,rect:{x:r.x,y:r.y,width:r.width,height:r.height}};};
+const target=focus?items.find(i=>i.key===focus):items[0];if(!target)return{ok:false};target.node.scrollIntoView({block:'center'});
+const rows=items.map(i=>({key:i.key,text:i.node.textContent,geometry:measure(i.node)}));
+const inventory={fields:current?x.domFields.map(f=>{const n=document.getElementById(f.id);return{id:f.id,block:f.block,value:n.value,disabled:n.disabled,tag:n.tagName,ariaInvalid:n.getAttribute('aria-invalid'),error:f.error,options:n.tagName==='SELECT'?[...n.options].map(o=>({value:o.value,text:o.textContent,selected:o.selected,disabled:o.disabled,hidden:o.hidden})):null};}):[],statuses:[...home.querySelectorAll('[data-home-static-status]')].map(n=>({block:n.dataset.homeStaticStatus,text:n.textContent}))};
+const focusVisible=measure(target.node).visible;
+return{ok:focusVisible,viewport:{width:innerWidth,height:innerHeight},homeVisit:home.dataset.visit||null,homeRevision:home.dataset.revision||null,inventory,rows,focusKey:focus,focusVisible,requiredViews:focus?[]:rows.filter(r=>!r.geometry.visible).map(r=>r.key)};

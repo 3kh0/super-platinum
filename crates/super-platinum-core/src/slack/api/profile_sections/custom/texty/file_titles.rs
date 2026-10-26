@@ -12,6 +12,8 @@ mod dependencies;
 mod emoji;
 mod groups;
 mod link;
+mod reference;
+mod sections;
 mod users;
 pub use channels::{
     ChannelText, PrivateChannelText, known_ordinary_channel_label,
@@ -21,7 +23,12 @@ pub use dependencies::{
     TitleDependencies, dependencies_with_emoji_context, dependencies_with_groups,
 };
 pub use emoji::EmojiText;
-pub use groups::known_group_label;
+pub use groups::{GroupTitle, group_label_from_lookup, known_group_label};
+pub use reference::CanvasReferenceText;
+pub use sections::{
+    CanvasSectionLabel, CanvasSectionText, SectionVariant, section_dependencies, section_label,
+    section_label_with_resolver, section_leaf_label, section_preview_block,
+};
 pub use users::{member_label, user_ids, user_ids_with_emoji_context};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

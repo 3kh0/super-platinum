@@ -1,0 +1,1224 @@
+{
+  "ok": true,
+  "count": 8,
+  "vectors": [
+    {
+      "name": "known-deleted-full-recovery",
+      "initial": {
+        "id": "FSTATUS0001",
+        "mode": "quip",
+        "filetype": "quip",
+        "title": "Secret predecessor",
+        "updated": 104,
+        "opaque": {
+          "prior": true
+        }
+      },
+      "rawToken": {
+        "type": "canvas",
+        "file_id": "FSTATUS0001",
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "style": {
+          "bold": true,
+          "italic": true
+        },
+        "opaque": {
+          "keep": 2
+        }
+      },
+      "stages": [
+        {
+          "input": {
+            "error": {
+              "error": "file_deleted"
+            }
+          },
+          "mapped": {
+            "id": "FSTATUS0001",
+            "mode": "tombstone",
+            "is_deleted": true
+          },
+          "mappedOwnUndefinedKeys": [],
+          "error": null,
+          "row": {
+            "id": "FSTATUS0001",
+            "mode": "tombstone",
+            "is_deleted": true
+          },
+          "rowOwnUndefinedKeys": [],
+          "slug": {
+            "label": "Deleted canvas",
+            "labelResolverParams": {
+              "variant": "deleted",
+              "fileId": "FSTATUS0001",
+              "plainTextCanvasName": "Deleted canvas",
+              "plainTextSectionPreview": ""
+            },
+            "iconName": "trash",
+            "isDisabled": true,
+            "isLocked": false,
+            "isLoading": false
+          },
+          "delta": {
+            "url": "https://example.test/canvas/FSTATUS0001",
+            "id": "FSTATUS0001",
+            "label": "Deleted canvas",
+            "type": "canvas"
+          },
+          "calls": []
+        },
+        {
+          "input": {
+            "envelope": {
+              "ok": true,
+              "file": {
+                "id": "FSTATUS0001",
+                "mode": "quip",
+                "filetype": "quip",
+                "title": "Recovered canvas",
+                "updated": 104,
+                "is_deleted": true
+              }
+            }
+          },
+          "mapped": {
+            "id": "FSTATUS0001",
+            "mode": "quip",
+            "filetype": "quip",
+            "title": "Recovered canvas",
+            "updated": 104,
+            "is_deleted": false
+          },
+          "mappedOwnUndefinedKeys": [
+            "todos",
+            "comments",
+            "content",
+            "content_html",
+            "content_html_url",
+            "content_highlight_html",
+            "content_highlight_html_truncated",
+            "public_shared"
+          ],
+          "error": null,
+          "row": {
+            "ims": [],
+            "groups": [],
+            "id": "FSTATUS0001",
+            "mode": "quip",
+            "is_deleted": false,
+            "is_tombstoned": false,
+            "filetype": "quip",
+            "title": "Recovered canvas",
+            "updated": 104,
+            "actions": [],
+            "channels": [],
+            "is_starred": false,
+            "is_shared": false,
+            "comments_count": 0,
+            "isNonExistent": false,
+            "isUnknown": false,
+            "localUpdated": 1792800000000
+          },
+          "rowOwnUndefinedKeys": [
+            "comments",
+            "todos",
+            "content",
+            "content_html",
+            "content_html_url",
+            "content_highlight_html",
+            "content_highlight_html_truncated",
+            "public_shared",
+            "permalink",
+            "headers",
+            "transcription",
+            "ai_summary",
+            "ai_skill_category",
+            "is_locked",
+            "thumb_pdf",
+            "converted_pdf",
+            "hls",
+            "hls_embed",
+            "hls_preview",
+            "quip_thread_id",
+            "canvas_metadata"
+          ],
+          "slug": {
+            "label": "Recovered canvas",
+            "labelResolverParams": {
+              "variant": "normal",
+              "fileId": "FSTATUS0001",
+              "plainTextCanvasName": "Recovered canvas",
+              "plainTextSectionPreview": ""
+            },
+            "iconName": "canvas-content",
+            "isDisabled": false,
+            "isLocked": false,
+            "isLoading": false
+          },
+          "delta": {
+            "url": "https://example.test/canvas/FSTATUS0001",
+            "id": "FSTATUS0001",
+            "label": "Recovered canvas",
+            "type": "canvas"
+          },
+          "calls": [
+            {
+              "kind": "conditional-hit",
+              "team": "TDELETED",
+              "id": "FSTATUS0001"
+            },
+            {
+              "kind": "conditional-hit",
+              "team": "TDELETED",
+              "id": "FSTATUS0001"
+            },
+            {
+              "kind": "normal-title-text-adapter"
+            },
+            {
+              "kind": "conditional-hit",
+              "team": "TDELETED",
+              "id": "FSTATUS0001"
+            },
+            {
+              "kind": "conditional-hit",
+              "team": "TDELETED",
+              "id": "FSTATUS0001"
+            },
+            {
+              "kind": "normal-title-text-adapter"
+            }
+          ]
+        }
+      ],
+      "ledger": [
+        {
+          "request": {
+            "kind": "api",
+            "method": "files.info",
+            "args": {
+              "file": "FSTATUS0001",
+              "page": 1,
+              "count": 500,
+              "truncate": true,
+              "skip_shares": true
+            },
+            "reason": "bounded-deleted-reference"
+          },
+          "response": {
+            "error": {
+              "error": "file_deleted"
+            }
+          }
+        },
+        {
+          "request": {
+            "kind": "api",
+            "method": "files.info",
+            "args": {
+              "file": "FSTATUS0001",
+              "page": 1,
+              "count": 500,
+              "truncate": true,
+              "skip_shares": true
+            },
+            "reason": "bounded-deleted-reference"
+          },
+          "response": {
+            "envelope": {
+              "ok": true,
+              "file": {
+                "id": "FSTATUS0001",
+                "mode": "quip",
+                "filetype": "quip",
+                "title": "Recovered canvas",
+                "updated": 104,
+                "is_deleted": true
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "deleted-partial-retains-mode-then-full",
+      "initial": null,
+      "rawToken": {
+        "type": "canvas",
+        "file_id": "FSTATUS0001",
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "style": {
+          "bold": true,
+          "italic": true
+        },
+        "opaque": {
+          "keep": 2
+        }
+      },
+      "stages": [
+        {
+          "input": {
+            "error": {
+              "error": "file_deleted"
+            }
+          },
+          "mapped": {
+            "id": "FSTATUS0001",
+            "mode": "tombstone",
+            "is_deleted": true
+          },
+          "mappedOwnUndefinedKeys": [],
+          "error": null,
+          "row": {
+            "id": "FSTATUS0001",
+            "mode": "tombstone",
+            "is_deleted": true
+          },
+          "rowOwnUndefinedKeys": [],
+          "slug": {
+            "label": "Deleted canvas",
+            "labelResolverParams": {
+              "variant": "deleted",
+              "fileId": "FSTATUS0001",
+              "plainTextCanvasName": "Deleted canvas",
+              "plainTextSectionPreview": ""
+            },
+            "iconName": "trash",
+            "isDisabled": true,
+            "isLocked": false,
+            "isLoading": false
+          },
+          "delta": {
+            "url": "https://example.test/canvas/FSTATUS0001",
+            "id": "FSTATUS0001",
+            "label": "Deleted canvas",
+            "type": "canvas"
+          },
+          "calls": []
+        },
+        {
+          "input": {
+            "envelope": {
+              "ok": true,
+              "file": {
+                "id": "FSTATUS0001",
+                "updated": 103
+              }
+            }
+          },
+          "mapped": {
+            "id": "FSTATUS0001",
+            "updated": 103,
+            "is_deleted": false
+          },
+          "mappedOwnUndefinedKeys": [
+            "todos",
+            "comments",
+            "content",
+            "content_html",
+            "content_html_url",
+            "content_highlight_html",
+            "content_highlight_html_truncated",
+            "public_shared"
+          ],
+          "error": null,
+          "row": {
+            "ims": [],
+            "groups": [],
+            "id": "FSTATUS0001",
+            "mode": "tombstone",
+            "is_deleted": false,
+            "is_tombstoned": false,
+            "updated": 103,
+            "actions": [],
+            "channels": [],
+            "is_starred": false,
+            "is_shared": false,
+            "comments_count": 0,
+            "isNonExistent": false,
+            "isUnknown": false,
+            "localUpdated": 1792800000000
+          },
+          "rowOwnUndefinedKeys": [
+            "comments",
+            "todos",
+            "content",
+            "content_html",
+            "content_html_url",
+            "content_highlight_html",
+            "content_highlight_html_truncated",
+            "public_shared",
+            "permalink",
+            "headers",
+            "transcription",
+            "ai_summary",
+            "ai_skill_category",
+            "is_locked",
+            "thumb_pdf",
+            "converted_pdf",
+            "hls",
+            "hls_embed",
+            "hls_preview",
+            "canvas_metadata"
+          ],
+          "slug": {
+            "label": "Deleted canvas",
+            "labelResolverParams": {
+              "variant": "deleted",
+              "fileId": "FSTATUS0001",
+              "plainTextCanvasName": "Deleted canvas",
+              "plainTextSectionPreview": ""
+            },
+            "iconName": "trash",
+            "isDisabled": true,
+            "isLocked": false,
+            "isLoading": false
+          },
+          "delta": {
+            "url": "https://example.test/canvas/FSTATUS0001",
+            "id": "FSTATUS0001",
+            "label": "Deleted canvas",
+            "type": "canvas"
+          },
+          "calls": []
+        },
+        {
+          "input": {
+            "envelope": {
+              "ok": true,
+              "file": {
+                "id": "FSTATUS0001",
+                "mode": "quip",
+                "filetype": "quip",
+                "title": "Recovered canvas",
+                "updated": 104
+              }
+            }
+          },
+          "mapped": {
+            "id": "FSTATUS0001",
+            "mode": "quip",
+            "filetype": "quip",
+            "title": "Recovered canvas",
+            "updated": 104,
+            "is_deleted": false
+          },
+          "mappedOwnUndefinedKeys": [
+            "todos",
+            "comments",
+            "content",
+            "content_html",
+            "content_html_url",
+            "content_highlight_html",
+            "content_highlight_html_truncated",
+            "public_shared"
+          ],
+          "error": null,
+          "row": {
+            "ims": [],
+            "groups": [],
+            "id": "FSTATUS0001",
+            "mode": "quip",
+            "is_deleted": false,
+            "is_tombstoned": false,
+            "updated": 104,
+            "actions": [],
+            "channels": [],
+            "is_starred": false,
+            "is_shared": false,
+            "comments_count": 0,
+            "isNonExistent": false,
+            "isUnknown": false,
+            "localUpdated": 1792800000000,
+            "filetype": "quip",
+            "title": "Recovered canvas"
+          },
+          "rowOwnUndefinedKeys": [
+            "comments",
+            "todos",
+            "content",
+            "content_html",
+            "content_html_url",
+            "content_highlight_html",
+            "content_highlight_html_truncated",
+            "public_shared",
+            "permalink",
+            "headers",
+            "transcription",
+            "ai_summary",
+            "ai_skill_category",
+            "is_locked",
+            "thumb_pdf",
+            "converted_pdf",
+            "hls",
+            "hls_embed",
+            "hls_preview",
+            "canvas_metadata",
+            "quip_thread_id"
+          ],
+          "slug": {
+            "label": "Recovered canvas",
+            "labelResolverParams": {
+              "variant": "normal",
+              "fileId": "FSTATUS0001",
+              "plainTextCanvasName": "Recovered canvas",
+              "plainTextSectionPreview": ""
+            },
+            "iconName": "canvas-content",
+            "isDisabled": false,
+            "isLocked": false,
+            "isLoading": false
+          },
+          "delta": {
+            "url": "https://example.test/canvas/FSTATUS0001",
+            "id": "FSTATUS0001",
+            "label": "Recovered canvas",
+            "type": "canvas"
+          },
+          "calls": [
+            {
+              "kind": "conditional-hit",
+              "team": "TDELETED",
+              "id": "FSTATUS0001"
+            },
+            {
+              "kind": "conditional-hit",
+              "team": "TDELETED",
+              "id": "FSTATUS0001"
+            },
+            {
+              "kind": "normal-title-text-adapter"
+            },
+            {
+              "kind": "conditional-hit",
+              "team": "TDELETED",
+              "id": "FSTATUS0001"
+            },
+            {
+              "kind": "conditional-hit",
+              "team": "TDELETED",
+              "id": "FSTATUS0001"
+            },
+            {
+              "kind": "normal-title-text-adapter"
+            }
+          ]
+        }
+      ],
+      "ledger": [
+        {
+          "request": {
+            "kind": "api",
+            "method": "files.info",
+            "args": {
+              "file": "FSTATUS0001",
+              "page": 1,
+              "count": 500,
+              "truncate": true,
+              "skip_shares": true
+            },
+            "reason": "bounded-deleted-reference"
+          },
+          "response": {
+            "error": {
+              "error": "file_deleted"
+            }
+          }
+        },
+        {
+          "request": {
+            "kind": "api",
+            "method": "files.info",
+            "args": {
+              "file": "FSTATUS0001",
+              "page": 1,
+              "count": 500,
+              "truncate": true,
+              "skip_shares": true
+            },
+            "reason": "bounded-deleted-reference"
+          },
+          "response": {
+            "envelope": {
+              "ok": true,
+              "file": {
+                "id": "FSTATUS0001",
+                "updated": 103
+              }
+            }
+          }
+        },
+        {
+          "request": {
+            "kind": "api",
+            "method": "files.info",
+            "args": {
+              "file": "FSTATUS0001",
+              "page": 1,
+              "count": 500,
+              "truncate": true,
+              "skip_shares": true
+            },
+            "reason": "bounded-deleted-reference"
+          },
+          "response": {
+            "envelope": {
+              "ok": true,
+              "file": {
+                "id": "FSTATUS0001",
+                "mode": "quip",
+                "filetype": "quip",
+                "title": "Recovered canvas",
+                "updated": 104
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "private-deleted-full-clears-access",
+      "initial": {
+        "id": "FSTATUS0001",
+        "mode": "quip",
+        "file_access": "not_visible",
+        "title": "Secret restricted"
+      },
+      "rawToken": {
+        "type": "canvas",
+        "file_id": "FSTATUS0001",
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "style": {
+          "bold": true,
+          "italic": true
+        },
+        "opaque": {
+          "keep": 2
+        }
+      },
+      "stages": [
+        {
+          "input": {
+            "error": {
+              "error": "file_deleted"
+            }
+          },
+          "mapped": {
+            "id": "FSTATUS0001",
+            "mode": "tombstone",
+            "is_deleted": true
+          },
+          "mappedOwnUndefinedKeys": [],
+          "error": null,
+          "row": {
+            "id": "FSTATUS0001",
+            "mode": "tombstone",
+            "is_deleted": true
+          },
+          "rowOwnUndefinedKeys": [],
+          "slug": {
+            "label": "Deleted canvas",
+            "labelResolverParams": {
+              "variant": "deleted",
+              "fileId": "FSTATUS0001",
+              "plainTextCanvasName": "Deleted canvas",
+              "plainTextSectionPreview": ""
+            },
+            "iconName": "trash",
+            "isDisabled": true,
+            "isLocked": false,
+            "isLoading": false
+          },
+          "delta": {
+            "url": "https://example.test/canvas/FSTATUS0001",
+            "id": "FSTATUS0001",
+            "label": "Deleted canvas",
+            "type": "canvas"
+          },
+          "calls": []
+        },
+        {
+          "input": {
+            "envelope": {
+              "ok": true,
+              "file": {
+                "id": "FSTATUS0001",
+                "mode": "quip",
+                "filetype": "quip",
+                "title": "Recovered canvas",
+                "updated": 104
+              }
+            }
+          },
+          "mapped": {
+            "id": "FSTATUS0001",
+            "mode": "quip",
+            "filetype": "quip",
+            "title": "Recovered canvas",
+            "updated": 104,
+            "is_deleted": false
+          },
+          "mappedOwnUndefinedKeys": [
+            "todos",
+            "comments",
+            "content",
+            "content_html",
+            "content_html_url",
+            "content_highlight_html",
+            "content_highlight_html_truncated",
+            "public_shared"
+          ],
+          "error": null,
+          "row": {
+            "ims": [],
+            "groups": [],
+            "id": "FSTATUS0001",
+            "mode": "quip",
+            "is_deleted": false,
+            "is_tombstoned": false,
+            "filetype": "quip",
+            "title": "Recovered canvas",
+            "updated": 104,
+            "actions": [],
+            "channels": [],
+            "is_starred": false,
+            "is_shared": false,
+            "comments_count": 0,
+            "isNonExistent": false,
+            "isUnknown": false,
+            "localUpdated": 1792800000000
+          },
+          "rowOwnUndefinedKeys": [
+            "comments",
+            "todos",
+            "content",
+            "content_html",
+            "content_html_url",
+            "content_highlight_html",
+            "content_highlight_html_truncated",
+            "public_shared",
+            "permalink",
+            "headers",
+            "transcription",
+            "ai_summary",
+            "ai_skill_category",
+            "is_locked",
+            "thumb_pdf",
+            "converted_pdf",
+            "hls",
+            "hls_embed",
+            "hls_preview",
+            "quip_thread_id",
+            "canvas_metadata"
+          ],
+          "slug": {
+            "label": "Recovered canvas",
+            "labelResolverParams": {
+              "variant": "normal",
+              "fileId": "FSTATUS0001",
+              "plainTextCanvasName": "Recovered canvas",
+              "plainTextSectionPreview": ""
+            },
+            "iconName": "canvas-content",
+            "isDisabled": false,
+            "isLocked": false,
+            "isLoading": false
+          },
+          "delta": {
+            "url": "https://example.test/canvas/FSTATUS0001",
+            "id": "FSTATUS0001",
+            "label": "Recovered canvas",
+            "type": "canvas"
+          },
+          "calls": [
+            {
+              "kind": "conditional-hit",
+              "team": "TDELETED",
+              "id": "FSTATUS0001"
+            },
+            {
+              "kind": "conditional-hit",
+              "team": "TDELETED",
+              "id": "FSTATUS0001"
+            },
+            {
+              "kind": "normal-title-text-adapter"
+            },
+            {
+              "kind": "conditional-hit",
+              "team": "TDELETED",
+              "id": "FSTATUS0001"
+            },
+            {
+              "kind": "conditional-hit",
+              "team": "TDELETED",
+              "id": "FSTATUS0001"
+            },
+            {
+              "kind": "normal-title-text-adapter"
+            }
+          ]
+        }
+      ],
+      "ledger": [
+        {
+          "request": {
+            "kind": "api",
+            "method": "files.info",
+            "args": {
+              "file": "FSTATUS0001",
+              "page": 1,
+              "count": 500,
+              "truncate": true,
+              "skip_shares": true
+            },
+            "reason": "bounded-deleted-reference"
+          },
+          "response": {
+            "error": {
+              "error": "file_deleted"
+            }
+          }
+        },
+        {
+          "request": {
+            "kind": "api",
+            "method": "files.info",
+            "args": {
+              "file": "FSTATUS0001",
+              "page": 1,
+              "count": 500,
+              "truncate": true,
+              "skip_shares": true
+            },
+            "reason": "bounded-deleted-reference"
+          },
+          "response": {
+            "envelope": {
+              "ok": true,
+              "file": {
+                "id": "FSTATUS0001",
+                "mode": "quip",
+                "filetype": "quip",
+                "title": "Recovered canvas",
+                "updated": 104
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "file-not-found-distinct",
+      "initial": null,
+      "rawToken": {
+        "type": "canvas",
+        "file_id": "FSTATUS0001",
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "style": {
+          "bold": true,
+          "italic": true
+        },
+        "opaque": {
+          "keep": 2
+        }
+      },
+      "stages": [
+        {
+          "input": {
+            "error": {
+              "error": "file_not_found"
+            }
+          },
+          "mapped": {
+            "id": "FSTATUS0001",
+            "mode": "not_found"
+          },
+          "mappedOwnUndefinedKeys": [],
+          "error": null,
+          "row": {
+            "id": "FSTATUS0001",
+            "mode": "not_found"
+          },
+          "rowOwnUndefinedKeys": [],
+          "slug": {
+            "label": "Private canvas",
+            "labelResolverParams": {
+              "variant": "hidden",
+              "fileId": "FSTATUS0001",
+              "plainTextCanvasName": "Private canvas",
+              "plainTextSectionPreview": ""
+            },
+            "iconName": "lock",
+            "isDisabled": false,
+            "isLocked": true,
+            "isLoading": false
+          },
+          "delta": {
+            "url": "https://example.test/canvas/FSTATUS0001",
+            "id": "FSTATUS0001",
+            "label": "Private canvas",
+            "type": "canvas"
+          },
+          "calls": [
+            {
+              "kind": "conditional-hit",
+              "team": "TDELETED",
+              "id": "FSTATUS0001"
+            },
+            {
+              "kind": "conditional-hit",
+              "team": "TDELETED",
+              "id": "FSTATUS0001"
+            },
+            {
+              "kind": "conditional-hit",
+              "team": "TDELETED",
+              "id": "FSTATUS0001"
+            },
+            {
+              "kind": "conditional-hit",
+              "team": "TDELETED",
+              "id": "FSTATUS0001"
+            }
+          ]
+        }
+      ],
+      "ledger": [
+        {
+          "request": {
+            "kind": "api",
+            "method": "files.info",
+            "args": {
+              "file": "FSTATUS0001",
+              "page": 1,
+              "count": 500,
+              "truncate": true,
+              "skip_shares": true
+            },
+            "reason": "bounded-deleted-reference"
+          },
+          "response": {
+            "error": {
+              "error": "file_not_found"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "generic-error-no-marker",
+      "initial": null,
+      "rawToken": {
+        "type": "canvas",
+        "file_id": "FSTATUS0001",
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "style": {
+          "bold": true,
+          "italic": true
+        },
+        "opaque": {
+          "keep": 2
+        }
+      },
+      "stages": [
+        {
+          "input": {
+            "error": {
+              "error": "internal_error"
+            }
+          },
+          "mapped": null,
+          "mappedOwnUndefinedKeys": [],
+          "error": {
+            "data": {
+              "error": "internal_error"
+            }
+          },
+          "row": null,
+          "rowOwnUndefinedKeys": [],
+          "slug": {
+            "label": "Deleted canvas",
+            "labelResolverParams": {
+              "variant": "deleted",
+              "fileId": "FSTATUS0001",
+              "plainTextCanvasName": "Deleted canvas",
+              "plainTextSectionPreview": ""
+            },
+            "iconName": "trash",
+            "isDisabled": true,
+            "isLocked": false,
+            "isLoading": false
+          },
+          "delta": {
+            "url": "https://example.test/canvas/FSTATUS0001",
+            "id": "FSTATUS0001",
+            "label": "Deleted canvas",
+            "type": "canvas"
+          },
+          "calls": []
+        }
+      ],
+      "ledger": [
+        {
+          "request": {
+            "kind": "api",
+            "method": "files.info",
+            "args": {
+              "file": "FSTATUS0001",
+              "page": 1,
+              "count": 500,
+              "truncate": true,
+              "skip_shares": true
+            },
+            "reason": "bounded-deleted-reference"
+          },
+          "response": {
+            "error": {
+              "error": "internal_error"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "generic-error-preserves-known",
+      "initial": {
+        "id": "FSTATUS0001",
+        "mode": "quip",
+        "filetype": "quip",
+        "title": "Recovered canvas",
+        "updated": 104
+      },
+      "rawToken": {
+        "type": "canvas",
+        "file_id": "FSTATUS0001",
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "style": {
+          "bold": true,
+          "italic": true
+        },
+        "opaque": {
+          "keep": 2
+        }
+      },
+      "stages": [
+        {
+          "input": {
+            "error": {
+              "error": "internal_error"
+            }
+          },
+          "mapped": null,
+          "mappedOwnUndefinedKeys": [],
+          "error": {
+            "data": {
+              "error": "internal_error"
+            }
+          },
+          "row": {
+            "id": "FSTATUS0001",
+            "mode": "quip",
+            "filetype": "quip",
+            "title": "Recovered canvas",
+            "updated": 104
+          },
+          "rowOwnUndefinedKeys": [],
+          "slug": {
+            "label": "Recovered canvas",
+            "labelResolverParams": {
+              "variant": "normal",
+              "fileId": "FSTATUS0001",
+              "plainTextCanvasName": "Recovered canvas",
+              "plainTextSectionPreview": ""
+            },
+            "iconName": "canvas-content",
+            "isDisabled": false,
+            "isLocked": false,
+            "isLoading": false
+          },
+          "delta": {
+            "url": "https://example.test/canvas/FSTATUS0001",
+            "id": "FSTATUS0001",
+            "label": "Recovered canvas",
+            "type": "canvas"
+          },
+          "calls": [
+            {
+              "kind": "conditional-hit",
+              "team": "TDELETED",
+              "id": "FSTATUS0001"
+            },
+            {
+              "kind": "conditional-hit",
+              "team": "TDELETED",
+              "id": "FSTATUS0001"
+            },
+            {
+              "kind": "normal-title-text-adapter"
+            },
+            {
+              "kind": "conditional-hit",
+              "team": "TDELETED",
+              "id": "FSTATUS0001"
+            },
+            {
+              "kind": "conditional-hit",
+              "team": "TDELETED",
+              "id": "FSTATUS0001"
+            },
+            {
+              "kind": "normal-title-text-adapter"
+            }
+          ]
+        }
+      ],
+      "ledger": [
+        {
+          "request": {
+            "kind": "api",
+            "method": "files.info",
+            "args": {
+              "file": "FSTATUS0001",
+              "page": 1,
+              "count": 500,
+              "truncate": true,
+              "skip_shares": true
+            },
+            "reason": "bounded-deleted-reference"
+          },
+          "response": {
+            "error": {
+              "error": "internal_error"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "malformed-error-no-marker",
+      "initial": null,
+      "rawToken": {
+        "type": "canvas",
+        "file_id": "FSTATUS0001",
+        "url": "https://example.test/canvas/FSTATUS0001",
+        "style": {
+          "bold": true,
+          "italic": true
+        },
+        "opaque": {
+          "keep": 2
+        }
+      },
+      "stages": [
+        {
+          "input": {
+            "error": {
+              "error": 7
+            }
+          },
+          "mapped": null,
+          "mappedOwnUndefinedKeys": [],
+          "error": {
+            "data": {
+              "error": 7
+            }
+          },
+          "row": null,
+          "rowOwnUndefinedKeys": [],
+          "slug": {
+            "label": "Deleted canvas",
+            "labelResolverParams": {
+              "variant": "deleted",
+              "fileId": "FSTATUS0001",
+              "plainTextCanvasName": "Deleted canvas",
+              "plainTextSectionPreview": ""
+            },
+            "iconName": "trash",
+            "isDisabled": true,
+            "isLocked": false,
+            "isLoading": false
+          },
+          "delta": {
+            "url": "https://example.test/canvas/FSTATUS0001",
+            "id": "FSTATUS0001",
+            "label": "Deleted canvas",
+            "type": "canvas"
+          },
+          "calls": []
+        }
+      ],
+      "ledger": [
+        {
+          "request": {
+            "kind": "api",
+            "method": "files.info",
+            "args": {
+              "file": "FSTATUS0001",
+              "page": 1,
+              "count": 500,
+              "truncate": true,
+              "skip_shares": true
+            },
+            "reason": "bounded-deleted-reference"
+          },
+          "response": {
+            "error": {
+              "error": 7
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "absent-is-presentation-not-deletion-evidence",
+      "nofetch": {
+        "label": "Deleted canvas",
+        "labelResolverParams": {
+          "variant": "deleted",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Deleted canvas",
+          "plainTextSectionPreview": ""
+        },
+        "iconName": "trash",
+        "isDisabled": true,
+        "isLocked": false,
+        "isLoading": false
+      },
+      "nofetchCalls": [],
+      "fetched": {
+        "label": "Untitled",
+        "labelResolverParams": {
+          "variant": "normal",
+          "fileId": "FSTATUS0001",
+          "plainTextCanvasName": "Untitled",
+          "plainTextSectionPreview": ""
+        },
+        "iconName": "canvas-content",
+        "isDisabled": false,
+        "isLocked": false,
+        "isLoading": false
+      },
+      "fetchCalls": [
+        {
+          "kind": "unknown-hit",
+          "team": "TABSENT",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "unknown-hit",
+          "team": "TABSENT",
+          "id": "FSTATUS0001"
+        },
+        {
+          "kind": "quip-title-read"
+        },
+        {
+          "kind": "untitled-fallback"
+        }
+      ],
+      "canonicalFiles": {}
+    }
+  ],
+  "scope": "Actual retained20Mt/HcWC/4OY3/KhL1/pND factories with synthetic rejected/positive transport, row-registration and English key adapter. No browser/Save/server execution."
+}

@@ -109,6 +109,8 @@ pub struct CanvasCollabSnapshot {
     pub document: RawMessage,
     pub sections: Vec<Section>,
     pub load: LoadDataResponse,
+    pub(crate) replacement_provenance:
+        Option<std::sync::Arc<crate::canvas::edit::structure::ReplacementProvenance>>,
     file_id: String,
     thread_id: String,
     document_id: String,
@@ -202,6 +204,7 @@ impl CanvasCollabSnapshot {
             document,
             sections,
             load,
+            replacement_provenance: None,
             file_id,
             thread_id,
             document_id,

@@ -3,6 +3,43 @@ use super::Unavailable;
 use crate::slack::models::UserGroup;
 use serde_json::Value;
 
+/// Explicit application presentation; not an observed Slack locale or source
+/// authority. The restricted-self branch must separately retain its own proof.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct GroupTitle(());
+impl GroupTitle {
+    pub fn english() -> Self {
+        Self(())
+    }
+    pub fn unknown_label(self) -> &'static str {
+        "@unknown-group"
+    }
+}
+
+/// Canonical effective handle/flags are authoritative for this sealed lookup.
+/// Raw terminal/partial input can omit a handle while JJAw retains its previous
+/// value. Never mutate raw label_source or use it as the merged label preimage.
+/// Recheck lookup.current before mounting; mounted Catalog keeps its own label.
+pub fn group_label_from_lookup(
+    id: &str,
+    lookup: &crate::state::directory_usergroups::unknown::Lookup,
+    context: Option<GroupTitle>,
+) -> Result<String, Unavailable> {
+    use crate::state::directory_usergroups::unknown::LookupKind;
+    if !valid_id(id) || lookup.id() != id || lookup.effective()["id"].as_str() != Some(id) {
+        return Err(Unavailable::InvalidMetadata);
+    }
+    match lookup.kind() {
+        LookupKind::Unknown | LookupKind::NonExistent => context
+            .map(|context| context.unknown_label().into())
+            .ok_or(Unavailable::UnsupportedTitle),
+        LookupKind::Known => UserGroup::from_observed(lookup.effective())
+            .ok()
+            .and_then(|group| group.profile_label())
+            .ok_or(Unavailable::InvalidMetadata),
+    }
+}
+
 fn valid_id(id: &str) -> bool {
     id.len() >= 9
         && id.len() <= 255
@@ -51,3 +88,6 @@ pub fn known_group_label(id: &str, group: &UserGroup) -> Result<String, Unavaila
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod missing_tests;
