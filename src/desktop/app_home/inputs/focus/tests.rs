@@ -52,7 +52,7 @@ fn explicit_value_reset_boundary_preserves_focus_identity() {
 fn new_visit_removal_and_kind_change_each_rearm() {
     let mut s = setup();
     let first = config(&s, &key()).unwrap()["instance"].clone();
-    s.app_home.surface.as_mut().unwrap().id = next();
+    crate::app_home::fixture::revisit(&mut s);
     hydrate(&mut s);
     let second = config(&s, &key()).unwrap()["instance"].clone();
     assert_ne!(first, second);
@@ -122,7 +122,7 @@ fn date_reuses_logical_focus_history_without_creating_text_dispatch_mount() {
     s.app_home.forms.insert(o, HomeForm::parse(&raw).unwrap());
     hydrate(&mut s);
     assert_eq!(config(&s, &key).unwrap()["instance"], first["instance"]);
-    s.app_home.surface.as_mut().unwrap().id = next();
+    crate::app_home::fixture::revisit(&mut s);
     hydrate(&mut s);
     assert_ne!(config(&s, &key).unwrap()["instance"], first["instance"]);
 }

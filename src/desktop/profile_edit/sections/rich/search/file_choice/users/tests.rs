@@ -6,14 +6,15 @@ use super_platinum_core::{
     slack::Transport,
     state::{Workspace, directory_members::Origin},
 };
-const TEAM: &str = "TTITLE01";
-const MEMBER: &str = "UTITLE01";
-const FILE: &str = "FTITLE01";
+// Keep synthetic identities inside the production hydration/file ID boundaries.
+const TEAM: &str = "TTITLE001";
+const MEMBER: &str = "UTITLE001";
+const FILE: &str = "FTITLE001";
 fn shell() -> ShellState {
     let mut s = ShellState::login(crate::media::MediaRegistry::default());
     let owner = WorkspaceSession {
         team_id: TEAM.into(),
-        user_id: "USELF01".into(),
+        user_id: "USELF0001".into(),
         enterprise_id: None,
         name: "Fixture".into(),
         url: "https://fixture.invalid".into(),
@@ -39,9 +40,9 @@ fn shell() -> ShellState {
             Origin::Directory,
             vec![
                 raw,
-                json!({"id":"UEXTRA01","name":"extra","profile":{"display_name":"Extra"}}),
+                json!({"id":"UEXTRA001","name":"extra","profile":{"display_name":"Extra"}}),
             ],
-            json!({(MEMBER):true,"UEXTRA01":true}),
+            json!({(MEMBER):true,"UEXTRA001":true}),
         )
         .unwrap();
     let flags = Flags::decode(&json!({"ok":true,"assignments":{}})).unwrap();
@@ -91,7 +92,7 @@ fn observed(s: &ShellState) -> Users {
             &owner.session,
             owner.epoch,
             &generation,
-            &BTreeSet::from([MEMBER.into(), "UEXTRA01".into()]),
+            &BTreeSet::from([MEMBER.into(), "UEXTRA001".into()]),
             &w.users,
         )
         .unwrap();
@@ -256,7 +257,7 @@ fn invalidated_display_preimage_refuses_owner_native_and_canonical_replacement()
                 .get_mut(TEAM)
                 .unwrap()
                 .directory_members
-                .invalidate("UEXTRA01"),
+                .invalidate("UEXTRA001"),
         }
         assert!(
             !source.current(&s),
@@ -278,7 +279,7 @@ fn display_native_preimage_tracks_required_rows_and_explicit_absence_only() {
         .get_mut(TEAM)
         .unwrap()
         .users
-        .get_mut("UEXTRA01")
+        .get_mut("UEXTRA001")
         .unwrap()
         .name = Some("unrelated typed update".into());
     assert!(
@@ -310,13 +311,13 @@ fn observed_user_title_bypasses_quip_without_changing_exact_insertion_wire() {
     let mut titles = file_title_source::Store::new();
     titles.ingest(&raw).unwrap();
     for (hidden, label) in [
-        ("", "Review @  Cafe\u{301}   / @  Cafe\u{301}  "),
+        ("", "Review @  Cafe\u{301}   / @  Cafe\u{301}"),
         (MEMBER, "Review Hidden user / Hidden user"),
     ] {
         let result = Projection::capture_with_users(
             &s,
             TEAM,
-            "USELF01",
+            "USELF0001",
             &json!({"ok":true,"workspaces":[{"id":TEAM}]}),
             titles.row(FILE).unwrap(),
             FILE,
@@ -331,6 +332,11 @@ fn observed_user_title_bypasses_quip_without_changing_exact_insertion_wire() {
         );
         assert_eq!(result._title.source(), &raw);
     }
+    // The original renderer trims the whole title block, not the raw member.
+    assert_eq!(
+        users.snapshot(&s)["members"][0]["source"]["profile"]["display_name"],
+        "  Cafe\u{301}  "
+    );
     assert_eq!(users.snapshot(&s)["members"][0]["source"]["opaque"], 17);
 }
 #[test]
@@ -521,7 +527,7 @@ fn independently_owned_existing_titles_preserve_raw_and_retire_original_sources(
         );
         assert_eq!(
             titles.label(&s, &raw).unwrap(),
-            "Review @  Cafe\u{301}   / @  Cafe\u{301}  "
+            "Review @  Cafe\u{301}   / @  Cafe\u{301}"
         );
         assert!(
             FileTarget::capture(&s, TEAM, &raw).is_err(),

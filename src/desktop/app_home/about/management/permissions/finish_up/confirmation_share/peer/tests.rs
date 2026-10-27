@@ -183,7 +183,7 @@ fn unrelated_member_intake_conservatively_retires_original_revision() {
     let saved = witness(&shell);
     adopt(
         &mut shell,
-        json!({"id":"UOTHER001","team_id":TEAM,"name":"Other"}),
+        json!({"id":"UOTHER001","team_id":TEAM,"name":"Other","profile":{}}),
     );
     let w = &shell.core.workspaces[TEAM];
     assert!(saved.subset.current_rows(

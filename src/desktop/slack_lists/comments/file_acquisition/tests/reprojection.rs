@@ -224,3 +224,35 @@ async fn account_visit_socket_and_old_worker_retirement_refuse_refresh_adoption(
         }
     }
 }
+
+#[test]
+fn retired_socket_requires_successful_transcript_read_before_new_automatic_work() {
+    let (mut shell, generation, _) = loaded(1);
+    shell.core.workspaces.get_mut("T1").unwrap().rt_generation += 1;
+    assert!(pending(&shell, generation).is_empty());
+    let entry = shell.slack_lists.comments.entry.as_ref().unwrap().clone();
+    let (owner, serial, _, cursor) = controller::begin(&mut shell, false).unwrap();
+    controller::finish(
+        &mut shell,
+        &owner,
+        serial,
+        cursor,
+        Err(Error::Offline("synthetic".into())),
+    );
+    assert!(pending(&shell, generation).is_empty());
+    let (owner, serial, _, cursor) = controller::begin(&mut shell, false).unwrap();
+    controller::finish(
+        &mut shell,
+        &owner,
+        serial,
+        cursor,
+        Ok(network::Loaded {
+            page: entry.page.unwrap(),
+            projection: entry.projection.unwrap(),
+        }),
+    );
+    let work = pending(&shell, generation);
+    assert_eq!(work.len(), 1);
+    queue(&mut shell, generation, work);
+    assert!(pending(&shell, generation).is_empty());
+}

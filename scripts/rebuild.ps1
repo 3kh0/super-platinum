@@ -14,6 +14,8 @@ $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
 $desktopTarget = Join-Path $repo 'target/desktop'
 $coreTarget = Join-Path $repo 'crates/super-platinum-core/target'
+# User-authorized combined cache budget for the desktop-failure repair phase.
+$targetBudgetGiB = 48
 $features = 'original-download-native-fixture,protected-native-fixture'
 $generatorKey = 'CMAKE_GENERATOR_x86_64_pc_windows_msvc'
 $previousPath = $env:PATH
@@ -100,8 +102,8 @@ try {
                     Measure-Object -Property Length -Sum).Sum
             }
         }
-        if ($free -lt 50GB -or $targetBytes -ge 40GB) {
-            throw 'Storage gate: require 50 GiB free and combined targets below 40 GiB. Review cleanup separately; nothing was deleted.'
+        if ($free -lt 50GB -or $targetBytes -ge ($targetBudgetGiB * 1GB)) {
+            throw "Storage gate: require 50 GiB free and combined targets below $targetBudgetGiB GiB. Review cleanup separately; nothing was deleted."
         }
         $os = Get-CimInstance Win32_OperatingSystem
         if ($os.FreeVirtualMemory * 1KB -lt 4GB) {

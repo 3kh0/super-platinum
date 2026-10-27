@@ -107,7 +107,9 @@ progress signal (corrected before warm 2).
 
 ## Resource limits and final gate
 
-Keep **40 GiB combined target high-water** and a **50 GiB free-space floor**.
+For the user-authorized desktop-failure repair phase, keep **48 GiB combined
+target high-water** and a **50 GiB free-space floor**. This phase-specific
+authorization supersedes the former 40 GiB budget; preserve all caches.
 The helper checks both before starting, plus a **4 GiB commit-headroom safety
 margin**. Ordinary helper runs report memory but do not monitor/kill after launch.
 The experimental monitor enforced the storage/commit thresholds throughout; low

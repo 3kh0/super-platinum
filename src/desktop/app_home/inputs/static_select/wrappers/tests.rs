@@ -134,12 +134,25 @@ fn removed_dirty_wrapper_is_not_marked_shown_or_rendered_as_source_present() {
         f.fields[&b.key].value,
         InputValue::Selected(vec!["beta".into()])
     );
-    assert!(f.static_field(&b.key).is_err());
+    // Dirty removal is a transactional conflict: retain its complete old form,
+    // but only the current server view can establish a rendered source field.
+    assert_eq!(f.raw_view(), &raw);
+    assert!(!source_present(&s, &b.key));
     assert!(inline_key(&s, &metadata("controls", "first")).is_none());
+    let current = s
+        .app_home
+        .surface
+        .as_ref()
+        .unwrap()
+        .view
+        .as_ref()
+        .unwrap()
+        .raw();
     assert_eq!(
-        shown_keys(&s, &f.raw_view()["blocks"][3]),
+        shown_keys(&s, &current["blocks"][3]),
         vec![key("controls", "second")]
     );
+    assert!(shown_keys(&s, &f.raw_view()["blocks"][3]).is_empty());
     assert!(!b.current(&s));
 }
 

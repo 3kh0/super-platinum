@@ -244,7 +244,7 @@ fn mounted_props_keep_local_and_pristine_parent_but_retire_old_action() {
     mount(&mut s);
     assert_eq!(proof(&s)["numberWidgets"][0]["local"], "2.50");
     assert_eq!(parent(&s)["value"], "2.5");
-    s.app_home.surface.as_mut().unwrap().id = next();
+    crate::app_home::fixture::revisit(&mut s);
     super::super::super::hydrate(&mut s);
     mount(&mut s);
     assert_eq!(proof(&s)["numberWidgets"][0]["local"], "2.5");

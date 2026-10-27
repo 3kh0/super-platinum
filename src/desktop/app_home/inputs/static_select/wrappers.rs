@@ -14,13 +14,29 @@ pub(crate) fn inline_key(s: &ShellState, metadata: &BlockElementMetadata) -> Opt
         block_id: metadata.block_id.clone()?,
         action_id: metadata.action_id.clone()?,
     };
-    let f = form(s)?;
-    f.static_field(&key).ok()?;
-    let block = f.raw_view()["blocks"]
+    source_present(s, &key).then_some(key)
+}
+fn source_block<'a>(s: &'a ShellState, key: &InputKey) -> Option<&'a Value> {
+    s.app_home.surface.as_ref()?.view.as_ref()?.raw()["blocks"]
         .as_array()?
         .iter()
-        .find(|b| b["block_id"] == key.block_id)?;
-    matches!(block["type"].as_str(), Some("actions" | "section")).then_some(key)
+        .find(|block| block["block_id"] == key.block_id)
+}
+fn source_present(s: &ShellState, key: &InputKey) -> bool {
+    let Some(field) = form(s).and_then(|f| f.static_field(key).ok()) else {
+        return false;
+    };
+    let Some(block) = source_block(s, key) else {
+        return false;
+    };
+    let element = match block["type"].as_str() {
+        Some("actions") => block["elements"]
+            .as_array()
+            .and_then(|elements| elements.iter().find(|e| e["action_id"] == key.action_id)),
+        Some("section") => block.get("accessory"),
+        _ => None,
+    };
+    element == Some(&field.raw)
 }
 /// Only source-present admitted inline fields count as rendered. The existing
 /// dirty-field fallback still protects values whose element was removed.
@@ -32,7 +48,11 @@ pub(crate) fn shown_keys(s: &ShellState, block: &Value) -> Vec<InputKey> {
         .map(|f| {
             f.fields
                 .keys()
-                .filter(|k| block["block_id"] == k.block_id && f.static_field(k).is_ok())
+                .filter(|k| {
+                    block["block_id"] == k.block_id
+                        && source_block(s, k) == Some(block)
+                        && source_present(s, k)
+                })
                 .cloned()
                 .collect()
         })

@@ -308,12 +308,11 @@ fn scoped_removal_clears_all_copies_keeps_raw_and_prevents_old_read_resurrection
         ));
         assert_eq!(owner.reading(&shell, read), preflight);
         let e = shell.slack_lists.comments.entry.as_ref().unwrap();
-        assert!(
-            e.rows.is_empty()
-                && e.accepted.is_empty()
-                && e.live.is_empty()
-                && e.deleted.contains(TS)
+        assert_eq!(
+            e.rows.iter().map(|row| row.ts.as_str()).collect::<Vec<_>>(),
+            vec![source.target.root_ts().unwrap()]
         );
+        assert!(e.accepted.is_empty() && e.live.is_empty() && e.deleted.contains(TS));
         assert_eq!(
             e.page.as_ref().unwrap().raw(),
             before.page.as_ref().unwrap().raw()
@@ -347,16 +346,17 @@ fn scoped_removal_clears_all_copies_keeps_raw_and_prevents_old_read_resurrection
                     projection: before.projection.unwrap(),
                 }),
             );
-            assert!(
-                shell
-                    .slack_lists
-                    .comments
-                    .entry
-                    .as_ref()
-                    .unwrap()
+            let retained = shell.slack_lists.comments.entry.as_ref().unwrap();
+            assert!(Arc::ptr_eq(&rows, &retained.rows));
+            assert_eq!(
+                retained
                     .rows
-                    .is_empty()
+                    .iter()
+                    .map(|row| row.ts.as_str())
+                    .collect::<Vec<_>>(),
+                vec![source.target.root_ts().unwrap()]
             );
+            assert!(retained.deleted.contains(TS));
         }
     }
 }

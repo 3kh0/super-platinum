@@ -328,6 +328,7 @@ pub(super) fn finish(
             e.page = Some(loaded.page);
             e.error = None;
             e.retry_at = 0;
+            file_acquisition::transcript_accepted(shell, owner);
         }
         Err(error) => {
             let deadline = match &error {

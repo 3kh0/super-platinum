@@ -12,7 +12,7 @@ fn setup_mode(durable: bool) -> (ShellState, Attempt, Read, Arc<CanvasCollabSnap
     });
     shell.overlay = Some(crate::state::Overlay::Canvas);
     open_visit(&mut shell);
-    let source = fixture::snapshot();
+    let source = fixture::witnessed_snapshot(100);
     let read = begin_read(&mut shell).unwrap();
     assert!(finish_read(&mut shell, &read, Ok(source.clone())));
     let view = presentation(&shell).unwrap();

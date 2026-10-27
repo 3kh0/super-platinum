@@ -195,6 +195,7 @@ fn pair_dispatch_refuses_other_prepared_id_and_snapshot_unknown_change() {
 fn retained_old_tombstone_preserves_text_edit_but_does_not_grant_structural_eligibility() {
     let now = checklist::save::now_usec().unwrap();
     let mut shell = setup();
+    load(&mut shell, replacement_fixture::witnessed_snapshot(now));
     let view = checklist::presentation(&shell).unwrap();
     let (attempt, intent) = checklist::replacement_ops::begin_replacement(
         &mut shell,

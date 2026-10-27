@@ -234,7 +234,7 @@ fn revisit_and_reset_retire_old_mounts_without_replaying_callbacks() {
     let mut s = setup(true, false);
     let q = emit(&mut s, 1, true).unwrap().1.unwrap();
     let o = owner(&s).unwrap();
-    s.app_home.surface.as_mut().unwrap().id = next();
+    crate::app_home::fixture::revisit(&mut s);
     hydrate(&mut s);
     mount(&mut s);
     super::super::poll(&mut s);

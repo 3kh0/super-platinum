@@ -113,12 +113,12 @@ fn repair_witness_refuses_original_source_owner_policy_and_slot_retirement() {
 #[test]
 fn recovery_requires_canonical_known_ordinary_selected_editor() {
     for raw in [
-        json!({"id":EDITOR,"isUnknown":true}),
-        json!({"id":EDITOR,"isNonExistent":true}),
-        json!({"id":EDITOR,"isUnknown":"false"}),
-        json!({"id":EDITOR,"is_bot":true}),
-        json!({"id":EDITOR,"is_app_user":true}),
-        json!({"id":EDITOR,"bot_id":"B1"}),
+        json!({"id":EDITOR,"profile":{},"isUnknown":true}),
+        json!({"id":EDITOR,"profile":{},"isNonExistent":true}),
+        json!({"id":EDITOR,"profile":{},"isUnknown":"false"}),
+        json!({"id":EDITOR,"profile":{},"is_bot":true}),
+        json!({"id":EDITOR,"profile":{},"is_app_user":true}),
+        json!({"id":EDITOR,"profile":{},"bot_id":"B1"}),
     ] {
         let (mut shell, _, ticket, _) = setup();
         adopt(&mut shell, raw);

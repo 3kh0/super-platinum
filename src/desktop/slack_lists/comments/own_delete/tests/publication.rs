@@ -117,7 +117,11 @@ async fn retained_ack_publishes_only_after_local_commit_and_duplicate_does_not_r
     {
         let shell = state.peek();
         let e = shell.slack_lists.comments.entry.as_ref().unwrap();
-        assert!(e.rows.is_empty() && e.deleted.contains(TS));
+        assert_eq!(
+            e.rows.iter().map(|row| row.ts.as_str()).collect::<Vec<_>>(),
+            vec![e.target.root_ts().unwrap()]
+        );
+        assert!(e.deleted.contains(TS));
         assert_eq!(e.page.as_ref().unwrap().raw(), &page);
         assert!(presentation(&shell).unwrap().terminal);
     }

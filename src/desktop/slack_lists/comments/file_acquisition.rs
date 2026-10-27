@@ -19,6 +19,8 @@ const MAX_FILES: usize = 64;
 
 #[derive(Clone, Default)]
 pub(super) struct State {
+    // Cached rows alone cannot rearm a retired socket's automatic title work.
+    transcript_socket: Option<(u64, u64)>,
     generation: u64,
     attempts: Vec<Attempt>,
     worker: Option<Arc<()>>,
@@ -159,6 +161,19 @@ fn truth(v: &Value) -> bool {
 fn enabled(shell: &ShellState) -> bool {
     !crate::fixture::is_fixture() || fixture::cold_files::enabled(shell)
 }
+pub(super) fn transcript_accepted(shell: &mut ShellState, owner: &Owner) {
+    if owner.active(shell) {
+        shell
+            .slack_lists
+            .comments
+            .file_acquisition
+            .transcript_socket = shell
+            .core
+            .workspaces
+            .get(&owner.scope.team)
+            .map(|w| (owner.serial, w.rt_generation));
+    }
+}
 pub(super) fn retire(shell: &mut ShellState) {
     let debt = shell.slack_lists.comments.file_acquisition.cooldown.take();
     shell.slack_lists.comments.file_acquisition = State {
@@ -204,6 +219,15 @@ fn pending(shell: &ShellState, generation: u64) -> Vec<Demand> {
         return Vec::new();
     };
     let state = &shell.slack_lists.comments.file_acquisition;
+    if state.transcript_socket
+        != shell
+            .core
+            .workspaces
+            .get(&entry.owner.scope.team)
+            .map(|w| (entry.owner.serial, w.rt_generation))
+    {
+        return Vec::new();
+    }
     let mut remaining = MAX_FILES.saturating_sub(
         state
             .attempts

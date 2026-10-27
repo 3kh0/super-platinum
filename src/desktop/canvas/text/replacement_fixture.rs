@@ -32,6 +32,98 @@ pub(in crate::canvas) fn snapshot() -> Arc<CanvasCollabSnapshot> {
     *title = Section::decode(&raw).unwrap();
     Arc::new(snapshot)
 }
+#[cfg(test)]
+pub(in crate::canvas) fn witnessed_snapshot(now: u64) -> Arc<CanvasCollabSnapshot> {
+    use super_platinum_core::canvas::edit::{
+        EditSession,
+        text::{TextDraft, TextIntent, TextRun},
+    };
+    let mut source = (*snapshot()).clone();
+    let rich = TextIntent::capture(&source, "paragraph", now)
+        .unwrap()
+        .draft()
+        .clone();
+    let plain = TextDraft {
+        runs: rich
+            .runs
+            .iter()
+            .map(|run| TextRun {
+                text: run.text.clone(),
+                style: Default::default(),
+            })
+            .collect(),
+    };
+    let n = |tag, value| F::uint(tag, value).unwrap();
+    let m = |tag, value: &RawMessage| F::message(tag, value).unwrap();
+    let paragraph = source
+        .sections
+        .iter_mut()
+        .find(|s| s.id() == "paragraph")
+        .unwrap();
+    let content = paragraph.raw().message(12).unwrap().unwrap();
+    let leaf = content
+        .message(1)
+        .unwrap()
+        .unwrap()
+        .replace_fields(1, &[F::bytes(1, plain.rtml().unwrap().as_bytes()).unwrap()])
+        .unwrap();
+    *paragraph = Section::from_raw(
+        paragraph
+            .raw()
+            .replace_fields(
+                12,
+                &[m(12, &content.replace_fields(1, &[m(1, &leaf)]).unwrap())],
+            )
+            .unwrap(),
+    )
+    .unwrap();
+    let prepared = TextIntent::capture(&source, "paragraph", now)
+        .unwrap()
+        .prepare(&source, &mut EditSession::new(), &rich, now)
+        .unwrap();
+    let update = Section::from_raw(prepared.document_data().message(1).unwrap().unwrap()).unwrap();
+    let prior = source.section("paragraph").unwrap();
+    let sequence = prior.sequence().unwrap().unwrap() + 1000;
+    let raw = prior.merge_partial(&update).unwrap().raw().clone();
+    let wire = raw
+        .message(38)
+        .unwrap()
+        .unwrap()
+        .remove(12)
+        .unwrap()
+        .replace_fields(3, &[n(3, sequence)])
+        .unwrap()
+        .replace_fields(4, &[n(4, now + 60_000_000)])
+        .unwrap();
+    let canonical = raw
+        .replace_fields(2, &[n(2, sequence)])
+        .unwrap()
+        .replace_fields(38, &[m(38, &wire)])
+        .unwrap();
+    let data = RawMessage::from_fields(&[m(1, &canonical)]).unwrap();
+    let ack = EditAck::decode(
+        RawMessage::from_fields(&[n(1, 1), m(2, &data)])
+            .unwrap()
+            .raw(),
+    )
+    .unwrap();
+    let accepted = prepared.validate_ack(&ack).unwrap();
+    *source
+        .sections
+        .iter_mut()
+        .find(|s| s.id() == "paragraph")
+        .unwrap() = accepted.section().clone();
+    assert!(accepted.confirms_readback(&source).unwrap());
+    assert_eq!(
+        TextIntent::capture(&source, "paragraph", now)
+            .unwrap()
+            .draft()
+            .rtml()
+            .unwrap(),
+        rich.rtml().unwrap()
+    );
+    Arc::new(source)
+}
 pub(super) fn install_owner(shell: &mut ShellState, snapshot: &CanvasCollabSnapshot) -> bool {
     if !requested()
         || shell.core.session.is_some()

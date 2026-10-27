@@ -73,6 +73,13 @@ fn nonunified_requires_full_observed_configuration_and_current_account() {
         .unwrap()
         .unified_user_client_enabled
         .insert("TOTHER".into(), true);
+    // An orphan flag does not configure an account. Once that credential is
+    // installed, its true flag selects unified mode and needs source facts.
+    assert!(Witness::capture(&s).is_ok());
+    let session = s.core.session.as_mut().unwrap();
+    let mut other = session.workspaces.values().next().unwrap().clone();
+    other.team_id = "TOTHER".into();
+    session.workspaces.insert("TOTHER".into(), other);
     assert!(Witness::capture(&s).is_err());
     assert!(!initial.current(&s));
 }

@@ -68,7 +68,7 @@ fn cold_reply_elects_only_closed_whole_canvas_without_claiming_a_title() {
 fn actual_cold_file_receipt_enables_independent_reply_context_without_query_authority() {
     for whitespace in [false, true] {
         let mut s = shell();
-        s.self_account.user_id = "USELF01".into();
+        s.self_account.user_id = "USELF0001".into();
         s.canvas_titles = crate::canvas::quip_titles::State::fresh();
         let original = token();
         publish(&mut s, &raw(whitespace)).unwrap();

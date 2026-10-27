@@ -380,14 +380,18 @@ fn multi_search_does_not_require_single_mode_or_apply_its_enterprise_team_mask()
     session.workspaces.insert(enterprise.into(), credential);
     session
         .unified_user_client_enabled
-        .insert(enterprise.into(), false);
-    let workspace = s.core.workspaces.remove(&team).unwrap();
+        .insert(enterprise.into(), true);
+    let mut workspace = s.core.workspaces.remove(&team).unwrap();
+    workspace.team_id = enterprise.into();
     s.core.workspaces.insert(enterprise.into(), workspace);
     s.core.active_team = Some(enterprise.into());
     let owner = Owner::capture(&s).unwrap();
     let h = s.app_home.surface.as_mut().unwrap();
     h.id = owner.home_visit;
     h.owner = owner;
+    // Supply the independently selected Home route; E-shaped credentials with
+    // no Enterprise constructor observation still cannot admit single mode.
+    crate::app_home::context::fixture::select_override(&mut s, &team);
     inputs::hydrate(&mut s);
     assert!(
         channels::mode::Observation::capture(&s, &s.app_home.surface.as_ref().unwrap().owner)

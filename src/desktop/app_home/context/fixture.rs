@@ -7,6 +7,20 @@ const BOT: &str = "UHOME0001";
 pub(super) const TWO: &str = "TWORK0002";
 pub(super) const THREE: &str = "TWORK0003";
 pub(super) const INSTALLED: &str = "TINSTALL1";
+#[cfg(test)]
+pub(in crate::app_home) fn select_override(s: &mut ShellState, team: &str) {
+    let account =
+        Arc::new(SourceContext::capture(s, s.core.active_team.as_ref().unwrap()).unwrap());
+    let channel = s.core.active_channel.clone().unwrap();
+    s.app_home.context.overrides.insert(
+        key(&account, &channel),
+        Override {
+            account,
+            team: team.into(),
+            revision: next(),
+        },
+    );
+}
 pub(crate) struct ActionGate {
     waiting: bool,
     release: Option<tokio::sync::oneshot::Sender<()>>,

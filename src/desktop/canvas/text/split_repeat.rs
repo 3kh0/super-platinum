@@ -206,11 +206,21 @@ mod tests {
                     5 => bad["split"]["typing"]["events"][0]["start"] = json!(1),
                     _ => bad["split"]["typing"] = Value::Null,
                 }
-                assert!(
-                    parse_native(bad).is_none(),
-                    "mutation {mutation}: {}",
-                    case["name"]
-                );
+                if mutation == 6 && value["blocks"] == value["split"]["repeat"]["after"] {
+                    // Erasing back to the initial empty third row may still
+                    // prove two Enters, but cannot retain any typing authority.
+                    let Some(Captured::End(plain)) = parse_native(bad) else {
+                        panic!("unchanged empty repeat refused: {}", case["name"]);
+                    };
+                    assert!(plain.is_repeat());
+                    assert!(!plain.is_repeat_typing());
+                } else {
+                    assert!(
+                        parse_native(bad).is_none(),
+                        "mutation {mutation}: {}",
+                        case["name"]
+                    );
+                }
             }
         }
     }

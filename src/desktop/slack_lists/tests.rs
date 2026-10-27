@@ -18,6 +18,7 @@ pub(super) fn loaded(checked: bool) -> Loaded {
 }
 pub(super) fn make_shell() -> ShellState {
     let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
+    shell.core.active_account = Some("00000000-0000-4000-8000-000000009996".into());
     let team = shell.core.active_team.clone().unwrap();
     let user = shell.core.workspaces[&team].self_user_id.clone();
     shell.self_account.user_id = user.clone();

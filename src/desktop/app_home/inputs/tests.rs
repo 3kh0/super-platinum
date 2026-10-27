@@ -45,7 +45,7 @@ fn ordinary_parent_feedback_stays_absent_before_and_after_invalid_edit() {
     assert_eq!(presentation_error(&s, &input()), None);
     assert_eq!(form(&s).unwrap(), &edited);
     assert_eq!(form(&s).unwrap().state().unwrap(), wire);
-    s.app_home.surface.as_mut().unwrap().id = next();
+    crate::app_home::fixture::revisit(&mut s);
     assert_eq!(presentation_error(&s, &input()), None);
     assert_eq!(form(&s).unwrap(), &edited);
 }

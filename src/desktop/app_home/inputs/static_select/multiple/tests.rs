@@ -189,7 +189,7 @@ fn removed_option_keeps_local_token_and_invalid_flag_survives_max_raise() {
         values(&s.app_home.static_select.multiples[&i].visible),
         vec!["a", "b", "c"]
     );
-    s.app_home.surface.as_mut().unwrap().id = next();
+    crate::app_home::fixture::revisit(&mut s);
     hydrate(&mut s);
     assert_eq!(
         values(&s.app_home.static_select.multiples[&i].visible),
@@ -205,7 +205,7 @@ fn revisit_uses_current_dirty_parent_order_and_saved_parent_without_replaying() 
     let mut s = setup(true);
     emit(&mut s, &["b", "a"]);
     let i = (owner(&s).unwrap(), key());
-    s.app_home.surface.as_mut().unwrap().id = next();
+    crate::app_home::fixture::revisit(&mut s);
     hydrate(&mut s);
     mount(&mut s);
     assert_eq!(
@@ -222,7 +222,7 @@ fn revisit_uses_current_dirty_parent_order_and_saved_parent_without_replaying() 
         |r| r["state"] = json!({"values":{"pick":{"value":{"type":"multi_static_select","selected_options":[option("c"),option("a")]}}}}),
     );
     let i = (owner(&s).unwrap(), key());
-    s.app_home.surface.as_mut().unwrap().id = next();
+    crate::app_home::fixture::revisit(&mut s);
     hydrate(&mut s);
     assert_eq!(
         values(&s.app_home.static_select.multiples[&i].visible),

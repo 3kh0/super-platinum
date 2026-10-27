@@ -149,7 +149,7 @@ mod tests {
         assert!(r.requests.is_empty() && r.prepared.is_empty());
         let prepared = AnnotationIntent::capture_range(&before, "paragraph", 5, 13)
             .unwrap()
-            .prepare(&before)
+            .prepare_at(&before, crate::canvas::checklist::save::now_usec().unwrap())
             .unwrap();
         let record = prepared.record().unwrap();
         let rich: Value =

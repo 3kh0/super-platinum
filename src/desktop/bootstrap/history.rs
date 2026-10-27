@@ -273,7 +273,12 @@ pub async fn load_older(state: Signal<ShellState>) {
 }
 
 async fn load_older_in_mode(mut state: Signal<ShellState>, fixture: bool) {
-    if fixture && !super::ordinary_history::fixture::enabled(&state.peek()) {
+    if fixture
+        && (!super::ordinary_history::fixture::requested()
+            || !state
+                .try_peek()
+                .is_ok_and(|s| super::ordinary_history::fixture::enabled(&s)))
+    {
         return;
     }
     if state

@@ -73,7 +73,11 @@ fn current_policy_and_member_name_preserve_spaces_hidden_and_real_preference() {
 #[test]
 fn observed_unknown_nonexistent_and_known_empty_never_fabricate_id_name() {
     for (row, name, interactive) in [
-        (json!({"id":EDITOR,"isUnknown":true}), Name::Unknown, false),
+        (
+            json!({"id":EDITOR,"profile":{},"isUnknown":true}),
+            Name::Unknown,
+            false,
+        ),
         (
             json!({"id":EDITOR,"isNonExistent":true,"real_name":"","profile":{"display_name":"","real_name":""}}),
             Name::Nonexistent,

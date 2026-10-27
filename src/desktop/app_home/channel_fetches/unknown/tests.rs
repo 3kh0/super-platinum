@@ -82,6 +82,24 @@ fn drain_source(s: &mut ShellState, owner: &Owner) {
         .directory_channels
         .has_pending()
     {
+        let observed = observe(s, ctx).unwrap();
+        let w = s.core.workspaces.get_mut(&ctx.session.team_id).unwrap();
+        if let Some(commit) = w
+            .directory_channels
+            .drain_source_action(
+                &observed,
+                &ctx.account,
+                &ctx.session,
+                ctx.epoch,
+                GENERATION,
+                &w.channels,
+            )
+            .unwrap()
+        {
+            (w.directory_channels, w.channels) = commit.into_parts();
+            super::super::advance(s, owner).unwrap();
+            continue;
+        }
         let facts = members::receipt(s, owner, &[]).unwrap().facts;
         let w = s.core.workspaces.get_mut(&ctx.session.team_id).unwrap();
         let p = w

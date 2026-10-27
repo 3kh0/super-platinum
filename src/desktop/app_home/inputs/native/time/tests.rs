@@ -402,7 +402,11 @@ fn time_reset_retains_focus_history_but_reseeds_native_widget() {
     let before = crate::app_home::inputs::focus::config(&s, &key()).unwrap();
     emit(&mut s, "commit", "17:45", true);
     let raw = form(&s).unwrap().raw_view().clone();
-    super::super::reset(&mut s, &o);
+    let mut dom = dioxus::prelude::VirtualDom::new(dioxus::prelude::VNode::empty);
+    dom.rebuild_to_vec();
+    dom.in_scope(dioxus::prelude::ScopeId::ROOT, || {
+        super::super::reset(&mut s, &o);
+    });
     s.app_home.forms.insert(o, HomeForm::parse(&raw).unwrap());
     crate::app_home::inputs::hydrate(&mut s);
     mount(&mut s);

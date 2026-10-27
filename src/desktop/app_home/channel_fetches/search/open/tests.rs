@@ -109,7 +109,11 @@ fn newer_source_queue_retires_older_open_companions() {
     let mut newer = receipt(&mut s, &owner);
     newer.origin = Origin::OpenedConversation;
     newer
-        .accept(&mut s, &[json!({"id":ID,"is_open":false})], &|_| true)
+        .accept(
+            &mut s,
+            &[json!({"id":ID,"is_im":true,"user":owner.context.session.user_id,"is_open":false})],
+            &|_| true,
+        )
         .unwrap();
     publish_origin(&mut s, &owner, Origin::OpenedConversation);
     assert!(matches!(*done.lock().unwrap(), Status::Retired));

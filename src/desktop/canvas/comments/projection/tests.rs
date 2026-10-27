@@ -1,6 +1,15 @@
 use super::*;
 use serde_json::{Value, json};
 
+// These tests inspect body media; author pictures are a separate metadata path.
+pub(super) fn body_core() -> super_platinum_core::CoreAppState {
+    let mut core = crate::fixture::fixture_core();
+    for user in core.workspaces.get_mut("T1").unwrap().users.values_mut() {
+        user.profile = None;
+    }
+    core
+}
+
 fn render(fields: Value) -> (Message, MessageVm) {
     let mut raw = json!({
         "type":"message", "subtype":"document_comment_root", "ts":"1.0",
@@ -10,7 +19,7 @@ fn render(fields: Value) -> (Message, MessageVm) {
         .unwrap()
         .extend(fields.as_object().unwrap().clone());
     let message: Message = serde_json::from_value(raw).unwrap();
-    let core = crate::fixture::fixture_core();
+    let core = body_core();
     let vm = message_vm(&core.workspaces["T1"], &message, &MediaRegistry::default());
     (message, vm)
 }
@@ -25,7 +34,7 @@ fn text(vm: &MessageVm) -> String {
 
 #[test]
 fn deferred_file_root_metadata_never_traverses_superseded_body_or_decoy_media() {
-    let core = crate::fixture::fixture_core();
+    let core = body_core();
     let media = MediaRegistry::default();
     let raw = json!({"type":"message","subtype":"document_comment_root","ts":"1.0",
         "text":"Superseded","blocks":[{"type":"image","image_url":"https://example.test/block.png","alt_text":"decoy"}],
@@ -97,7 +106,7 @@ fn unsupported_blocks_never_restore_superseded_text() {
 #[test]
 fn ordinary_replies_keep_existing_projection() {
     let (message, vm) = render(json!({"subtype":null,"thread_ts":"0.9","text":"*ordinary reply*"}));
-    let core = crate::fixture::fixture_core();
+    let core = body_core();
     let original = crate::message_vm::message_vm_with_pending(
         &core.workspaces["T1"],
         &message,
@@ -156,7 +165,7 @@ fn entity_decoding_keeps_link_identity_and_hidden_body_registers_no_media() {
         "text":"hidden text", "blocks":[{"type":"image", "image_url":"https://example.test/hidden.png", "alt_text":"hidden"}]
     }));
     assert_eq!(text(&vm), "This content was deleted.");
-    let core = crate::fixture::fixture_core();
+    let core = body_core();
     let media = MediaRegistry::default();
     message_vm(&core.workspaces["T1"], &message, &media);
     assert!(!media.has_pending());
@@ -179,7 +188,7 @@ fn special_root(visible: Option<Value>) -> Message {
 
 #[test]
 fn hidden_file_blocks_and_attachments_never_register_media_or_change_root_custody() {
-    let core = crate::fixture::fixture_core();
+    let core = body_core();
     for files in [true, false] {
         let mut message = special_root(Some(json!(false)));
         if !files {
@@ -211,7 +220,7 @@ fn hidden_file_blocks_and_attachments_never_register_media_or_change_root_custod
 
 #[test]
 fn visible_file_root_keeps_selected_block_media_but_never_appends_file_or_attachment_media() {
-    let core = crate::fixture::fixture_core();
+    let core = body_core();
     for visible in [
         None,
         Some(Value::Null),
@@ -267,7 +276,7 @@ fn fallback_root(fields: Value, multiple: bool) -> Message {
 }
 
 fn project_fallback(message: &Message) -> MessageVm {
-    let core = crate::fixture::fixture_core();
+    let core = body_core();
     let original = serde_json::to_value(message).unwrap();
     let media = MediaRegistry::default();
     let vm = message_vm(&core.workspaces["T1"], message, &media);
@@ -392,7 +401,7 @@ fn malformed_file_root_fallback_is_empty_without_decoy_media_or_text() {
 
 #[test]
 fn nonroot_files_and_fileless_root_attachments_keep_existing_behavior() {
-    let core = crate::fixture::fixture_core();
+    let core = body_core();
     let mut reply = special_root(Some(json!(false)));
     reply.subtype = None;
     reply.thread_ts = Some("0.9".into());

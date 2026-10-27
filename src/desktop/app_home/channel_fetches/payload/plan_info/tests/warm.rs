@@ -1,8 +1,9 @@
 use super::*;
-const ACCOUNT: &str = "67c1fd64-2911-4d9a-aa50-fd73155a98f8";
 fn retained() -> (ShellState, Owner, Value) {
-    let (mut s, _) = prepared();
-    s.core.active_account = Some(ACCOUNT.into());
+    let mut s = ShellState::fixture(crate::media::MediaRegistry::default());
+    fixture::install(&mut s);
+    // The cache owner must match the already acquired channel lineage.
+    let account = s.core.active_account.clone().unwrap();
     let team = s.core.active_team.clone().unwrap();
     let context = Arc::new(Context::capture(&s, &team).unwrap());
     let owner = initial::begin(
@@ -21,7 +22,7 @@ fn retained() -> (ShellState, Owner, Value) {
         .unwrap()
         .cfm_payload
         .plan_info_cache =
-        source::PlanInfoCache::accepted(ACCOUNT, &owner.context.session, raw.clone());
+        source::PlanInfoCache::accepted(&account, &owner.context.session, raw.clone());
     (s, owner, raw)
 }
 #[test]

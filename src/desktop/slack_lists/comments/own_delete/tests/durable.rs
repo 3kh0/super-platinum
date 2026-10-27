@@ -178,8 +178,16 @@ async fn positive_readback_is_separate_from_unknown_receipt_and_missing_page_is_
         json!({"ok":true,"messages":[],"has_more":false}),
     )
     .unwrap();
-    assert!(!record.observed(&missing).unwrap());
-    let deleted = json!({"ok":true,"messages":[],"deleted":[TS],"has_more":false});
+    assert!(record.observed(&missing).is_err());
+    let root = json!({"type":"message","subtype":"list_record_comment", "ts":source.target.root_ts(),
+        "slack_list":{"list_id":source.target.list_id(),"list_record_id":source.target.record_id()}});
+    let missing_reply = Page::parse(
+        &source.target,
+        json!({"ok":true,"messages":[root],"has_more":false}),
+    )
+    .unwrap();
+    assert!(!record.observed(&missing_reply).unwrap());
+    let deleted = json!({"ok":true,"messages":[root],"deleted":[TS],"has_more":false});
     let page = Page::parse(&source.target, deleted.clone()).unwrap();
     assert!(record.observed(&page).unwrap());
     recovery

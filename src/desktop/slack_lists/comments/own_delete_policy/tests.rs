@@ -59,7 +59,10 @@ fn acquired_list_file_branch_does_not_use_edit_mode_window_access_or_locked_as_g
         )
         .unwrap()
     );
-    assert!(facts::read_only_file_thread(&channel(), &target(json!({"subtype":"poll"}))).is_err());
+    // Polls are refused before a List comment Target can be acquired.
+    let mut poll = target(json!({})).document_raw().clone();
+    poll["subtype"] = json!("poll");
+    assert!(Document::parse(poll).is_err());
     let mut foreign = channel();
     foreign["id"] = json!("COTHER");
     // Identity validation belongs to the channel response; no foreign response admits.

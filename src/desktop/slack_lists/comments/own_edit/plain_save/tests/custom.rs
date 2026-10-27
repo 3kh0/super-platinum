@@ -171,7 +171,8 @@ fn display_custom_embed_first_reaches_complete_catalog_at_encoding() {
         custom::encoding(&standard, Some(&empty), &text).is_err(),
         "complete negative does not invent custom membership"
     );
-    assert!(custom::needs_catalog(&standard, None, "malformed").is_err());
+    assert!(custom::needs_catalog(&standard, None, "malformed").unwrap());
+    assert!(custom::needs_catalog(&standard, None, ":bad:name:").is_err());
 }
 
 #[test]

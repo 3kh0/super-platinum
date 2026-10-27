@@ -189,14 +189,14 @@ fn mounted_props_do_not_sync_but_fresh_retained_widget_applies_initial_once() {
     assert_eq!(local(&s), "draft@example.com");
     assert_eq!(parent(&s)["value"], "draft@example.com");
     assert!(s.app_home.text.emails[&index(&s)].window.is_none());
-    s.app_home.surface.as_mut().unwrap().id = next();
+    crate::app_home::fixture::revisit(&mut s);
     hydrate(&mut s, &[]);
     mount(&mut s);
     assert_eq!(local(&s), "New@Example.com");
     assert_eq!(parent(&s)["value"], "New@Example.com");
     assert!(s.app_home.text.emails[&index(&s)].window.is_none());
     refresh(&mut s, None);
-    s.app_home.surface.as_mut().unwrap().id = next();
+    crate::app_home::fixture::revisit(&mut s);
     hydrate(&mut s, &[]);
     mount(&mut s);
     assert_eq!(local(&s), "");

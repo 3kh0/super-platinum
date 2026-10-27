@@ -85,12 +85,20 @@ fn selected_acquired_agent_grant_reaches_named_run_union_only_in_this_context() 
         unified_user: false,
         collaborators: vec!["UWORKFLOW".into()],
         available_external_ids: None,
-        entities: vec![Entity {
-            id: "UWORKFLOW".into(),
-            kind: Kind::User,
-            enterprise_id: None,
-            eligible: true,
-        }],
+        entities: vec![
+            Entity {
+                id: "TWORKFLOW".into(),
+                kind: Kind::Team,
+                enterprise_id: None,
+                eligible: true,
+            },
+            Entity {
+                id: "UWORKFLOW".into(),
+                kind: Kind::User,
+                enterprise_id: None,
+                eligible: true,
+            },
+        ],
     };
     let mut draft = Draft::from_acquired(
         &json!({"ok":true,"permission_type":"named_entities","user_ids":["UWORKFLOW"],

@@ -177,10 +177,18 @@ fn background_progress_retains_original_batch_order_and_unsent_ids() {
 #[test]
 fn legacy_background_witness_cannot_borrow_later_canonical_lineage() {
     let mut shell = shell();
+    // Model a legacy warm cache, rather than a newly initialized source store.
+    shell
+        .core
+        .workspaces
+        .get_mut(TEAM)
+        .unwrap()
+        .directory_usergroups = Default::default();
     let owner = Context::capture(&shell, TEAM).unwrap();
     let source = RefreshSource::capture(&shell, &owner).unwrap();
     assert!(source.current(&shell, &owner));
     let w = shell.core.workspaces.get_mut(TEAM).unwrap();
+    w.directory_usergroups = super_platinum_core::state::directory_usergroups::Store::fresh();
     let boot = w.directory_usergroups.begin_boot(&w.usergroups).unwrap();
     let commit = w
         .directory_usergroups

@@ -1,6 +1,11 @@
 //! Exercise the actual native fixture's synthetic canonical adapter, not a parallel seed.
 use super::*;
-fn edit(source: &Arc<CanvasCollabSnapshot>, id: &str, rtml: &str) -> Arc<CanvasCollabSnapshot> {
+fn edit(
+    source: &Arc<CanvasCollabSnapshot>,
+    id: &str,
+    rtml: &str,
+    owns_peer: bool,
+) -> Arc<CanvasCollabSnapshot> {
     let mut session = super_platinum_core::canvas::edit::EditSession::new();
     let prepared = TextIntent::capture(source, id, 100)
         .unwrap()
@@ -12,7 +17,7 @@ fn edit(source: &Arc<CanvasCollabSnapshot>, id: &str, rtml: &str) -> Arc<CanvasC
         )
         .unwrap();
     let (accepted, fresh, _) = completion::text(prepared, source.clone());
-    assert!(accepted.associated_peer_count() > 0);
+    assert_eq!(accepted.associated_peer_count() > 0, owns_peer, "{id}");
     assert!(accepted.confirms_readback(&fresh).unwrap());
     unchanged(source, &fresh, id).unwrap();
     canonical(&fresh, id, rtml).unwrap();
@@ -54,7 +59,7 @@ fn actual_parent_seed_rich_apply_remove_and_continuation_preserve_child_and_gap(
         } else {
             format!("<a href=\"https://example.test/\">{rtml}</a>")
         };
-        let formatted = edit(&source, owner, &rich);
+        let formatted = edit(&source, owner, &rich, true);
         let actions = super_platinum_core::canvas::edit::structure::paragraph_actions(
             &formatted,
             &[owner, &child],
@@ -64,9 +69,14 @@ fn actual_parent_seed_rich_apply_remove_and_continuation_preserve_child_and_gap(
             a.as_ref()
                 .is_some_and(|a| a.insert_before && a.insert_after && a.delete)
         }));
-        let removed = edit(&formatted, owner, &rtml);
-        let owner_later = edit(&removed, owner, &format!("{rtml} edited"));
-        let child_later = edit(&owner_later, &child, &format!("{} edited", escaped(tail)));
+        let removed = edit(&formatted, owner, &rtml, true);
+        let owner_later = edit(&removed, owner, &format!("{rtml} edited"), true);
+        let child_later = edit(
+            &owner_later,
+            &child,
+            &format!("{} edited", escaped(tail)),
+            false,
+        );
         assert_eq!(child_later.section(owner), owner_later.section(owner));
         assert_eq!(formatted.section(&child), initial.section(&child));
     }
@@ -77,7 +87,7 @@ fn actual_parent_coalescence_rich_delete_retains_checkpoint_child_and_gap() {
     let initial = seed::seed_parent("ascii", "retained", "revert");
     let child = seed::child(&initial, owner);
     let source = add_gap(initial, owner, "Independent gap");
-    let rich = edit(&source, owner, "<b>Keep this</b>");
+    let rich = edit(&source, owner, "<b>Keep this</b>", true);
     let prepared =
         super_platinum_core::canvas::edit::structure::StructureIntent::delete(&rich, owner, 100)
             .unwrap()

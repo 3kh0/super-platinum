@@ -20,7 +20,7 @@ fn token() -> Value {
 }
 fn setup(blocks: bool) -> ShellState {
     let mut s = shell();
-    s.self_account.user_id = "USELF01".into();
+    s.self_account.user_id = "USELF0001".into();
     s.canvas_titles = crate::canvas::quip_titles::State::fresh();
     file_source::fixture_target_source(&mut s, TEAM, vec![empty_source(blocks)]).unwrap();
     s

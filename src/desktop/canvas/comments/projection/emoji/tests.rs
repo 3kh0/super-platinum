@@ -91,7 +91,7 @@ fn selected_map_reprojects_root_and_retained_preview_then_restores_unobserved_gl
 
 #[test]
 fn selected_file_root_defers_body_and_hidden_root_never_registers_body_media() {
-    let core = crate::fixture::fixture_core();
+    let core = super::super::tests::body_core();
     let standard = StandardEmoji::build(Version::V17).unwrap();
     let mut raw = serde_json::to_value(message(true)).unwrap();
     raw["files"] = json!([{"id":"F12345678","name":"first canonical file"}]);
@@ -185,7 +185,7 @@ fn retired_canvas_owner_and_closed_query_cannot_refresh_cached_rows() {
 
 #[test]
 fn selected_map_does_not_restore_text_superseded_by_unsupported_blocks() {
-    let core = crate::fixture::fixture_core();
+    let core = super::super::tests::body_core();
     let mut raw = serde_json::to_value(message(true)).unwrap();
     raw["blocks"] = json!([{"type":"future_unsupported"}]);
     let message: Message = serde_json::from_value(raw).unwrap();

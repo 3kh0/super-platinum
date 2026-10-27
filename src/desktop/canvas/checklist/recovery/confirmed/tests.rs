@@ -24,6 +24,8 @@ pub(in crate::canvas::checklist) fn foreign(mut ticket: Ticket) -> Ticket {
 }
 fn setup(previous: bool) -> (ShellState, Read, RestoreRead) {
     let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
+    shell.core.active_account = Some("00000000-0000-4000-8000-000000009997".into());
+    shell.self_account.user_id = shell.core.workspaces["T1"].self_user_id.clone();
     shell.canvas = Some(crate::state::CanvasTarget {
         id: "Ffixture".into(),
         title: "Restore".into(),

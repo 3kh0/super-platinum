@@ -3,6 +3,33 @@ use super_platinum_core::state::directory_usergroups::{
     NativeMembers, Operation, Origin, RendererReply, Store,
 };
 const ID: &str = "SGROUP001";
+fn setup() -> (ShellState, Token) {
+    use super_platinum_core::{config::Session, slack::Transport};
+
+    let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
+    // Group policy needs an authenticated read owner and a hydratable self ID.
+    // Install that identity before the profile fixture captures its permissions.
+    let team = shell.core.active_team.clone().unwrap();
+    let workspace = shell.core.workspaces.get_mut(&team).unwrap();
+    let mut user = workspace.users.remove(&workspace.self_user_id).unwrap();
+    user.id = "UPROFILE1".into();
+    workspace.self_user_id = user.id.clone();
+    shell.self_account.user_id = user.id.clone();
+    workspace.users.insert(user.id.clone(), user);
+    fixture::install_interaction(&mut shell);
+    let original = Token::capture(&shell).unwrap();
+    let session = crate::profile_edit::fixture::session(&original.owner);
+    shell.core.session = Some(Session {
+        d_cookie: "synthetic".into(),
+        unified_user_client_enabled: BTreeMap::new(),
+        workspaces: BTreeMap::from([(team, session)]),
+    });
+    shell.core.transport = Some(Arc::new(Transport::disconnected_fixture("synthetic")));
+    let token = Token::capture(&shell).unwrap();
+    shell.profile_edit.draft.as_mut().unwrap().token = token.clone();
+    shell.profile_edit.sections.draft.as_mut().unwrap().token = token.clone();
+    (shell, token)
+}
 fn group(handle: &str, version: u64) -> Value {
     json!({"id":ID,"handle":handle,"name":"Fixture group","date_update":version})
 }

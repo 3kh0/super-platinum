@@ -48,7 +48,7 @@ fn new_parent_full_initial_retained_mount_projection_and_reset_are_distinct() {
     inputs::hydrate(&mut s);
     assert_eq!(visible(&s, &key()).unwrap(), vec![original.clone()]);
     let old = widget(&s, &key()).unwrap().instance;
-    s.app_home.surface.as_mut().unwrap().id = next();
+    crate::app_home::fixture::revisit(&mut s);
     inputs::hydrate(&mut s);
     let projected = visible(&s, &key()).unwrap();
     assert_ne!(widget(&s, &key()).unwrap().instance, old);

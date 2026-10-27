@@ -87,6 +87,14 @@ pub(crate) fn install(s: &mut ShellState) {
     });
     inputs::hydrate(s);
 }
+/// A fresh Home visit retaining the same view/form for lifecycle unit tests.
+#[cfg(test)]
+pub(super) fn revisit(s: &mut ShellState) {
+    let owner = Owner::capture(s).expect("fixture Home owner");
+    let surface = s.app_home.surface.as_mut().unwrap();
+    surface.id = owner.home_visit;
+    surface.owner = owner;
+}
 pub(crate) fn install_inputs(s: &mut ShellState) {
     install(s);
     let h = s.app_home.surface.as_mut().unwrap();
