@@ -48,6 +48,7 @@ def known_fixtures():
     # The checked-in sweep is the explicit fixture allowlist, not a prefix match.
     # The bounded-channel hook additionally has this exact boot.rs match arm.
     catalog = (ROOT / "scripts/agent-ui-check.sh").read_text(encoding="utf-8")
+    catalog = "\n".join(line.split("#", 1)[0] for line in catalog.splitlines())
     block = catalog.split("FIXTURES=(", 1)[1].split(")", 1)[0]
     names = block.split()
     if not names or any(not re.fullmatch(r"[a-z][a-z0-9-]*", name) for name in names):

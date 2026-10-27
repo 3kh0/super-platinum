@@ -12,6 +12,11 @@ SPEC.loader.exec_module(RUNNER)
 
 
 class VisualValidationTests(unittest.TestCase):
+    def test_catalog_ignores_shell_comments_including_parentheses(self):
+        catalog = "FIXTURES=(\n channel # comment with ) punctuation\n # ignored\n search-error\n)\n"
+        with patch.object(Path, "read_text", return_value=catalog):
+            self.assertEqual(RUNNER.known_fixtures(), {"channel", "search-error", "channel-window-10000"})
+
     def test_exact_names_presets_and_no_implicit_sweep(self):
         for preset in RUNNER.PRESETS:
             self.assertEqual(RUNNER.selected_fixtures([preset], []), list(RUNNER.PRESETS[preset]))

@@ -1,16 +1,11 @@
-//! Copy only this file to examples/emoji_catalog_lifecycle.rs for a root-owned
-//! locked example run. The exact reviewed Catalog source stays in tmp.
-use super_platinum_core::{
-    composer_emoji::{insertion, search, standard},
-    slack,
-};
-#[path = "../tmp/emoji-completion-integration-prep/core/catalog.rs"]
-mod catalog;
-
-use catalog::Catalog;
+//! Catalog lifecycle measurements against the maintained core implementation.
 use serde_json::{Value, json};
 use slack::models::Emoji;
 use std::{collections::HashMap, hint::black_box, sync::Arc, time::Instant};
+use super_platinum_core::{
+    composer_emoji::{catalog::Catalog, standard},
+    slack,
+};
 
 const VERSION: &str = "emoji-owned-catalog-lifecycle-v1";
 const SIZES: &[usize] = &[0, 1_000, 16_000, 64_000];
@@ -209,7 +204,7 @@ fn main() {
     println!(
         "{}",
         json!({"schema":1,"corpus":VERSION,"rounds":rounds,"seed":seed,"retained_warmup_rounds":1,
-        "measurement":"actual full Emoji clone, deterministic sort, reviewed Catalog::build and Arc/snapshot drop wall time; includes replacement with old owner reader live; assertions/setup/serialization excluded",
+        "measurement":"actual full Emoji clone, deterministic sort, maintained core Catalog::build and Arc/snapshot drop wall time; includes replacement with old owner reader live; assertions/setup/serialization excluded",
         "excludes":["picker projection","preferences/history","ranking","worker transfer/scheduling","renderer/native frames","production owner admission"],
         "inventories":inventories})
     );

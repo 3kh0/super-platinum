@@ -92,7 +92,7 @@ pub(crate) fn snapshot() -> Value {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super_platinum_core::slack::api::profile_sections::custom::texty::file_titles;
+    use super_platinum_core::slack::api::custom::texty::file_titles;
 
     #[test]
     fn mounted_vectors_share_dependency_and_label_admission_without_wire_mutation() {

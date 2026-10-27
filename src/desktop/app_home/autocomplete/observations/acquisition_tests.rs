@@ -29,6 +29,17 @@ fn harness() -> (VirtualDom, Signal<ShellState>, Arc<Context>, Authority) {
 fn poll<F: Future>(dom: &VirtualDom, future: Pin<&mut F>) -> Poll<F::Output> {
     dom.in_runtime(|| future.poll(&mut PollContext::from_waker(Waker::noop())))
 }
+fn api_method(request: &super_platinum_core::slack::PreparedRequest) -> &str {
+    assert_eq!(request.method, "POST");
+    request
+        .url
+        .split_once("/api/")
+        .unwrap()
+        .1
+        .split('?')
+        .next()
+        .unwrap()
+}
 fn raw(method: &str, c: &Context) -> Value {
     match method {
         "client.gantryBoot" => {
@@ -45,8 +56,9 @@ fn successful_shared_producer_installs_complete_then_offline_reuses_without_read
     let (dom, state, c, a) = harness();
     let calls = RefCell::new(vec![]);
     let read = |r: super_platinum_core::slack::PreparedRequest| {
-        calls.borrow_mut().push(r.method);
-        std::future::ready(Ok(raw(r.method, &c)))
+        let method = api_method(&r);
+        calls.borrow_mut().push(method.to_owned());
+        std::future::ready(Ok(raw(method, &c)))
     };
     let mut first = Box::pin(acquire_with(
         state,
@@ -111,9 +123,10 @@ fn joined_call_consumes_no_reads_and_dropping_waiter_does_not_cancel_producer() 
     let receiver = RefCell::new(Some(rx));
     let calls = RefCell::new(vec![]);
     let read = |r: super_platinum_core::slack::PreparedRequest| {
-        calls.borrow_mut().push(r.method);
-        let response = raw(r.method, &c);
-        let hold = if r.method == "users.prefs.get" {
+        let method = api_method(&r);
+        calls.borrow_mut().push(method.to_owned());
+        let response = raw(method, &c);
+        let hold = if method == "users.prefs.get" {
             receiver.borrow_mut().take()
         } else {
             None
@@ -206,7 +219,7 @@ fn retirement_between_reads_blocks_next_read_and_atomic_publication() {
                 let mut state = state;
                 state.write().app_home.workflow_names_revision += 1;
             }
-            std::future::ready(Ok(raw(r.method, &c)))
+            std::future::ready(Ok(raw(api_method(&r), &c)))
         };
         let online = |_: &ShellState| connected.get();
         let mut future = Box::pin(acquire_with(state, c.clone(), a, &|_| true, &online, &read));

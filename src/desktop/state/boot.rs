@@ -781,7 +781,7 @@ impl ShellState {
             avatar: Some(jules_avatar),
             body: vec![
                 RichNode::Text("I measured the warm path:".into()),
-                RichNode::Code("cache â†’ render â†’ background refresh".into()),
+                RichNode::Code("cache → render → background refresh".into()),
                 RichNode::Quote(vec![RichNode::Text(
                     "Cached content stays visible if refresh fails.".into(),
                 )]),
@@ -813,7 +813,7 @@ impl ShellState {
                 RichNode::Text("The multiline composer and custom emoji fixture both pass ".into()),
                 RichNode::Emoji {
                     name: "ship".into(),
-                    glyph: "ðŸš¢".into(),
+                    glyph: "🚢".into(),
                 },
             ],
             ..Default::default()
