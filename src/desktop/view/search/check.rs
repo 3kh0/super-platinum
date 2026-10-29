@@ -8,7 +8,7 @@ use super_platinum_core::search_query::SearchFilters;
 pub(crate) const QUERY: &str =
     "launch has:file has:file -has:file \"has:link\" has:pin HAS:link has:links";
 const APPLIED: &str = "launch   -has:file \"has:link\" has:pin HAS:link has:links has:link";
-const CLEARED: &str = "launch   -has:file \"has:link\" has:pin HAS:link has:links ";
+const CLEARED: &str = "launch   -has:file \"has:link\"  HAS:link has:links ";
 const KEYBOARD: &str = "report \"exact phrase\" -has:link has:pin";
 const UNFINISHED: &str = "report \"unfinished";
 const ERROR: &str = "Close the quoted phrase before adding a filter.";

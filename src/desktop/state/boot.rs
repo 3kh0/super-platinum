@@ -80,6 +80,73 @@ impl ShellState {
                 state.overlay = Some(Overlay::Settings);
                 state
             }
+            "search-messages-pages"
+            | "search-messages-pages-narrow"
+            | "search-messages-page2"
+            | "search-messages-page2-narrow"
+            | "search-messages-page-failed"
+            | "search-messages-page-failed-narrow" => {
+                let mut state = Self::fixture(media);
+                crate::bootstrap::search_message_pages::fixture(&mut state, &fixture);
+                state
+            }
+            "search-files-pages"
+            | "search-files-pages-narrow"
+            | "search-files-page-failed"
+            | "search-files-saving"
+            | "search-files-saving-narrow"
+            | "search-files-save-unconfirmed"
+            | "search-files-save-unconfirmed-narrow"
+            | "search-files-page-failed-narrow" => {
+                let mut state = Self::fixture(media);
+                state.overlay = Some(Overlay::Search);
+                state.set_search_kind(super_platinum_core::search::SearchKind::Files);
+                state.set_search_query("design notes".into());
+                state.search_file_pages_fixture = Some(fixture.contains("failed"));
+                state.search_file_sort_fixture = if fixture.contains("saving") {
+                    Some(crate::bootstrap::search_file_pages::saved::Fixture::Saving)
+                } else if fixture.contains("save-unconfirmed") {
+                    Some(crate::bootstrap::search_file_pages::saved::Fixture::Unconfirmed)
+                } else {
+                    None
+                };
+                state.search_pager.page = 1;
+                state
+            }
+            "search-files-types"
+            | "search-files-types-narrow"
+            | "search-files-types-clear"
+            | "search-files-types-clear-narrow" => {
+                // Presentation only: no session/receipt is invented to enable
+                // owned handlers or admit a private Files protocol.
+                let mut state = Self::fixture(media);
+                state.overlay = Some(Overlay::Search);
+                state.set_search_kind(super_platinum_core::search::SearchKind::Files);
+                state.set_search_query(if fixture.contains("clear") {
+                    "design notes -type:pdfs type:videos".into()
+                } else {
+                    "design notes type:documents type:images type:pdfs".into()
+                });
+                state.search_filters = Some(
+                    super_platinum_core::search_query::SearchFilters::from_query(
+                        &state.search_query,
+                    ),
+                );
+                state
+            }
+            "search-message-scopes"
+            | "search-message-scopes-narrow"
+            | "search-message-scopes-clear"
+            | "search-message-scopes-clear-narrow" => {
+                let mut state = Self::fixture(media);
+                super::search_message_scopes::fixture(&mut state, &fixture);
+                state
+            }
+            "search-files" | "search-files-narrow" => {
+                let mut state = Self::fixture(media);
+                crate::bootstrap::search_files::fixture(&mut state);
+                state
+            }
             "search-has-filters" | "search-has-filters-narrow" => {
                 let mut state = Self::fixture(media);
                 crate::view::search::check::install(&mut state);
@@ -93,7 +160,41 @@ impl ShellState {
             | "search-narrow"
             | "search-opening"
             | "search-filters"
-            | "search-filters-narrow" => {
+            | "search-filters-narrow"
+            | "search-saved-pinned"
+            | "search-saved-pinned-narrow"
+            | "search-context-filters"
+            | "search-context-filters-narrow"
+            | "search-date"
+            | "search-date-narrow"
+            | "search-history"
+            | "search-history-narrow"
+            | "search-attachments"
+            | "search-attachments-narrow"
+            | "search-conversations"
+            | "search-conversations-narrow"
+            | "search-people"
+            | "search-people-narrow"
+            | "search-people-paging"
+            | "search-people-paging-narrow"
+            | "search-people-account-type"
+            | "search-people-account-type-narrow"
+            | "search-people-account-type-deactivated"
+            | "search-people-account-type-deactivated-narrow"
+            | "search-people-saving"
+            | "search-people-saving-narrow"
+            | "search-people-save-unconfirmed"
+            | "search-people-save-unconfirmed-narrow"
+            | "search-people-loading"
+            | "search-people-loading-narrow"
+            | "search-people-empty"
+            | "search-people-empty-narrow"
+            | "search-people-error"
+            | "search-people-error-narrow"
+            | "profile-people-read-only"
+            | "profile-people-read-only-narrow"
+            | "profile-people-read-only-error"
+            | "profile-people-read-only-error-narrow" => {
                 let mut state = Self::fixture(media);
                 crate::bootstrap::search_fixture(&mut state, &fixture);
                 state
@@ -260,6 +361,7 @@ impl ShellState {
         let Some(session) = accounts.sessions.get(&accounts.active_account) else {
             return Ok(Self::login(media));
         };
+        let media = media.for_session(Some(accounts.active_account.clone()));
         let workspaces = session
             .workspaces
             .values()
@@ -397,6 +499,12 @@ impl ShellState {
             channel_workflows: Default::default(),
             dm_query: String::new(),
             dm_unread_only: false,
+            dm_input_revision: 0,
+            dm_open: None,
+            surface_hydration: Default::default(),
+            resource_reads: Default::default(),
+            thread_feed_reads: Default::default(),
+            later_read: Default::default(),
             activity_tab: ActivityTab::default(),
             surfaces: HashMap::new(),
             profile_hover: None,
@@ -424,8 +532,25 @@ impl ShellState {
             search_open_generation: 0,
             search_opening: None,
             search_filters: None,
+            search_file_type_filters: None,
+            search_message_scope_filters: None,
+            search_message_scope_fixture: None,
+            search_history_open: false,
             search_filter_error: None,
             search_results: Vec::new(),
+            search_people_results: None,
+            search_file_pages_fixture: None,
+            search_file_sort_fixture: None,
+            search_file_module: None,
+            search_file_save_registry: Default::default(),
+            search_people_module: None,
+            search_people_pager_fixture: false,
+            search_control_memory: None,
+            search_message_pages: None,
+            search_message_pages_fixture: None,
+            search_people_account_fixture: None,
+            search_people_save_fixture: None,
+            search_file_results: Vec::new(),
             search_pager: Default::default(),
             later_open_generation: 0,
             unread_anchor: None,
@@ -447,6 +572,7 @@ impl ShellState {
             thread_error: None,
             thread_history: Default::default(),
             profile_user: None,
+            profile_search: None,
             profile_generation: 0,
             profile_dm_generation: 0,
             profile_dm_opening: None,
@@ -517,6 +643,7 @@ impl ShellState {
         settings: super_platinum_core::config::Settings,
     ) -> Self {
         let core = super_platinum_core::CoreAppState::new(settings);
+        let media = media.for_session(core.active_account.clone());
         let state = Self {
             core,
             managed_drafts: Default::default(),
@@ -559,6 +686,12 @@ impl ShellState {
             channel_workflows: Default::default(),
             dm_query: String::new(),
             dm_unread_only: false,
+            dm_input_revision: 0,
+            dm_open: None,
+            surface_hydration: Default::default(),
+            resource_reads: Default::default(),
+            thread_feed_reads: Default::default(),
+            later_read: Default::default(),
             activity_tab: ActivityTab::default(),
             surfaces: HashMap::new(),
             profile_hover: None,
@@ -586,8 +719,25 @@ impl ShellState {
             search_open_generation: 0,
             search_opening: None,
             search_filters: None,
+            search_file_type_filters: None,
+            search_message_scope_filters: None,
+            search_message_scope_fixture: None,
+            search_history_open: false,
             search_filter_error: None,
             search_results: Vec::new(),
+            search_people_results: None,
+            search_file_pages_fixture: None,
+            search_file_sort_fixture: None,
+            search_file_module: None,
+            search_file_save_registry: Default::default(),
+            search_people_module: None,
+            search_people_pager_fixture: false,
+            search_control_memory: None,
+            search_message_pages: None,
+            search_message_pages_fixture: None,
+            search_people_account_fixture: None,
+            search_people_save_fixture: None,
+            search_file_results: Vec::new(),
             search_pager: Default::default(),
             later_open_generation: 0,
             unread_anchor: None,
@@ -609,6 +759,7 @@ impl ShellState {
             thread_error: None,
             thread_history: Default::default(),
             profile_user: None,
+            profile_search: None,
             profile_generation: 0,
             profile_dm_generation: 0,
             profile_dm_opening: None,
@@ -658,6 +809,7 @@ impl ShellState {
 
     pub fn fixture(media: MediaRegistry) -> Self {
         let mut core = fixture_core();
+        let media = media.for_session(core.active_account.clone());
         // Existing offline scenes intentionally exercise Slack's left-off
         // opening. Production missing preferences remain unavailable/falsy.
         for workspace in core.workspaces.values_mut() {
@@ -915,6 +1067,12 @@ impl ShellState {
             channel_workflows: Default::default(),
             dm_query: String::new(),
             dm_unread_only: false,
+            dm_input_revision: 0,
+            dm_open: None,
+            surface_hydration: Default::default(),
+            resource_reads: Default::default(),
+            thread_feed_reads: Default::default(),
+            later_read: Default::default(),
             activity_tab: ActivityTab::default(),
             surfaces: HashMap::new(),
             profile_hover: None,
@@ -942,8 +1100,25 @@ impl ShellState {
             search_open_generation: 0,
             search_opening: None,
             search_filters: None,
+            search_file_type_filters: None,
+            search_message_scope_filters: None,
+            search_message_scope_fixture: None,
+            search_history_open: false,
             search_filter_error: None,
             search_results: Vec::new(),
+            search_people_results: None,
+            search_file_pages_fixture: None,
+            search_file_sort_fixture: None,
+            search_file_module: None,
+            search_file_save_registry: Default::default(),
+            search_people_module: None,
+            search_people_pager_fixture: false,
+            search_control_memory: None,
+            search_message_pages: None,
+            search_message_pages_fixture: None,
+            search_people_account_fixture: None,
+            search_people_save_fixture: None,
+            search_file_results: Vec::new(),
             search_pager: Default::default(),
             later_open_generation: 0,
             unread_anchor: None,
@@ -965,6 +1140,7 @@ impl ShellState {
             thread_error: None,
             thread_history: Default::default(),
             profile_user: None,
+            profile_search: None,
             profile_generation: 0,
             profile_dm_generation: 0,
             profile_dm_opening: None,
@@ -1082,6 +1258,12 @@ impl ShellState {
             | "thread-feed-error"
             | "thread-feed-loading"
             | "thread-feed-updated"
+            | "thread-feed-refresh-retry"
+            | "thread-feed-refresh-retry-narrow"
+            | "thread-feed-older-retry"
+            | "thread-feed-older-retry-narrow"
+            | "thread-feed-initial-retry"
+            | "thread-feed-initial-retry-narrow"
             | "thread-feed-narrow" => crate::thread_feed::fixture(&mut state, name),
             "thread-follow-on"
             | "thread-follow-off"
@@ -1643,6 +1825,27 @@ impl ShellState {
             "app-modal-users" | "app-modal-users-narrow" => {
                 crate::app_modal::users_fixture::install(&mut state)
             }
+            "app-modal-email" | "app-modal-email-narrow" => {
+                crate::app_modal::email::fixture::install(&mut state, false);
+            }
+            "app-modal-email-error" | "app-modal-email-error-narrow" => {
+                crate::app_modal::email::fixture::install(&mut state, true);
+            }
+            "app-modal-url" | "app-modal-url-narrow" => {
+                crate::app_modal::url_input::fixture::install(&mut state, false);
+            }
+            "app-modal-url-error" | "app-modal-url-error-narrow" => {
+                crate::app_modal::url_input::fixture::install(&mut state, true);
+            }
+            "app-modal-url-prefill" | "app-modal-url-prefill-narrow" => {
+                crate::app_modal::url_input::fixture::install_prefill(&mut state);
+            }
+            "app-modal-required-integer" | "app-modal-required-integer-narrow" => {
+                crate::app_modal::number_input::fixture::install(&mut state);
+            }
+            "app-modal-signed-integer" | "app-modal-signed-integer-narrow" => {
+                crate::app_modal::number_input::fixture::install_signed(&mut state);
+            }
             "app-modal-multi-conversation" | "app-modal-multi-conversation-narrow" => {
                 crate::app_modal::multi_conversation_fixture::install(&mut state);
             }
@@ -2137,6 +2340,32 @@ impl ShellState {
             }
             "unreads" => state.main_view = MainView::Unreads,
             "dms" => state.main_view = MainView::Dms,
+            "dms-current-facts" | "dms-current-facts-narrow" => {
+                crate::bootstrap::dms::install_facts_fixture(&mut state)
+            }
+            "dms-initial-unloaded"
+            | "dms-initial-unloaded-narrow"
+            | "dms-initial-loading"
+            | "dms-initial-loading-narrow" => {
+                crate::bootstrap::dms::install_initial_fixture(&mut state, name)
+            }
+            "dms-paging-filtered"
+            | "dms-paging-filtered-narrow"
+            | "dms-paging-loading"
+            | "dms-paging-loading-narrow"
+            | "dms-paging-empty"
+            | "dms-paging-empty-narrow" => {
+                crate::bootstrap::dms::install_paging_fixture(&mut state, name)
+            }
+            "dms-cold-rows" | "dms-cold-rows-narrow" => {
+                crate::bootstrap::dms::install_fixture(&mut state)
+            }
+            "resource-files-recovery" | "resource-files-recovery-narrow" => {
+                crate::resource_reads::fixture(&mut state, false)
+            }
+            "resource-links-recovery" | "resource-links-recovery-narrow" => {
+                crate::resource_reads::fixture(&mut state, true)
+            }
             "files"
             | "files-narrow"
             | "files-density"
@@ -2274,7 +2503,13 @@ impl ShellState {
                 crate::later::message_fixture::apply(&mut state)
             }
             "later-files" | "later-files-narrow" => crate::later::file_fixture::apply(&mut state),
-            "later" | "later-empty" | "later-error" | "later-reminder" | "later-new-reminder" => {
+            "later"
+            | "later-empty"
+            | "later-error"
+            | "later-reminder"
+            | "later-new-reminder"
+            | "later-read-recovery"
+            | "later-read-recovery-narrow" => {
                 use super_platinum_core::later::{SavedItem, SavedPage};
                 state.main_view = MainView::Later;
                 let team = state.core.active_team.clone().unwrap();
@@ -2322,6 +2557,10 @@ impl ShellState {
                 page.counts.uncompleted_count = page.saved_items.len();
                 let generation = state.core.later.begin(Default::default(), false);
                 state.core.later.apply_page(generation, page, false, None);
+                if matches!(name, "later-read-recovery" | "later-read-recovery-narrow") {
+                    state.core.later.next_cursor = Some("fixture-retained-continuation".into());
+                    state.core.later.error = Some("Could not load saved items. Your loaded items are still available. Try again.".into());
+                }
                 if name == "later-error" {
                     state.core.later.error = Some(
                         "Later could not refresh. Your saved items are still available.".into(),
@@ -2337,6 +2576,10 @@ impl ShellState {
             "activity-paging"
             | "activity-navigation"
             | "activity-navigation-narrow"
+            | "activity-refresh-retry"
+            | "activity-refresh-retry-narrow"
+            | "activity-older-retry"
+            | "activity-older-retry-narrow"
             | "activity-loading"
             | "activity-error"
             | "activity-more-error"

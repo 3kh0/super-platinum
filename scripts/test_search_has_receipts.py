@@ -35,7 +35,7 @@ def receipt(narrow=False):
         native={'query':query,'revision':1+revision,'panel':flags is not None,'flags':flags,'error':error,
            'results':0,'page':0,'loading':False,'noSession':True,'noTransport':True}
         dom={'ok':True,'viewport':viewport,'query':query,'queryRevision':query,'panel':flags is not None,
-          'expanded':str(flags is not None).lower(),'flags':flags,'labels':[] if flags is None else ['Has files','Has links'],
+          'expanded':str(flags is not None).lower(),'flags':flags,'labels':[] if flags is None else ['Has files','Has links','In threads','Saved items','Pinned messages'],
           'alert':error,'controls':controls,'dialog':[20,20,viewport[0]-20,viewport[1]-20],'horizontalOverflow':False,'results':0}
         records.append({'ok':True,'stage':name,'ordinal':i,'noSession':True,'noTransport':True,'native':native,'dom':dom})
     return {'ok':True,'fixture':fixture,'noSession':True,'noTransport':True,'credentialBoundary':'actual search credentials refused; no raw request ledger',

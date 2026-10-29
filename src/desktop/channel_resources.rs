@@ -4,7 +4,6 @@ use dioxus::prelude::*;
 use super_platinum_core::{
     files::{FileSort, FilesQuery},
     links::LinksState,
-    slack::api,
 };
 
 pub fn visible_links<'a>(shell: &'a ShellState, channel: &str) -> Option<&'a LinksState> {
@@ -157,6 +156,24 @@ pub(crate) fn select_route(
 }
 
 pub async fn refresh(state: Signal<ShellState>) {
+    refresh_with_reconnect(state, None).await;
+}
+pub(crate) async fn refresh_after_outage(
+    state: Signal<ShellState>,
+    visit: crate::bootstrap::reconnect::Visit,
+) {
+    refresh_with_reconnect(state, Some(visit)).await;
+}
+async fn refresh_with_reconnect(
+    state: Signal<ShellState>,
+    reconnect: Option<crate::bootstrap::reconnect::Visit>,
+) {
+    if reconnect
+        .as_ref()
+        .is_some_and(|visit| !visit.current(&state.peek()))
+    {
+        return;
+    }
     if crate::channel_tabs::selection::folder_selected(&state.peek()) {
         crate::channel_tabs::folder::load(state);
         return;
@@ -190,7 +207,7 @@ pub async fn refresh(state: Signal<ShellState>) {
         ChannelTab::Pins => crate::pins::load(state, channel).await,
         ChannelTab::Files => {
             let (query, page) = crate::files::visible_for(&state.peek(), Some(&channel))
-                .map(|f| (f.query.clone(), f.page))
+                .map(|f| (f.query.clone(), f.resume_page()))
                 .unwrap_or((
                     FilesQuery {
                         channel: Some(channel),
@@ -199,66 +216,24 @@ pub async fn refresh(state: Signal<ShellState>) {
                     },
                     1,
                 ));
-            crate::files::load(state, query, page).await;
+            if let Some(visit) = reconnect.clone() {
+                crate::files::load_reconnect(state, query, page, visit).await;
+            } else {
+                crate::files::load(state, query, page).await;
+            }
         }
         ChannelTab::Links => {
             let (query, page) = visible_links(&state.peek(), &channel)
-                .map(|l| (l.query.clone(), l.page))
+                .map(|l| (l.query.clone(), l.resume_page()))
                 .unwrap_or((String::new(), 1));
-            load_links(state, channel, query, page).await;
+            if let Some(visit) = reconnect {
+                links_read::load_reconnect(state, channel, query, page, visit).await;
+            } else {
+                load_links(state, channel, query, page).await;
+            }
         }
     }
 }
 
-pub async fn load_links(mut state: Signal<ShellState>, channel: String, query: String, page: u32) {
-    let Some((transport, client, sessions)) = crate::bootstrap::credentials(&state) else {
-        return;
-    };
-    let Some(team) = state.peek().core.active_team.clone() else {
-        return;
-    };
-    let Some(session) = sessions.into_iter().find(|s| s.team_id == team) else {
-        return;
-    };
-    let (epoch, generation) = {
-        let mut shell = state.write();
-        let epoch = shell.core.account_epoch;
-        shell
-            .core
-            .channel_links
-            .ensure_scope(epoch, &team, &channel);
-        (epoch, shell.core.channel_links.begin(query.clone(), page))
-    };
-    let result =
-        api::fetch_channel_links(&transport, &client, &session, &channel, &query, page).await;
-    let mut shell = state.write();
-    if shell.core.account_epoch != epoch
-        || shell.core.active_team.as_ref() != Some(&team)
-        || !shell
-            .core
-            .channel_links
-            .matches_scope(epoch, &team, &channel)
-        || shell.core.channel_links.generation != generation
-        || !shell
-            .core
-            .transport
-            .as_ref()
-            .is_some_and(|current| std::sync::Arc::ptr_eq(current, &transport))
-    {
-        return;
-    }
-    match result {
-        Ok(page) => {
-            shell.core.channel_links.apply(generation, page);
-        }
-        Err(error) => {
-            shell.core.channel_links.loading = false;
-            shell.core.channel_links.error = Some("Links could not load. Please try again.".into());
-            shell.report_failure(
-                &error,
-                "Links will be available when you reconnect.",
-                || "Could not load channel links.".into(),
-            );
-        }
-    }
-}
+mod links_read;
+pub(crate) use links_read::{Source as LinksSource, load_links};

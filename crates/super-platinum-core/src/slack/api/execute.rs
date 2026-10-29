@@ -193,10 +193,10 @@ pub async fn fetch_client_dms(
     count: u32,
     cursor: Option<String>,
 ) -> Result<ClientDmsPage, Error> {
-    let value = transport
-        .execute(client_dms(client, workspace, count, cursor))
-        .await?;
-    decode(value, "client.dms")
+    fetch_client_dms_with(client, workspace, count, cursor, |request| {
+        transport.execute(request)
+    })
+    .await
 }
 
 pub async fn fetch_activity_feed(
@@ -451,16 +451,10 @@ pub async fn fetch_conversation_info(
     workspace: &WorkspaceSession,
     channel_id: ChannelId,
 ) -> Result<Channel, Error> {
-    #[derive(serde::Deserialize)]
-    struct ConversationInfoPage {
-        channel: Channel,
-    }
-
-    let value = transport
-        .execute(conversations_info(client, workspace, channel_id))
-        .await?;
-    let page: ConversationInfoPage = decode(value, "conversations.info")?;
-    Ok(page.channel)
+    fetch_conversation_info_with(client, workspace, channel_id, |request| {
+        transport.execute(request)
+    })
+    .await
 }
 
 /// Keep the original channel object for source-directory publication. Existing
@@ -830,11 +824,10 @@ pub async fn fetch_users_search(
     workspace: &WorkspaceSession,
     query: String,
 ) -> Result<Vec<User>, Error> {
-    let request = super::super::edge::users_search(client, workspace, &query, 30)
-        .map_err(|e| Error::Transport(format!("build users/search: {e}")))?;
-    let value = transport.execute(request).await?;
-    let page: EdgeResults<User> = decode(value, "users/search")?;
-    Ok(page.results)
+    fetch_users_search_with(client, workspace, query, |request| {
+        transport.execute(request)
+    })
+    .await
 }
 
 pub async fn fetch_channels_search(
@@ -895,9 +888,23 @@ pub async fn fetch_search_messages(
     workspace: &WorkspaceSession,
     args: SearchArgs,
 ) -> Result<SearchMessagesPage, Error> {
-    let value = transport
-        .execute(search_messages(client, workspace, args))
-        .await?;
+    fetch_search_messages_with(client, workspace, args, |request| {
+        transport.execute(request)
+    })
+    .await
+}
+
+pub async fn fetch_search_messages_with<F, Fut>(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    args: SearchArgs,
+    execute: F,
+) -> Result<SearchMessagesPage, Error>
+where
+    F: FnOnce(PreparedRequest) -> Fut,
+    Fut: std::future::Future<Output = Result<serde_json::Value, Error>>,
+{
+    let value = execute(search_messages(client, workspace, args)).await?;
     decode(value, "search.modules.messages")
 }
 

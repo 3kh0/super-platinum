@@ -735,6 +735,10 @@ fn home_error(field: &FormField) -> Option<String> {
         values::error(field)
     }
 }
+// Shared EZY9/+Key/2Ztu scalar validation; no Home state/mount capability.
+pub(super) fn email_error(field: &FormField) -> Option<String> {
+    email::error(field)
+}
 // ECMAScript String.trim used by the captured Home text callback. Rust's
 // whitespace set differs: U+FEFF is removed there, while U+0085 is retained.
 fn trim_input(text: &str) -> &str {

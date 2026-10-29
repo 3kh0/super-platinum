@@ -1,5 +1,6 @@
 //! Shared bounded directory data/transport. Owners admit and commit separately.
 use super::*;
+use std::future::Future;
 use super_platinum_core::{
     slack::{
         api,
@@ -109,6 +110,14 @@ impl State {
     pub(crate) fn retire(&mut self) {
         self.revision = next_id();
         self.loading = false;
+    }
+    /// Cleanup is exact-query owned and cannot clear a successor's spinner.
+    pub(crate) fn cancel(&mut self, query: &Query) -> bool {
+        if !self.current(query) || !self.loading {
+            return false;
+        }
+        self.retire();
+        true
     }
     pub(crate) fn finish(&mut self, query: &Query, update: Update) {
         if !self.current(query) || matches!(update, Update::WrongKind) {
@@ -223,26 +232,42 @@ pub(crate) fn resolved(
         .unwrap_or_default();
     Update::Ready(choices)
 }
-pub(crate) async fn fetch(
+pub(crate) fn client_current(shell: &ShellState, context: &crate::scheduled::Context) -> bool {
+    shell.core.client.same_configuration(&context.client)
+}
+
+pub(crate) async fn fetch_with<F, Fut, C>(
     context: &crate::scheduled::Context,
     query: &Query,
-) -> Result<Results, Error> {
+    execute: F,
+    current: C,
+) -> Result<Option<Results>, Error>
+where
+    F: FnMut(super_platinum_core::slack::PreparedRequest) -> Fut,
+    Fut: Future<Output = Result<Value, Error>>,
+    C: FnMut() -> bool,
+{
     match query.kind {
-        Kind::Users => api::fetch_users_search(
-            &context.transport,
+        Kind::Users => api::fetch_users_search_continued_with(
             &context.client,
             &context.session,
             query.text.clone(),
+            execute,
+            current,
         )
         .await
-        .map(Results::Users),
-        Kind::Channels => api::fetch_channels_search(
-            &context.transport,
+        .map(|rows| rows.map(Results::Users)),
+        Kind::Channels => api::fetch_channels_search_continued_with(
             &context.client,
             &context.session,
             query.text.clone(),
+            execute,
+            current,
         )
         .await
-        .map(Results::Channels),
+        .map(|rows| rows.map(Results::Channels)),
     }
 }
+
+#[cfg(test)]
+pub(crate) mod test_support;

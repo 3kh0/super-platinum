@@ -9,6 +9,8 @@ use super::events::{RawEvent, RtEvent};
 use super::models::{Message as SlackMessage, TeamId};
 
 mod member_subscription;
+mod preference;
+pub use preference::PreferenceCarrier;
 pub(super) mod message_update;
 pub use member_subscription::{MemberSubscription, MemberSubscriptionError, SubscriptionReceipt};
 
@@ -30,6 +32,10 @@ pub enum RtUpdate {
         // Boxed: `RtEvent` is ~1KB, which would otherwise set the size of every
         // `RtUpdate` sent over the realtime channel, including keepalives.
         event: Box<RtEvent>,
+    },
+    Preference {
+        generation: u64,
+        carrier: PreferenceCarrier,
     },
     Disconnected {
         generation: u64,
@@ -233,10 +239,7 @@ async fn run_connection(
                         && output
                             .send((
                                 params.team.clone(),
-                                RtUpdate::Event {
-                                    generation,
-                                    event: Box::new(event),
-                                },
+                                preference::update(generation, event, text.as_str()),
                             ))
                             .await
                             .is_err()

@@ -59,7 +59,8 @@ def request(endpoint, command, timeout=20, **fields):
 class NativeFixture:
     """Own exactly one disconnected fixture and its private temporary endpoint."""
 
-    def __init__(self, fixture, log, binary=None, checks=None, *, after_exit=None):
+    def __init__(self, fixture, log, binary=None, checks=None, *, after_exit=None,
+                 preserve_runtime=None):
         self.fixture = fixture
         self.log = Path(log).resolve()
         self.binary = Path(binary or os.environ.get("SUPER_PLATINUM_BINARY", DEFAULT_BINARY)).resolve()
@@ -76,10 +77,16 @@ class NativeFixture:
         self._after_exit = after_exit
         self._after_exit_attempted = False
         self._entered = False
+        self.preserve_runtime = (os.environ.get("SUPER_PLATINUM_NATIVE_PRESERVE_RUNTIME") == "1"
+                                 if preserve_runtime is None else bool(preserve_runtime))
+        self.retained_runtime = None
 
     def __enter__(self):
         if not self.binary.is_file():
             raise FileNotFoundError(f"native binary missing: {self.binary}; build it first")
+        if sys.platform == "win32":
+            from windows_native_session import require_interactive
+            self.native_session = require_interactive()
         self.log.parent.mkdir(parents=True, exist_ok=True)
         self._temporary = tempfile.TemporaryDirectory(prefix="sp-fixture-")
         temporary = Path(self._temporary.name).resolve(strict=True)
@@ -159,7 +166,8 @@ class NativeFixture:
         path = Path(path).resolve()
         # Prevent a stale PNG from turning a false-positive agent response into
         # capture evidence. The caller owns this explicitly named output file.
-        path.unlink(missing_ok=True)
+        if path.exists():
+            raise FileExistsError(f"Refusing to overwrite fixture evidence: {path}")
         response = self.control("screenshot", timeout=25, path=str(path))
         with path.open("rb") as source:
             header = source.read(24)
@@ -245,6 +253,15 @@ class NativeFixture:
 
     def _cleanup_temporary(self):
         if self._temporary is not None:
+            if self.preserve_runtime:
+                path = self._verify_temporary()
+                if self.retained_runtime is None:
+                    self.retained_runtime = {"fixture": self.fixture, "path": str(path),
+                                             "processStopped": (self.process is None
+                                                                or self.process.poll() is not None)}
+                    print("native-fixture-runtime-preserved: " +
+                          json.dumps(self.retained_runtime), flush=True)
+                return
             # WebView2 descendants can release/recreate scratch files shortly
             # after the owned GUI exits. Retry only this verified directory,
             # including Windows directory-not-empty (145), for at most 3 seconds.

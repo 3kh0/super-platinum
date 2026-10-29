@@ -37,6 +37,7 @@
 .home-email-control { position: relative; display: block; min-width: 0; }
 .home-email-control .home-email-icon { position: absolute; left: var(--space-3); top: 50%; width: 18px; height: 18px; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
 .app-modal-field .home-email-control input[type="email"] { padding-left: calc(var(--space-3) + 18px + var(--space-2)); }
+.app-modal-field .home-email-control input[type="url"] { padding-left: calc(var(--space-3) + 18px + var(--space-2)); }
 /* Home Time keeps an editable draft and an independently selected wall time. */
 .home-time-control { position: relative; display: block; min-width: 0; }
 .home-time-selected { position: absolute; inset: 0; padding: 9px 13px; color: var(--text); pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

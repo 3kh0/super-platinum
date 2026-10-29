@@ -13,6 +13,8 @@ use super_platinum_core::{
     state::directory_channels::{Facts, Observation, Origin, RendererReply},
 };
 
+#[cfg(test)]
+pub(crate) mod calendar_member_test_support;
 pub(crate) mod canonical;
 pub(crate) mod conditional;
 pub(super) mod context;
@@ -23,6 +25,9 @@ pub(crate) mod fixture;
 mod initial;
 mod members;
 mod payload;
+pub(crate) use payload::file_saved_search as file_saved_parameters;
+pub(crate) use payload::file_search as file_search_parameters;
+pub(crate) use payload::people as people_parameters;
 pub(crate) use payload::plan_info;
 mod render;
 pub(crate) mod search;

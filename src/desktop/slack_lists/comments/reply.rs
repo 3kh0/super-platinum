@@ -209,16 +209,16 @@ async fn prepare(
     }
     .await;
     if owner.reading(&state.peek(), serial) {
-        state
-            .write()
-            .slack_lists
-            .comments
-            .entry
-            .as_mut()
-            .unwrap()
-            .loading = false;
+        finish_preflight(&mut state.write(), &owner, serial);
     }
     acquired
+}
+// A preflight may read a Page for send policy, but never publishes that Page or
+// grants automatic transcript title work. Only its own busy flag is released.
+pub(super) fn finish_preflight(shell: &mut ShellState, owner: &Owner, serial: u64) {
+    if owner.reading(shell, serial) {
+        shell.slack_lists.comments.entry.as_mut().unwrap().loading = false;
+    }
 }
 fn dispatch_current(
     shell: &ShellState,

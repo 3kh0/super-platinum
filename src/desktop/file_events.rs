@@ -269,6 +269,28 @@ pub(crate) fn reconcile_metadata(shell: &mut ShellState, team: &str, file: &File
         .map(|_| super_platinum_core::state::file_title(file));
 
     if shell.core.active_team.as_deref() == Some(team) {
+        for copy in shell
+            .search_file_results
+            .iter_mut()
+            .filter(|copy| copy.id.as_deref() == Some(id) && !policy::deleted(copy))
+        {
+            if let Some(title) = &title {
+                copy.title = Some(title.clone());
+                if let Some(name) = file.name.as_ref().filter(|name| !name.trim().is_empty()) {
+                    copy.name = Some(name.clone());
+                }
+            }
+            if let Some(size) = file.size {
+                copy.size = Some(size);
+            }
+            if let Some(kind) = file
+                .pretty_type
+                .as_ref()
+                .filter(|kind| !kind.trim().is_empty())
+            {
+                copy.pretty_type = Some(kind.clone());
+            }
+        }
         if let Some(title) = title
             && let Some(viewer) = &mut shell.viewer
             && viewer

@@ -11,6 +11,7 @@ impl ShellState {
 
     pub(crate) fn reading_thread(&self, focused: bool, channel: &str, root: &str) -> bool {
         focused
+            && self.thread_visible()
             && !crate::read_shortcuts::busy_thread(self)
             && !crate::read_shortcuts::bulk::blocks_reads(self)
             && self.detail_open()

@@ -21,6 +21,7 @@ pub(crate) fn LaterPanel(state: Signal<ShellState>) -> Element {
     let later = crate::later::visible_state(&snapshot);
     let filter = later.map(|later| later.filter).unwrap_or_default();
     let loading = later.is_some_and(|later| later.loading);
+    let read_frame = crate::later::read::Frame::capture(&snapshot);
     let workspace = snapshot
         .core
         .active_team
@@ -33,12 +34,12 @@ pub(crate) fn LaterPanel(state: Signal<ShellState>) -> Element {
                 h2 {"Later"}
                 span {class:"spacer"}
                 button {class:"later-refresh",onclick:move |_|creating.set(true),"New reminder"}
-                button {class:"later-refresh",disabled:loading,onclick:move |_|{spawn(crate::later::load(state,filter,false));},"Refresh"}
+                button {id:"later-read-refresh",class:"later-refresh",disabled:loading,onclick:{let source=read_frame.as_ref().map(|frame|frame.replace(filter)); move |_|{if let Some(source)=source.clone(){crate::later::read::start(state,source);}}},"Refresh"}
             }
             div {class:"later-tabs",role:"tablist","aria-label":"Saved item status",
                 for tab in LaterFilter::ALL {
                     button {role:"tab","aria-selected":tab==filter,class:if tab==filter {"active"}else{""},
-                        onclick:move |_|{spawn(crate::later::load(state,tab,false));},
+                        onclick:{let source=read_frame.as_ref().map(|frame|frame.replace(tab)); move |_|{if let Some(source)=source.clone(){crate::later::read::start(state,source);}}},
                         "{tab.label()}"
                         if let Some(later)=later {span {"{later.counts.get(tab)}"}}
                     }
@@ -49,7 +50,7 @@ pub(crate) fn LaterPanel(state: Signal<ShellState>) -> Element {
                 if let Some(error)=later.and_then(|later|later.error.as_ref()) {
                     div {class:"later-error",role:"alert",
                         p {"{error}"}
-                        button {onclick:move |_|{spawn(crate::later::load(state,filter,false));},"Retry"}
+                        button {id:"later-read-retry",disabled:loading,onclick:{let source=read_frame.as_ref().map(|frame|frame.retry().unwrap_or_else(||frame.replace(filter))); move |_|{if let Some(source)=source.clone(){crate::later::read::start(state,source);}}},"Retry"}
                     }
                 }
                 if loading {p {class:"later-status",role:"status","Loading saved items…"}}
@@ -124,7 +125,7 @@ pub(crate) fn LaterPanel(state: Signal<ShellState>) -> Element {
                         }
                     }
                     if later.next_cursor.is_some() {
-                        button {class:"later-more",disabled:loading,onclick:move |_|{spawn(crate::later::load(state,filter,true));},"Load more"}
+                        button {id:"later-read-more",class:"later-more",disabled:loading,onclick:{let source=read_frame.as_ref().and_then(|frame|frame.more()); move |_|{if let Some(source)=source.clone(){crate::later::read::start(state,source);}}},"Load more"}
                     }
                 }
             }

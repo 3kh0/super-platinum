@@ -84,7 +84,30 @@ async fn fetch(ctx: Option<&Context>, id: &str) -> Result<File, ()> {
         super::file_fixture::metadata(id).ok_or(())
     }
 }
-pub(super) async fn hydrate(mut state: Signal<ShellState>, ctx: Option<&Context>, generation: u64) {
+pub(super) async fn hydrate(state: Signal<ShellState>, ctx: Option<&Context>, generation: u64) {
+    hydrate_inner(state, ctx, None, generation).await;
+}
+pub(super) async fn hydrate_owned(
+    state: Signal<ShellState>,
+    ctx: &Context,
+    owner: &crate::bootstrap::ReadOwner,
+    generation: u64,
+) {
+    hydrate_inner(state, Some(ctx), Some(owner), generation).await;
+}
+async fn hydrate_inner(
+    mut state: Signal<ShellState>,
+    ctx: Option<&Context>,
+    owner: Option<&crate::bootstrap::ReadOwner>,
+    generation: u64,
+) {
+    let current = |shell: &ShellState| match (ctx, owner) {
+        (Some(ctx), Some(owner)) => super::read::current(shell, ctx, owner, generation),
+        _ => true,
+    };
+    if !current(&state.peek()) {
+        return;
+    }
     let Some(visit) = Visit::capture(&state.peek()) else {
         return;
     };
@@ -106,7 +129,7 @@ pub(super) async fn hydrate(mut state: Signal<ShellState>, ctx: Option<&Context>
             .collect::<std::collections::BTreeSet<_>>()
     };
     for id in ids {
-        if !visit.current(&state.peek()) {
+        if !current(&state.peek()) || !visit.current(&state.peek()) {
             return;
         }
         let revision = state.write().core.later.begin_hydration();
@@ -115,6 +138,9 @@ pub(super) async fn hydrate(mut state: Signal<ShellState>, ctx: Option<&Context>
         } else {
             fetch(ctx, &id).await
         };
+        if !current(&state.peek()) {
+            return;
+        }
         apply(&mut state.write(), &visit, &id, revision, result);
     }
 }

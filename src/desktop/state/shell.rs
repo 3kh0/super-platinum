@@ -11,6 +11,10 @@ pub enum PendingDeliveryStatus {
 }
 
 pub struct ShellState {
+    pub(crate) later_read: crate::later::read::State,
+    pub(crate) surface_hydration: crate::bootstrap::SurfaceHydration,
+    pub(crate) resource_reads: crate::resource_reads::Root,
+    pub(crate) thread_feed_reads: crate::thread_feed::Reads,
     pub(crate) message_buttons: crate::message_buttons::State,
     pub(crate) app_home: crate::app_home::Root,
     pub(crate) directory_member_fetches: crate::directory_member_fetches::Registry,
@@ -67,6 +71,8 @@ pub struct ShellState {
     pub(crate) channel_workflows: crate::channel_workflows::Root,
     pub dm_query: String,
     pub dm_unread_only: bool,
+    pub(crate) dm_input_revision: u64,
+    pub(crate) dm_open: Option<std::sync::Arc<crate::bootstrap::dms::Opening>>,
     pub activity_tab: ActivityTab,
     /// What each surface has open in its conversation column, keyed by the
     /// surface. Home is in here too, so a rail switch restores the channel that
@@ -99,8 +105,32 @@ pub struct ShellState {
     pub search_open_generation: u64,
     pub search_opening: Option<(String, String)>,
     pub search_filters: Option<super_platinum_core::search_query::SearchFilters>,
+    pub(crate) search_file_type_filters: Option<super::search_filter_types::Draft>,
+    pub(crate) search_message_scope_filters: Option<super::search_message_scopes::Draft>,
+    pub(crate) search_message_scope_fixture: Option<super::search_message_scopes::Fixture>,
+    pub search_history_open: bool,
     pub search_filter_error: Option<&'static str>,
     pub search_results: Vec<SearchResultVm>,
+    pub(crate) search_message_pages: Option<crate::bootstrap::search_message_pages::Book>,
+    /// Named offline presentation, never a request/cache ownership receipt.
+    pub(crate) search_message_pages_fixture:
+        Option<crate::bootstrap::search_message_pages::Fixture>,
+    pub(crate) search_people_results: Option<crate::bootstrap::search_people::Results>,
+    pub(crate) search_file_pages_fixture: Option<bool>,
+    pub(crate) search_file_sort_fixture:
+        Option<crate::bootstrap::search_file_pages::saved::Fixture>,
+    pub(crate) search_file_module: Option<crate::bootstrap::search_file_pages::Module>,
+    pub(crate) search_file_save_registry:
+        crate::bootstrap::search_file_pages::saved::registry::Registry,
+    pub(crate) search_people_module: Option<crate::bootstrap::search_people::numbered::Module>,
+    /// Named offline presentation only; never consulted by runtime admission.
+    pub(crate) search_people_pager_fixture: bool,
+    pub(crate) search_control_memory: Option<crate::bootstrap::search_control_memory::Record>,
+    pub(crate) search_people_account_fixture:
+        Option<super_platinum_core::slack::api::people_pages::AccountType>,
+    pub(crate) search_people_save_fixture:
+        Option<crate::bootstrap::search_people::numbered::saved_sort::Fixture>,
+    pub search_file_results: Vec<super_platinum_core::slack::models::File>,
     pub search_pager: super_platinum_core::search::SearchPager,
     /// Cancels metadata resolution when another saved item is opened.
     pub later_open_generation: u64,
@@ -128,6 +158,7 @@ pub struct ShellState {
     pub thread_error: Option<String>,
     pub thread_history: super_platinum_core::thread_history::ThreadHistory,
     pub profile_user: Option<String>,
+    pub(crate) profile_search: Option<crate::bootstrap::profile_search::Snapshot>,
     pub profile_generation: u64,
     pub profile_dm_generation: u64,
     pub profile_dm_opening: Option<String>,
@@ -253,6 +284,7 @@ impl ShellState {
     /// pane must not linger with the previous item's replies when a channel
     /// item is opened next.
     pub fn close_thread(&mut self) {
+        crate::bootstrap::dms::cancel(self);
         self.cancel_profile_dm();
         self.checkpoint_composers();
         self.thread_generation = self.thread_generation.wrapping_add(1);
@@ -288,6 +320,13 @@ impl ShellState {
         self.refresh_from_core();
     }
 
+    /// Match the mounted thread pane's display decision, including workflow screens.
+    pub(crate) fn thread_visible(&self) -> bool {
+        self.thread_root.is_some()
+            && !crate::app_home::about::management::entry::showing(self)
+            && !crate::channel_workflows::details::visible(self)
+    }
+
     /// A visible resource panel must not consume unread messages behind it.
     pub fn transcript_visible(&self) -> bool {
         self.channel_tab == ChannelTab::Messages
@@ -296,6 +335,7 @@ impl ShellState {
                 MainView::Home | MainView::Dms | MainView::Activity | MainView::Later
             )
             && self.detail_open()
+            && !crate::app_home::about::management::entry::showing(self)
             && !(matches!(self.main_view, MainView::Activity | MainView::Later)
                 && self.thread_root.is_some())
     }
@@ -358,6 +398,7 @@ impl ShellState {
     }
 
     pub fn close_profile(&mut self) {
+        self.profile_search = None;
         crate::canvas::comments::clear_profile_token(self);
         self.profile_generation = self.profile_generation.wrapping_add(1);
         self.cancel_profile_dm();
@@ -541,6 +582,43 @@ pub(crate) fn account_vms(accounts: &super_platinum_core::config::Accounts) -> V
 }
 
 impl ShellState {
+    pub(crate) fn clear_search_results(&mut self) {
+        self.search_results.clear();
+        self.search_message_pages = None;
+        self.search_message_pages_fixture = None;
+        self.search_file_results.clear();
+        self.search_file_pages_fixture = None;
+        self.search_file_sort_fixture = None;
+        if let Some(module) = &mut self.search_file_module {
+            module.clear_results();
+        }
+        self.search_people_results = None;
+        self.search_people_pager_fixture = false;
+        self.search_people_account_fixture = None;
+        self.search_people_save_fixture = None;
+        if let Some(module) = &mut self.search_people_module {
+            module.clear_results();
+        }
+    }
+
+    pub(crate) fn set_search_kind(
+        &mut self,
+        kind: super_platinum_core::search::SearchKind,
+    ) -> bool {
+        if !self.search_pager.change_kind(kind) {
+            return false;
+        }
+        super::search_filter_types::retire(self);
+        self.cancel_search_open();
+        self.clear_search_results();
+        self.search_history_open = false;
+        if kind == super_platinum_core::search::SearchKind::People {
+            self.search_filters = None;
+            self.search_filter_error = None;
+        }
+        true
+    }
+
     pub fn replace_search_query(&mut self, query: String) {
         self.search_focus_at_end = false;
         self.cancel_search_open();
@@ -549,10 +627,13 @@ impl ShellState {
     }
 
     pub fn set_search_query(&mut self, query: String) {
-        if self.search_query.trim() != query.trim() {
+        if self.search_query != query {
+            self.search_history_open = false;
             self.cancel_search_open();
+        }
+        if self.search_query.trim() != query.trim() {
             self.search_pager.reset();
-            self.search_results.clear();
+            self.clear_search_results();
             self.search_filters = None;
             self.search_filter_error = None;
         }
@@ -562,6 +643,12 @@ impl ShellState {
 
 impl ShellState {
     pub fn apply_search_filters(&mut self) -> bool {
+        if self.search_file_type_filters.is_some()
+            || self.search_message_scope_filters.is_some()
+            || self.search_message_scope_fixture.is_some()
+        {
+            return false;
+        }
         let Some(filters) = self.search_filters.as_ref() else {
             return false;
         };
@@ -582,11 +669,14 @@ impl ShellState {
 
 impl ShellState {
     pub fn cancel_search_open(&mut self) {
+        super::search_filter_types::retire(self);
+        super::search_message_scopes::retire(self);
         self.search_open_generation = self.search_open_generation.wrapping_add(1);
         self.search_opening = None;
     }
 
     pub fn dismiss_overlay(&mut self) {
+        crate::bootstrap::dms::cancel(self);
         if crate::canvas_create::departure(self) {
             return;
         }

@@ -12,6 +12,7 @@ use std::time::Instant;
 // object/array order, auxiliary rows and outcomes without filtering entity IDs.
 pub use super::channels::{Outcomes, Page};
 pub const LIMIT: usize = super::channels::LIMIT;
+mod final_sdk;
 
 #[cfg(test)]
 mod tests;

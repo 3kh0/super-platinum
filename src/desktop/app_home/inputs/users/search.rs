@@ -35,56 +35,51 @@ pub(crate) fn search(mut state: Signal<ShellState>, ticket: Ticket, query: Strin
     spawn(async move {
         let (serial, revision, mut cancellation) = request;
         tokio::select! {_=tokio::time::sleep(Duration::from_millis(250))=>{},_=cancellation.changed()=>return}
-        let prepared = {
-            let mut s = state.write();
-            if !request_current(&s, serial, revision) {
-                return;
-            }
-            if cooling(&s, &ticket) {
-                let p = s.app_home.users.picker.as_mut().unwrap();
-                p.loading = false;
-                p.error = Some(
-                    "Slack asked us to wait before searching again. Cached choices are shown."
-                        .into(),
-                );
-                return;
-            }
-            directory::prepare_users(&ticket.owner.ctx, &query)
-        };
-        let result = match prepared {
-            Ok(prepared) => {
-                let fixture = fixture::request(&mut state.write(), &ticket, &prepared);
-                let read = async {
-                    match fixture {
-                        Some(receiver) => receiver
-                            .await
-                            .unwrap_or(Err(Error::Offline("Home member read unavailable".into()))),
-                        None => ticket.owner.ctx.transport.execute(prepared).await,
-                    }
-                };
-                tokio::select! {result=read=>result,_=cancellation.changed()=>return}
-            }
-            Err(error) => Err(error),
-        };
-        let mut s = state.write();
-        if !directory::owner_current(&s, &ticket.owner.ctx) {
-            return;
-        }
-        if let Err(Error::RateLimited {
-            retry_after_secs: Some(seconds),
-            ..
-        }) = &result
-        {
-            cooldown(&mut s, &ticket, *seconds);
-        }
-        complete(
-            &mut s,
+        let original = ticket.clone();
+        let read = continued::run_with(
+            state,
+            ticket,
             serial,
             revision,
-            result.and_then(|v| directory::decode_users(&v)),
+            query,
+            move |prepared, scope| {
+                let mut state = state;
+                let ticket = original.clone();
+                async move {
+                    // Fixture registration is a dispatch boundary too. The ordinary
+                    // transport repeats admission after its asynchronous link hold.
+                    if !scope.admitted() {
+                        return Ok(None);
+                    }
+                    let fixture = fixture::request(&mut state.write(), &ticket, &prepared);
+                    match fixture {
+                        Some(receiver) => {
+                            scope
+                                .finish_injected(async move {
+                                    receiver.await.unwrap_or(Err(Error::Offline(
+                                        "Home member read unavailable".into(),
+                                    )))
+                                })
+                                .await
+                        }
+                        None => scope.transport(&ticket.owner.ctx, prepared).await,
+                    }
+                }
+            },
         );
+        until_cancelled(read, &mut cancellation).await;
     });
 }
+
+mod continued;
+
+async fn until_cancelled(
+    read: impl std::future::Future<Output = ()>,
+    cancellation: &mut tokio::sync::watch::Receiver<bool>,
+) {
+    tokio::select! {_=read=>{},_=cancellation.changed()=>{}}
+}
+
 fn cooldown(s: &mut ShellState, t: &Ticket, seconds: u64) {
     let now = Instant::now();
     let deadline = now

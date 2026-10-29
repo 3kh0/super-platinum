@@ -42,6 +42,7 @@ pub(super) fn open_shell(shell: &mut ShellState, generation: u64) -> bool {
         target,
         title,
         read: 0,
+        read_socket: None,
         read_replaces_page: false,
         loading: false,
         page: None,
@@ -232,11 +233,17 @@ pub(super) fn begin(
     } else {
         None
     };
+    let socket = shell
+        .core
+        .workspaces
+        .get(&e.owner.scope.team)
+        .map(|w| w.rt_generation);
     let e = shell.slack_lists.comments.entry.as_mut()?;
     e.loading = true;
     e.read_replaces_page = true;
     e.error = None;
     e.read = next_id();
+    e.read_socket = socket;
     Some((e.owner.clone(), e.read, e.target.clone(), cursor))
 }
 pub(super) fn begin_preflight(

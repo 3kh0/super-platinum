@@ -648,8 +648,11 @@ fn state_snapshot(state: &ShellState) -> Value {
     let search = (state.overlay == Some(Overlay::Search)).then(|| {
         json!({
             "query": state.search_query,
+            "kind": state.search_pager.kind.label(),
+            "history_open": state.search_history_open,
+            "recent_query_count": crate::view::search::history::entries(state).len(),
             "loading": state.search_pager.loading,
-            "sort": state.search_pager.sort.label(),
+            "sort": if state.search_pager.kind == super_platinum_core::search::SearchKind::People {"Service order"} else {state.search_pager.sort.label()},
             "filters_open": state.search_filters.is_some(),
             "opening": state.search_opening.is_some(),
             "filter_error": state.search_filter_error,
@@ -658,6 +661,11 @@ fn state_snapshot(state: &ShellState) -> Value {
             "has_more": state.search_pager.has_more(),
             "failed": state.search_pager.failed,
             "hit_count": state.search_results.len(),
+            "file_count": state.search_file_results.iter().filter(|file| crate::bootstrap::search_files::visible(state,file)).count(),
+            "file_ids": state.search_file_results.iter().filter(|file| crate::bootstrap::search_files::visible(state,file)).filter_map(|file|file.id.as_ref()).collect::<Vec<_>>(),
+            "people_count": crate::bootstrap::search_people::rows(state).len(),
+            "people_ids": crate::bootstrap::search_people::rows(state).iter().map(|u|&u.id).collect::<Vec<_>>(),
+            "people_limit": super_platinum_core::slack::api::USER_SEARCH_LIMIT,
             "hits": state.search_results.iter().map(|hit| json!({
                 "channel": hit.channel_id,
                 "channel_name": hit.channel_name,

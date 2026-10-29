@@ -31,6 +31,7 @@ async fn read(
     if !names.current(&state.peek(), search) || !search.can_dispatch(&state.peek()) {
         return Err(unavailable());
     }
+    let recipe = search.lease.member_wire();
     let query = members::Query::capture(
         &ctx.session,
         raw_query,
@@ -81,24 +82,36 @@ async fn read(
             )?);
         }
         let endpoint = endpoint.as_ref().ok_or_else(unavailable)?;
-        let request = query.request(
-            &ctx.client,
-            &ctx.session,
-            endpoint,
-            Instant::now(),
-            pages.marker(),
-        )?;
+        let now = Instant::now();
+        let request = match recipe {
+            channel_host::MemberWire::Legacy => {
+                query.request(&ctx.client, &ctx.session, endpoint, now, pages.marker())
+            }
+            channel_host::MemberWire::ProfileLongText => query.request_for_profile_long_text(
+                &ctx.client,
+                &ctx.session,
+                endpoint,
+                now,
+                pages.marker(),
+            ),
+        }?;
         let response = if search.fixture {
             tokio::select! {
                 biased;
                 _ = search.lease.cancelled() => Err(unavailable()),
-                result = search.lease.fixture_request(state, &request, true) => result,
+                result = async {match recipe {
+                    channel_host::MemberWire::Legacy => search.lease.fixture_request(state, &request, true).await,
+                    channel_host::MemberWire::ProfileLongText => search.lease.fixture_profile_member_request(state, &request).await,
+                }} => result,
             }
         } else {
             tokio::select! {
                 biased;
                 _ = search.lease.cancelled() => Err(unavailable()),
-                result = ctx.transport.execute_profile_member_search_current(request, || current(&state.peek()) && endpoint.current(&ctx.session, Instant::now())) => result.map(|r|r.into_parts()),
+                result = async {match recipe {
+                    channel_host::MemberWire::Legacy => ctx.transport.execute_profile_member_search_current(request, || current(&state.peek()) && endpoint.current(&ctx.session, Instant::now())).await,
+                    channel_host::MemberWire::ProfileLongText => ctx.transport.execute_profile_long_text_member_search_current(request, || current(&state.peek()) && endpoint.current(&ctx.session, Instant::now())).await,
+                }} => result.map(|r|r.into_parts()),
             }
         }?;
         if !current(&state.peek()) || !endpoint.current(&ctx.session, Instant::now()) {

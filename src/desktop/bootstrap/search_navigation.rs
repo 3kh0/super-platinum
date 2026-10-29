@@ -13,6 +13,7 @@ struct OpenVisit {
     channel: u64,
     thread: u64,
     view: MainView,
+    message_page: Option<super::search_message_pages::OpenProof>,
 }
 impl OpenVisit {
     fn begin(shell: &mut ShellState, hit: &SearchResultVm) -> Self {
@@ -27,10 +28,14 @@ impl OpenVisit {
             channel: shell.channel_generation,
             thread: shell.thread_generation,
             view: shell.main_view,
+            message_page: None,
         }
     }
     fn current(&self, shell: &ShellState) -> bool {
-        shell.core.account_epoch == self.epoch
+        self.message_page
+            .as_ref()
+            .is_none_or(|proof| proof.current(shell))
+            && shell.core.account_epoch == self.epoch
             && shell.core.active_team == self.team
             && shell.search_open_generation == self.request
             && match (&self.transport, &shell.core.transport) {
@@ -80,9 +85,39 @@ impl OpenVisit {
     }
 }
 
-pub fn open_search_hit(mut state: Signal<ShellState>, hit: SearchResultVm) {
-    let visit = {
+pub fn open_search_hit(state: Signal<ShellState>, hit: SearchResultVm) {
+    open_hit(state, Some(hit), None);
+}
+
+pub(super) fn open_message_page_hit(
+    state: Signal<ShellState>,
+    source: super::search_message_pages::RowSource,
+) {
+    open_hit(state, None, Some(source));
+}
+
+fn open_hit(
+    mut state: Signal<ShellState>,
+    legacy: Option<SearchResultVm>,
+    source: Option<super::search_message_pages::RowSource>,
+) {
+    let (hit, visit) = {
         let mut shell = state.write();
+        let (hit, proof) = if let Some(source) = source {
+            let Some(hit) = source.resolve(&shell) else {
+                return;
+            };
+            (hit, Some(source.proof()))
+        } else {
+            // A queued legacy row cannot borrow an owned page's matching ID.
+            if super::search_message_pages::has_scope(&shell) {
+                return;
+            }
+            let Some(hit) = legacy else {
+                return;
+            };
+            (hit, None)
+        };
         if shell.overlay != Some(Overlay::Search)
             || !shell
                 .search_results
@@ -92,7 +127,13 @@ pub fn open_search_hit(mut state: Signal<ShellState>, hit: SearchResultVm) {
         {
             return;
         }
-        OpenVisit::begin(&mut shell, &hit)
+        let mut visit = OpenVisit::begin(&mut shell, &hit);
+        visit.message_page = proof;
+        if !visit.current(&shell) {
+            visit.release(&mut shell);
+            return;
+        }
+        (hit, visit)
     };
     dioxus::core::spawn_forever(async move {
         if !visit.source_current(&state.peek()) {
@@ -197,6 +238,10 @@ pub fn open_search_hit(mut state: Signal<ShellState>, hit: SearchResultVm) {
 }
 
 #[cfg(test)]
+#[path = "search_navigation/message_page_tests.rs"]
+mod message_page_tests;
+
+#[cfg(test)]
 mod tests {
     use super::*;
     fn fixture_shell() -> ShellState {
@@ -206,6 +251,7 @@ mod tests {
     }
     fn hit() -> SearchResultVm {
         SearchResultVm {
+            direct_conversation: false,
             channel_id: "C_ARCHIVED".into(),
             channel_name: "archived".into(),
             ts: "100.1".into(),
@@ -240,6 +286,12 @@ mod tests {
         let visit = OpenVisit::begin(&mut shell, &hit());
         shell.set_search_query("new query".into());
         assert!(!visit.source_current(&shell));
+        let visit = OpenVisit::begin(&mut shell, &hit());
+        let revision = shell.search_pager.revision();
+        shell.set_search_query("new query ".into());
+        assert!(!visit.source_current(&shell));
+        assert!(shell.search_opening.is_none());
+        assert_eq!(shell.search_pager.revision(), revision);
         let visit = OpenVisit::begin(&mut shell, &hit());
         shell.core.account_epoch += 1;
         assert!(!visit.source_current(&shell));

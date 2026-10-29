@@ -274,3 +274,8 @@ pub(super) fn confirmed_added(
 
 #[cfg(test)]
 mod tests;
+
+/// Presentation visit clock, including a tab change and return.
+pub(crate) fn revision(shell: &ShellState) -> u64 {
+    shell.channel_tabs.navigation.clock
+}

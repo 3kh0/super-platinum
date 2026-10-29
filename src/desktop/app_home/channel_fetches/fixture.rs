@@ -25,11 +25,18 @@ pub(super) struct Model {
     focus: String,
 }
 pub(crate) fn install(shell: &mut ShellState) {
+    install_account(shell, false);
+}
+#[cfg(test)]
+pub(crate) fn install_people(shell: &mut ShellState) {
+    install_account(shell, true);
+}
+fn install_account(shell: &mut ShellState, people: bool) {
     let Some(transport) = disconnected() else {
         return;
     };
     let session: WorkspaceSession = serde_json::from_value(json!({"team_id":TEAM,"user_id":USER,
-        "name":"Channel refresh","url":"https://example.test","token":"synthetic-channel-token"}))
+        "name":"Channel refresh","url":if people {"https://fixture.slack.com"} else {"https://example.test"},"token":"synthetic-channel-token"}))
     .unwrap();
     shell.core.workspaces.clear();
     shell
@@ -41,7 +48,11 @@ pub(crate) fn install(shell: &mut ShellState) {
     shell.core.active_channel = Some(CHANNEL.into());
     shell.core.session = Some(Session {
         d_cookie: "synthetic-channel-cookie".into(),
-        unified_user_client_enabled: Default::default(),
+        unified_user_client_enabled: if people {
+            [(TEAM.into(), false)].into()
+        } else {
+            Default::default()
+        },
         workspaces: [(TEAM.into(), session.clone())].into(),
     });
     shell.core.transport = Some(Arc::new(transport));

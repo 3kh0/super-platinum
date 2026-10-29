@@ -1,0 +1,130 @@
+[
+  {
+    "value": "0",
+    "admitted": true
+  },
+  {
+    "value": "1",
+    "admitted": true
+  },
+  {
+    "value": "9",
+    "admitted": true
+  },
+  {
+    "value": "10",
+    "admitted": true
+  },
+  {
+    "value": "99",
+    "admitted": true
+  },
+  {
+    "value": "100",
+    "admitted": true
+  },
+  {
+    "value": "999",
+    "admitted": true
+  },
+  {
+    "value": "1000",
+    "admitted": true
+  },
+  {
+    "value": "123456789",
+    "admitted": true
+  },
+  {
+    "value": "999999998",
+    "admitted": true
+  },
+  {
+    "value": "999999999",
+    "admitted": true
+  },
+  {
+    "value": "",
+    "admitted": false
+  },
+  {
+    "value": " ",
+    "admitted": false
+  },
+  {
+    "value": "01",
+    "admitted": false
+  },
+  {
+    "value": "00",
+    "admitted": false
+  },
+  {
+    "value": "-0",
+    "admitted": false
+  },
+  {
+    "value": "-1",
+    "admitted": false
+  },
+  {
+    "value": "+1",
+    "admitted": false
+  },
+  {
+    "value": "1.0",
+    "admitted": false
+  },
+  {
+    "value": "1.",
+    "admitted": false
+  },
+  {
+    "value": ".1",
+    "admitted": false
+  },
+  {
+    "value": "1e3",
+    "admitted": false
+  },
+  {
+    "value": "1E3",
+    "admitted": false
+  },
+  {
+    "value": " 1",
+    "admitted": false
+  },
+  {
+    "value": "1 ",
+    "admitted": false
+  },
+  {
+    "value": "1\n",
+    "admitted": false
+  },
+  {
+    "value": "1000000000",
+    "admitted": false
+  },
+  {
+    "value": "NaN",
+    "admitted": false
+  },
+  {
+    "value": "Infinity",
+    "admitted": false
+  },
+  {
+    "value": "0x10",
+    "admitted": false
+  },
+  {
+    "value": "1_000",
+    "admitted": false
+  },
+  {
+    "value": "1234567890",
+    "admitted": false
+  }
+]

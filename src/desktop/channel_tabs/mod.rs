@@ -81,6 +81,12 @@ impl Visit {
     pub(crate) fn current(&self, shell: &ShellState) -> bool {
         self.0.current(shell)
     }
+    pub(crate) fn channel(&self) -> &str {
+        &self.0.key.channel
+    }
+    pub(crate) fn native_read_current(&self, shell: &ShellState) -> bool {
+        self.0.fixture.is_none() && self.current(shell)
+    }
 }
 pub(crate) fn refresh(state: Signal<ShellState>, visit: &Visit) {
     if entry(&state.peek()).is_some_and(|e| e.knowledge.is_some()) {
@@ -162,23 +168,21 @@ fn current_entry<'a>(
         .filter(|e| e.serial == serial)
 }
 pub(crate) fn find_canvases(state: Signal<ShellState>, visit: &Visit, text: String) {
-    let visit = visit.clone();
-    dioxus::core::spawn_forever(async move {
-        if !visit.current(&state.peek()) || visit.0.fixture.is_some() {
-            return;
-        }
-        crate::files::load(
-            state,
-            super_platinum_core::files::FilesQuery {
-                kind: super_platinum_core::files::FileKind::Canvases,
-                channel: Some(visit.0.key.channel.clone()),
-                text,
-                ..Default::default()
-            },
-            1,
-        )
-        .await;
-    });
+    let Ok(shell) = state.try_peek() else {
+        return;
+    };
+    if !visit.native_read_current(&shell) {
+        return;
+    }
+    drop(shell);
+    let query = super_platinum_core::files::FilesQuery {
+        kind: super_platinum_core::files::FileKind::Canvases,
+        channel: Some(visit.channel().to_owned()),
+        text,
+        ..Default::default()
+    };
+    let work = crate::files::load_picker(state, query, 1, visit.clone());
+    dioxus::core::spawn_forever(work);
 }
 pub(crate) fn open_canvas(state: Signal<ShellState>, visit: &Visit, base: Inventory, id: String) {
     selection::open(state, visit, base, id);

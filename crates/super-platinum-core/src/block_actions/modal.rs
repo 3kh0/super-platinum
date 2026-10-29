@@ -9,8 +9,10 @@ use std::collections::VecDeque;
 
 use serde_json::Value;
 
+use super::form::{FormError, ModalForm};
 use crate::slack::api::BlockViewResponseAction;
 use crate::slack::events::RawEvent;
+pub(super) mod integer_introductions;
 
 const TOKEN_LIMIT: usize = 10;
 const STACK_LIMIT: usize = 10;
@@ -78,6 +80,7 @@ pub struct ModalState {
     tokens: VecDeque<Token>,
     stack: Vec<ModalView>,
     revision: u64,
+    integer_owner: Option<integer_introductions::Owner>,
 }
 
 impl ModalState {
@@ -87,6 +90,7 @@ impl ModalState {
             tokens: VecDeque::new(),
             stack: Vec::new(),
             revision: 0,
+            integer_owner: None,
         }
     }
 
@@ -120,6 +124,7 @@ impl ModalState {
         {
             return false;
         }
+        self.revoke_integer_introductions();
         let current = self.stack.last_mut().expect("checked active view");
         current.payload = Some(payload);
         current.needs_content = false;
@@ -141,12 +146,14 @@ impl ModalState {
         }
         match action {
             BlockViewResponseAction::Absent => {
+                self.revoke_integer_introductions();
                 // Successful submission pops one view even when clear_on_close
                 // is set: that flag governs dismissal, not submission.
                 self.stack.pop();
                 self.tokens.clear();
             }
             BlockViewResponseAction::Clear => {
+                self.revoke_integer_introductions();
                 self.stack.clear();
                 self.tokens.clear();
             }
@@ -154,6 +161,7 @@ impl ModalState {
                 if !self.valid_current_payload(payload) {
                     return false;
                 }
+                self.revoke_integer_introductions();
                 let current = self.stack.last_mut().expect("checked active view");
                 current.payload = Some(payload.clone());
                 current.needs_content = false;
@@ -179,6 +187,7 @@ impl ModalState {
                 {
                     return false;
                 }
+                self.revoke_integer_introductions();
                 self.stack.push(ModalView {
                     id: id.to_owned(),
                     app_id: current.app_id.clone(),
@@ -228,6 +237,7 @@ impl ModalState {
     /// Explicit session/reconnect replacement; events never change the scope.
     pub fn reset_scope(&mut self, scope: ModalScope) {
         if self.scope != scope {
+            self.revoke_integer_introductions();
             self.scope = scope;
             self.tokens.clear();
             self.stack.clear();
@@ -317,6 +327,96 @@ impl ModalState {
     }
 
     pub fn apply(&mut self, scope: &ModalScope, event: &RawEvent, now_ms: u64) -> ModalChange {
+        let change = self.apply_unobserved(scope, event, now_ms);
+        if change != ModalChange::Ignored {
+            self.revoke_integer_introductions();
+        }
+        change
+    }
+
+    /// The actual accepted realtime-root caller alone opts into extra provenance.
+    /// Direct compatibility apply never arms it; an update cannot seed a root.
+    pub fn apply_realtime_integer_context(
+        &mut self,
+        scope: &ModalScope,
+        event: &RawEvent,
+        now_ms: u64,
+    ) -> ModalChange {
+        let empty = self.stack.is_empty();
+        let change = self.apply_unobserved(scope, event, now_ms);
+        if change == ModalChange::Ignored {
+            return change;
+        }
+        if empty && change == ModalChange::Opened && self.stack.len() == 1 {
+            self.integer_owner = integer_introductions::Owner::new(&self.stack[0]);
+        } else if self.stack.len() != 1 {
+            self.revoke_integer_introductions();
+        } else if let Some(owner) = &mut self.integer_owner {
+            owner.observe(&self.stack[0]);
+        }
+        change
+    }
+    pub fn integer_introduction_context_live(&self) -> bool {
+        self.integer_owner
+            .as_ref()
+            .is_some_and(integer_introductions::Owner::live)
+    }
+    /// Enroll exactly one form at the accepted root, before any updates.
+    pub fn parse_integer_root_form(&mut self) -> Result<ModalForm, FormError> {
+        let view = self.stack.last().ok_or(FormError::ConflictingUpdate)?;
+        if self.stack.len() != 1 {
+            return Err(FormError::ConflictingUpdate);
+        }
+        self.integer_owner
+            .as_mut()
+            .ok_or(FormError::ConflictingUpdate)?
+            .parse_root(view)
+    }
+    pub fn revoke_integer_introductions(&self) -> bool {
+        self.integer_owner
+            .as_ref()
+            .is_some_and(integer_introductions::Owner::revoke)
+    }
+    pub fn capture_integer_drafts<'a>(&mut self, forms: impl IntoIterator<Item = &'a ModalForm>) {
+        if let Some(owner) = &mut self.integer_owner {
+            for form in forms {
+                owner.capture(form);
+            }
+        }
+    }
+    pub fn reconcile_integer_form(&mut self, form: &mut ModalForm) -> Result<(), FormError> {
+        let view = self.stack.last().ok_or(FormError::ConflictingUpdate)?;
+        if view.needs_content {
+            return Err(FormError::ConflictingUpdate);
+        }
+        let payload = view.payload.as_ref().ok_or(FormError::ConflictingUpdate)?;
+        if let Some(owner) = &mut self.integer_owner
+            && owner.matches(&form.view_id)
+            && view.id == form.view_id
+        {
+            owner.reconcile(form, payload)
+        } else {
+            form.reconcile(payload)
+        }
+    }
+    pub fn consume_integer_submission(&self, form: &ModalForm) -> bool {
+        if !form.has_introduced_integers() {
+            // Ordinary submissions keep their old retry policy, but end future
+            // introductions on this RT-only lifetime.
+            self.revoke_integer_introductions();
+            return true;
+        }
+        self.integer_owner
+            .as_ref()
+            .is_some_and(|owner| owner.consume(form))
+    }
+
+    fn apply_unobserved(
+        &mut self,
+        scope: &ModalScope,
+        event: &RawEvent,
+        now_ms: u64,
+    ) -> ModalChange {
         if scope != &self.scope {
             return ModalChange::Ignored;
         }
@@ -464,6 +564,7 @@ impl ModalState {
         if scope != &self.scope || self.stack.is_empty() {
             return false;
         }
+        self.revoke_integer_introductions();
         let clear = self
             .stack
             .last()
@@ -483,6 +584,7 @@ impl ModalState {
 
     pub fn clear_local(&mut self, scope: &ModalScope) {
         if scope == &self.scope {
+            self.revoke_integer_introductions();
             self.stack.clear();
             self.tokens.clear();
             self.revision = self.revision.wrapping_add(1);

@@ -47,6 +47,16 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
         {
             return;
         }
+        let (update, file_preference) = match update {
+            RtUpdate::Preference {
+                generation,
+                carrier,
+            } => {
+                let event = Box::new(carrier.event().clone());
+                (RtUpdate::Event { generation, event }, Some(carrier))
+            }
+            other => (other, None),
+        };
         match update {
             RtUpdate::Connected {
                 generation,
@@ -294,6 +304,33 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                 let transcript_visible = shell.reading_latest(crate::read_visibility::focused());
                 let activity_names_revision =
                     crate::app_home::about::management::activity::refresh::policy_revision(&shell);
+                let people_sort_source = matches!(event.as_ref(), RtEvent::PreferencesChanged {name,..} if name=="search_people_sort")
+                    .then(||crate::bootstrap::search_people::numbered::RefreshSource::capture(&shell)).flatten();
+                let people_sort_change = crate::app_home::channel_fetches::people_parameters::preference_event_with_change(
+                    &mut shell, &team, generation, &event,
+                );
+                let people_sort_read =
+                    people_sort_source
+                        .zip(people_sort_change)
+                        .and_then(|(source, change)| {
+                            crate::bootstrap::search_people::numbered::after_sort_change(
+                                &mut shell, source, &change,
+                            )
+                        });
+                crate::app_home::channel_fetches::file_search_parameters::preference_event(
+                    &mut shell,
+                    &team,
+                    generation,
+                    &event,
+                    file_preference.as_ref(),
+                );
+                crate::app_home::channel_fetches::file_saved_parameters::preference_event(
+                    &mut shell,
+                    &team,
+                    generation,
+                    &event,
+                    file_preference.as_ref(),
+                );
                 let home_load = crate::app_home::realtime(&mut shell, &team, generation, &event);
                 let observations_changed = crate::app_home::autocomplete::startup::relevant_event(
                     &shell, &team, generation, &event,
@@ -400,6 +437,9 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     shell.refresh_dock_badge_for(&team);
                 }
                 drop(shell);
+                if let Some(work) = people_sort_read {
+                    crate::bootstrap::search_people::numbered::run_refresh(state, work);
+                }
                 if observations_changed {
                     crate::app_home::autocomplete::startup::schedule(state, &team);
                 }
@@ -479,6 +519,7 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     dioxus::prelude::spawn(crate::huddle::finish(state, teardown));
                 }
             }
+            RtUpdate::Preference { .. } => continue,
             RtUpdate::Disconnected { generation } => {
                 owned_socket.disconnected(&mut shell, &team, generation);
                 crate::file_share::connection(&mut shell, &team, generation);

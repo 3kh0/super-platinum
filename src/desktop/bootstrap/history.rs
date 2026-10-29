@@ -413,6 +413,11 @@ pub async fn mark_visible_read(state: Signal<ShellState>) {
 pub(crate) async fn mark_channel_read(mut state: Signal<ShellState>, opening: bool) {
     let (team, channel, latest, previous, revision, scope) = {
         let shell = state.read();
+        // A hidden transcript is already ineligible for automatic marks. Reject
+        // it before asking the native window about focus.
+        if !shell.transcript_visible() {
+            return;
+        }
         let focused = crate::read_visibility::focused();
         if crate::read_shortcuts::bulk::blocks_reads(&shell)
             || crate::unread::blocks_auto_read(&shell)
@@ -573,6 +578,9 @@ pub async fn mark_thread_read(mut state: Signal<ShellState>, channel: String, ro
     }
     let (team, latest) = {
         let shell = state.read();
+        if !shell.thread_visible() {
+            return;
+        }
         if crate::read_shortcuts::bulk::blocks_reads(&shell)
             || !shell.reading_thread(crate::read_visibility::focused(), &channel, &root_ts)
         {

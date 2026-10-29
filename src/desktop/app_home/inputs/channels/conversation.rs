@@ -128,14 +128,17 @@ pub(super) async fn read(
     mut state: Signal<ShellState>,
     t: &Ticket,
     query: &str,
-) -> Result<(Vec<User>, Vec<Channel>), Error> {
+    scope: &directory::read_scope::ReadScope,
+) -> Result<Option<(Vec<User>, Vec<Channel>)>, Error> {
     let requests = directory::aggregate::prepare(&t.owner.ctx, query, t.conversation.as_ref());
-    let fixture = fixture::request(&mut state.write(), t, &requests);
-    match fixture {
-        Some(rx) => {
-            let value = rx.await.unwrap_or_else(|_| {
-                Err(Error::Offline("Home conversation read unavailable".into()))
-            })?;
+    use super::fixture::exchange::{self, Read};
+    match exchange::conversations(state, t, scope, &requests).await {
+        Read::Refused => Ok(None),
+        Read::Unavailable(error) => Err(error),
+        Read::Registered(mut exchange) => {
+            // Legacy caller retains its original outer query-gated observation.
+            let value = exchange.receive().await?;
+            drop(exchange);
             let response = |key: &str, enabled: bool| {
                 if enabled {
                     value
@@ -155,7 +158,10 @@ pub(super) async fn read(
                 ),
                 mpims: response("mpims", requests.mpims.as_ref().is_ok_and(|v| v.is_some())),
             })
+            .map(Some)
         }
-        None => directory::aggregate::execute(&t.owner.ctx, requests).await,
+        Read::Live => directory::aggregate::execute(&t.owner.ctx, requests)
+            .await
+            .map(Some),
     }
 }

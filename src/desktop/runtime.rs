@@ -1,5 +1,4 @@
 use dioxus::prelude::{ReadableExt, Signal, WritableExt};
-use super_platinum_core::slack::transport::Health;
 
 use crate::state::ShellState;
 
@@ -131,17 +130,16 @@ pub async fn ticks(mut state: Signal<ShellState>) {
             shell.media_epoch = shell.media_epoch.wrapping_add(1);
             changed = true;
         }
-        // Nothing is swept into a link that is known to be down: every fetch
-        // would fail, and the loader would spend the outage burning through
-        // each picture's retry backoff.
+        // Local pictures remain available during an outage. Cache misses and
+        // provisional hits consume one disk attempt per actual demand; the
+        // captured loader mode refuses HTTP while the link is known down.
         let sweep = media_sweep.due(now)
+            && !shell.media.is_loading()
             && shell
                 .core
                 .transport
                 .as_ref()
-                .is_some_and(|transport| transport.health() != Health::Offline)
-            && !shell.media.is_loading()
-            && shell.media.has_pending();
+                .is_some_and(|transport| shell.media.has_pending_for(transport.health()));
         let transport = sweep.then(|| shell.core.transport.clone()).flatten();
         let close_pending = !shell.app_modal_closes.is_empty();
         let list_viewing = crate::slack_lists::lifecycle::plan(
@@ -174,8 +172,7 @@ pub async fn ticks(mut state: Signal<ShellState>) {
             }
         }
         if let Some(transport) = transport {
-            let media = state.read().media.clone();
-            dioxus::prelude::spawn(async move { media.load_pending(transport).await });
+            dioxus::prelude::spawn(crate::media::load(state, transport));
         }
     }
 }

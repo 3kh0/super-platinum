@@ -2,6 +2,10 @@
 use super::*;
 use serde_json::json;
 pub(crate) fn install(s: &mut ShellState) {
+    install_prepared(s, |_| {});
+}
+/// Fixture composition runs synchronously before original owner capture.
+pub(super) fn install_prepared(s: &mut ShellState, before_owner: impl FnOnce(&mut ShellState)) {
     let team = s.core.active_team.clone().unwrap();
     let user = s.core.workspaces[&team].self_user_id.clone();
     let session = super_platinum_core::config::WorkspaceSession {
@@ -23,6 +27,7 @@ pub(crate) fn install(s: &mut ShellState) {
     s.overlay = None;
     s.app_modal = None;
     s.channel_tab = ChannelTab::Messages;
+    before_owner(s);
     let ctx = Arc::new(Context::capture(s).unwrap());
     let channel = s.core.active_channel.clone().unwrap();
     let channel_scope = channel_scope(s, &ctx, &channel).unwrap();

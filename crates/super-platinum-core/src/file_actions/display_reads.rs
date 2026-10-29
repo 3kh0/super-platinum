@@ -121,6 +121,13 @@ impl FileDisplayOverlay {
         message
     }
 
+    /// Apply verified display changes to a file from this request's response.
+    /// Media URLs, access policy and content remain owned by that response.
+    pub fn file(&self, mut file: File) -> File {
+        self.apply_file(&mut file);
+        file
+    }
+
     /// In-place application for non-history ingress; never unwraps messages.
     pub(crate) fn apply_file(&self, file: &mut File) {
         if !self.0.is_empty()

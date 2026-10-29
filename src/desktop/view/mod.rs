@@ -21,6 +21,8 @@ mod global_notifications;
 mod huddle;
 mod huddle_stage;
 mod later;
+#[cfg(test)]
+pub(crate) use later::{LaterPanel, LaterPanelProps};
 mod local_drafts;
 pub(crate) mod managed_schedule;
 pub(crate) mod managed_schedule_check;
@@ -462,7 +464,7 @@ pub fn shell() -> Element {
             if let Some(root) = snapshot.thread_root.as_ref() {
                 aside {
                     class: if activity_thread_focus { "thread-pane wide" } else { "thread-pane" },
-                    style:if workflow_entry || workflow_details{"display:none"}else{"display:flex"},
+                    style:if snapshot.thread_visible(){"display:flex"}else{"display:none"},
                     // A file dropped on the thread is a reply in it. Stopping
                     // here keeps the shell's handler from filing it into the
                     // channel composer as well.

@@ -1,4 +1,5 @@
 pub(crate) mod clock;
+mod read_only;
 use crate::media::MediaUri;
 use dioxus::prelude::*;
 use serde_json::Value;
@@ -172,6 +173,9 @@ pub(crate) fn profile_pane(mut state: Signal<ShellState>, snapshot: &ShellState)
     let Some(user_id) = snapshot.profile_user.as_deref() else {
         return rsx! {};
     };
+    if let Some(details) = crate::bootstrap::profile_search::presentation(snapshot, user_id) {
+        return read_only::pane(state, snapshot, details);
+    }
     let Some(profile) = profile_display(snapshot, user_id, "pane") else {
         return rsx! {};
     };
@@ -213,26 +217,7 @@ pub(crate) fn profile_pane(mut state: Signal<ShellState>, snapshot: &ShellState)
             style: "{pane_style}",
             role: "dialog",
             "aria-label": "{profile.name} Profile",
-            div {
-                class: "profile-resize-handle",
-                title: "Resize profile",
-                "aria-label": "Resize profile panel",
-                onmousedown: move |event: MouseEvent| {
-                    event.prevent_default();
-                    let point = event.data().client_coordinates();
-                    start_profile_resize(state, point.x, pane_width);
-                }
-            }
-            header { class: "profile-pane-header",
-                h2 { "Profile" }
-                button {
-                    class: "profile-close",
-                    title: "Close profile",
-                    "aria-label": "Close profile",
-                    onclick: move |_| state.write().close_profile(),
-                    {crate::icons::icon(crate::icons::Icon::Close, "icon")}
-                }
-            }
+            {pane_header(state, pane_width)}
             div {
                 class: "profile-pane-scroll",
                 onclick: move |_| state.write().profile_menu_open = false,
@@ -579,11 +564,46 @@ fn profile_avatar(
     class: &'static str,
     ready: bool,
 ) -> Element {
+    avatar_fields(
+        &profile.name,
+        &profile.initials,
+        profile.avatar.as_ref(),
+        media_epoch,
+        class,
+        ready,
+    )
+}
+
+fn avatar_fields(
+    name: &str,
+    initials: &str,
+    avatar: Option<&MediaAssetId>,
+    media_epoch: u64,
+    class: &'static str,
+    ready: bool,
+) -> Element {
     rsx! {
-        if let Some(avatar) = profile.avatar.as_ref().filter(|_| ready) {
-            img { class: "{class}", src: "{avatar.webview_uri_at(media_epoch)}", alt: "Profile photo for {profile.name}" }
+        if let Some(avatar) = avatar.filter(|_| ready) {
+            img { class: "{class}", src: "{avatar.webview_uri_at(media_epoch)}", alt: "Profile photo for {name}" }
         } else {
-            span { class: "profile-avatar-initials", "{profile.initials}" }
+            span { class: "profile-avatar-initials", "{initials}" }
+        }
+    }
+}
+
+fn pane_header(mut state: Signal<ShellState>, pane_width: f64) -> Element {
+    rsx! {
+        div { class: "profile-resize-handle", title: "Resize profile", "aria-label": "Resize profile panel",
+            onmousedown: move |event: MouseEvent| {
+                event.prevent_default();
+                start_profile_resize(state, event.data().client_coordinates().x, pane_width);
+            }
+        }
+        header { class: "profile-pane-header", h2 { "Profile" }
+            button { class: "profile-close", title: "Close profile", "aria-label": "Close profile",
+                onclick: move |_| state.write().close_profile(),
+                {crate::icons::icon(crate::icons::Icon::Close, "icon")}
+            }
         }
     }
 }
@@ -719,7 +739,7 @@ fn open_recent_dm(mut state: Signal<ShellState>, channel: String) {
 fn see_all_conversations(mut state: Signal<ShellState>, name: String) {
     let mut shell = state.write();
     shell.main_view = crate::state::MainView::Dms;
-    shell.dm_query = name;
+    shell.set_dm_query(name);
     shell.close_profile();
 }
 

@@ -1,0 +1,238 @@
+[
+  {
+    "literal": "",
+    "accepts": false
+  },
+  {
+    "literal": "example.com",
+    "accepts": true
+  },
+  {
+    "literal": "localhost",
+    "accepts": true
+  },
+  {
+    "literal": "a",
+    "accepts": true
+  },
+  {
+    "literal": "/path",
+    "accepts": true
+  },
+  {
+    "literal": "?q=x",
+    "accepts": false
+  },
+  {
+    "literal": "#fragment",
+    "accepts": false
+  },
+  {
+    "literal": "www.example.com/a b",
+    "accepts": true
+  },
+  {
+    "literal": "http://[",
+    "accepts": true
+  },
+  {
+    "literal": "http://exa mple.com",
+    "accepts": true
+  },
+  {
+    "literal": "mailto:a@example.com",
+    "accepts": true
+  },
+  {
+    "literal": "javascript:alert(1)",
+    "accepts": true
+  },
+  {
+    "literal": "data:text/plain,ok",
+    "accepts": true
+  },
+  {
+    "literal": "ftp://example.com",
+    "accepts": true
+  },
+  {
+    "literal": "https://example.com",
+    "accepts": true
+  },
+  {
+    "literal": "https://EXAMPLE.com/%zz",
+    "accepts": true
+  },
+  {
+    "literal": "https://example.com:99999",
+    "accepts": true
+  },
+  {
+    "literal": "https://user:pw@example.com",
+    "accepts": true
+  },
+  {
+    "literal": "//example.com",
+    "accepts": true
+  },
+  {
+    "literal": "  example.com  ",
+    "accepts": false
+  },
+  {
+    "literal": "a b",
+    "accepts": false
+  },
+  {
+    "literal": "not a url",
+    "accepts": false
+  },
+  {
+    "literal": "\u2603.net",
+    "accepts": true
+  },
+  {
+    "literal": "\u00e9xample.com",
+    "accepts": true
+  },
+  {
+    "literal": "http://192.168.1.1",
+    "accepts": true
+  },
+  {
+    "literal": "127.1",
+    "accepts": true
+  },
+  {
+    "literal": "http://0xffffffff",
+    "accepts": true
+  },
+  {
+    "literal": "http://[::1]",
+    "accepts": true
+  },
+  {
+    "literal": "[::1]",
+    "accepts": true
+  },
+  {
+    "literal": "0x7f.1",
+    "accepts": true
+  },
+  {
+    "literal": "::",
+    "accepts": false
+  },
+  {
+    "literal": ":",
+    "accepts": false
+  },
+  {
+    "literal": "::1",
+    "accepts": false
+  },
+  {
+    "literal": "c:\\test",
+    "accepts": true
+  },
+  {
+    "literal": "file:///C:/x",
+    "accepts": true
+  },
+  {
+    "literal": "https://exa\\mple.com",
+    "accepts": true
+  },
+  {
+    "literal": "https://ex\nample.com",
+    "accepts": true
+  },
+  {
+    "literal": "example.com\n",
+    "accepts": true
+  },
+  {
+    "literal": "https://%0",
+    "accepts": true
+  },
+  {
+    "literal": "https://%65xample.com",
+    "accepts": true
+  },
+  {
+    "literal": "%65xample.com",
+    "accepts": true
+  },
+  {
+    "literal": "https://a..b",
+    "accepts": true
+  },
+  {
+    "literal": "https://a_b.com",
+    "accepts": true
+  },
+  {
+    "literal": "https://user@[::1]:443/path",
+    "accepts": true
+  },
+  {
+    "literal": "user@example.com",
+    "accepts": true
+  },
+  {
+    "literal": "example.com:8080",
+    "accepts": true
+  },
+  {
+    "literal": "tel:123",
+    "accepts": true
+  },
+  {
+    "literal": "http://",
+    "accepts": true
+  },
+  {
+    "literal": "https:",
+    "accepts": true
+  },
+  {
+    "literal": "http:example.com",
+    "accepts": true
+  },
+  {
+    "literal": "https:///example.com",
+    "accepts": true
+  },
+  {
+    "literal": "http:\\\\example.com",
+    "accepts": true
+  },
+  {
+    "literal": "\u4f8b\u3048.\u30c6\u30b9\u30c8",
+    "accepts": true
+  },
+  {
+    "literal": "https://\u4f8b\u3048.\u30c6\u30b9\u30c8",
+    "accepts": true
+  },
+  {
+    "literal": "https://exa\u0000mple.com",
+    "accepts": true
+  },
+  {
+    "literal": "foo\u0085bar",
+    "accepts": false
+  },
+  {
+    "literal": "foo\ufeffbar",
+    "accepts": true
+  },
+  {
+    "literal": "foo\u2028bar",
+    "accepts": false
+  },
+  {
+    "literal": "foo\tbar",
+    "accepts": true
+  }
+]

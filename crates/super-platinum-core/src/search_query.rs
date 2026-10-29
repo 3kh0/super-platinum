@@ -1,12 +1,20 @@
 //! Edits explicit search modifiers without rewriting the user's free-form query.
+pub mod file_types;
+pub mod message_scopes;
+
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct SearchFilters {
     pub channel: String,
     pub sender: String,
+    pub with_person: String,
+    pub on: String,
     pub after: String,
     pub before: String,
     pub has_file: bool,
     pub has_link: bool,
+    pub in_thread: bool,
+    pub saved: bool,
+    pub pinned: bool,
 }
 
 impl SearchFilters {
@@ -24,16 +32,22 @@ impl SearchFilters {
         Self {
             channel: get("in"),
             sender: get("from"),
+            with_person: get("with"),
+            on: get("on"),
             after: get("after"),
             before: get("before"),
             has_file: has_token(query, "has:file"),
             has_link: has_token(query, "has:link"),
+            in_thread: has_token(query, "is:thread"),
+            saved: has_token(query, "is:saved"),
+            pinned: has_token(query, "has:pin"),
         }
     }
 
     pub fn apply(&self, query: &str) -> Result<String, &'static str> {
         let original = Self::from_query(query);
         for (value, old) in [
+            (&self.on, &original.on),
             (&self.after, &original.after),
             (&self.before, &original.before),
         ] {
@@ -44,10 +58,32 @@ impl SearchFilters {
                 return Err("Use YYYY-MM-DD for dates.");
             }
         }
+        // Check the original query before a clear can remove an unfinished
+        // modifier and hide its quote from a later addition in this same Apply.
+        let adds_modifier = [
+            (&self.channel, &original.channel),
+            (&self.sender, &original.sender),
+            (&self.with_person, &original.with_person),
+            (&self.on, &original.on),
+            (&self.after, &original.after),
+            (&self.before, &original.before),
+        ]
+        .into_iter()
+        .any(|(value, old)| value != old && !value.trim().is_empty())
+            || (self.has_file && !original.has_file)
+            || (self.has_link && !original.has_link)
+            || (self.in_thread && !original.in_thread)
+            || (self.saved && !original.saved)
+            || (self.pinned && !original.pinned);
+        if adds_modifier && unfinished_quote(query) {
+            return Err("Close the quoted phrase before adding a filter.");
+        }
         let mut query = query.to_owned();
         for (key, value, old) in [
             ("in", &self.channel, &original.channel),
             ("from", &self.sender, &original.sender),
+            ("with", &self.with_person, &original.with_person),
+            ("on", &self.on, &original.on),
             ("after", &self.after, &original.after),
             ("before", &self.before, &original.before),
         ] {
@@ -58,6 +94,9 @@ impl SearchFilters {
         for (token, enabled, old) in [
             ("has:file", self.has_file, original.has_file),
             ("has:link", self.has_link, original.has_link),
+            ("is:thread", self.in_thread, original.in_thread),
+            ("is:saved", self.saved, original.saved),
+            ("has:pin", self.pinned, original.pinned),
         ] {
             if enabled != old {
                 query = toggle_token(&query, token, enabled)?;
@@ -68,7 +107,7 @@ impl SearchFilters {
 }
 
 // Only canonical positive tokens are owned by these controls. Quoted spellings,
-// exclusions and other has values remain raw syntax, never guessed/normalized.
+// exclusions and other modifier values remain raw syntax, never guessed/normalized.
 fn has_token(query: &str, token: &str) -> bool {
     tokens(query)
         .into_iter()
@@ -78,17 +117,9 @@ fn has_token(query: &str, token: &str) -> bool {
 fn toggle_token(query: &str, token: &str, enabled: bool) -> Result<String, &'static str> {
     let mut result = query.to_owned();
     if enabled {
-        let mut quoted = false;
-        let mut escaped = false;
-        for ch in query.chars() {
-            if ch == '"' && !escaped {
-                quoted = !quoted;
-            }
-            escaped = ch == '\\' && !escaped;
-        }
         // Appending inside an unfinished phrase would add literal text instead
         // of the requested modifier. Keep the original query on refusal.
-        if quoted {
+        if unfinished_quote(query) {
             return Err("Close the quoted phrase before adding a filter.");
         }
         if query.chars().last().is_some_and(|ch| !ch.is_whitespace()) {
@@ -111,6 +142,9 @@ fn replace(query: &str, key: &str, value: &str) -> Result<String, &'static str> 
     if value.contains(['"', '\\', '\n', '\r']) {
         return Err("Use a channel or username without quotes or line breaks.");
     }
+    if !value.is_empty() && unfinished_quote(query) {
+        return Err("Close the quoted phrase before adding a filter.");
+    }
     let prefix = format!("{key}:");
     let mut result = query.to_owned();
     for (start, end) in tokens(query).into_iter().rev() {
@@ -131,6 +165,18 @@ fn replace(query: &str, key: &str, value: &str) -> Result<String, &'static str> 
         "{result}{}{key}:{value}",
         if result.is_empty() { "" } else { " " }
     ))
+}
+
+fn unfinished_quote(query: &str) -> bool {
+    let mut quoted = false;
+    let mut escaped = false;
+    for ch in query.chars() {
+        if ch == '"' && !escaped {
+            quoted = !quoted;
+        }
+        escaped = ch == '\\' && !escaped;
+    }
+    quoted
 }
 
 // Preserve byte boundaries, whitespace, negative modifiers, and quoted literals.
@@ -161,6 +207,103 @@ fn tokens(query: &str) -> Vec<(usize, usize)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn exact_day_edit_and_clear_own_only_positive_on_modifiers() {
+        let query = "release on:2026-01-01 on:2026-02-01 -on:2025-01-01 after:2026-01-01 before:2027-01-01 during:2026";
+        let mut filters = SearchFilters::from_query(query);
+        assert_eq!(filters.on, "2026-01-01");
+        filters.on = "2024-02-29".into();
+        let applied = filters.apply(query).unwrap();
+        assert_eq!(
+            applied,
+            "release   -on:2025-01-01 after:2026-01-01 before:2027-01-01 during:2026 on:2024-02-29"
+        );
+        let mut clear = SearchFilters::from_query(&applied);
+        clear.on.clear();
+        assert_eq!(
+            clear.apply(&applied).unwrap(),
+            "release   -on:2025-01-01 after:2026-01-01 before:2027-01-01 during:2026"
+        );
+    }
+    #[test]
+    fn unchanged_date_syntax_preserves_relative_quoted_repeated_and_unknown_tokens() {
+        for query in [
+            "  on:yesterday\ton:today -on:tomorrow during:october  ",
+            r#""on:literal" "say \"on:other\"" on:"2026-10-01" in:ship"#,
+            "on:2026-10-01 after:last-week before:tomorrow has:file",
+            r#"release "unfinished on:2026-10-01"#,
+        ] {
+            assert_eq!(
+                SearchFilters::from_query(query).apply(query).unwrap(),
+                query
+            );
+        }
+    }
+    #[test]
+    fn edited_exact_dates_validate_calendar_days_without_range_arithmetic() {
+        for day in ["2024-02-29", "2026-10-01", "9999-12-31"] {
+            let filters = SearchFilters {
+                on: day.into(),
+                ..Default::default()
+            };
+            assert_eq!(
+                filters.apply("release").unwrap(),
+                format!("release on:{day}")
+            );
+        }
+        for day in [
+            "2026-02-29",
+            "2026-02-30",
+            "2026-13-01",
+            "2026-10-01 from:other",
+        ] {
+            let filters = SearchFilters {
+                on: day.into(),
+                ..Default::default()
+            };
+            assert_eq!(filters.apply("release"), Err("Use YYYY-MM-DD for dates."));
+        }
+    }
+    #[test]
+    fn adding_date_refuses_unfinished_quotes_before_token_removal_but_clear_is_allowed() {
+        for query in [r#"release "unfinished"#, r#"release on:"unfinished"#] {
+            let mut filters = SearchFilters::from_query(query);
+            filters.on = "2026-10-01".into();
+            assert_eq!(
+                filters.apply(query),
+                Err("Close the quoted phrase before adding a filter.")
+            );
+        }
+        let query = r#"release on:2026-10-01 "unfinished"#;
+        let mut filters = SearchFilters::from_query(query);
+        filters.on.clear();
+        assert_eq!(filters.apply(query).unwrap(), r#"release  "unfinished"#);
+        let query = r#""say \"on:literal\"""#;
+        let filters = SearchFilters {
+            on: "2026-10-01".into(),
+            ..Default::default()
+        };
+        assert_eq!(
+            filters.apply(query).unwrap(),
+            format!("{query} on:2026-10-01")
+        );
+        let query = r#"release in:"unfinished"#;
+        let mut filters = SearchFilters::from_query(query);
+        filters.channel.clear();
+        filters.on = "2026-10-01".into();
+        assert_eq!(
+            filters.apply(query),
+            Err("Close the quoted phrase before adding a filter.")
+        );
+        filters.on.clear();
+        filters.has_file = true;
+        assert_eq!(
+            filters.apply(query),
+            Err("Close the quoted phrase before adding a filter.")
+        );
+        filters.has_file = false;
+        assert_eq!(filters.apply(query).unwrap(), "release");
+    }
     #[test]
     fn editing_channel_preserves_quotes_exclusions_and_other_operators() {
         let query = "🚀 \"in:literal phrase\" -in:noise in:old has:file from:<@U1>";
@@ -285,10 +428,11 @@ mod tests {
     }
     #[test]
     fn clear_owned_flags_retains_unmanaged_query_syntax() {
-        let query = r#"report has:file has:link -has:file has:pin has:"link" "has:file""#;
+        let query =
+            r#"report has:file has:link -has:file has:pin has:"link" "has:file" has:custom"#;
         assert_eq!(
             SearchFilters::default().apply(query).unwrap(),
-            r#"report   -has:file has:pin has:"link" "has:file""#
+            r#"report   -has:file  has:"link" "has:file" has:custom"#
         );
     }
     #[test]
@@ -331,3 +475,8 @@ mod tests {
         assert_eq!(filters.apply("").unwrap(), "has:link");
     }
 }
+
+#[cfg(test)]
+mod context_tests;
+#[cfg(test)]
+mod saved_pinned_tests;

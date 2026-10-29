@@ -102,9 +102,11 @@ impl MediaRegistry {
                     original: Some((url.into(), true)),
                     mime: mime.into(),
                     authenticated: true,
+                    scope: Some(self.scope.clone()),
                     deferred: true,
                     demand_on_display: false,
                     slot: None,
+                    disk_demand: None,
                     snapshot: Some(Arc::downgrade(&bytes)),
                 },
             );

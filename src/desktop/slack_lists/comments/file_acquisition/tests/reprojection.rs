@@ -226,6 +226,76 @@ async fn account_visit_socket_and_old_worker_retirement_refuse_refresh_adoption(
 }
 
 #[test]
+fn transcript_started_before_reconnect_cannot_authorize_new_socket_file_work() {
+    let (mut shell, generation, _) = loaded(1);
+    let entry = shell.slack_lists.comments.entry.as_ref().unwrap().clone();
+    let mut raw = entry.page.as_ref().unwrap().raw().clone();
+    raw["messages"][0]["ts"] = json!("1700000002.000001");
+    raw["messages"][0]["text"] = json!("Accepted transcript from the older socket");
+    let page = Page::parse(&entry.target, raw.clone()).unwrap();
+    let (owner, serial, _, cursor) = controller::begin(&mut shell, false).unwrap();
+    shell.core.workspaces.get_mut("T1").unwrap().rt_generation += 1;
+    controller::finish(
+        &mut shell,
+        &owner,
+        serial,
+        cursor,
+        Ok(network::Loaded {
+            page,
+            projection: entry.projection.unwrap(),
+        }),
+    );
+    let current = shell.slack_lists.comments.entry.as_ref().unwrap();
+    assert!(!current.loading);
+    // A valid transcript still publishes. Only automatic title authority waits
+    // for a read that actually began on the new realtime generation.
+    assert_eq!(current.page.as_ref().unwrap().raw(), &raw);
+    assert_eq!(current.rows[0].ts, "1700000002.000001");
+    assert!(!Arc::ptr_eq(&current.rows, &entry.rows));
+    for _ in 0..3 {
+        assert!(pending(&shell, generation).is_empty());
+    }
+}
+
+#[test]
+fn preflight_completion_never_grants_new_socket_transcript_authority() {
+    let (mut shell, generation, _) = loaded(1);
+    let entry = shell.slack_lists.comments.entry.as_ref().unwrap().clone();
+    let (old_owner, old_serial, _, _) = controller::begin_preflight(&mut shell).unwrap();
+    shell.core.workspaces.get_mut("T1").unwrap().rt_generation += 1;
+    super::super::super::reply::finish_preflight(&mut shell, &old_owner, old_serial);
+    assert!(pending(&shell, generation).is_empty());
+    let (owner, serial, _, _) = controller::begin_preflight(&mut shell).unwrap();
+    // An older completion cannot release the newer read's busy flag.
+    super::super::super::reply::finish_preflight(&mut shell, &old_owner, old_serial);
+    assert!(owner.reading(&shell, serial));
+    super::super::super::reply::finish_preflight(&mut shell, &owner, serial);
+    let current = shell.slack_lists.comments.entry.as_ref().unwrap();
+    assert!(!current.loading);
+    assert!(Arc::ptr_eq(&current.rows, &entry.rows));
+    assert_eq!(
+        current.page.as_ref().unwrap().raw(),
+        entry.page.as_ref().unwrap().raw()
+    );
+    assert!(pending(&shell, generation).is_empty());
+    let (owner, serial, _, cursor) = controller::begin(&mut shell, false).unwrap();
+    controller::finish(
+        &mut shell,
+        &owner,
+        serial,
+        cursor,
+        Ok(network::Loaded {
+            page: entry.page.unwrap(),
+            projection: entry.projection.unwrap(),
+        }),
+    );
+    let work = pending(&shell, generation);
+    assert_eq!(work.len(), 1);
+    queue(&mut shell, generation, work);
+    assert!(pending(&shell, generation).is_empty());
+}
+
+#[test]
 fn retired_socket_requires_successful_transcript_read_before_new_automatic_work() {
     let (mut shell, generation, _) = loaded(1);
     shell.core.workspaces.get_mut("T1").unwrap().rt_generation += 1;

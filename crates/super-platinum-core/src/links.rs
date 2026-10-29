@@ -28,7 +28,10 @@ pub struct LinksState {
     pub generation: u64,
     pub query: String,
     pub items: Vec<ChannelLink>,
+    /// The last successfully loaded page; never relabel retained rows.
     pub page: u32,
+    /// Transient target retained across failure/cancellation for exact retry.
+    pub requested_page: Option<u32>,
     pub page_count: u32,
     pub total: u64,
     pub loading: bool,
@@ -50,28 +53,52 @@ impl LinksState {
             };
         }
     }
+    pub fn accepts(&self, generation: u64) -> bool {
+        self.generation == generation && self.loading && self.requested_page.is_some()
+    }
+    /// Resume an unresolved target; explicit Refresh may use the loaded page.
+    pub fn resume_page(&self) -> u32 {
+        self.requested_page.unwrap_or(self.page).max(1)
+    }
+    pub fn fail(&mut self, generation: u64, error: impl Into<String>) -> bool {
+        if !self.accepts(generation) {
+            return false;
+        }
+        self.loading = false;
+        self.error = Some(error.into());
+        // Failure is terminal: its late response can no longer publish.
+        self.generation = self.generation.wrapping_add(1);
+        true
+    }
+    pub fn cancel(&mut self, generation: u64) -> bool {
+        self.fail(generation, "Loading stopped. Try again.")
+    }
     pub fn begin(&mut self, query: String, page: u32) -> u64 {
         let query = query.trim().to_owned();
         let page = page.max(1);
-        if self.query != query || self.page != page {
+        if self.query != query {
             self.items.clear();
             self.total = 0;
             self.page_count = 0;
             self.loaded = false;
         }
+        if !self.loaded {
+            self.page = 1;
+        }
         self.query = query;
-        self.page = page;
+        self.requested_page = Some(page);
         self.loading = true;
         self.error = None;
         self.generation = self.generation.wrapping_add(1);
         self.generation
     }
     pub fn apply(&mut self, generation: u64, response: LinksPage) -> bool {
-        if self.generation != generation {
+        if !self.accepts(generation) {
             return false;
         }
+        let requested_page = self.requested_page.take().expect("accepted page target");
         let pagination = response.pagination.unwrap_or_default();
-        self.page = pagination.page.unwrap_or(self.page).max(1);
+        self.page = pagination.page.unwrap_or(requested_page).max(1);
         self.page_count = pagination.page_count.unwrap_or(1).max(1);
         self.total = pagination
             .total_count
@@ -127,3 +154,6 @@ mod tests {
         assert_eq!(state.page_count, 6);
     }
 }
+
+#[cfg(test)]
+mod resource_page_recovery;

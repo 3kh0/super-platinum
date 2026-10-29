@@ -12,8 +12,14 @@ use super_platinum_core::{
     MediaAssetId, MediaAssetKind, MediaCacheKind, MediaStore, detect_image_mime,
 };
 
+mod cache_hydration;
 pub(crate) mod check;
 mod display_demand;
+mod loading;
+mod session;
+pub(crate) use session::load;
+#[cfg(test)]
+pub(crate) use session::load_with;
 mod fresh_original;
 pub(crate) use fresh_original::FreshOriginal;
 mod uri;
@@ -83,7 +89,9 @@ fn is_slack_hosted(url: &str) -> bool {
 pub struct MediaRegistry {
     assets: Arc<Mutex<AssetCache>>,
     sources: Arc<RwLock<HashMap<MediaAssetId, MediaSource>>>,
-    source_ids: Arc<RwLock<HashMap<(MediaAssetKind, String), MediaAssetId>>>,
+    source_ids:
+        Arc<RwLock<HashMap<(MediaAssetKind, String, Option<session::Scope>), MediaAssetId>>>,
+    scope: session::Scope,
     backoff: Arc<RwLock<HashMap<MediaAssetId, Backoff>>>,
     load_lock: Arc<tokio::sync::Mutex<()>>,
     /// Set whenever bytes land. The UI tick turns this into one media generation
@@ -119,11 +127,15 @@ struct MediaAsset {
     last_used: u64,
     revision: u64,
     image_failed: bool,
+    picture: Option<(String, String)>,
 }
 
 #[derive(Default)]
 struct AssetCache {
     entries: HashMap<MediaAssetId, MediaAsset>,
+    /// Most recently used resident picture per exact stable slot/source URL.
+    /// IDs only: this never retains bytes beyond the existing cache caps.
+    pictures: HashMap<(String, String), MediaAssetId>,
     // Evicted sources must not be re-fetched by the periodic sweep until a
     // viewer/render explicitly needs them again.
     evicted: HashSet<MediaAssetId>,
@@ -136,18 +148,22 @@ impl AssetCache {
         self.clock = self.clock.wrapping_add(1);
         let asset = self.entries.get_mut(id)?;
         asset.last_used = self.clock;
+        if let Some(key) = &asset.picture {
+            self.pictures.insert(key.clone(), id.clone());
+        }
         Some(asset)
     }
 
     fn insert(&mut self, id: MediaAssetId, mut asset: MediaAsset) {
-        if let Some(old) = self.entries.remove(&id) {
-            self.bytes -= old.bytes.len();
-        }
+        self.remove(&id);
         self.evicted.remove(&id);
         self.clock = self.clock.wrapping_add(1);
         asset.last_used = self.clock;
         asset.revision = self.clock;
         self.bytes += asset.bytes.len();
+        if let Some(key) = &asset.picture {
+            self.pictures.insert(key.clone(), id.clone());
+        }
         self.entries.insert(id, asset);
         while self.bytes > MAX_RESIDENT_BYTES || self.entries.len() > MAX_RESIDENT_ASSETS {
             let oldest = self
@@ -156,14 +172,20 @@ impl AssetCache {
                 .min_by_key(|(_, asset)| asset.last_used)
                 .map(|(id, _)| id.clone())
                 .expect("cache is not empty");
-            self.bytes -= self
-                .entries
-                .remove(&oldest)
-                .expect("asset exists")
-                .bytes
-                .len();
+            self.remove(&oldest).expect("asset exists");
             self.evicted.insert(oldest);
         }
+    }
+
+    fn remove(&mut self, id: &MediaAssetId) -> Option<MediaAsset> {
+        let old = self.entries.remove(id)?;
+        self.bytes -= old.bytes.len();
+        if let Some(key) = &old.picture {
+            if self.pictures.get(key) == Some(id) {
+                self.pictures.remove(key);
+            }
+        }
+        Some(old)
     }
 
     fn wanted(&self, id: &MediaAssetId) -> bool {
@@ -178,6 +200,7 @@ struct MediaSource {
     snapshot: Option<std::sync::Weak<[u8]>>,
     mime: String,
     authenticated: bool,
+    scope: Option<session::Scope>,
     /// Registered but not queued. Full-resolution originals â€” a 60 MB video, a
     /// photo behind a thumbnail â€” exist as assets so the viewer can open them,
     /// but nothing downloads them until somebody asks.
@@ -188,6 +211,7 @@ struct MediaSource {
     /// Stable identity for the on-disk cache; see `MediaStore`. Only set for the
     /// small, endlessly reused images (avatars, emoji) worth persisting.
     slot: Option<String>,
+    disk_demand: Option<cache_hydration::Demand>,
 }
 
 impl MediaRegistry {
@@ -255,10 +279,9 @@ impl MediaRegistry {
         }
         let mut assets = self.assets.lock().expect("media registry poisoned");
         for id in ids {
-            if let Some(asset) = assets.entries.remove(&id) {
-                assets.bytes -= asset.bytes.len();
-            }
+            assets.remove(&id);
             assets.evicted.remove(&id);
+            self.rearm_cache_demand(&id);
         }
         self.dirty.store(true, Ordering::Release);
     }
@@ -289,7 +312,7 @@ impl MediaRegistry {
     }
 
     fn insert_asset(&self, id: MediaAssetId, mime: String, bytes: Arc<[u8]>, provisional: bool) {
-        self.assets.lock().expect("media registry poisoned").insert(
+        self.insert_asset_record(
             id,
             MediaAsset {
                 mime,
@@ -298,9 +321,39 @@ impl MediaRegistry {
                 last_used: 0,
                 revision: 0,
                 image_failed: false,
+                picture: None,
             },
         );
+    }
+    fn insert_asset_record(&self, id: MediaAssetId, mut asset: MediaAsset) {
+        asset.picture = self
+            .sources
+            .read()
+            .expect("media registry poisoned")
+            .get(&id)
+            .and_then(|source| {
+                source
+                    .slot
+                    .as_ref()
+                    .map(|slot| (slot.clone(), source.url.clone()))
+            });
+        self.assets
+            .lock()
+            .expect("media registry poisoned")
+            .insert(id, asset);
         self.dirty.store(true, Ordering::Release);
+    }
+    fn reuse_picture(&self, id: &MediaAssetId, key: (String, String)) {
+        let previous = {
+            let mut assets = self.assets.lock().expect("media registry poisoned");
+            let previous = assets.pictures.get(&key).cloned();
+            previous
+                .filter(|previous| previous != id)
+                .and_then(|previous| assets.get(&previous).cloned())
+        };
+        if let Some(asset) = previous {
+            self.insert_asset_record(id.clone(), asset);
+        }
     }
 
     /// Registers a remote image, deciding for itself whether the Slack session
@@ -435,6 +488,8 @@ impl MediaRegistry {
 
     /// Queues a deferred asset. Called when the viewer opens one.
     pub fn request(&self, id: &MediaAssetId) {
+        // Keep demand visibility and its disk-attempt revision atomic.
+        let mut assets = self.assets.lock().expect("media registry poisoned");
         let mut sources = self.sources.write().expect("media registry poisoned");
         let Some(source) = sources.get_mut(id) else {
             return;
@@ -445,13 +500,13 @@ impl MediaRegistry {
             return;
         }
         source.deferred = false;
-        drop(sources);
+        if let Some(demand) = &mut source.disk_demand {
+            demand.rearm();
+        }
         // A viewer can reopen an original after its bytes were evicted.
-        self.assets
-            .lock()
-            .expect("media registry poisoned")
-            .evicted
-            .remove(id);
+        assets.evicted.remove(id);
+        drop(sources);
+        drop(assets);
         // A deferred asset that failed earlier must not stay parked on its
         // backoff when the reader explicitly asks for it again.
         self.backoff
@@ -481,7 +536,9 @@ impl MediaRegistry {
         slot: Option<String>,
         deferred: bool,
     ) -> MediaAssetId {
-        let key = (kind, url.to_owned());
+        let owner = authenticated.then(|| self.scope.clone());
+        let picture = slot.as_ref().map(|slot| (slot.clone(), url.to_owned()));
+        let key = (kind, url.to_owned(), owner.clone());
         let existing = self
             .source_ids
             .read()
@@ -518,11 +575,16 @@ impl MediaRegistry {
                     snapshot: None,
                     mime,
                     authenticated,
+                    scope: owner,
                     deferred,
                     demand_on_display: false,
+                    disk_demand: slot.as_ref().map(|_| Default::default()),
                     slot,
                 },
             );
+        if let Some(key) = picture {
+            self.reuse_picture(&id, key);
+        }
         id
     }
 
@@ -534,8 +596,8 @@ impl MediaRegistry {
     pub fn is_ready(&self, id: &MediaAssetId) -> bool {
         let mut assets = self.assets.lock().expect("media registry poisoned");
         let ready = assets.get(id).is_some();
-        if !ready {
-            assets.evicted.remove(id);
+        if !ready && assets.evicted.remove(id) {
+            self.rearm_cache_demand(id);
         }
         drop(assets);
         ready || self.snapshot(id).is_some()
@@ -582,7 +644,10 @@ impl MediaRegistry {
             .expect("media registry poisoned")
             .iter()
             .any(|(id, source)| {
-                !source.deferred && is_due(backoff.get(id), now) && assets.wanted(id)
+                self.eligible(source)
+                    && !source.deferred
+                    && is_due(backoff.get(id), now)
+                    && assets.wanted(id)
             })
     }
 
@@ -598,88 +663,6 @@ impl MediaRegistry {
 
     /// Populates every registered source that has no current bytes yet, from the
     /// on-disk cache where possible and the network otherwise.
-    pub async fn load_pending(&self, transport: Arc<Transport>) {
-        // Serialize refreshes so a later projection can safely queue more
-        // sources while an earlier batch is still downloading.
-        let _guard = self.load_lock.lock().await;
-        let pending = self.pending_sources();
-        if pending.is_empty() {
-            return;
-        }
-        // Disk first: an unchanged URL needs no request at all, and a hit under
-        // the same identity at an older URL paints the previous picture
-        // immediately instead of leaving a gap until the download finishes.
-        let pending = self.hydrate_from_store(pending).await;
-        if pending.is_empty() {
-            return;
-        }
-        let user_agent = super_platinum_core::slack::xparams::Identity::from_capture().user_agent;
-        let permits = Arc::new(tokio::sync::Semaphore::new(12));
-        let mut tasks = tokio::task::JoinSet::new();
-        for (id, source) in pending {
-            let transport = transport.clone();
-            let user_agent = user_agent.clone();
-            let permits = permits.clone();
-            tasks.spawn(async move {
-                let _permit = permits.acquire_owned().await.expect("semaphore is open");
-                let result = if source.authenticated {
-                    transport.get_bytes(&source.url, &user_agent).await
-                } else if source.mime == "image/gif" {
-                    transport
-                        .get_public_gif_bytes(&source.url, &user_agent)
-                        .await
-                } else {
-                    transport.get_public_bytes(&source.url, &user_agent).await
-                };
-                (id, source, result)
-            });
-        }
-        let mut persist = Vec::new();
-        while let Some(result) = tasks.join_next().await {
-            let Ok((id, source, result)) = result else {
-                continue;
-            };
-            match result {
-                Ok(bytes) => {
-                    let mime = detect_image_mime(&bytes).unwrap_or(&source.mime);
-                    if let Some(slot) = source.slot.clone() {
-                        persist.push((slot, source.url.clone(), bytes.clone()));
-                    }
-                    self.backoff
-                        .write()
-                        .expect("media registry poisoned")
-                        .remove(&id);
-                    self.insert_asset(id, mime.to_owned(), bytes.into(), false);
-                }
-                Err(error) => {
-                    // Transport errors may themselves contain signed URLs.
-                    // Log only the host, opaque local asset ID and category.
-                    let host = url::Url::parse(&source.url)
-                        .ok()
-                        .and_then(|url| url.host_str().map(str::to_owned))
-                        .unwrap_or_else(|| "invalid-host".into());
-                    let category = if transport.health() == Health::Offline {
-                        "offline"
-                    } else if is_permanent(&error) {
-                        "unavailable"
-                    } else {
-                        "retryable transport failure"
-                    };
-                    eprintln!("super-platinum: media {} from {host}: {category}", id.uri());
-                    // A machine-level outage is not this URL's fault. Recording
-                    // a failure would double its backoff on every sweep, and
-                    // the picture would stay blank for minutes after the
-                    // network came back.
-                    if transport.health() != Health::Offline {
-                        self.record_failure(&id, is_permanent(&error));
-                    }
-                }
-            }
-        }
-        self.persist(persist).await;
-    }
-
-    /// Sources with no current bytes, cheapest and most noticeable first.
     fn pending_sources(&self) -> Vec<(MediaAssetId, MediaSource)> {
         let now = Instant::now();
         let assets = self.assets.lock().expect("media registry poisoned");
@@ -690,7 +673,10 @@ impl MediaRegistry {
             .expect("media registry poisoned")
             .iter()
             .filter(|(id, source)| {
-                !source.deferred && is_due(backoff.get(*id), now) && assets.wanted(id)
+                self.eligible(source)
+                    && !source.deferred
+                    && is_due(backoff.get(*id), now)
+                    && assets.wanted(id)
             })
             .map(|(id, source)| (id.clone(), source.clone()))
             .collect::<Vec<_>>();
@@ -702,65 +688,6 @@ impl MediaRegistry {
             MediaAssetKind::Attachment => 2,
         });
         pending
-    }
-
-    /// Fills in what the on-disk cache already holds and returns the sources
-    /// that still need the network.
-    async fn hydrate_from_store(
-        &self,
-        pending: Vec<(MediaAssetId, MediaSource)>,
-    ) -> Vec<(MediaAssetId, MediaSource)> {
-        let Some(store) = self.store.clone() else {
-            return pending;
-        };
-        let lookups = pending
-            .iter()
-            .filter_map(|(id, source)| {
-                let slot = source.slot.clone()?;
-                Some((id.clone(), slot, source.url.clone()))
-            })
-            .collect::<Vec<_>>();
-        if lookups.is_empty() {
-            return pending;
-        }
-        let hits = tokio::task::spawn_blocking(move || {
-            lookups
-                .into_iter()
-                .filter_map(|(id, slot, url)| store.load(&slot, &url).map(|image| (id, image)))
-                .collect::<Vec<_>>()
-        })
-        .await
-        .unwrap_or_default();
-        let mut satisfied = HashSet::new();
-        for (id, image) in hits {
-            if image.current {
-                satisfied.insert(id.clone());
-            }
-            self.insert_asset(id, image.mime, image.bytes.into(), !image.current);
-        }
-        pending
-            .into_iter()
-            .filter(|(id, _)| !satisfied.contains(id))
-            .collect()
-    }
-
-    async fn persist(&self, entries: Vec<(String, String, Vec<u8>)>) {
-        let Some(store) = self.store.clone() else {
-            return;
-        };
-        if entries.is_empty() {
-            return;
-        }
-        let limit = self.current_limit();
-        let _ = tokio::task::spawn_blocking(move || {
-            for (slot, url, bytes) in entries {
-                if let Err(error) = store.store(&slot, &url, &bytes) {
-                    eprintln!("super-platinum: could not cache {slot}: {error}");
-                }
-            }
-            store.prune_to(limit);
-        })
-        .await;
     }
 
     fn record_failure(&self, id: &MediaAssetId, permanent: bool) {
@@ -805,8 +732,8 @@ impl MediaRegistry {
         let asset = {
             let mut assets = self.assets.lock().expect("media registry poisoned");
             let asset = assets.get(&id).cloned();
-            if asset.is_none() {
-                assets.evicted.remove(&id);
+            if asset.is_none() && assets.evicted.remove(&id) {
+                self.rearm_cache_demand(&id);
             }
             asset
         };
@@ -818,6 +745,7 @@ impl MediaRegistry {
                 last_used: 0,
                 revision: 0,
                 image_failed: false,
+                picture: None,
             })
         });
         match asset {
@@ -1238,6 +1166,13 @@ pub fn desktop_config(media: MediaRegistry) -> Config {
                 | "app-calendar-connect-narrow"
                 | "app-calendar-uncertain-narrow"
                 | "app-modal-form-narrow"
+                | "app-modal-email-narrow"
+                | "app-modal-email-error-narrow"
+                | "app-modal-url-narrow"
+                | "app-modal-url-error-narrow"
+                | "app-modal-url-prefill-narrow"
+                | "app-modal-required-integer-narrow"
+                | "app-modal-signed-integer-narrow"
                 | "app-modal-users-narrow"
                 | "app-modal-user-narrow"
                 | "app-modal-conversation-narrow"
@@ -1258,12 +1193,22 @@ pub fn desktop_config(media: MediaRegistry) -> Config {
                 | "thread-marked-unread-narrow"
                 | "thread-counts-narrow"
                 | "thread-feed-narrow"
+                | "thread-feed-refresh-retry-narrow"
+                | "thread-feed-older-retry-narrow"
+                | "thread-feed-initial-retry-narrow"
                 | "thread-follow-narrow"
                 | "activity-narrow"
                 | "activity-navigation-narrow"
+                | "activity-refresh-retry-narrow"
+                | "activity-older-retry-narrow"
+                | "resource-files-recovery-narrow"
+                | "resource-links-recovery-narrow"
                 | "search-narrow"
                 | "search-filters-narrow"
-                | "search-has-filters-narrow")
+                | "search-has-filters-narrow"
+                | "search-files-narrow"
+                | "search-date-narrow"
+                | "search-history-narrow")
         ) {
         WINDOW_MIN_INNER_SIZE
     } else {

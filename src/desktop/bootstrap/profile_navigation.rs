@@ -11,6 +11,7 @@ pub(super) struct ProfileVisit {
     team: String,
     self_user: Option<String>,
     session: Option<WorkspaceSession>,
+    cookie: Option<String>,
     transport: Option<Arc<Transport>>,
     generation: u64,
     user: Option<String>,
@@ -33,6 +34,11 @@ impl ProfileVisit {
                 .as_ref()
                 .and_then(|session| session.workspaces.get(&team))
                 .cloned(),
+            cookie: shell
+                .core
+                .session
+                .as_ref()
+                .map(|session| session.d_cookie.clone()),
             team,
             transport: shell.core.transport.clone(),
             generation: shell.profile_generation,
@@ -66,6 +72,17 @@ impl ProfileVisit {
     }
     fn account_current(&self, shell: &ShellState) -> bool {
         self.owner_current(shell)
+            && self.cookie
+                == shell
+                    .core
+                    .session
+                    .as_ref()
+                    .map(|session| session.d_cookie.clone())
+            && self.transport.as_ref().is_none_or(|transport| {
+                self.cookie
+                    .as_ref()
+                    .is_none_or(|cookie| transport.d_cookie() == cookie)
+            })
             && match (
                 &self.session,
                 shell
@@ -100,6 +117,14 @@ impl ProfileVisit {
     }
     pub(super) fn current(&self, shell: &ShellState) -> bool {
         self.account_current(shell)
+            && shell.profile_generation == self.generation
+            && shell.profile_user == self.user
+    }
+
+    /// Explicit read-only Retry may refresh credentials only for this same pane
+    /// and original account owner. This does not admit response data.
+    pub(super) fn same_owner_pane(&self, shell: &ShellState) -> bool {
+        self.owner_current(shell)
             && shell.profile_generation == self.generation
             && shell.profile_user == self.user
     }

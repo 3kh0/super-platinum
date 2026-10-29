@@ -7,6 +7,10 @@ pub(crate) fn thread_list(state: Signal<ShellState>, snapshot: &ShellState) -> E
     let Some(feed) = crate::thread_feed::visible_state(snapshot) else {
         return rsx! {p {class:"secondary-empty", "Loading threads…"}};
     };
+    let read = crate::thread_feed::Source::capture(snapshot);
+    let retry = feed.failed_read();
+    let failed_older = retry.is_some_and(|r| r.cursor.is_some());
+    let initial_failure = retry.is_some() && !feed.loaded && !failed_older;
     let workspace = snapshot
         .core
         .active_team
@@ -15,12 +19,20 @@ pub(crate) fn thread_list(state: Signal<ShellState>, snapshot: &ShellState) -> E
     rsx! {
         div { class: "secondary-list", "aria-label":"Followed threads",
             div {class:"secondary-toolbar",
-                button {disabled:feed.loading, onclick:move |_| {spawn(crate::thread_feed::load(state,false));},
+                button {id:"thread-feed-refresh",disabled:feed.loading,onclick:{let source=read.clone();move |_|{if let Some(source)=source.clone(){source.start(state,crate::thread_feed::Mode::Refresh);}}},
                     if feed.dirty {"New activity — refresh"} else {"Refresh"}
                 }
             }
             if feed.loading && feed.items.is_empty() {p {class:"secondary-empty", role:"status", "Loading threads…"}}
-            if feed.failed {p {class:"secondary-empty", role:"status", "Could not load threads. Your loaded conversations are still available."}}
+            if feed.failed {p {class:"secondary-empty",role:"status",
+                if initial_failure {"Could not load threads. Try again when you reconnect."}
+                else if failed_older {"Could not load older threads. Your loaded conversations are still available."}
+                else if retry.is_some() {"Could not refresh threads. Your loaded conversations are still available."}
+                else {"Threads could not finish loading. Refresh to try again."}
+            }}
+            if retry.is_some() {div {class:"secondary-toolbar",
+                button {id:"thread-feed-retry",disabled:feed.loading,onclick:{let source=read.clone();move |_|{if let Some(source)=source.clone(){source.start(state,crate::thread_feed::Mode::Retry);}}},"Retry"}
+            }}
             if feed.loaded && !feed.loading && !feed.failed && feed.items.is_empty() {p {class:"secondary-empty", "No followed threads yet."}}
                 for item in &feed.items {
                     {
@@ -76,11 +88,12 @@ pub(crate) fn thread_list(state: Signal<ShellState>, snapshot: &ShellState) -> E
 
             if feed.has_more {
                 div {class:"secondary-toolbar",
-                    button {disabled:feed.loading, onclick:move |_| {spawn(crate::thread_feed::load(state,true));},
-                        if feed.loading {"Loading more…"} else if feed.failed {"Retry loading more"} else {"Load more threads"}
-                    }
+                    button {id:"thread-feed-older",disabled:feed.loading,onclick:{let source=read.clone();move |_|{if let Some(source)=source.clone(){source.start(state,crate::thread_feed::Mode::Older);}}},"Load more threads"}
                 }
             }
         }
     }
 }
+
+#[cfg(all(test, feature = "protected-native-fixture"))]
+mod recovery;

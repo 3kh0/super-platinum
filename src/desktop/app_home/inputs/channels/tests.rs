@@ -347,6 +347,7 @@ fn shared_prepared_directory_route_keeps_account_separate_from_home_team_filter(
     assert_eq!(body["should_allowed_internal_teams_match_any"], true);
     assert!(body.get("external_team").is_none());
     assert_eq!(body["query"], "project");
+    assert_eq!(body["check_membership"], true);
     let ordinary = directory::prepare_channels(
         &t.owner.ctx,
         "project",

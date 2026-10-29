@@ -6,6 +6,13 @@ use super::common::{credentials, persist_workspace, refresh_history};
 use crate::state::ShellState;
 
 mod channel_metadata;
+pub(crate) use channel_metadata::Owner as ReadOwner;
+mod surface_metadata;
+use std::sync::Arc;
+pub(crate) use surface_metadata::Hydration as SurfaceHydration;
+use surface_metadata::{
+    hydrate_emojis as hydrate_surface_emojis, hydrate_users as hydrate_surface_users,
+};
 
 pub async fn refresh(mut state: Signal<ShellState>) {
     if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
@@ -18,6 +25,13 @@ pub async fn refresh(mut state: Signal<ShellState>) {
     let refresh_epoch = state.peek().core.account_epoch;
     let active_team = state.read().core.active_team.clone();
     workspaces.sort_by_key(|session| Some(&session.team_id) != active_team.as_ref());
+    let mut later_owner = workspaces
+        .iter()
+        .find(|session| Some(&session.team_id) == active_team.as_ref())
+        .and_then(|session| {
+            channel_metadata::Owner::capture(&state.peek().core, &transport, session)
+        })
+        .map(Arc::new);
     for workspace_session in workspaces {
         let team = workspace_session.team_id.clone();
         let warm = state
@@ -84,6 +98,19 @@ pub async fn refresh(mut state: Signal<ShellState>) {
             }
         }
 
+        if state.peek().core.account_epoch != refresh_epoch {
+            return;
+        }
+        let Some(owner) =
+            channel_metadata::Owner::capture(&state.peek().core, &transport, &workspace_session)
+                .map(Arc::new)
+        else {
+            return;
+        };
+
+        if active_team.as_ref() == Some(&team) {
+            later_owner = Some(owner.clone());
+        }
         // Accepted boot may already have a current socket on a warm refresh.
         // Cold boot is deferred by the scheduler until Connected is accepted.
         crate::app_home::autocomplete::startup::schedule(state, &team);
@@ -121,11 +148,28 @@ pub async fn refresh(mut state: Signal<ShellState>) {
                 channel,
             )
             .await;
-            hydrate_surface_users(&mut state, &transport, &client, &workspace_session, &team).await;
-            dioxus::prelude::spawn(refresh_media(state, transport.clone()));
+            hydrate_surface_users(
+                &mut state,
+                &transport,
+                &client,
+                &workspace_session,
+                &team,
+                owner.clone(),
+            )
+            .await;
+            if !owner.current(&state.peek().core) {
+                return;
+            }
+            spawn_owned_media(state, transport.clone(), owner.clone());
         }
 
+        if !owner.current(&state.peek().core) {
+            return;
+        }
         crate::usergroups::hydrate(state, &team).await;
+        if !owner.current(&state.peek().core) {
+            return;
+        }
         // Capture revisions immediately before the HTTP request, while retaining
         // the owner from before boot/history awaits. New socket/local read state wins.
         if let Some(read) = counts_owner.and_then(|owner| owner.begin(&state.peek().core)) {
@@ -136,8 +180,18 @@ pub async fn refresh(mut state: Signal<ShellState>) {
                 }
             }
         }
+        if !owner.current(&state.peek().core) {
+            return;
+        }
         refresh_channel_metadata(&mut state, &transport, &client, &workspace_session, &team).await;
-        if let Ok(dnd) = api::fetch_dnd_info(&transport, &client, &workspace_session).await
+        if !owner.current(&state.peek().core) {
+            return;
+        }
+        let dnd = api::fetch_dnd_info(&transport, &client, &workspace_session).await;
+        if !owner.current(&state.peek().core) {
+            return;
+        }
+        if let Ok(dnd) = dnd
             && let Some(workspace) = state.write().core.workspaces.get_mut(&team)
         {
             workspace.self_dnd = dnd;
@@ -145,25 +199,51 @@ pub async fn refresh(mut state: Signal<ShellState>) {
         let posting =
             crate::bootstrap::posting_ingress::capture(&state, &transport, &workspace_session);
         if let Ok(dms) = api::fetch_sidebar_dms(&transport, &client, &workspace_session).await {
+            if !owner.current(&state.peek().core) {
+                return;
+            }
             posting.channels(&state, &dms.all_channels());
             if let Some(workspace) = state.write().core.workspaces.get_mut(&team) {
                 workspace.apply_sidebar_dms(dms);
             }
         }
-        if let Ok(sections) =
-            api::fetch_channel_sections(&transport, &client, &workspace_session).await
+        if !owner.current(&state.peek().core) {
+            return;
+        }
+        let sections = api::fetch_channel_sections(&transport, &client, &workspace_session).await;
+        if !owner.current(&state.peek().core) {
+            return;
+        }
+        if let Ok(sections) = sections
             && let Some(workspace) = state.write().core.workspaces.get_mut(&team)
         {
             workspace.apply_channel_sections(sections);
         }
         state.write().refresh_from_core();
-        hydrate_surface_users(&mut state, &transport, &client, &workspace_session, &team).await;
-        dioxus::prelude::spawn(refresh_media(state, transport.clone()));
+        hydrate_surface_users(
+            &mut state,
+            &transport,
+            &client,
+            &workspace_session,
+            &team,
+            owner.clone(),
+        )
+        .await;
+        if !owner.current(&state.peek().core) {
+            return;
+        }
+        spawn_owned_media(state, transport.clone(), owner.clone());
 
         persist_workspace(&state, &team);
     }
     // Metadata only unless Later is visible; active history takes priority.
-    dioxus::prelude::spawn(crate::later::load(state, Default::default(), false));
+    if let Some(owner) = later_owner {
+        dioxus::prelude::spawn(async move {
+            if owner.current(&state.peek().core) {
+                crate::later::load(state, Default::default(), false).await;
+            }
+        });
+    }
 }
 
 pub(crate) async fn hydrate_current_surface(mut state: Signal<ShellState>) {
@@ -182,12 +262,88 @@ pub(crate) async fn hydrate_current_surface(mut state: Signal<ShellState>) {
     else {
         return;
     };
-    hydrate_activity_messages(&mut state, &transport, &client, &workspace_session).await;
-    hydrate_surface_emojis(&mut state, &transport, &client, &workspace_session, &team).await;
-    hydrate_surface_channels(&mut state, &transport, &client, &workspace_session, &team).await;
-    hydrate_surface_users(&mut state, &transport, &client, &workspace_session, &team).await;
-    register_surface_avatars(&state, &team);
-    refresh_media(state, transport).await;
+    let Some(owner) =
+        channel_metadata::Owner::capture(&state.peek().core, &transport, &workspace_session)
+            .map(Arc::new)
+    else {
+        return;
+    };
+    hydrate_surface_with(state, owner.clone(), |stage| {
+        let owner = owner.clone();
+        let transport = &transport;
+        let client = &client;
+        let workspace_session = &workspace_session;
+        let team = &team;
+        async move {
+            match stage {
+                SurfaceStage::Activity => {
+                    hydrate_activity_messages(&mut state, transport, client, workspace_session)
+                        .await
+                }
+                SurfaceStage::Emoji => {
+                    hydrate_surface_emojis(
+                        &mut state,
+                        transport,
+                        client,
+                        workspace_session,
+                        team,
+                        owner,
+                    )
+                    .await
+                }
+                SurfaceStage::Channels => {
+                    hydrate_surface_channels(&mut state, transport, client, workspace_session, team)
+                        .await
+                }
+                SurfaceStage::Users => {
+                    hydrate_surface_users(
+                        &mut state,
+                        transport,
+                        client,
+                        workspace_session,
+                        team,
+                        owner,
+                    )
+                    .await
+                }
+                SurfaceStage::Avatars => register_surface_avatars(&state, team),
+                SurfaceStage::Media => refresh_media(state, transport.clone()).await,
+            }
+        }
+    })
+    .await;
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum SurfaceStage {
+    Activity,
+    Emoji,
+    Channels,
+    Users,
+    Avatars,
+    Media,
+}
+async fn hydrate_surface_with<F, Fut>(
+    state: Signal<ShellState>,
+    owner: Arc<channel_metadata::Owner>,
+    mut stage: F,
+) where
+    F: FnMut(SurfaceStage) -> Fut,
+    Fut: std::future::Future<Output = ()>,
+{
+    for next in [
+        SurfaceStage::Activity,
+        SurfaceStage::Emoji,
+        SurfaceStage::Channels,
+        SurfaceStage::Users,
+        SurfaceStage::Avatars,
+        SurfaceStage::Media,
+    ] {
+        if !owner.current(&state.peek().core) {
+            return;
+        }
+        stage(next).await;
+    }
 }
 
 /// Every Slack message currently projected onto a visible surface. Emoji, user,
@@ -235,80 +391,6 @@ fn visit_surface_messages(
     }
 }
 
-async fn hydrate_surface_emojis(
-    state: &mut Signal<ShellState>,
-    transport: &super_platinum_core::slack::Transport,
-    client: &super_platinum_core::slack::SlackClient,
-    workspace_session: &super_platinum_core::config::WorkspaceSession,
-    team: &str,
-) {
-    let names = {
-        let shell = state.read();
-        let Some(workspace) = shell.core.workspaces.get(team) else {
-            return;
-        };
-        let mut names = std::collections::HashSet::new();
-        visit_surface_messages(&shell, team, &mut |message| {
-            super_platinum_core::state::collect_message_emoji_names(message, &mut names);
-        });
-        if let Some(status) = workspace
-            .users
-            .get(&workspace.self_user_id)
-            .and_then(|user| user.profile.as_ref())
-            .and_then(|profile| profile.status_emoji.as_deref())
-        {
-            names.extend(
-                super_platinum_core::state::emoji_names_in_text(status)
-                    .into_iter()
-                    .filter(|name| !super_platinum_core::state::is_standard_emoji(name)),
-            );
-        }
-        names.retain(|name| {
-            !workspace.custom_emoji.contains_key(name)
-                // Names Slack has already told us it does not know must not be
-                // re-requested on every projection.
-                && !shell
-                    .core
-                    .emoji_hydrated
-                    .contains(&(team.to_owned(), name.clone()))
-        });
-        names.into_iter().collect::<Vec<_>>()
-    };
-    if names.is_empty() {
-        return;
-    }
-    state
-        .write()
-        .core
-        .emoji_hydrated
-        .extend(names.iter().map(|name| (team.to_owned(), name.clone())));
-    let mut loaded = Vec::new();
-    for chunk in names.chunks(100) {
-        match api::fetch_emojis_info(transport, client, workspace_session, chunk.to_vec()).await {
-            Ok(emojis) => loaded.extend(emojis),
-            Err(error) => {
-                eprintln!("super-platinum: custom emoji hydration failed: {error}");
-                // Allow a retry on the next projection.
-                let mut shell = state.write();
-                for name in chunk {
-                    shell
-                        .core
-                        .emoji_hydrated
-                        .remove(&(team.to_owned(), name.clone()));
-                }
-            }
-        }
-    }
-    if loaded.is_empty() {
-        return;
-    }
-    let mut shell = state.write();
-    if let Some(workspace) = shell.core.workspaces.get_mut(team) {
-        workspace.apply_emojis(loaded);
-    }
-    shell.refresh_from_core();
-}
-
 /// Unfurl footers and `#channel` chips print a raw id until the conversation is
 /// known, so pull metadata for the ones the visible messages point at.
 /// Bring cached conversation metadata up to date, the way Slack's client does:
@@ -338,6 +420,9 @@ async fn refresh_channel_metadata(
         let Some(read) = owner.begin(&state.peek().core, batch.keys()) else {
             return;
         };
+        if !owner.current(&state.peek().core) {
+            return;
+        }
         let posting =
             crate::bootstrap::posting_ingress::capture(state, transport, workspace_session)
                 .for_channels(batch.keys());
@@ -422,6 +507,9 @@ async fn hydrate_surface_channels(
                 .iter()
                 .map(|channel| (team.to_owned(), channel.clone())),
         );
+        if !owner.current(&state.peek().core) {
+            return;
+        }
         let posting =
             crate::bootstrap::posting_ingress::capture(state, transport, workspace_session)
                 .for_channels(&chunk);
@@ -506,12 +594,18 @@ async fn hydrate_activity_messages(
     client: &super_platinum_core::slack::SlackClient,
     workspace_session: &super_platinum_core::config::WorkspaceSession,
 ) {
+    let Some(owner) =
+        channel_metadata::Owner::capture(&state.peek().core, transport, workspace_session)
+    else {
+        return;
+    };
     let (epoch, sequence) = {
         let shell = state.peek();
         (shell.core.account_epoch, shell.core.activity.load_seq)
     };
     let current = |shell: &ShellState| {
-        shell.core.account_epoch == epoch
+        owner.current(&shell.core)
+            && shell.core.account_epoch == epoch
             && shell.core.active_team.as_deref() == Some(workspace_session.team_id.as_str())
             && shell
                 .core
@@ -587,146 +681,6 @@ async fn hydrate_activity_messages(
             }
         }
     }
-}
-
-async fn hydrate_surface_users(
-    state: &mut Signal<ShellState>,
-    transport: &super_platinum_core::slack::Transport,
-    client: &super_platinum_core::slack::SlackClient,
-    workspace_session: &super_platinum_core::config::WorkspaceSession,
-    team: &str,
-) {
-    crate::usergroups::hydrate(*state, team).await;
-    let requested = {
-        let shell = state.read();
-        let Some(workspace) = shell.core.workspaces.get(team) else {
-            return;
-        };
-        let mut ids = std::collections::HashSet::new();
-        for section in &shell.sidebar_sections {
-            for index in &section.channel_indices {
-                if let Some(user) = shell
-                    .channels
-                    .get(*index)
-                    .and_then(|channel| channel.user_id.as_ref())
-                {
-                    ids.insert(user.clone());
-                }
-            }
-        }
-        // Mentions inside Block Kit and unfurl authors need display names and
-        // avatars too, not just the message authors.
-        visit_surface_messages(&shell, team, &mut |message| {
-            super_platinum_core::state::collect_message_user_ids(message, &mut ids);
-        });
-        if shell.main_view == crate::state::MainView::Unreads {
-            for channel in workspace
-                .channels
-                .values()
-                .filter(|channel| workspace.unread_total(channel) > 0)
-            {
-                if let Some(messages) = workspace.messages.get(&channel.id) {
-                    ids.extend(
-                        messages
-                            .messages
-                            .iter()
-                            .rev()
-                            .take(3)
-                            .filter_map(|message| message.user.clone()),
-                    );
-                }
-            }
-        }
-        for entry in &shell.core.dms.entries {
-            if let Some(user) = entry
-                .channel
-                .as_ref()
-                .and_then(super_platinum_core::state::dm_user_id)
-            {
-                ids.insert(user.to_owned());
-            }
-            if let Some(user) = entry
-                .message
-                .as_ref()
-                .and_then(|message| message.user.clone())
-            {
-                ids.insert(user);
-            }
-        }
-        ids.extend(
-            shell
-                .core
-                .activity
-                .items
-                .iter()
-                .filter_map(|item| item.author().map(str::to_owned)),
-        );
-        ids.extend(
-            shell
-                .core
-                .activity
-                .hydrated
-                .values()
-                .filter_map(|message| message.user.clone()),
-        );
-        for item in &shell.core.threads_view.items {
-            ids.extend(
-                std::iter::once(&item.root_msg)
-                    .chain(&item.unread_replies)
-                    .chain(&item.latest_replies)
-                    .filter_map(|message| message.user.clone()),
-            );
-        }
-        if let Some(user) = shell.profile_user.as_ref() {
-            ids.insert(user.clone());
-        }
-        ids.insert(workspace.self_user_id.clone());
-        ids.retain(|id| {
-            if id.trim().is_empty() || shell.core.avatar_profile_hydrated.contains(id) {
-                return false;
-            }
-            workspace.users.get(id).is_none_or(|user| {
-                workspace.avatar_url(id).is_none()
-                    || super_platinum_core::state::display_name(Some(user), id) == *id
-            })
-        });
-        let mut ids = ids.into_iter().collect::<Vec<_>>();
-        ids.sort();
-        ids
-    };
-    if requested.is_empty() {
-        return;
-    }
-
-    state
-        .write()
-        .core
-        .avatar_profile_hydrated
-        .extend(requested.iter().cloned());
-    let mut loaded = Vec::new();
-    let mut failed = false;
-    for chunk in requested.chunks(100) {
-        match api::fetch_users_info(transport, client, workspace_session, chunk.to_vec()).await {
-            Ok(users) => loaded.extend(users),
-            Err(error) => {
-                failed = true;
-                eprintln!("super-platinum: visible user hydration failed: {error}");
-            }
-        }
-    }
-
-    let mut shell = state.write();
-    if failed {
-        for id in &requested {
-            shell.core.avatar_profile_hydrated.remove(id);
-        }
-    }
-    if let Some(workspace) = shell.core.workspaces.get_mut(team) {
-        for user in loaded {
-            workspace.users.insert(user.id.clone(), user);
-        }
-    }
-    shell.refresh_from_core();
 }
 
 pub async fn sign_in(mut state: Signal<ShellState>) {
@@ -823,15 +777,23 @@ async fn reload_account(mut state: Signal<ShellState>) {
     refresh(state).await;
 }
 
-pub(super) async fn refresh_media(
+fn spawn_owned_media(
     state: Signal<ShellState>,
-    transport: std::sync::Arc<super_platinum_core::slack::Transport>,
+    transport: Arc<super_platinum_core::slack::Transport>,
+    owner: Arc<channel_metadata::Owner>,
 ) {
-    let media = state.read().media.clone();
-    // The media generation is bumped by `runtime::ticks` as bytes land, not
-    // here: a single slow host would otherwise hold back every avatar that
-    // already arrived in the same batch.
-    media.load_pending(transport).await;
+    let work = refresh_media(state, transport);
+    dioxus::prelude::spawn(async move {
+        if owner.current(&state.peek().core) {
+            work.await;
+        }
+    });
+}
+pub(super) fn refresh_media(
+    state: Signal<ShellState>,
+    transport: Arc<super_platinum_core::slack::Transport>,
+) -> impl std::future::Future<Output = ()> {
+    crate::media::load(state, transport)
 }
 
 pub(crate) fn install_loaded(mut state: Signal<ShellState>, mut loaded: ShellState) {
@@ -856,5 +818,7 @@ pub(crate) fn install_loaded(mut state: Signal<ShellState>, mut loaded: ShellSta
     crate::app_home::about::management::carry_pending(&mut previous, &mut loaded);
     crate::app_home::channel_fetches::carry(&mut previous, &mut loaded);
     crate::directory_member_fetches::carry_into_fresh_shell(&mut previous, &mut loaded);
+    crate::bootstrap::search_file_pages::saved::registry::carry(&mut previous, &mut loaded);
+    previous.media.retire();
     *previous = loaded;
 }

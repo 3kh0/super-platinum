@@ -685,6 +685,7 @@ pub struct PendingSend {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SearchResultVm {
+    pub direct_conversation: bool,
     pub thread_ts: Option<String>,
     pub channel_id: String,
     pub channel_name: String,

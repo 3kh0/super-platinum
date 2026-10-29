@@ -4,8 +4,28 @@ use super::*;
 use std::future::Future;
 use super_platinum_core::slack::api::custom::texty::files::OrderedResponse;
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum MemberWire {
+    Legacy,
+    ProfileLongText,
+}
+
 pub(crate) trait Host: Clone + Send + Sync + 'static {
     const LIST: bool;
+    fn member_wire(&self) -> MemberWire {
+        MemberWire::Legacy
+    }
+    fn fixture_profile_member_request(
+        &self,
+        _state: Signal<ShellState>,
+        _request: &PreparedRequest,
+    ) -> impl Future<Output = Result<(Value, Option<Vec<String>>), Error>> {
+        async {
+            Err(Error::Api(
+                "profile_long_text_member_fixture_unavailable".into(),
+            ))
+        }
+    }
     /// Explicit caller-owned presentation; generic List hosts remain conservative.
     fn canvas_title_locale(&self) -> Option<super::super::title_locale::CanvasTitle> {
         None
@@ -40,6 +60,16 @@ pub(crate) trait Host: Clone + Send + Sync + 'static {
 }
 impl Host for query::Lease {
     const LIST: bool = false;
+    fn member_wire(&self) -> MemberWire {
+        MemberWire::ProfileLongText
+    }
+    async fn fixture_profile_member_request(
+        &self,
+        state: Signal<ShellState>,
+        request: &PreparedRequest,
+    ) -> Result<(Value, Option<Vec<String>>), Error> {
+        fixture::completion::profile_member_search(state, request).await
+    }
     fn canvas_title_locale(&self) -> Option<super::super::title_locale::CanvasTitle> {
         Some(super::super::title_locale::CanvasTitle::english())
     }
@@ -124,3 +154,6 @@ pub(super) fn ordinary<L: Host>(row: &Value) -> bool {
         super_platinum_core::slack::api::custom::texty::matching::ordinary_local(row)
     }
 }
+
+#[cfg(test)]
+mod tests;

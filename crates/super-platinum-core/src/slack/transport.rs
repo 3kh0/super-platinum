@@ -16,8 +16,14 @@ mod avatar;
 mod canvas_collab;
 mod canvas_edit;
 mod draft_mutation;
+mod file_pages;
 mod file_share_read;
+mod file_sort_preference;
+mod people_pages;
+mod people_sort_preference;
 pub use file_share_read::FileShareReadGate;
+pub use file_sort_preference::FileSortPreferenceFailure;
+pub use people_sort_preference::PeopleSortPreferenceFailure;
 mod emoji_preferences;
 mod original_download;
 mod protected_draft;
@@ -81,6 +87,7 @@ mod presentation_notifications;
 mod profile_channel_search;
 mod profile_file_search;
 mod profile_group_search;
+mod profile_long_text_member_search;
 mod profile_member_search;
 mod profile_sections;
 mod read_preferences;
@@ -108,6 +115,7 @@ pub use list_record_delete::ListDeleteFailure;
 pub(super) use notification_preferences::notification_preferences_success;
 pub use offline_features::AutocompletePrioritiesResponse;
 
+mod admitted;
 #[cfg(test)]
 mod execute_current_tests;
 #[cfg(test)]
@@ -264,46 +272,9 @@ impl Transport {
         req: PreparedRequest,
         current: impl Fn() -> bool,
     ) -> Result<Value, Error> {
-        let mut attempt = 0;
-        loop {
-            if !current() {
-                return Err(Error::Api("request_superseded".into()));
-            }
-            let link = self.await_link().await;
-            if !current() {
-                return Err(Error::Api("request_superseded".into()));
-            }
-            link?;
-            // A call already on the wire when the link goes has nothing to wait
-            // for but its own timeout. Cutting it loose the moment the shell
-            // says the network is gone is what keeps a pane from sitting on
-            // "Loading…" for half a minute; the retry below re-enters the hold
-            // and goes out again once the link is confirmed back. Only for
-            // calls that are safe to repeat — a send that may have landed must
-            // not be fired twice.
-            let attempted = if req.retry_safe() {
-                tokio::select! {
-                    biased;
-                    result = self.execute_once(&req) => result,
-                    () = self.link_dropped() => {
-                        Err(Error::Offline("link dropped mid-call".into()))
-                    }
-                }
-            } else {
-                self.execute_once(&req).await
-            };
-            if !current() {
-                return Err(Error::Api("request_superseded".into()));
-            }
-            match attempted {
-                Ok(value) => return Ok(value),
-                Err(e) if req.retry_safe() && retryable_error(&e) && attempt < 2 => {
-                    attempt += 1;
-                    tokio::time::sleep(retry_delay(&e, attempt)).await;
-                }
-                Err(e) => return Err(e),
-            }
-        }
+        self.execute_admitted(req, current, || true, |_| {})
+            .await?
+            .ok_or_else(|| Error::Api("request_superseded".into()))
     }
 
     /// Preserve structured app feedback for the narrow Block Kit protocol.

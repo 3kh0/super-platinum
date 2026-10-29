@@ -42,6 +42,8 @@ struct CachedSidebar {
     priority_section: bool,
     #[serde(default)]
     starred_order: Vec<String>,
+    #[serde(default)]
+    recent_searches: serde_json::Value,
 }
 
 #[derive(serde::Serialize)]
@@ -62,6 +64,7 @@ struct CachedSidebarRef<'a> {
     vip_users: &'a std::collections::HashSet<String>,
     priority_section: bool,
     starred_order: &'a [String],
+    recent_searches: &'a crate::search::SearchHistory,
 }
 const MAX_CACHED_MESSAGES_PER_CHANNEL: usize = 200;
 
@@ -75,6 +78,8 @@ mod plan_info_tests;
 mod read_preferences_tests;
 #[cfg(test)]
 mod read_shortcuts_tests;
+#[cfg(test)]
+mod search_history_tests;
 mod snapshot;
 pub use snapshot::WorkspaceSnapshot;
 
@@ -215,6 +220,7 @@ impl Cache {
             starred_order: Vec::new(),
             dm_order: Vec::new(),
             recent_channels,
+            recent_searches: Default::default(),
             last_active_channel,
             priority_scores: Default::default(),
             frecency,
@@ -266,6 +272,10 @@ impl Cache {
             .as_deref()
             .and_then(|json| serde_json::from_str::<CachedSidebar>(json).ok())
         {
+            if !ws.self_user_id.is_empty() && ws.self_user_id == session.user_id {
+                ws.recent_searches =
+                    crate::search::SearchHistory::restore(&sidebar.recent_searches);
+            }
             ws.thread_counts = crate::state::ThreadCountsState::from_cache(sidebar.thread_counts);
             ws.draft_presence = crate::drafts::presence::Presence::restore(sidebar.draft_presence);
             ws.deleted_files = sidebar.deleted_files;
@@ -413,6 +423,7 @@ impl Cache {
                     vip_users: &ws.vip_users,
                     priority_section: ws.priority_sidebar_section,
                     starred_order: &ws.starred_order,
+                    recent_searches: &ws.recent_searches,
                 })?,
             ],
         )?;

@@ -1,7 +1,14 @@
 //! Named static surfaces: no read, preference write, room or event dispatch.
 use super::*;
 pub(super) fn install(s: &mut ShellState, variant: &str) {
-    super::super::fixture::install(s);
+    install_prepared(s, variant, |_| {});
+}
+pub(super) fn install_prepared(
+    s: &mut ShellState,
+    variant: &str,
+    before_owner: impl FnOnce(&mut ShellState),
+) {
+    super::super::fixture::install_prepared(s, before_owner);
     let d = s.message_buttons.shortcuts.dialog.as_ref().unwrap();
     let mut c = Calendar::new(
         cal::Provider::Google,

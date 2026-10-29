@@ -10,7 +10,7 @@ CASES=(
  ('initial',QUERY,[True,False],None,0),
  ('pending',QUERY,[False,True],None,0),
  ('applied','launch   -has:file "has:link" has:pin HAS:link has:links has:link',None,None,1),
- ('cleared','launch   -has:file "has:link" has:pin HAS:link has:links ',None,None,2),
+ ('cleared','launch   -has:file "has:link"  HAS:link has:links ',None,None,2),
  ('keyboard-applied',KEYBOARD+' has:file',None,None,3),
  ('quote-refused','report "unfinished',[True,True],ERROR,3),
  ('recovered','report "unfinished" has:file has:link',[True,True],None,4),
@@ -68,7 +68,7 @@ def validate_stage(stage,index,fixture,first_revision=None,platform=None):
     require(all(type(v) is int and v==0 for v in (native['results'],native['page'],dom['results'])),'Fabricated Search results')
     require(type(native['revision']) is int and native['revision']>=0,'Search revision type')
     if first_revision is not None:require(native['revision']==first_revision+revision,'Query remount/refusal revision changed')
-    require(dom['labels']==([] if flags is None else ['Has files','Has links']),'Search labels changed')
+    require(dom['labels']==([] if flags is None else ['Has files','Has links','In threads','Saved items','Pinned messages']),'Search labels changed')
     require(dom['horizontalOverflow'] is False,'Search horizontal overflow')
     r=dom['dialog'];require(vector(r,4) and 0<=r[0]<r[2]<=viewport[0] and 0<=r[1]<r[3]<=viewport[1],'Search dialog outside viewport')
     keys={'query','filters'}|({'file','link','apply','clear'} if flags is not None else set())|({'alert'} if error else set())

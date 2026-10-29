@@ -70,6 +70,8 @@ struct Entry {
     title: String,
     target: Target,
     read: u64,
+    // The transcript's acquisition generation, captured before its first await.
+    read_socket: Option<u64>,
     // Send preflight uses the same read authority but never publishes its Page.
     read_replaces_page: bool,
     loading: bool,

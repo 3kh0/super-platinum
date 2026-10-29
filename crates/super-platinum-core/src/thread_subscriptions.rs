@@ -133,6 +133,22 @@ impl CoreAppState {
     }
 }
 
+/// Exact channel-local subscription preimage. No write or readiness capability.
+#[derive(PartialEq)]
+pub(crate) struct Observation(Vec<(ThreadKey, Option<bool>, u64, Option<u64>)>);
+impl ThreadSubscriptions {
+    pub(crate) fn observe(&self, epoch:u64, team:&str, channel:&str)->Option<Observation> {
+        let mut rows=Vec::new();
+        for ((e,key),entry) in &self.entries {
+            if *e==epoch && key.0==team && key.1==channel {
+                if rows.len()>=1000 {return None;}
+                rows.push((key.clone(),entry.active,entry.revision,entry.pending));
+            }
+        }
+        rows.sort_by(|a,b|a.0.cmp(&b.0));Some(Observation(rows))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

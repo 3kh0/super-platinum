@@ -414,6 +414,20 @@ pub(crate) async fn search(
     state: Signal<ShellState>,
     request: &PreparedRequest,
 ) -> Result<Reply, Error> {
+    search_with(state, request, validate).await
+}
+pub(crate) async fn profile_member_search(
+    state: Signal<ShellState>,
+    request: &PreparedRequest,
+) -> Result<Reply, Error> {
+    search_with(state, request, profile_members::validate).await
+}
+mod profile_members;
+async fn search_with(
+    state: Signal<ShellState>,
+    request: &PreparedRequest,
+    validate: fn(&SlackClient, &WorkspaceSession, &PreparedRequest) -> Result<Accepted, Error>,
+) -> Result<Reply, Error> {
     let (model, started) = {
         let shell = state.peek();
         let model = handle(&shell)?;

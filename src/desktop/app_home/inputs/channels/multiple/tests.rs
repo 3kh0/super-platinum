@@ -406,6 +406,7 @@ fn multi_search_does_not_require_single_mode_or_apply_its_enterprise_team_mask()
     let RequestBody::Json(body) = request.body else {
         panic!("JSON request")
     };
+    assert_eq!(body["check_membership"], true);
     assert!(body.get("allowed_internal_teams").is_none());
     assert!(
         body.get("should_allowed_internal_teams_match_any")

@@ -1,6 +1,6 @@
 use uuid::Uuid;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Identity {
     pub user_agent: String,
     pub sec_ch_ua: String,
@@ -21,7 +21,7 @@ impl Identity {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct XParams {
     pub version_ts: String,
     pub gantry: String,

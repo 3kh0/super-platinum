@@ -15,6 +15,51 @@ def windows_error(code):
 
 
 class CleanupTests(unittest.TestCase):
+    def test_preservation_before_process_creation_keeps_original_failure_evidence(self):
+        value, temporary = self.fixture()
+        value.preserve_runtime = True
+        value.process = None
+        with patch("builtins.print"):
+            value.close()
+        temporary.cleanup.assert_not_called()
+        self.assertTrue(value.retained_runtime["processStopped"])
+        self.assertFalse(value.cleanup_errors)
+
+    def test_preservation_keeps_owned_runtime_after_closed_audit(self):
+        value, temporary = self.fixture()
+        value.preserve_runtime = True
+        value._entered = True
+        value._after_exit = Mock()
+        with patch("builtins.print") as output:
+            value.close()
+            value.close()
+        temporary.cleanup.assert_not_called()
+        value._after_exit.assert_called_once_with(value._temporary_path)
+        self.assertTrue(value._output is None)
+        self.assertEqual(value.retained_runtime["path"], str(value._temporary_path))
+        self.assertTrue(value.retained_runtime["processStopped"])
+        self.assertEqual(output.call_count, 1)
+
+    def test_preservation_still_refuses_replaced_runtime_owner(self):
+        value, temporary = self.fixture()
+        value.preserve_runtime = True
+        value._temporary_owner = object()
+        with self.assertRaisesRegex(RuntimeError, "unverified"):
+            value.close()
+        temporary.cleanup.assert_not_called()
+        self.assertIsNone(value.retained_runtime)
+
+    def test_capture_refuses_existing_evidence_without_unlink_or_request(self):
+        value = module.NativeFixture("test", "unused.log")
+        value.control = Mock()
+        with patch.object(Path, "resolve", return_value=Path("existing.png")), \
+                patch.object(Path, "exists", return_value=True), \
+                patch.object(Path, "unlink") as unlink:
+            with self.assertRaises(FileExistsError):
+                value.capture("existing.png")
+        unlink.assert_not_called()
+        value.control.assert_not_called()
+
     def test_closed_callback_reads_owned_files_before_cleanup_exactly_once(self):
         calls = []
         temporary = tempfile.TemporaryDirectory(prefix="sp-fixture-closed-test-")

@@ -1,6 +1,9 @@
 //! Scoped Activity pagination and reconciliation of changes received during a fetch.
 use crate::slack::models::{ActivityFeedPage, ActivityItem, ChannelId, Message, MessageTs};
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::{
+    collections::{BTreeMap, HashMap, HashSet},
+    sync::Arc,
+};
 
 #[derive(Debug, Clone, Default)]
 pub struct ActivityState {
@@ -22,7 +25,15 @@ pub struct ActivitySync {
     changes: HashMap<String, ActivityItem>,
     cursors: HashSet<String>,
     pending_page_read: bool,
+    pending: Option<Arc<()>>,
+    retry: Option<ActivityRetry>,
     pending_cursor_reads: HashMap<(String, Option<String>), ReadTimestamp>,
+}
+
+/// A failed HTTP coordinate, distinct from committed pagination and cycle stops.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ActivityRetry {
+    pub cursor: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -30,6 +41,7 @@ pub struct ActivityRequest {
     epoch: u64,
     team: String,
     sequence: u64,
+    ticket: Arc<()>,
     pub cursor: Option<String>,
 }
 
@@ -56,8 +68,30 @@ impl ActivityState {
     }
 
     pub fn begin(&mut self, append: bool) -> Option<ActivityRequest> {
+        if append && self.next_cursor.is_none() {
+            return None;
+        }
+        self.begin_cursor(if append {
+            self.next_cursor.clone()
+        } else {
+            None
+        })
+    }
+
+    pub fn failed_read(&self) -> Option<&ActivityRetry> {
+        self.sync.retry.as_ref()
+    }
+
+    /// Retry the failed coordinate with a fresh sequence, never inferred from
+    /// whichever committed rows or filtered view happen to be visible.
+    pub fn begin_retry(&mut self) -> Option<ActivityRequest> {
+        let cursor = self.sync.retry.as_ref()?.cursor.clone();
+        self.begin_cursor(cursor)
+    }
+
+    fn begin_cursor(&mut self, cursor: Option<String>) -> Option<ActivityRequest> {
         let (epoch, team) = self.sync.scope.clone()?;
-        if self.loading || (append && self.next_cursor.is_none()) {
+        if self.loading {
             return None;
         }
         self.loading = true;
@@ -66,18 +100,15 @@ impl ActivityState {
         self.sync.changes.clear();
         self.sync.pending_page_read = false;
         self.sync.pending_cursor_reads.clear();
-        if !append {
-            self.sync.cursors.clear();
-        }
+        self.sync.retry = None;
+        let ticket = Arc::new(());
+        self.sync.pending = Some(ticket.clone());
         Some(ActivityRequest {
             epoch,
             team,
             sequence: self.load_seq,
-            cursor: if append {
-                self.next_cursor.clone()
-            } else {
-                None
-            },
+            ticket,
+            cursor,
         })
     }
 
@@ -85,6 +116,11 @@ impl ActivityState {
         self.loading
             && self.matches_scope(request.epoch, &request.team)
             && self.load_seq == request.sequence
+            && self
+                .sync
+                .pending
+                .as_ref()
+                .is_some_and(|p| Arc::ptr_eq(p, &request.ticket))
     }
 
     pub fn fail(&mut self, request: &ActivityRequest) -> bool {
@@ -93,6 +129,25 @@ impl ActivityState {
         }
         self.loading = false;
         self.failed = true;
+        self.sync.pending = None;
+        self.sync.retry = Some(ActivityRetry {
+            cursor: request.cursor.clone(),
+        });
+        self.sync.changes.clear();
+        self.sync.pending_page_read = false;
+        self.sync.pending_cursor_reads.clear();
+        true
+    }
+
+    /// Quietly release only the original pending request. This does not turn
+    /// account/visit retirement into a visible network error or retry fact.
+    pub fn cancel(&mut self, request: &ActivityRequest) -> bool {
+        if !self.accepts(request) {
+            return false;
+        }
+        self.loading = false;
+        self.sync.pending = None;
+        self.sync.retry = None;
         self.sync.changes.clear();
         self.sync.pending_page_read = false;
         self.sync.pending_cursor_reads.clear();
@@ -110,7 +165,11 @@ impl ActivityState {
             .map(ActivityItem::identity);
         if request.cursor.is_none() {
             self.items.clear();
+            // Commit a fresh chain only with the accepted replacement page.
+            self.sync.cursors.clear();
         }
+        self.sync.pending = None;
+        self.sync.retry = None;
         let pending_page_read = std::mem::take(&mut self.sync.pending_page_read);
         let pending_cursor_reads = std::mem::take(&mut self.sync.pending_cursor_reads);
         for mut item in page.items {
@@ -337,6 +396,9 @@ fn read_timestamp(ts: &str) -> Option<ReadTimestamp> {
 
 #[cfg(test)]
 mod cursor_tests;
+
+#[cfg(test)]
+mod recovery;
 
 #[cfg(test)]
 mod tests {

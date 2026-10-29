@@ -73,6 +73,7 @@ mod read_preferences;
 mod read_shortcuts;
 mod read_visibility;
 mod realtime;
+mod resource_reads;
 mod runtime;
 mod scheduled;
 mod self_status;

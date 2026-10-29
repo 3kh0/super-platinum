@@ -131,19 +131,81 @@ pub(crate) fn search(mut state: Signal<ShellState>, generation: u64, query: Stri
             &context.transport,
             &context.session,
         );
-        let result = directory::fetch(&context, &request.query).await;
-        if request.current(&state.peek())
-            && request.kind == Kind::Channels
-            && let Ok(Results::Channels(channels)) = &result
-        {
-            posting.channels(&state, channels);
-        }
-        finish(&mut state.write(), &request, result);
+        complete_with(
+            state,
+            request,
+            &context,
+            |request| context.transport.execute(request),
+            |state, channels| posting.channels(state, channels),
+        )
+        .await;
     });
+}
+
+fn retire_owned(mut state: Signal<ShellState>, request: &Request) {
+    if !request.current(&state.peek()) {
+        return;
+    }
+    let mut shell = state.write();
+    if request.current(&shell) {
+        shell
+            .slack_lists
+            .view
+            .as_mut()
+            .unwrap()
+            .editor
+            .as_mut()
+            .unwrap()
+            .directory
+            .cancel(&request.query);
+    }
+}
+
+async fn complete_with<F, Fut, I>(
+    state: Signal<ShellState>,
+    request: Request,
+    context: &crate::scheduled::Context,
+    execute: F,
+    mut ingress: I,
+) where
+    F: FnMut(super_platinum_core::slack::PreparedRequest) -> Fut,
+    Fut: std::future::Future<Output = Result<Value, Error>>,
+    I: FnMut(&Signal<ShellState>, &[super_platinum_core::slack::models::Channel]),
+{
+    let current =
+        |shell: &ShellState| request.current(shell) && directory::client_current(shell, context);
+    let received =
+        directory::fetch_with(context, &request.query, execute, || current(&state.peek())).await;
+    if !current(&state.peek()) {
+        retire_owned(state, &request);
+        return;
+    }
+    let result = match received {
+        Ok(Some(rows)) => Ok(rows),
+        Err(error) => Err(error),
+        Ok(None) => {
+            retire_owned(state, &request);
+            return;
+        }
+    };
+    if request.kind == Kind::Channels
+        && current(&state.peek())
+        && let Ok(Results::Channels(channels)) = &result
+    {
+        ingress(&state, channels);
+    }
+    if current(&state.peek()) {
+        let mut state = state;
+        finish(&mut state.write(), &request, result);
+    } else {
+        retire_owned(state, &request);
+    }
 }
 
 #[cfg(test)]
 mod channel_tests;
+#[cfg(test)]
+mod continuation_tests;
 #[cfg(test)]
 mod owner_tests;
 #[cfg(test)]

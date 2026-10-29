@@ -113,6 +113,13 @@ pub struct FilesQuery {
     pub sort: FileSort,
 }
 impl FilesQuery {
+    /// One accepted identity for state comparison and the issued request.
+    pub fn normalized(mut self) -> Self {
+        self.text = self.text.trim().to_owned();
+        self.sort = self.effective_sort();
+        self
+    }
+
     /// Slack's engagement index ignores text/channel/creator filters. Use the
     /// actual search index whenever one of those filters is active.
     pub fn effective_sort(&self) -> FileSort {
@@ -167,7 +174,10 @@ pub struct FilesState {
     pub generation: u64,
     pub query: FilesQuery,
     pub items: Vec<File>,
+    /// The last successfully loaded page; never relabel retained rows.
     pub page: u32,
+    /// Transient target retained across failure/cancellation for exact retry.
+    pub requested_page: Option<u32>,
     pub page_count: u32,
     pub total: u64,
     pub loading: bool,
@@ -200,28 +210,52 @@ impl FilesState {
             };
         }
     }
-    pub fn begin(&mut self, mut query: FilesQuery, page: u32) -> u64 {
-        query.sort = query.effective_sort();
+    pub fn accepts(&self, generation: u64) -> bool {
+        self.generation == generation && self.loading && self.requested_page.is_some()
+    }
+    /// Resume an unresolved target; explicit Refresh may use the loaded page.
+    pub fn resume_page(&self) -> u32 {
+        self.requested_page.unwrap_or(self.page).max(1)
+    }
+    pub fn fail(&mut self, generation: u64, error: impl Into<String>) -> bool {
+        if !self.accepts(generation) {
+            return false;
+        }
+        self.loading = false;
+        self.error = Some(error.into());
+        // Failure is terminal: its late response can no longer publish.
+        self.generation = self.generation.wrapping_add(1);
+        true
+    }
+    pub fn cancel(&mut self, generation: u64) -> bool {
+        self.fail(generation, "Loading stopped. Try again.")
+    }
+    pub fn begin(&mut self, query: FilesQuery, page: u32) -> u64 {
+        let query = query.normalized();
         let page = page.max(1);
-        if self.query != query || self.page != page {
+        if self.query != query {
             self.items.clear();
             self.total = 0;
             self.page_count = 0;
             self.loaded = false;
         }
+        if !self.loaded {
+            self.page = 1;
+        }
         self.query = query;
-        self.page = page;
+        self.requested_page = Some(page);
         self.loading = true;
         self.error = None;
         self.generation = self.generation.wrapping_add(1);
         self.generation
     }
     pub fn apply(&mut self, generation: u64, response: FilesPage) -> bool {
-        if self.generation != generation {
+        if !self.accepts(generation) {
             return false;
         }
+        let requested_page = self.requested_page.take().expect("accepted page target");
         let pagination = response.pagination.unwrap_or_default();
-        self.page = pagination.page.unwrap_or(self.page).max(1);
+        self.page = pagination.page.unwrap_or(requested_page).max(1);
         self.page_count = pagination.page_count.unwrap_or(1).max(1);
         self.total = pagination
             .total_count
@@ -307,3 +341,6 @@ mod tests {
         assert!(!s.apply(current, FilesPage::default()));
     }
 }
+
+#[cfg(test)]
+mod resource_page_recovery;

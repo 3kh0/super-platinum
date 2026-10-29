@@ -6,6 +6,7 @@ mod files;
 pub(crate) mod message_check;
 pub(crate) mod message_fixture;
 mod navigation;
+pub(crate) mod read;
 use crate::state::{MainView, ShellState};
 use dioxus::prelude::*;
 pub use navigation::open;
@@ -36,6 +37,23 @@ impl Context {
             account: shell.core.active_account.clone(),
         })
     }
+    fn capture(shell: &ShellState) -> Option<Self> {
+        let team = shell.core.active_team.as_ref()?;
+        Some(Self {
+            transport: shell.core.transport.clone()?,
+            client: shell.core.client.clone(),
+            session: shell
+                .core
+                .session
+                .as_ref()?
+                .workspaces
+                .values()
+                .find(|session| &session.team_id == team)?
+                .clone(),
+            epoch: shell.core.account_epoch,
+            account: shell.core.active_account.clone(),
+        })
+    }
     fn current(&self, shell: &ShellState) -> bool {
         shell.core.active_account == self.account
             && shell.core.account_epoch == self.epoch
@@ -59,86 +77,32 @@ pub fn visible_state(shell: &ShellState) -> Option<&super_platinum_core::later::
         .then_some(&shell.core.later)
 }
 
-pub async fn load(mut state: Signal<ShellState>, filter: LaterFilter, append: bool) {
+pub async fn load(state: Signal<ShellState>, filter: LaterFilter, append: bool) {
     if message_fixture::filter(state, filter, append) {
         return;
     }
-    let Some(ctx) = Context::get(&state) else {
+    let Some(frame) = read::Frame::capture(&state.peek()) else {
         return;
     };
-    let (generation, cursor, dock_revision) = {
-        let mut shell = state.write();
-        shell
-            .core
-            .later
-            .ensure_scope(ctx.epoch, &ctx.session.team_id);
-        let dock_revision = shell
-            .core
-            .workspaces
-            .get(&ctx.session.team_id)
-            .map(|w| w.dock_counts.revision());
-        let later = &mut shell.core.later;
-        if append && (later.loading || later.next_cursor.is_none()) {
-            return;
-        }
-        let cursor = if append {
-            later.next_cursor.clone()
-        } else {
-            None
-        };
-        (later.begin(filter, append), cursor, dock_revision)
+    let source = if append {
+        frame.more()
+    } else {
+        Some(frame.replace(filter))
     };
-    let result = api::fetch_saved(
-        &ctx.transport,
-        &ctx.client,
-        &ctx.session,
-        filter,
-        cursor.clone(),
-    )
-    .await;
-    if !ctx.current(&state.peek()) {
-        return;
-    }
-    let applied = {
-        let mut shell = state.write();
-        if shell.core.later.generation != generation {
-            return;
-        }
-        match result {
-            Ok(page) => {
-                let overdue = page.counts.uncompleted_overdue_count;
-                let applied =
-                    shell
-                        .core
-                        .later
-                        .apply_page(generation, page, append, cursor.as_deref());
-                if applied {
-                    if let (Some(count), Some(workspace)) =
-                        (overdue, shell.core.workspaces.get_mut(&ctx.session.team_id))
-                    {
-                        // A saved RT event or fresher client.counts snapshot wins
-                        // over this page, even when its list generation matches.
-                        if Some(workspace.dock_counts.revision()) == dock_revision {
-                            workspace.dock_counts.apply_overdue_count(count);
-                        }
-                    }
-                    shell.refresh_dock_badge_for(&ctx.session.team_id);
-                }
-                applied
-            }
-            Err(error) => {
-                shell.core.later.loading = false;
-                shell.core.later.error = Some(format!("Could not load Later: {error}"));
-                false
-            }
-        }
-    };
-    if applied && state.peek().main_view == MainView::Later {
-        hydrate(state, &ctx, generation).await;
+    if let Some(source) = source {
+        read::run(state, source).await;
     }
 }
 
-async fn hydrate(mut state: Signal<ShellState>, ctx: &Context, generation: u64) {
+async fn hydrate(
+    mut state: Signal<ShellState>,
+    ctx: &Context,
+    owner: &crate::bootstrap::ReadOwner,
+    generation: u64,
+) {
+    if !read::current(&state.peek(), ctx, owner, generation) {
+        return;
+    }
     let groups = {
         let shell = state.peek();
         let later = &shell.core.later;
@@ -156,7 +120,9 @@ async fn hydrate(mut state: Signal<ShellState>, ctx: &Context, generation: u64) 
     for chunk in groups.chunks(20) {
         let hydration_revision = {
             let mut shell = state.write();
-            if !ctx.current(&shell) || shell.core.later.generation != generation {
+            if !read::current(&shell, ctx, owner, generation)
+                || shell.core.later.generation != generation
+            {
                 return;
             }
             shell.core.later.begin_hydration()
@@ -164,12 +130,17 @@ async fn hydrate(mut state: Signal<ShellState>, ctx: &Context, generation: u64) 
         let result =
             api::fetch_messages_list(&ctx.transport, &ctx.client, &ctx.session, chunk.to_vec())
                 .await;
-        if !ctx.current(&state.peek()) || state.peek().core.later.generation != generation {
+        if !read::current(&state.peek(), ctx, owner, generation)
+            || state.peek().core.later.generation != generation
+        {
             return;
         }
         match result {
             Ok(page) => {
                 let mut shell = state.write();
+                if !read::current(&shell, ctx, owner, generation) {
+                    return;
+                }
                 for (channel, data) in page.messages_data {
                     for message in data.messages {
                         if let Some(ts) = message.ts.clone() {
@@ -184,14 +155,18 @@ async fn hydrate(mut state: Signal<ShellState>, ctx: &Context, generation: u64) 
                 }
             }
             Err(error) => {
-                state.write().core.later.error = Some(format!(
-                    "Saved items loaded; message previews failed: {error}"
-                ));
+                let _ = error;
+                state.write().core.later.error = Some(
+                    "Saved items loaded; message previews could not refresh. Try refreshing Later."
+                        .into(),
+                );
             }
         }
     }
-    files::hydrate(state, Some(ctx), generation).await;
-    if !ctx.current(&state.peek()) || state.peek().core.later.generation != generation {
+    files::hydrate_owned(state, ctx, owner, generation).await;
+    if !read::current(&state.peek(), ctx, owner, generation)
+        || state.peek().core.later.generation != generation
+    {
         return;
     }
     // Hydrate names for saved messages from conversations not visited this run.
@@ -233,11 +208,14 @@ async fn hydrate(mut state: Signal<ShellState>, ctx: &Context, generation: u64) 
             channels.into_iter().collect::<Vec<_>>(),
         )
     };
+    if !read::current(&state.peek(), ctx, owner, generation) {
+        return;
+    }
     if !users.is_empty() {
         if let Ok(users) =
             api::fetch_users_info(&ctx.transport, &ctx.client, &ctx.session, users).await
         {
-            if !ctx.current(&state.peek()) {
+            if !read::current(&state.peek(), ctx, owner, generation) {
                 return;
             }
             if let Some(workspace) = state.write().core.workspaces.get_mut(&ctx.session.team_id) {
@@ -247,6 +225,9 @@ async fn hydrate(mut state: Signal<ShellState>, ctx: &Context, generation: u64) 
             }
         }
     }
+    if !read::current(&state.peek(), ctx, owner, generation) {
+        return;
+    }
     if !channels.is_empty() {
         let posting =
             crate::bootstrap::posting_ingress::capture(&state, &ctx.transport, &ctx.session)
@@ -254,7 +235,7 @@ async fn hydrate(mut state: Signal<ShellState>, ctx: &Context, generation: u64) 
         if let Ok(channels) =
             api::fetch_channels_info(&ctx.transport, &ctx.client, &ctx.session, channels).await
         {
-            if !ctx.current(&state.peek()) {
+            if !read::current(&state.peek(), ctx, owner, generation) {
                 return;
             }
             posting.channels(&state, &channels);
@@ -277,8 +258,13 @@ pub async fn hydrate_visible(state: Signal<ShellState>) {
     if !ctx.current(&state.peek()) {
         return;
     }
+    let Some(owner) =
+        crate::bootstrap::ReadOwner::capture(&state.peek().core, &ctx.transport, &ctx.session)
+    else {
+        return;
+    };
     let generation = state.peek().core.later.generation;
-    hydrate(state, &ctx, generation).await;
+    hydrate(state, &ctx, &owner, generation).await;
 }
 
 pub fn change(state: Signal<ShellState>, key: SavedKey, action: SavedAction) {

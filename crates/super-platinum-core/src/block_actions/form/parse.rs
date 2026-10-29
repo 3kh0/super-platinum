@@ -58,6 +58,26 @@ pub(super) fn form(
     view: &Value,
     origin_conversation: Option<&str>,
     viewed_conversation: Option<&ViewedConversation>,
+    inputs: ScalarInputs,
+    retained: Option<&ModalForm>,
+) -> Result<ModalForm, FormError> {
+    form_with_introductions(
+        view,
+        origin_conversation,
+        viewed_conversation,
+        inputs,
+        retained,
+        None,
+    )
+}
+
+pub(super) fn form_with_introductions(
+    view: &Value,
+    origin_conversation: Option<&str>,
+    viewed_conversation: Option<&ViewedConversation>,
+    inputs: ScalarInputs,
+    retained: Option<&ModalForm>,
+    grant: Option<&super::super::modal::integer_introductions::Grant<'_>>,
 ) -> Result<ModalForm, FormError> {
     if origin_conversation.is_some_and(|id| !valid_message_conversation(id)) {
         return Err(invalid("Invalid originating conversation"));
@@ -86,6 +106,19 @@ pub(super) fn form(
         raw_view: view.clone(),
         origin_conversation: origin_conversation.map(str::to_owned),
         viewed_conversation: viewed_conversation.cloned(),
+        inputs,
+        url_prefill_keys: BTreeSet::new(),
+        url_prefill_history: if inputs.url_prefill {
+            retained
+                .map(|old| old.url_prefill_history.clone())
+                .unwrap_or_default()
+        } else {
+            BTreeSet::new()
+        },
+        integer_keys: BTreeSet::new(),
+        introduced: retained
+            .map(|old| old.introduced.clone())
+            .unwrap_or_default(),
     };
     let mut block_ids = HashSet::new();
     for block in blocks {
@@ -113,12 +146,112 @@ pub(super) fn form(
             block_id: id(block.get("block_id"))?,
             action_id: id(element.get("action_id"))?,
         };
-        let (kind, initial_value) = input(
-            element,
-            view["type"] == "modal",
-            origin_conversation,
-            viewed_conversation,
-        )?;
+        let (kind, initial_value) =
+            if inputs.email && view["type"] == "modal" && element["type"] == "email_text_input" {
+                if !modal_email::supported(element)? {
+                    form.unsupported
+                        .push("Prefilled email inputs are not supported yet".into());
+                }
+                (InputKind::Email, InputValue::Email(None))
+            } else if inputs.url && view["type"] == "modal" && element["type"] == "url_text_input" {
+                let initial = modal_url::initial(element)?;
+                let previous = retained.and_then(|old| old.fields.get(&key));
+                let kept = inputs.url_prefill
+                    && retained.is_some_and(|old| {
+                        old.url_prefill_keys.contains(&key)
+                            && previous.is_some_and(|field| matches!(field.kind, InputKind::Url))
+                    });
+                let saved = view
+                    .get("state")
+                    .and_then(|state| state.get("values"))
+                    .and_then(|values| values.get(key.block_id.as_str()))
+                    .and_then(|actions| actions.get(key.action_id.as_str()))
+                    .is_some();
+                // Initial owned form only. Model key absence after an update
+                // does not prove the old widget was disposed before this render.
+                let admitted = inputs.url_prefill && (kept || (retained.is_none() && !saved));
+                let recreated = !kept && form.url_prefill_history.contains(&key);
+                if (initial.is_some() && !admitted) || recreated {
+                    form.unsupported
+                        .push("Prefilled URL inputs are not supported yet".into());
+                }
+                if kept || (initial.is_some() && admitted) {
+                    form.url_prefill_keys.insert(key.clone());
+                    form.url_prefill_history.insert(key.clone());
+                }
+                (
+                    InputKind::Url,
+                    InputValue::Url(if admitted { initial } else { None }),
+                )
+            } else if inputs.required_integer
+                && view["type"] == "modal"
+                && element["type"] == "number_input"
+            {
+                let initial = modal_number::initial(element)?;
+                let kept = retained.is_some_and(|old| {
+                    old.integer_keys.contains(&key)
+                        && old
+                            .fields
+                            .get(&key)
+                            .is_some_and(|field| matches!(field.kind, InputKind::Number { .. }))
+                });
+                let saved = view
+                    .get("state")
+                    .and_then(|s| s.get("values"))
+                    .and_then(|v| v.get(key.block_id.as_str()))
+                    .and_then(|v| v.get(key.action_id.as_str()))
+                    .is_some();
+                let introduced = !kept
+                    && !saved
+                    && grant.is_some_and(|grant| grant.matches(view) && grant.allows(&key, block))
+                    && initial.as_deref().is_some_and(|literal| {
+                        if inputs.signed_integer {
+                            modal_number::canonical_signed(literal)
+                        } else {
+                            modal_number::canonical(literal)
+                        }
+                    });
+                let admitted = modal_number::supported(block, element)
+                    && (kept
+                        || introduced
+                        || (retained.is_none()
+                            && !saved
+                            && initial.as_deref().is_some_and(|literal| {
+                                if inputs.signed_integer {
+                                    modal_number::canonical_signed(literal)
+                                } else {
+                                    modal_number::canonical(literal)
+                                }
+                            })));
+                if admitted {
+                    if introduced {
+                        form.introduced
+                            .register(&key, block, grant.expect("checked owner grant"));
+                    } else {
+                        form.integer_keys.insert(key.clone());
+                    }
+                } else {
+                    form.unsupported.push(
+                        "This number input requires an unsupported initialization or setting"
+                            .into(),
+                    );
+                }
+                (
+                    InputKind::Number {
+                        is_decimal_allowed: false,
+                        min_value: None,
+                        max_value: None,
+                    },
+                    InputValue::Number(initial),
+                )
+            } else {
+                input(
+                    element,
+                    view["type"] == "modal",
+                    origin_conversation,
+                    viewed_conversation,
+                )?
+            };
         if let InputKind::Unsupported { kind } = &kind {
             form.unsupported.push(kind.clone());
         }
@@ -161,7 +294,7 @@ pub(super) fn form(
             revision: 0,
             raw: element.clone(),
         };
-        field.error = values::error(&field);
+        field.error = values::error_in(&field, inputs);
         form.fields.insert(key.clone(), field);
         form.blocks.push(FormBlock::Input(key));
     }
@@ -196,9 +329,43 @@ pub(super) fn form(
                         continue;
                     }
                     let current = values::from_wire(&field.kind, value)?;
+                    if inputs.required_integer
+                        && matches!(field.kind, InputKind::Number { .. })
+                        && retained.is_some_and(|old| {
+                            old.integer_keys.contains(&key)
+                                && old.fields.get(&key).is_some_and(|f| f.kind == field.kind)
+                        })
+                    {
+                        // Decode first, then retain the existing parent/local row.
+                        // Fresh raw saved rows never acquire integer admission.
+                        continue;
+                    }
+                    if matches!(field.kind, InputKind::Email | InputKind::Url) {
+                        // iGIl has no saved email/URL projection. A fresh widget
+                        // cannot display a nonempty saved parent. Retained
+                        // identities keep their owned local row in reconcile;
+                        // incoming saved rows must not replace that buffer.
+                        if retained.is_some_and(|old| {
+                            old.fields.get(&key).is_some_and(|f| f.kind == field.kind)
+                        }) {
+                            continue;
+                        }
+                        if matches!(&current, InputValue::Email(Some(v)) | InputValue::Url(Some(v)) if !v.is_empty())
+                        {
+                            form.unsupported.push(format!(
+                                "Restored {} inputs are not supported yet",
+                                if matches!(field.kind, InputKind::Email) {
+                                    "email"
+                                } else {
+                                    "URL"
+                                }
+                            ));
+                            continue;
+                        }
+                    }
                     field.initial_value = current.clone();
                     field.value = current;
-                    field.error = values::error(field);
+                    field.error = values::error_in(field, inputs);
                 } else {
                     form.unsupported
                         .push(format!("State for unmodeled field {block_id}/{action_id}"));

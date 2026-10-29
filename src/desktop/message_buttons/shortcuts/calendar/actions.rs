@@ -16,6 +16,9 @@ pub(super) fn edit(mut state: Signal<ShellState>, id: u64, field: Field, value: 
         if !editable(&s, id) {
             return;
         }
+        let selection = matches!(field, Field::ShareChannel)
+            .then(|| sharing::selection(&s, id, &value))
+            .flatten();
         let c = active_mut(&mut s, id).unwrap();
         c.confirm_close = false;
         match field {
@@ -34,9 +37,16 @@ pub(super) fn edit(mut state: Signal<ShellState>, id: u64, field: Field, value: 
                 false
             }
             Field::ShareChannel => {
-                if c.share_choices.iter().any(|x| x.id == value) {
-                    c.share_selected = c.share_remote.iter().find(|x| x.id() == value).cloned();
-                    c.share_channel = value;
+                match selection {
+                    Some(sharing::Selection::Retain) | None => {}
+                    Some(sharing::Selection::Cached) => {
+                        c.share_selected = None;
+                        c.share_channel = value;
+                    }
+                    Some(sharing::Selection::Remote(destination)) => {
+                        c.share_selected = Some(destination);
+                        c.share_channel = value;
+                    }
                 }
                 false
             }

@@ -338,3 +338,15 @@ pub fn share_enabled(raw: &Value) -> Result<bool, Error> {
         Some(Value::Array(_) | Value::Object(_)) => true,
     })
 }
+
+/// The profile-field part of SINGLE sharing member discovery eligibility.
+/// Explicit malformed observations fail closed; retained selection is independent.
+pub fn sharing_profile_allowed(user: &crate::slack::models::User) -> bool {
+    matches!(
+        user.extra.get("is_profile_only_user"),
+        None | Some(Value::Bool(false))
+    )
+}
+
+#[cfg(test)]
+mod sharing_profile_tests;

@@ -2,6 +2,7 @@
 use super::*;
 use crate::message_buttons::inputs::user::{conversations, directory};
 use std::sync::Arc;
+mod continued;
 use super_platinum_core::{
     block_actions::form::InputKind,
     slack::{
@@ -265,6 +266,24 @@ fn request_current(shell: &ShellState, serial: u64, query_revision: u64) -> bool
 fn cooling(shell: &ShellState, ticket: &Ticket) -> bool {
     directory::cooling(shell, ticket.scope.account_epoch, &ticket.scope.team)
 }
+fn explicit_conversation_query(ticket: &Ticket) -> bool {
+    matches!(
+        ticket.raw.get("type").and_then(Value::as_str),
+        Some("conversations_select" | "multi_conversations_select")
+    ) && ticket
+        .filter
+        .as_ref()
+        .is_some_and(directory::conversation_mask_matches)
+}
+fn ordinary_channel_query(ticket: &Ticket) -> bool {
+    matches!(
+        ticket.raw.get("type").and_then(Value::as_str),
+        Some("channels_select" | "multi_channels_select")
+    ) && ticket
+        .filter
+        .as_ref()
+        .is_some_and(directory::public_channel_filter_matches)
+}
 pub(crate) fn search(mut state: Signal<ShellState>, ticket: Ticket, query: String) {
     let request = {
         let mut shell = state.write();
@@ -309,11 +328,72 @@ pub(crate) fn search(mut state: Signal<ShellState>, ticket: Ticket, query: Strin
                 return;
             }
         }
+        if ticket.filter.is_none() {
+            let reader = context.clone();
+            continued::run_with(
+                state,
+                ticket,
+                context,
+                serial,
+                revision,
+                query,
+                move |request, scope| {
+                    let context = reader.clone();
+                    async move { scope.transport(&context, request).await }
+                },
+            )
+            .await;
+            return;
+        }
         let posting = crate::bootstrap::posting_ingress::capture(
             &state,
             &context.transport,
             &context.session,
         );
+        if ordinary_channel_query(&ticket) {
+            let Some(filter) = ticket.filter.clone() else {
+                return;
+            };
+            let reader = context.clone();
+            continued::run_channels_with(
+                state,
+                ticket,
+                context,
+                serial,
+                revision,
+                query,
+                filter,
+                move |request, scope| {
+                    let context = reader.clone();
+                    async move { scope.transport(&context, request).await }
+                },
+                move |channels| posting.channels(&state, channels),
+            )
+            .await;
+            return;
+        }
+        if explicit_conversation_query(&ticket) {
+            let Some(filter) = ticket.filter.clone() else {
+                return;
+            };
+            let reader = context.clone();
+            continued::run_conversations_with(
+                state,
+                ticket,
+                context,
+                serial,
+                revision,
+                query,
+                filter,
+                move |_, request, scope, _| {
+                    let context = reader.clone();
+                    async move { scope.transport(&context, request).await }
+                },
+                move |channels| posting.channels(&state, channels),
+            )
+            .await;
+            return;
+        }
         let result = if let Some(filter) = &ticket.filter {
             directory::fetch_conversations(&context, &query, filter).await
         } else {

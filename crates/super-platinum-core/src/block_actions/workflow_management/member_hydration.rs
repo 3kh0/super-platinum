@@ -37,6 +37,11 @@ pub struct Flags {
     preserve_self_email: bool,
 }
 impl Flags {
+    /// Named retained observation only; callers must retain its original native owner.
+    pub fn channel_threads_enabled(&self) -> bool {
+        crate::channel_threads::enabled(&self.raw)
+    }
+
     /// hZ9m.GA and XbX7 read these exact assignments. Missing assignment in a
     /// complete successful response is off; an absent response is unavailable.
     pub fn decode(raw: &Value) -> Result<Self, Error> {

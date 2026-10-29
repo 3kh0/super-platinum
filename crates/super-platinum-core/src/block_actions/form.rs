@@ -13,7 +13,7 @@ pub use message_external_options::{
     parse_message_external_options, validate_message_external_options,
 };
 use serde_json::{Value, json};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 mod message_conversations;
 pub use message_conversations::{parse_message_conversations, validate_message_conversations};
@@ -21,6 +21,7 @@ mod message_channels;
 pub use message_channels::{parse_message_channels, validate_message_channels};
 mod message_channel;
 pub use message_channel::{parse_message_channel, validate_message_channel};
+mod introduced;
 mod message_conversation;
 mod message_date;
 mod message_multi;
@@ -29,6 +30,9 @@ mod message_time;
 mod message_user;
 mod message_users;
 mod modal_channel;
+mod modal_email;
+mod modal_number;
+mod modal_url;
 pub use message_conversation::{
     ConversationFilter, parse_message_conversation, valid_message_conversation,
     validate_message_conversation,
@@ -89,9 +93,11 @@ pub enum InputKind {
     ExternalSelect {
         min_query_length: usize,
     },
-    /// Home-only email control; generic Modal parsing remains unsupported.
+    /// Home or explicitly admitted submit-only Modal email control.
     Email,
-    /// Home-only numeric control. Generic Modal parsing still rejects number_input.
+    /// Explicitly admitted submit-only Modal URL control; Home stays closed.
+    Url,
+    /// Generic Modal parsing rejects numbers; renderer opt-ins own their scope.
     Number {
         is_decimal_allowed: bool,
         min_value: Option<String>,
@@ -140,8 +146,10 @@ pub enum InputValue {
     External(Option<ExternalOption>),
     Text(String),
     Number(Option<String>),
-    /// None is an omitted Home parent; a callback always stores Some, even empty.
+    /// None is an omitted parent; a native callback stores Some, even empty.
     Email(Option<String>),
+    /// None is omitted; callbacks preserve Some, including an empty clear.
+    Url(Option<String>),
     Selected(Vec<String>),
     Date(Option<String>),
     User(Option<String>),
@@ -184,6 +192,26 @@ pub struct ModalForm {
     /// Frozen action origin; retained across server updates to this form.
     origin_conversation: Option<String>,
     viewed_conversation: Option<ViewedConversation>,
+    // Renderer opt-in; saved state never grants this capability.
+    inputs: ScalarInputs,
+    // Provenance of a fresh prefilled URL slot, never inferred from later props.
+    url_prefill_keys: BTreeSet<InputKey>,
+    // At most the initial view's input count (<=100). Removal retires the grant
+    // but retains this evidence: a batched remove/readd may retain an old widget.
+    url_prefill_history: BTreeSet<InputKey>,
+    // Integer inputs have no blank/default admission. Only initial-owned slots
+    // enter this bounded set, so a removed slot can never reacquire a grant.
+    integer_keys: BTreeSet<InputKey>,
+    introduced: introduced::Introduced,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+struct ScalarInputs {
+    email: bool,
+    url: bool,
+    url_prefill: bool,
+    required_integer: bool,
+    signed_integer: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, thiserror::Error)]
@@ -220,7 +248,132 @@ impl ModalForm {
         origin_conversation: Option<&str>,
         viewed_conversation: Option<&ViewedConversation>,
     ) -> Result<Self, FormError> {
-        parse::form(view, origin_conversation, viewed_conversation)
+        parse::form(
+            view,
+            origin_conversation,
+            viewed_conversation,
+            ScalarInputs::default(),
+            None,
+        )
+    }
+
+    /// Submit-only normal-modal email fields with absent/empty initial values.
+    /// Generic parsing stays fail-closed; prefilled email and dispatch flows
+    /// remain unsupported until their separate mount/action contracts are met.
+    pub fn parse_with_email_context(
+        view: &Value,
+        origin_conversation: Option<&str>,
+        viewed_conversation: Option<&ViewedConversation>,
+    ) -> Result<Self, FormError> {
+        parse::form(
+            view,
+            origin_conversation,
+            viewed_conversation,
+            ScalarInputs {
+                email: true,
+                ..ScalarInputs::default()
+            },
+            None,
+        )
+    }
+
+    /// Submit-only normal-modal email and URL inputs with absent/empty initials.
+    /// Other parsing entry points do not acquire URL support from saved state.
+    pub fn parse_with_scalar_context(
+        view: &Value,
+        origin_conversation: Option<&str>,
+        viewed_conversation: Option<&ViewedConversation>,
+    ) -> Result<Self, FormError> {
+        parse::form(
+            view,
+            origin_conversation,
+            viewed_conversation,
+            ScalarInputs {
+                email: true,
+                url: true,
+                ..ScalarInputs::default()
+            },
+            None,
+        )
+    }
+
+    /// Admit initial prefilled URL slots only in a new owned form with no raw
+    /// saved row. Callers must own the modal and its parent; parsing alone never
+    /// authorizes a native interaction or submission. Other constructors retain
+    /// their blank-initial contracts.
+    pub fn parse_with_url_prefill_context(
+        view: &Value,
+        origin_conversation: Option<&str>,
+        viewed_conversation: Option<&ViewedConversation>,
+    ) -> Result<Self, FormError> {
+        parse::form(
+            view,
+            origin_conversation,
+            viewed_conversation,
+            ScalarInputs {
+                email: true,
+                url: true,
+                url_prefill: true,
+                ..ScalarInputs::default()
+            },
+            None,
+        )
+    }
+
+    /// Fresh required integer quantities with canonical nonempty initial values
+    /// in 0..999999999. No saved-state, optional, decimal, bound or dispatch grant.
+    /// Callers must own the normal-modal parent and retain native validity gates.
+    pub fn parse_with_required_integer_context(
+        view: &Value,
+        origin_conversation: Option<&str>,
+        viewed_conversation: Option<&ViewedConversation>,
+    ) -> Result<Self, FormError> {
+        parse::form(
+            view,
+            origin_conversation,
+            viewed_conversation,
+            ScalarInputs {
+                email: true,
+                url: true,
+                url_prefill: true,
+                required_integer: true,
+                ..ScalarInputs::default()
+            },
+            None,
+        )
+    }
+
+    /// Fresh required signed quantities in -999999999..999999999. Negative zero,
+    /// decimal/exponent spellings and all prior initialization guards stay closed.
+    /// The nonnegative constructor retains its original domain.
+    pub fn parse_with_signed_integer_context(
+        view: &Value,
+        origin_conversation: Option<&str>,
+        viewed_conversation: Option<&ViewedConversation>,
+    ) -> Result<Self, FormError> {
+        parse::form(
+            view,
+            origin_conversation,
+            viewed_conversation,
+            ScalarInputs {
+                email: true,
+                url: true,
+                url_prefill: true,
+                required_integer: true,
+                signed_integer: true,
+            },
+            None,
+        )
+    }
+
+    fn parse_update(&self, view: &Value) -> Result<Self, FormError> {
+        parse::form(
+            view,
+            self.origin_conversation.as_deref(),
+            self.viewed_conversation.as_ref(),
+            self.inputs,
+            Some(self),
+        )
     }
 
     pub fn set_value(&mut self, key: &InputKey, value: InputValue) -> Result<(), FormError> {
@@ -230,7 +383,7 @@ impl ModalForm {
         }
         field.value = value;
         field.dirty = true;
-        field.error = values::error(field);
+        field.error = values::error_in(field, self.inputs);
         Ok(())
     }
 
@@ -238,7 +391,7 @@ impl ModalForm {
         self.fields
             .iter()
             .filter_map(|(key, field)| {
-                values::error(field)
+                values::error_in(field, self.inputs)
                     .or_else(|| field.error.clone())
                     .map(|error| (key.clone(), error))
             })
@@ -248,6 +401,9 @@ impl ModalForm {
     /// State sent as the `state` form argument to views.submit. Option objects
     /// retain the server's exact text/value metadata, not their display labels.
     pub fn submission(&self) -> Result<Value, FormError> {
+        if !self.introduced_integers_current() {
+            return Err(FormError::ConflictingUpdate);
+        }
         if !self.unsupported.is_empty() {
             return Err(FormError::Unsupported(self.unsupported.clone()));
         }
@@ -271,15 +427,45 @@ impl ModalForm {
     /// Transactional: identity/type removals cannot silently discard dirty
     /// text. The controller must block submission after a conflicting update.
     pub fn reconcile(&mut self, view: &Value) -> Result<(), FormError> {
-        let mut next = Self::parse_with_context(
-            view,
-            self.origin_conversation.as_deref(),
-            self.viewed_conversation.as_ref(),
-        )?;
+        if self.has_introduced_integers() || self.has_integer_custody() {
+            return Err(FormError::ConflictingUpdate);
+        }
+        let next = self.reconciled_update(view, None, false)?;
+        *self = next;
+        Ok(())
+    }
+
+    fn reconciled_update(
+        &self,
+        view: &Value,
+        grant: Option<&super::modal::integer_introductions::Grant<'_>>,
+        retiring: bool,
+    ) -> Result<Self, FormError> {
+        let mut next = if grant.is_some() {
+            parse::form_with_introductions(
+                view,
+                self.origin_conversation.as_deref(),
+                self.viewed_conversation.as_ref(),
+                self.inputs,
+                Some(self),
+                grant,
+            )?
+        } else {
+            self.parse_update(view)?
+        };
         if next.view_id != self.view_id {
             return Err(FormError::ConflictingUpdate);
         }
         for (key, old) in &self.fields {
+            if retiring
+                && self.introduced.original_field(key, old)
+                && next
+                    .fields
+                    .get(key)
+                    .is_none_or(|new| values::wire_type(&old.kind) != values::wire_type(&new.kind))
+            {
+                continue;
+            }
             let Some(new) = next.fields.get_mut(key) else {
                 if old.dirty {
                     return Err(FormError::ConflictingUpdate);
@@ -297,11 +483,25 @@ impl ModalForm {
                 // not become a typed value. Retain those until an explicit
                 // edit; an unrelated remote update must not unblock an old
                 // valid value while invalid text is still displayed.
-                let external_error = (old.error != values::error(old))
+                let external_error = (old.error != values::error_in(old, self.inputs))
                     .then(|| old.error.clone())
                     .flatten();
-                new.error = external_error.or_else(|| values::error(new));
+                new.error = external_error.or_else(|| values::error_in(new, next.inputs));
             } else {
+                // AM6q/9tv2 retain matching scalar parent rows; same-ID initial
+                // prop changes must not reset the owned buffer or parent value.
+                if matches!(
+                    (&old.kind, &new.kind),
+                    (InputKind::Email, InputKind::Email)
+                        | (InputKind::Url, InputKind::Url)
+                        | (InputKind::Number { .. }, InputKind::Number { .. })
+                ) {
+                    new.value = old.value.clone();
+                    new.error = (old.error != values::error_in(old, self.inputs))
+                        .then(|| old.error.clone())
+                        .flatten()
+                        .or_else(|| values::error_in(new, next.inputs));
+                }
                 // JQ84 inline inner state only resets when a supplied initial
                 // array changes. Saved-state-only updates and initial removal
                 // do not reset this mounted pristine selection. Fresh parse
@@ -322,13 +522,12 @@ impl ModalForm {
                             &new.raw["initial_options"],
                         )?)
                     };
-                    new.error = values::error(new);
+                    new.error = values::error_in(new, next.inputs);
                 }
                 new.revision = old.revision.wrapping_add(u64::from(old.value != new.value));
             }
         }
-        *self = next;
-        Ok(())
+        Ok(next)
     }
 
     pub fn apply_server_errors(&mut self, errors: &BTreeMap<String, String>) {
@@ -336,7 +535,7 @@ impl ModalForm {
             field.error = errors
                 .get(&key.block_id)
                 .cloned()
-                .or_else(|| values::error(field));
+                .or_else(|| values::error_in(field, self.inputs));
         }
     }
 
@@ -346,11 +545,10 @@ impl ModalForm {
     /// Unlike an unsolicited update, removed or replaced dirty fields do not
     /// create a conflict after the app has accepted their submission.
     pub fn reconcile_submitted(&mut self, view: &Value) -> Result<(), FormError> {
-        let mut next = Self::parse_with_context(
-            view,
-            self.origin_conversation.as_deref(),
-            self.viewed_conversation.as_ref(),
-        )?;
+        if self.has_introduced_integers() || self.has_integer_custody() {
+            return Err(FormError::ConflictingUpdate);
+        }
+        let mut next = self.parse_update(view)?;
         if next.view_id != self.view_id {
             return Err(FormError::ConflictingUpdate);
         }
@@ -362,7 +560,7 @@ impl ModalForm {
                 new.value = old.value.clone();
                 new.dirty = old.dirty;
                 new.revision = old.revision;
-                new.error = values::error(new);
+                new.error = values::error_in(new, next.inputs);
             } else {
                 new.revision = old.revision.wrapping_add(1);
             }

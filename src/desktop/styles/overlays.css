@@ -140,6 +140,7 @@
   white-space: nowrap;
   font-size: 14px;
 }
+.results .search-result[role="listitem"] { padding: var(--space-2); }
 .search-result strong, .search-result span { display: block; }
 .search-result span { margin-top: 3px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .results-empty { padding: 12px; color: var(--muted); text-align: center; }
@@ -504,3 +505,16 @@
 .file-refresh {display:flex;flex-wrap:wrap;align-items:center;gap:8px;width:100%;min-width:0;}
 .file-refresh button {height:32px;min-width:132px;flex-shrink:0;padding:0 10px;border-radius:8px;background:var(--surface-raised);color:var(--text);}
 .file-refresh p {flex:1 1 220px;margin:0;color:var(--muted);font-size:var(--text-sm);line-height:1.5;}
+
+/* Bounded cached scope choices share the existing filter control vocabulary. */
+.search-scope-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--space-2); margin-block:var(--space-2); }
+.search-scope-picker { min-width:0; }
+.search-scope-heading { display:flex; align-items:center; justify-content:space-between; gap:var(--space-2); min-height:var(--control-height); font-size:var(--text-sm); }
+.search-scope-heading span { color:var(--muted); white-space:nowrap; }
+.search-scope-picker > input { min-width:0; width:100%; min-height:var(--control-height); padding:6px 8px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-md); color:var(--text); }
+.search-scope-window { max-height:160px; overflow-y:auto; margin-top:var(--space-1); }
+.search-scope-row { display:flex; align-items:center; gap:var(--space-2); min-height:var(--control-height); color:var(--text); font-size:var(--text-sm); }
+.search-scope-row input { margin:0; accent-color:var(--accent); flex:none; }
+.search-scope-row span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.search-scope-row small { color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+@media (max-width:600px) { .search-scope-grid { grid-template-columns:minmax(0,1fr); } }

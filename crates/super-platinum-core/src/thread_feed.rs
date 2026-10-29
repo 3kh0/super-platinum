@@ -11,7 +11,7 @@ use crate::{
 };
 use std::collections::{HashMap, HashSet};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FeedRequest {
     pub sequence: u64,
     pub cursor: Option<String>,
@@ -38,6 +38,8 @@ pub struct ThreadsState {
     scope: Option<(u64, String)>,
     seen_cursors: HashSet<String>,
     changes: Vec<Change>,
+    pending: Option<FeedRequest>,
+    retry: Option<FeedRequest>,
 }
 impl ThreadsState {
     pub fn matches_scope(&self, epoch: u64, team: &str) -> bool {
@@ -56,29 +58,65 @@ impl ThreadsState {
         }
     }
     pub fn begin(&mut self, append: bool) -> Option<FeedRequest> {
-        if self.loading || (append && (!self.has_more || self.next_cursor.is_none())) {
+        if append && (!self.has_more || self.next_cursor.is_none()) {
+            return None;
+        }
+        self.begin_cursor(if append {
+            self.next_cursor.clone()
+        } else {
+            None
+        })
+    }
+    pub fn failed_read(&self) -> Option<&FeedRequest> {
+        self.retry.as_ref()
+    }
+    pub fn begin_retry(&mut self) -> Option<FeedRequest> {
+        let cursor = self.retry.as_ref()?.cursor.clone();
+        self.begin_cursor(cursor)
+    }
+    fn begin_cursor(&mut self, cursor: Option<String>) -> Option<FeedRequest> {
+        if self.loading {
             return None;
         }
         self.loading = true;
         self.failed = false;
         self.dirty = false;
         self.changes.clear();
+        self.retry = None;
         self.load_seq = self.load_seq.wrapping_add(1);
-        Some(FeedRequest {
+        let request = FeedRequest {
             sequence: self.load_seq,
-            cursor: if append {
-                self.next_cursor.clone()
-            } else {
-                None
-            },
-        })
+            cursor,
+        };
+        self.pending = Some(request.clone());
+        Some(request)
+    }
+    /// Settlement requires the coordinate actually admitted by `begin`/Retry.
+    /// The public FeedRequest shape remains constructible; mutating its fields
+    /// no longer changes which pending page a caller may settle.
+    pub fn accepts(&self, request: &FeedRequest) -> bool {
+        self.loading && self.load_seq == request.sequence && self.pending.as_ref() == Some(request)
     }
     pub fn fail(&mut self, request: &FeedRequest) {
-        if self.load_seq == request.sequence {
+        if self.accepts(request) {
             self.loading = false;
             self.failed = true;
+            self.retry = Some(request.clone());
+            self.pending = None;
             self.changes.clear();
         }
+    }
+    /// Quiet local release, without fabricating a failed HTTP response.
+    /// Native callers must also retain their original shell/slot ownership.
+    pub fn cancel(&mut self, request: &FeedRequest) -> bool {
+        if !self.accepts(request) {
+            return false;
+        }
+        self.loading = false;
+        self.pending = None;
+        self.retry = None;
+        self.changes.clear();
+        true
     }
     pub fn upsert(&mut self, item: ThreadViewItem) {
         let Some((channel, root)) = item.channel().zip(item.root_ts()) else {
@@ -233,8 +271,7 @@ impl CoreAppState {
     ) -> bool {
         if self.active_team.as_deref() != Some(team)
             || !self.threads_view.matches_scope(self.account_epoch, team)
-            || self.threads_view.load_seq != request.sequence
-            || !self.threads_view.loading
+            || !self.threads_view.accepts(request)
         {
             return false;
         }
@@ -286,9 +323,14 @@ impl CoreAppState {
         feed.sort();
         feed.loaded = true;
         feed.loading = false;
+        feed.pending = None;
+        feed.retry = None;
         true
     }
 }
+
+#[cfg(test)]
+mod recovery;
 
 #[cfg(test)]
 mod tests {

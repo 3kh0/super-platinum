@@ -329,6 +329,7 @@ impl ShellState {
     /// be open, where it would have had no composer and left the row that is
     /// still highlighted pointing at something else entirely.
     pub fn select_channel(&mut self, index: usize, open: ChannelOpen) {
+        crate::bootstrap::dms::cancel(self);
         crate::read_preferences::opening::cancel(self);
         self.cancel_profile_dm();
         self.checkpoint_composers();
@@ -442,6 +443,10 @@ impl ShellState {
         let Some(workspace) = self.core.workspaces.get(&team) else {
             return false;
         };
+        let active_channel = workspace
+            .last_active_channel
+            .clone()
+            .or_else(|| workspace.channels.keys().next().cloned());
         if self.core.active_team.as_deref() != Some(team.as_str()) {
             self.row_heights.clear();
             self.channel_rows.clear();
@@ -452,8 +457,9 @@ impl ShellState {
             self.search_open_generation = self.search_open_generation.wrapping_add(1);
             self.search_opening = None;
             self.search_pager.reset();
-            self.search_results.clear();
+            self.clear_search_results();
             self.search_filters = None;
+            self.search_history_open = false;
             self.search_filter_error = None;
         }
         self.active_workspace = index;
@@ -468,10 +474,7 @@ impl ShellState {
             .activity
             .ensure_scope(self.core.account_epoch, &team);
         self.core.active_team = Some(team);
-        self.core.active_channel = workspace
-            .last_active_channel
-            .clone()
-            .or_else(|| workspace.channels.keys().next().cloned());
+        self.core.active_channel = active_channel;
         self.main_view = MainView::Home;
         self.refresh_from_core();
         crate::canvas::checklist::close_visit(self);

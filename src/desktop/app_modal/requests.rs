@@ -66,6 +66,8 @@ impl Ticket {
             if !session.busy {
                 return false;
             }
+            session.modal.capture_integer_drafts(session.forms.values());
+            session.modal.revoke_integer_introductions();
             session.busy = false;
             session.uncertain = true;
             session.view_error=Some("The connection changed before the app's response could be confirmed. Your entries are retained and the submission will not be repeated.".into());
@@ -73,6 +75,8 @@ impl Ticket {
             if !session.loading {
                 return false;
             }
+            session.modal.capture_integer_drafts(session.forms.values());
+            session.modal.revoke_integer_introductions();
             session.loading = false;
             session.conflict = true;
             session.view_error=Some("The connection changed while loading this app form. Close it and try opening it again.".into());
@@ -87,6 +91,15 @@ pub(super) async fn load(mut state: Signal<ShellState>) {
     };
     if !state.read().app_modal.as_ref().is_some_and(|s| s.loading) {
         return;
+    }
+    {
+        let mut shell = state.write();
+        if !ticket.current(&shell) {
+            return;
+        }
+        let session = shell.app_modal.as_mut().unwrap();
+        session.modal.capture_integer_drafts(session.forms.values());
+        session.modal.revoke_integer_introductions();
     }
     let result = match api::block_view_get(
         &ticket.context.client,
@@ -141,6 +154,7 @@ pub(super) async fn load(mut state: Signal<ShellState>) {
 /// Recheck current modal scope and context before building any views.submit body.
 /// A preselected or locally edited value cannot bypass an unavailable directory policy.
 pub(super) fn prepare_submission(shell: &ShellState) -> Result<Value, FormError> {
+    revoke_changed_integer_context(shell);
     let session = shell
         .app_modal
         .as_ref()
@@ -148,6 +162,13 @@ pub(super) fn prepare_submission(shell: &ShellState) -> Result<Value, FormError>
     if !current_scope(shell, session)
         || shell.overlay != Some(Overlay::AppModal)
         || session.locked()
+    {
+        return Err(FormError::ConflictingUpdate);
+    }
+    if session
+        .current_form()
+        .is_some_and(ModalForm::has_introduced_integers)
+        && !integer_context_current(shell, session)
     {
         return Err(FormError::ConflictingUpdate);
     }
@@ -163,64 +184,76 @@ pub(super) fn prepare_submission(shell: &ShellState) -> Result<Value, FormError>
     Ok(payload)
 }
 
-pub(super) async fn submit(mut state: Signal<ShellState>) {
-    let (ticket, payload, client_token, fixture_revision) = {
-        let mut shell = state.write();
-        let valid = shell
-            .app_modal
-            .as_ref()
-            .is_some_and(|s| current_scope(&shell, s) && !s.locked())
-            && shell.overlay == Some(Overlay::AppModal);
-        if !valid {
-            return;
-        }
-        let prepared = prepare_submission(&shell);
-        let session = shell.app_modal.as_mut().unwrap();
-        let Some(form) = session.current_form_mut() else {
-            return;
-        };
-        if form.submit_label.is_none() {
-            return;
-        }
-        let payload = match prepared {
-            Ok(payload) => payload,
-            Err(FormError::Validation(errors)) => {
-                for (key, error) in errors {
-                    if let Some(field) = form.fields.get_mut(&key) {
-                        field.error = Some(error);
-                    }
+fn accept_submission(
+    shell: &mut ShellState,
+) -> Option<(Option<Ticket>, Value, String, Option<u64>)> {
+    let valid = shell
+        .app_modal
+        .as_ref()
+        .is_some_and(|s| current_scope(shell, s) && !s.locked())
+        && shell.overlay == Some(Overlay::AppModal);
+    if !valid {
+        return None;
+    }
+    let prepared = prepare_submission(shell);
+    let session = shell.app_modal.as_mut().unwrap();
+    let Some(form) = session.current_form_mut() else {
+        return None;
+    };
+    if form.submit_label.is_none() {
+        return None;
+    }
+    let payload = match prepared {
+        Ok(payload) => payload,
+        Err(FormError::Validation(errors)) => {
+            for (key, error) in errors {
+                if let Some(field) = form.fields.get_mut(&key) {
+                    field.error = Some(error);
                 }
-                return;
             }
-            Err(error) => {
-                session.view_error = Some(error.to_string());
-                return;
-            }
-        };
-        let client_token = token();
-        let scope = session.modal.scope().clone();
-        let current = session.modal.stack().last().unwrap();
-        let app = current.app_id.clone();
-        let origin = current.origin_conversation.clone();
-        let viewed = current.viewed_conversation.clone();
-        session.modal.enqueue_with_context(
-            &scope,
-            client_token.clone(),
-            app,
-            origin,
-            viewed,
-            now_ms(),
-            60_000,
-        );
-        session.busy = true;
-        session.view_error = None;
-        let fixture_revision = session.fixture.then_some(session.modal.revision());
-        (
-            Ticket::capture(&shell),
-            payload,
-            client_token,
-            fixture_revision,
-        )
+            return None;
+        }
+        Err(error) => {
+            session.view_error = Some(error.to_string());
+            return None;
+        }
+    };
+    let form = session.current_form()?;
+    if !session.modal.consume_integer_submission(form) {
+        session.view_error = Some(FormError::ConflictingUpdate.to_string());
+        return None;
+    }
+    let client_token = token();
+    let scope = session.modal.scope().clone();
+    let current = session.modal.stack().last().unwrap();
+    let app = current.app_id.clone();
+    let origin = current.origin_conversation.clone();
+    let viewed = current.viewed_conversation.clone();
+    session.modal.enqueue_with_context(
+        &scope,
+        client_token.clone(),
+        app,
+        origin,
+        viewed,
+        now_ms(),
+        60_000,
+    );
+    session.busy = true;
+    session.view_error = None;
+    let fixture_revision = session.fixture.then_some(session.modal.revision());
+    Some((
+        Ticket::capture(shell),
+        payload,
+        client_token,
+        fixture_revision,
+    ))
+}
+
+pub(super) async fn submit(mut state: Signal<ShellState>) {
+    let Some((ticket, payload, client_token, fixture_revision)) =
+        accept_submission(&mut state.write())
+    else {
+        return;
     };
     if let Some(revision) = fixture_revision {
         if !crate::fixture::is_fixture() {
@@ -303,6 +336,7 @@ pub(super) fn complete(
     {
         return;
     }
+    session.modal.capture_integer_drafts(session.forms.values());
     session.busy = false;
     match result {
         Ok(api::BlockViewResponse::Rejected(error)) => {
@@ -323,6 +357,7 @@ pub(super) fn complete(
                 session.uncertain = false;
                 session.conflict = false;
                 session.view_error = None;
+                session.settle_integer_retirement();
                 if let api::BlockViewResponseAction::Update(payload) = &response.action {
                     if let Some(form) = session.forms.get_mut(view) {
                         if let Err(error) = form.reconcile_submitted(payload) {
@@ -391,3 +426,16 @@ pub(super) async fn close(state: Signal<ShellState>, ticket: CloseTicket) {
 
 #[cfg(test)]
 mod ownership_tests;
+
+#[cfg(test)]
+pub(super) fn accept_integer_submission_for_test(
+    shell: &mut ShellState,
+) -> Option<(Value, String, u64)> {
+    let (ticket, payload, token, _) = accept_submission(shell)?;
+    let ticket = ticket.expect("accepted controller journey captures its original request Ticket");
+    assert!(
+        ticket.current(shell),
+        "consumption preserves first-request Ticket authority"
+    );
+    Some((payload, token, shell.app_modal.as_ref()?.modal.revision()))
+}

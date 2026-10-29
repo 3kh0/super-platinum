@@ -91,7 +91,11 @@ pub fn overlay_view(
             "Channel or person",
         ),
         Overlay::Search => (
-            "Search messages",
+            if snapshot.search_pager.kind == super_platinum_core::search::SearchKind::Files {
+                "Search files"
+            } else {
+                "Search messages"
+            },
             snapshot.search_query.as_str(),
             "Search in workspace",
         ),
@@ -167,34 +171,29 @@ pub fn overlay_view(
                     },
                 }
                 if overlay == Overlay::Search { {crate::view::search::controls(state, snapshot)} }
-                div { class: "results", hidden: overlay == Overlay::Search && snapshot.search_filters.is_some(),
+                div { class: "results", hidden: overlay == Overlay::Search && ((crate::view::search::supports_filters(snapshot) && snapshot.search_filters.is_some()) || snapshot.search_history_open),
                     if overlay == Overlay::Search {
-                        if snapshot.search_pager.loading && snapshot.search_results.is_empty() {
+                        if snapshot.search_pager.loading && crate::view::search::result_count(snapshot) == 0 {
                             p { class: "results-empty", role: "status", "Searching…" }
                         }
-                        if snapshot.search_pager.page > 0 {
-                            p { class: "search-summary", role: "status", "{snapshot.search_results.len()} of {snapshot.search_pager.total} results · {snapshot.search_pager.sort.label()}" }
+                        if snapshot.search_pager.page > 0 && !crate::bootstrap::search_people::retired(snapshot) {
+                            p { class: "search-summary", role: "status", {crate::view::search::summary(snapshot)} }
+                        }
+                        if crate::bootstrap::search_people::retired(snapshot) {
+                            p {class:"results-empty",role:"status","Refresh this search to see people."}
+                            button {class:"chip",onclick:move |_|{spawn(crate::bootstrap::search(state));},"Refresh search"}
                         }
                         if snapshot.search_opening.is_some() { p { class: "results-empty", role: "status", "Opening conversation…" } }
-                        for result in &snapshot.search_results {
-                            button {
-                                key: "{result.channel_id}-{result.ts}",
-                                class: "search-result",
-                                onclick: {
-                                    let hit = result.clone();
-                                    move |_| crate::bootstrap::open_search_hit(state, hit.clone())
-                                },
-                                strong { "# {result.channel_name} · {result.author}" }
-                                span { "{result.text}" }
-                                span { class: "search-time",
-                                    {super_platinum_core::state::format_relative_ts(&result.ts)}
-                                    if result.thread_ts.is_some() { " · Thread reply" }
-                                }
-                            }
-                        }
-                        if !snapshot.search_pager.loading && !snapshot.search_pager.failed && snapshot.search_results.is_empty() {
+                        if snapshot.search_pager.kind == super_platinum_core::search::SearchKind::Messages { {crate::view::search::message_results(state,snapshot)} } else if snapshot.search_pager.kind == super_platinum_core::search::SearchKind::Files { {crate::view::search::file_results(state, snapshot)} }
+                        else { {crate::view::search::people_results(state, snapshot)} }
+                        if !crate::view::search::file_page_busy_or_retired(snapshot) && !snapshot.search_pager.loading && !snapshot.search_pager.failed && !crate::bootstrap::search_people::retired(snapshot) && !(crate::bootstrap::search_message_pages::has_scope(snapshot) && !crate::bootstrap::search_message_pages::active(snapshot)) && crate::view::search::result_count(snapshot) == 0 {
                             p { class: "results-empty",
-                                if snapshot.search_pager.page > 0 { "No messages found. Try a different search." }
+                                if snapshot.search_pager.page > 0 {
+                                    if snapshot.search_pager.kind == super_platinum_core::search::SearchKind::Files { "No files found. Try a different search." }
+                                    else if snapshot.search_pager.kind == super_platinum_core::search::SearchKind::People { "No people found. Try a different name or email." }
+                                    else { "No messages found. Try a different search." }
+                                }
+                                else if snapshot.search_pager.kind == super_platinum_core::search::SearchKind::People { "Press Enter to search by name or email." }
                                 else { "Press Enter to search. Use in:channel, from:person, or has:file to narrow results." }
                             }
                         }
@@ -202,14 +201,19 @@ pub fn overlay_view(
                         {palette_results(state, snapshot)}
                     }
                 }
-                if overlay == Overlay::Search && snapshot.search_filters.is_none() && (snapshot.search_pager.has_more() || snapshot.search_pager.failed) {
+                if overlay == Overlay::Search && !snapshot.search_history_open {
+                    {crate::view::search::people_page_controls(state,snapshot)}
+                    {crate::view::search::message_page_controls(state,snapshot)}
+                    {crate::view::search::file_page_controls(state,snapshot)}
+                }
+                if overlay == Overlay::Search && !crate::view::search::file_page_scope(snapshot) && !crate::view::search::message_page_scope(snapshot) && !crate::bootstrap::search_people::numbered::has_scope(snapshot) && (!crate::view::search::supports_filters(snapshot) || snapshot.search_filters.is_none()) && !snapshot.search_history_open && ((snapshot.search_pager.kind != super_platinum_core::search::SearchKind::People && snapshot.search_pager.has_more()) || snapshot.search_pager.failed) {
                     div { class: "search-footer",
                         if snapshot.search_pager.failed {
                             p { role: "status", "Search couldn’t load. Try again." }
                         }
                         button { class: "chip", disabled: snapshot.search_pager.loading,
                             onclick: move |_| {
-                                if state.peek().search_pager.page > 0 { spawn(crate::bootstrap::search_more(state)); }
+                                if state.peek().search_pager.page > 0 && state.peek().search_pager.kind != super_platinum_core::search::SearchKind::People { spawn(crate::bootstrap::search_more(state)); }
                                 else { spawn(crate::bootstrap::search(state)); }
                             },
                             if snapshot.search_pager.loading { "Loading…" }

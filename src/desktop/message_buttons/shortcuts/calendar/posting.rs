@@ -10,12 +10,22 @@ use super_platinum_core::{
         authority::{Authority, BootRead, RawChannel},
     },
 };
+#[cfg(test)]
+pub(in crate::message_buttons::shortcuts::calendar) mod permission_test_support;
 mod reads;
 #[cfg(test)]
 mod tests;
 #[cfg(test)]
 pub(super) fn test_acquire(s: &mut ShellState, id: u64, channels: Vec<Value>) {
     tests::acquire(s, id, channels);
+}
+#[cfg(test)]
+pub(super) fn test_candidates(
+    s: &ShellState,
+    id: u64,
+    remote: &[sharing::Destination],
+) -> Vec<String> {
+    context(s, id).map_or_else(Vec::new, |ctx| candidates(s, id, &ctx, remote))
 }
 
 #[derive(Clone, Default)]
@@ -116,6 +126,7 @@ fn candidates(
         return vec![];
     };
     let query = c.share_query.trim().to_lowercase();
+    let participants = sharing::participant_posting_candidates(s, id, ctx, remote);
     let mut rows = BTreeMap::new();
     for channel in w
         .channels
@@ -142,7 +153,10 @@ fn candidates(
                     .map(|id| super_platinum_core::state::display_name(w.users.get(id), id))
             })
             .unwrap_or_else(|| channel.id.clone());
-        if channel.id == c.share_channel || query.is_empty() || name.to_lowercase().contains(&query)
+        if channel.id == c.share_channel
+            || query.is_empty()
+            || name.to_lowercase().contains(&query)
+            || participants.contains(&channel.id)
         {
             rows.insert(channel.id.clone(), name);
         }
@@ -182,6 +196,8 @@ pub(super) async fn refresh(
     if ids.is_empty() {
         return true;
     }
+    #[cfg(test)]
+    permission_test_support::before_acquisition(&query).await;
     let Ok((mut authority, mut recovered)) = reads::authority(state, &mut query).await else {
         return false;
     };

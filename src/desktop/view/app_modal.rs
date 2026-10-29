@@ -10,6 +10,8 @@ use crate::{
     icons::{Icon, icon},
     state::ShellState,
 };
+mod email;
+mod scalar;
 
 pub(crate) fn app_modal(state: Signal<ShellState>) -> Element {
     let Some(revision) = crate::app_modal::presentation(&state.read()).map(|p| p.reset_revision)
@@ -167,7 +169,27 @@ pub(crate) fn ModalField(
                     placeholder:field.placeholder.clone().filter(|v|!v.is_empty()).unwrap_or_else(||"Enter an email address".into()),locked}
                 }}
             } else {
+                let initial = match &seed {
+                    InputValue::Email(value) => value.clone().unwrap_or_default(),
+                    _ => String::new(),
+                };
+                rsx! {email::Control {state,input_key:input_key.clone(),initial,id:id.clone(),
+                label:label_id.clone(),description:described_by.clone(),required:required.clone(),
+                invalid:invalid.clone(),placeholder:field.placeholder.clone().filter(|v|!v.is_empty()).unwrap_or_else(||"Enter an email address".into()),locked}}
+            }
+        }
+        InputKind::Url => {
+            if home.is_some() {
                 rsx! {p {class:"app-modal-hint","This field is not supported yet."}}
+            } else {
+                let initial = match &seed {
+                    InputValue::Url(value) => value.clone().unwrap_or_default(),
+                    _ => String::new(),
+                };
+                rsx! {scalar::Control {state,input_key:input_key.clone(),initial,id:id.clone(),
+                label:label_id.clone(),description:described_by.clone(),required:required.clone(),invalid:invalid.clone(),
+                placeholder:field.placeholder.clone().filter(|v|!v.is_empty()).unwrap_or_else(||"Enter a URL".into()),
+                locked,kind:crate::app_modal::scalar::Kind::Url}}
             }
         }
         InputKind::Number { .. } => {
@@ -176,7 +198,14 @@ pub(crate) fn ModalField(
                 id:id.clone(),label:label_id.clone(),description:described_by.clone(),required:required.clone(),invalid:invalid.clone(),
                 placeholder:field.placeholder.clone().unwrap_or_else(|| "Enter a number".into()),locked}}
             } else {
-                rsx! {p {class:"app-modal-hint","This field is not supported yet."}}
+                let initial = match &seed {
+                    InputValue::Number(value) => value.clone().unwrap_or_default(),
+                    _ => String::new(),
+                };
+                rsx! {scalar::Control {state,input_key:input_key.clone(),initial,id:id.clone(),
+                label:label_id.clone(),description:described_by.clone(),required:required.clone(),invalid:invalid.clone(),
+                placeholder:field.placeholder.clone().filter(|v|!v.is_empty()).unwrap_or_else(||"Enter a number".into()),
+                locked,kind:crate::app_modal::scalar::Kind::Integer}}
             }
         }
         InputKind::Text { multiline, .. } => {
@@ -434,6 +463,7 @@ pub(crate) fn control_shape(kind: &InputKind) -> String {
         InputKind::DateTime => "datetime",
         InputKind::Number { .. } => "number",
         InputKind::Email => "email",
+        InputKind::Url => "url",
         InputKind::Unsupported { .. } => "unsupported",
     };
     // Option insertion/removal/reordering changes native option identity. Seed

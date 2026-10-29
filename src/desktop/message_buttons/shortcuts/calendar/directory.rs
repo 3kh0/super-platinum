@@ -1,13 +1,14 @@
 //! Calendar-owned directory routing. An endpoint is not a user/channel grant.
 use super::*;
 use super_platinum_core::block_actions::directory_endpoint::DirectoryEndpoint;
+pub(super) mod guests;
 
 #[derive(Clone, Copy)]
 pub(super) enum Query {
     Guests(u64),
     Sharing(u64),
 }
-fn current(s: &ShellState, id: u64, query: Query, ctx: &Context) -> bool {
+pub(super) fn current(s: &ShellState, id: u64, query: Query, ctx: &Context) -> bool {
     editable(s, id)
         && context(s, id).is_some_and(|owned| std::ptr::eq(owned.as_ref(), ctx))
         && active(s, id).is_some_and(|c| match query {

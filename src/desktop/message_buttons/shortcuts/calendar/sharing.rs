@@ -25,6 +25,25 @@ impl Destination {
             },
         }
     }
+    fn discovery_available(&self, s: &ShellState, ctx: &Context, selected: &str) -> bool {
+        if !self.available(s, ctx) {
+            return false;
+        }
+        if self.id() == selected {
+            return true;
+        }
+        match self {
+            Self::User(user) => {
+                cal::sharing_profile_allowed(user)
+                    && s.core
+                        .workspaces
+                        .get(&ctx.session.team_id)
+                        .and_then(|w| w.users.get(&user.id))
+                        .is_none_or(cal::sharing_profile_allowed)
+            }
+            Self::Channel(_) => true,
+        }
+    }
     fn available(&self, s: &ShellState, ctx: &Context) -> bool {
         let Some(w) = s.core.workspaces.get(&ctx.session.team_id) else {
             return false;
@@ -137,29 +156,75 @@ pub(super) fn resolve(s: &ShellState, id: u64) -> Option<String> {
 pub(super) fn query_current(s: &ShellState, id: u64, generation: u64) -> bool {
     editable(s, id) && active(s, id).is_some_and(|c| c.share_generation == generation)
 }
-pub(super) fn search(mut state: Signal<ShellState>, id: u64, query: String) {
-    let job = {
-        let mut s = state.write();
-        if !editable(&s, id) || query.len() > 4096 {
-            return;
+fn owned_current(s: &ShellState, id: u64, generation: u64, ctx: &Context) -> bool {
+    directory::current(s, id, directory::Query::Sharing(generation), ctx)
+}
+mod channels;
+mod members;
+mod mpims;
+pub(super) use members::State as MemberState;
+pub(super) use mpims::State as MpimState;
+pub(super) fn participant_posting_candidates(
+    s: &ShellState,
+    id: u64,
+    ctx: &Context,
+    remote: &[Destination],
+) -> std::collections::BTreeSet<String> {
+    mpims::participant_candidates(s, id, ctx, remote)
+}
+pub(super) enum Selection {
+    Retain,
+    Cached,
+    Remote(Destination),
+}
+pub(super) fn selection(s: &ShellState, id: u64, value: &str) -> Option<Selection> {
+    members::selection(s, id, context(s, id)?.as_ref(), value)
+}
+fn merge_channels(
+    remote: &mut Vec<Destination>,
+    result: Result<Option<Vec<Channel>>, Error>,
+) -> bool {
+    let Ok(Some(rows)) = result else {
+        return false;
+    };
+    for channel in rows {
+        if !remote.iter().any(|old| old.id() == channel.id) {
+            remote.push(Destination::Channel(channel));
         }
-        let ctx = context(&s, id).unwrap();
-        active_mut(&mut s, id).unwrap().posting.invalidate();
-        let selected = active(&s, id).unwrap().share_channel.clone();
-        let choices = load::share_choices(&s, &ctx, &query, &selected);
-        let c = active_mut(&mut s, id).unwrap();
-        c.share_query = query.clone();
-        c.share_choices = choices;
+    }
+    true
+}
+pub(super) fn begin(s: &mut ShellState, id: u64, query: &str) -> Option<(Arc<Context>, u64)> {
+    if !editable(s, id) || query.len() > 4096 {
+        return None;
+    }
+    let ctx = context(s, id)?;
+    active_mut(s, id)?.posting.invalidate();
+    let selected = active(s, id)?.share_channel.clone();
+    let generation = {
+        let c = active_mut(s, id)?;
+        c.share_query = query.to_owned();
         c.share_remote.clear();
-        if let Some(selected) = &c.share_selected {
-            if !c.share_choices.iter().any(|v| v.id == selected.id()) {
-                c.share_choices.push(selected.choice());
-            }
-        }
         c.share_generation = c.share_generation.wrapping_add(1);
         c.metadata.invalidate();
         c.share_loading = true;
-        (ctx, c.share_generation)
+        c.share_generation
+    };
+    members::start_query(s, id, generation, ctx.as_ref());
+    mpims::start_query(s, id, generation, ctx.as_ref());
+    let choices = members::choices(s, id, ctx.as_ref(), query, &selected);
+    let c = active_mut(s, id)?;
+    c.share_choices = choices;
+    if let Some(selected) = &c.share_selected {
+        if !c.share_choices.iter().any(|v| v.id == selected.id()) {
+            c.share_choices.push(selected.choice());
+        }
+    }
+    Some((ctx, generation))
+}
+pub(super) fn search(mut state: Signal<ShellState>, id: u64, query: String) {
+    let Some(job) = begin(&mut state.write(), id, &query) else {
+        return;
     };
     dioxus::core::spawn_forever(async move {
         tokio::time::sleep(Duration::from_millis(180)).await;
@@ -168,100 +233,148 @@ pub(super) fn search(mut state: Signal<ShellState>, id: u64, query: String) {
         let mut failed = false;
         // Captured WNgx/53BY/vAgx options from rfHj, with the existing edge
         // discovery observation. No join/open/write is hidden in search.
-        for (path, body) in queries(&query) {
-            if !query_current(&state.peek(), id, generation) {
+        for (path, _) in queries(&query) {
+            if !owned_current(&state.peek(), id, generation, &ctx) {
                 return;
+            }
+            if path == "users/search" {
+                let acquired = members::read(state, id, generation, ctx.clone(), &query).await;
+                if !owned_current(&state.peek(), id, generation, &ctx) {
+                    return;
+                }
+                match acquired {
+                    Ok(Some(acquired)) => {
+                        if !members::append(
+                            &mut state.write(),
+                            id,
+                            generation,
+                            &ctx,
+                            acquired,
+                            &mut remote,
+                        ) {
+                            failed = true;
+                        }
+                    }
+                    Ok(None) | Err(_) => failed = true,
+                }
+                continue;
             }
             let ingress =
                 crate::bootstrap::posting_ingress::capture(&state, &ctx.transport, &ctx.session);
-            match directory::read(
-                state,
-                id,
-                directory::Query::Sharing(generation),
-                &ctx,
-                path,
-                body,
-            )
-            .await
-            {
-                Ok(raw) => {
-                    if !query_current(&state.peek(), id, generation) {
-                        return;
-                    }
-                    let mut accepted_channels = Vec::new();
-                    let rows = if path == "mpims/search" {
-                        raw.get("mpims").or_else(|| raw.get("results"))
-                    } else {
-                        raw.get("results")
-                    };
-                    if let Some(rows) = rows
-                        .and_then(serde_json::Value::as_array)
-                        .filter(|v| v.len() <= 512)
-                    {
-                        for row in rows.iter().take(100) {
-                            let candidate = if path == "users/search" {
-                                serde_json::from_value::<User>(row.clone())
-                                    .ok()
-                                    .map(Destination::User)
-                            } else if path == "mpims/search" {
-                                super::super::super::inputs::user::directory::decode_mpim(row)
-                                    .map(Destination::Channel)
-                            } else {
-                                serde_json::from_value::<Channel>(row.clone())
-                                    .ok()
-                                    .map(Destination::Channel)
-                            };
-                            if let Some(v) = candidate {
-                                if let Destination::Channel(channel) = &v {
-                                    accepted_channels.push(channel.clone());
-                                }
-                                if !remote.iter().any(|old: &Destination| old.id() == v.id()) {
-                                    remote.push(v);
-                                }
-                            }
-                        }
-                    } else {
-                        failed = true;
-                    }
-                    if query_current(&state.peek(), id, generation) {
-                        ingress.channels(&state, &accepted_channels);
-                    }
+            if path == "channels/search" {
+                let result =
+                    channels::read(state, id, generation, ctx.clone(), &query, move |rows| {
+                        ingress.channels(&state, rows)
+                    })
+                    .await;
+                if !owned_current(&state.peek(), id, generation, &ctx) {
+                    return;
                 }
-                Err(_) => failed = true,
+                if !merge_channels(&mut remote, result) {
+                    failed = true;
+                }
+                continue;
+            }
+            let outcome = mpims::read(state, id, generation, ctx.clone(), &query, move |rows| {
+                ingress.channels(&state, rows)
+            })
+            .await;
+            if !owned_current(&state.peek(), id, generation, &ctx) {
+                return;
+            }
+            failed |= outcome.failed;
+            for channel in outcome.legacy {
+                if !remote.iter().any(|old| old.id() == channel.id) {
+                    remote.push(Destination::Channel(channel));
+                }
+            }
+            if let Some(acquired) = outcome.acquired {
+                if !mpims::append(
+                    &mut state.write(),
+                    id,
+                    generation,
+                    &ctx,
+                    acquired,
+                    &mut remote,
+                ) {
+                    failed = true;
+                }
             }
         }
+        if !owned_current(&state.peek(), id, generation, &ctx) {
+            return;
+        }
         metadata::refresh(state, id, generation, &ctx, &remote).await;
-        if !posting::refresh(state, id, generation, &remote).await {
+        if !owned_current(&state.peek(), id, generation, &ctx) {
+            return;
+        }
+        let posted = posting::refresh(state, id, generation, &remote).await;
+        if !owned_current(&state.peek(), id, generation, &ctx) {
+            return;
+        }
+        if !posted {
             failed = true;
         }
         let mut s = state.write();
-        if !query_current(&s, id, generation) {
-            return;
-        }
-        remote.retain(|v| v.available(&s, &ctx));
-        let selected = active(&s, id).unwrap().share_channel.clone();
-        let choices = load::share_choices(&s, &ctx, &query, &selected);
-        let c = active_mut(&mut s, id).unwrap();
-        c.share_choices = choices;
-        if let Some(selected) = &c.share_selected {
-            if !c.share_choices.iter().any(|v| v.id == selected.id()) {
-                c.share_choices.push(selected.choice());
-            }
-        }
-        c.share_loading = false;
-        for v in &remote {
-            if !c.share_choices.iter().any(|old| old.id == v.id()) {
-                c.share_choices.push(v.choice());
-            }
-        }
-        c.share_remote = remote;
-        if failed {
-            c.notice = Some(
-                "Some sharing destinations could not be verified. Choose an available destination or turn sharing off."
-                    .into(),
-            );
-        }
+        publish(&mut s, id, generation, &ctx, &query, remote, failed);
     });
+}
+
+fn publish(
+    s: &mut ShellState,
+    id: u64,
+    generation: u64,
+    ctx: &Context,
+    query: &str,
+    remote: Vec<Destination>,
+    failed: bool,
+) {
+    if !owned_current(s, id, generation, ctx) {
+        return;
+    }
+    let (choices, remote, unavailable) = members::publication(s, id, ctx, query, remote);
+    install_publication(
+        s,
+        id,
+        generation,
+        ctx,
+        choices,
+        remote,
+        failed || unavailable,
+    );
+}
+fn install_publication(
+    s: &mut ShellState,
+    id: u64,
+    generation: u64,
+    ctx: &Context,
+    choices: Vec<cal::Choice>,
+    remote: Vec<Destination>,
+    failed: bool,
+) {
+    if !owned_current(s, id, generation, ctx) {
+        return;
+    }
+    let c = active_mut(s, id).unwrap();
+    c.share_choices = choices;
+    if let Some(selected) = &c.share_selected {
+        if !c.share_choices.iter().any(|v| v.id == selected.id()) {
+            c.share_choices.push(selected.choice());
+        }
+    }
+    c.share_loading = false;
+    for v in &remote {
+        if !c.share_choices.iter().any(|old| old.id == v.id()) {
+            c.share_choices.push(v.choice());
+        }
+    }
+    c.share_remote = remote;
+    if failed {
+        c.notice = Some(
+            "Some sharing destinations could not be verified. Choose an available destination or turn sharing off."
+                .into(),
+        );
+    }
 }
 
 fn queries(query: &str) -> [(&'static str, serde_json::Value); 3] {
@@ -282,6 +395,8 @@ fn queries(query: &str) -> [(&'static str, serde_json::Value); 3] {
         ),
     ]
 }
+#[cfg(test)]
+mod profile_only_tests;
 #[cfg(test)]
 #[path = "sharing_tests.rs"]
 mod tests;

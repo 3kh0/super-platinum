@@ -36,6 +36,7 @@ pub mod slack;
 pub mod slack_lists;
 pub mod slash_commands;
 pub mod state;
+pub mod channel_threads;
 pub mod thread_feed;
 pub mod thread_history;
 pub mod thread_reads;

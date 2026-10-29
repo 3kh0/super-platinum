@@ -68,6 +68,16 @@
   font-size: var(--text-sm);
 }
 
+/* Keep continuation reads reachable without an overflowing transcript. */
+.dm-pagination { padding: var(--space-2) var(--space-3); }
+.dm-pagination button {
+  width: 100%; min-height: 32px; padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-md); background: var(--surface-raised);
+  color: var(--text); font-size: var(--text-sm);
+}
+.dm-pagination button:hover:not(:disabled) { background: var(--hover-overlay); }
+.dm-pagination button:disabled { opacity: .55; cursor: default; }
+
 /* DM row */
 .dm-row {
   display: grid;

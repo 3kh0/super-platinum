@@ -11,6 +11,7 @@ use super_platinum_core::{
 
 #[derive(Clone)]
 pub(super) struct Transformations {
+    pub(super) people_search_assignment: Option<String>,
     pub(super) flags: Flags,
     pub(super) archive: bool,
     pub(super) temp_mute: bool,
@@ -25,6 +26,13 @@ impl Transformations {
             }
         };
         Ok(Self {
+            people_search_assignment: raw
+                .get("assignments")
+                .and_then(|v| v.get("enterprise_search"))
+                .and_then(|v| v.get("group"))
+                .and_then(Value::as_str)
+                .filter(|v| v.len() <= 128)
+                .map(str::to_owned),
             flags: Flags::decode(raw)?,
             archive: assignment("public_channel_retain_membership_on_archive")?,
             temp_mute: assignment("temp_mute")?,

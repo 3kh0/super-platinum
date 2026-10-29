@@ -4,6 +4,7 @@ use dioxus::prelude::*;
 use crate::state::{ActivityTab, MainView, ShellState};
 
 mod dm_channels;
+mod paging;
 
 pub(crate) fn secondary_view(mut state: Signal<ShellState>, snapshot: &ShellState) -> Element {
     let workspace = snapshot
@@ -130,20 +131,26 @@ pub(crate) fn activity_channel_label(
     }
 }
 
-async fn load_more_dms_if_needed(state: Signal<ShellState>) {
-    let near_bottom = dioxus::document::eval(
-        "const list=document.getElementById('dm-list');
-         dioxus.send(Boolean(list && list.scrollHeight - list.scrollTop - list.clientHeight < 160));",
-    )
-    .recv::<bool>()
-    .await
-    .unwrap_or(false);
-    if near_bottom {
-        crate::bootstrap::load_more_dms(state).await;
-    }
+async fn load_more_dms_if_needed(
+    state: Signal<ShellState>,
+    source: crate::bootstrap::dms::PageSource,
+) {
+    let near_bottom = async {
+        dioxus::document::eval("const list=document.getElementById('dm-list'); dioxus.send(Boolean(list && list.scrollHeight - list.scrollTop - list.clientHeight < 160));")
+            .recv::<bool>().await.unwrap_or(false)
+    };
+    crate::bootstrap::dms::load_more_if(state, source, near_bottom).await;
 }
 
 pub(crate) fn dm_list_panel(mut state: Signal<ShellState>, snapshot: &ShellState) -> Element {
+    let row_frame = crate::bootstrap::dms::Frame::capture(snapshot);
+    let page_source = row_frame
+        .as_ref()
+        .and_then(|frame| crate::bootstrap::dms::PageSource::capture(snapshot, frame));
+    let initial_source = row_frame
+        .as_ref()
+        .and_then(|frame| crate::bootstrap::dms::InitialSource::capture(snapshot, frame));
+    let scroll_source = page_source.clone();
     let channel_index = if snapshot.core.dms.entries.is_empty() {
         Default::default()
     } else {
@@ -169,7 +176,7 @@ pub(crate) fn dm_list_panel(mut state: Signal<ShellState>, snapshot: &ShellState
                     input {
                         r#type: "checkbox",
                         checked: snapshot.dm_unread_only,
-                        onchange: move |event| state.write().dm_unread_only = event.checked()
+                        onchange: move |event| state.write().set_dm_unread_only(event.checked())
                     }
                 }
                 button {
@@ -184,31 +191,22 @@ pub(crate) fn dm_list_panel(mut state: Signal<ShellState>, snapshot: &ShellState
                 class: "list-find",
                 initial_value: "{snapshot.dm_query}",
                 placeholder: "Find a DM…",
-                oninput: move |event| state.write().dm_query = event.value()
+                oninput: move |event| state.write().set_dm_query(event.value())
             }
             div {
                 id: "dm-list",
                 class: "list-body",
                 onscroll: move |_| {
-                    spawn(load_more_dms_if_needed(state));
+                    if let Some(source)=scroll_source.clone(){spawn(load_more_dms_if_needed(state,source));}
                 },
-                if snapshot.core.dms.loading && snapshot.core.dms.entries.is_empty() {
+                if snapshot.core.dms.loading && snapshot.core.dms.entries.is_empty() && !crate::bootstrap::dms::initial_phase(snapshot) {
                     p { class: "list-empty", "Loading direct messages…" }
                 }
-                for entry in snapshot.core.dms.entries.iter().filter(|entry| {
-                    let label = workspace
-                        .and_then(|ws| entry.channel.as_ref().map(|channel| super_platinum_core::state::channel_display_name(ws, channel)))
-                        .or_else(|| entry.channel.as_ref().and_then(|channel| channel.name.clone()))
-                        .unwrap_or_else(|| "Direct message".into());
-                    (!snapshot.dm_unread_only || dm_entry_unread(workspace, entry) > 0)
-                        && (snapshot.dm_query.is_empty()
-                            || label.to_lowercase().contains(&snapshot.dm_query.to_lowercase()))
-                }) {
+                for entry in snapshot.core.dms.entries.iter().filter(|entry| snapshot.dm_row_visible(entry)) {
                     {
-                        let label = workspace
-                            .and_then(|ws| entry.channel.as_ref().map(|channel| super_platinum_core::state::channel_display_name(ws, channel)))
-                            .or_else(|| entry.channel.as_ref().and_then(|channel| channel.name.clone()))
-                            .unwrap_or_else(|| "Direct message".into());
+                        let label = snapshot.dm_row_label(entry);
+                        let source = row_frame.as_ref().and_then(|frame| crate::bootstrap::dms::Source::for_row(frame, &entry.id));
+                        let opening = crate::bootstrap::dms::is_opening(snapshot, &entry.id);
                         let snippet = dm_preview(snapshot, workspace, entry);
                         let time = entry
                             .latest
@@ -246,17 +244,11 @@ pub(crate) fn dm_list_panel(mut state: Signal<ShellState>, snapshot: &ShellState
                                     "dm-row"
                                 },
                                 key: "dm-{entry.id}",
-                                onclick: {
-                                    let channel = entry.id.clone();
-                                    move |_| {
-                                        let index = {
-                                            state.read().channels.iter().position(|candidate| candidate.id == channel)
-                                        };
-                                        if let Some(index) = index {
-                                            state.write().select_channel(index, crate::state::ChannelOpen::InSurface);
-                                            spawn(crate::bootstrap::refresh_selected_channel(state));
-                                        }
-                                    }
+                                disabled: opening || source.is_none(),
+                                "aria-busy": opening.to_string(),
+                                "data-dm-id": entry.id.clone(),
+                                onclick: move |_| {
+                                    if let Some(source) = source.clone() { crate::bootstrap::dms::open(state, source); }
                                 },
                                 div { class: "dm-avatar-wrap",
                                     div { class: "dm-avatar",
@@ -290,7 +282,8 @@ pub(crate) fn dm_list_panel(mut state: Signal<ShellState>, snapshot: &ShellState
                         }
                     }
                 }
-                if snapshot.core.dms.loading && !snapshot.core.dms.entries.is_empty() {
+                {paging::footer(state,snapshot,page_source,initial_source)}
+                if snapshot.core.dms.loading && !snapshot.core.dms.entries.is_empty() && !crate::bootstrap::dms::initial_phase(snapshot) {
                     p { class: "list-loading", "Loading older conversations…" }
                 }
             }
@@ -342,16 +335,7 @@ pub(crate) fn dm_entry_unread(
     workspace: Option<&super_platinum_core::state::Workspace>,
     entry: &super_platinum_core::slack::models::DmEntry,
 ) -> u32 {
-    if let Some(ws) = workspace
-        && let Some(channel) = ws.channels.get(&entry.id)
-    {
-        return ws.unread_total(channel);
-    }
-    entry
-        .channel
-        .as_ref()
-        .and_then(|channel| channel.unread_count_display.or(channel.unread_count))
-        .unwrap_or(0)
+    crate::state::dms::entry_unread(workspace, entry)
 }
 
 pub(crate) fn dm_time_label(ts: &str) -> String {
@@ -374,6 +358,11 @@ pub(crate) fn dm_time_label(ts: &str) -> String {
 }
 
 pub(crate) fn activity_list_panel(mut state: Signal<ShellState>, snapshot: &ShellState) -> Element {
+    let read = crate::activity_feed::Source::capture(snapshot);
+    let retry = snapshot.core.activity.failed_read();
+    let failed_older = retry.is_some_and(|r| r.cursor.is_some());
+    let initial_failure = retry.is_some() && !snapshot.core.activity.loaded && !failed_older;
+
     let workspace = snapshot
         .core
         .active_team
@@ -452,16 +441,32 @@ pub(crate) fn activity_list_panel(mut state: Signal<ShellState>, snapshot: &Shel
                 button {
                     class: "chip",
                     disabled: snapshot.core.activity.loading,
-                    onclick: move |_| { spawn(crate::activity_feed::load(state, false)); },
+                    id: "activity-read-refresh",
+                    onclick: {let source=read.clone(); move |_| {if let Some(source)=source.clone(){source.start(state,crate::activity_feed::Mode::Refresh);}}},
                     "Refresh"
                 }
             }
             div { class: "list-body", "aria-label": "Activity notifications",
+                if snapshot.core.activity.failed {
+                    p { class: "list-empty", role: "status",
+                        if retry.is_some() {
+                            if initial_failure {"Could not load activity. Try again when you reconnect."}
+                            else if failed_older {"Could not load older activity. Your loaded notifications are still available."}
+                            else {"Could not refresh activity. Your loaded notifications are still available."}
+                        } else {"Activity could not finish loading. Refresh to try again."}
+                    }
+                }
+                if retry.is_some() {
+                    div {class:"activity-toolbar",
+                        button {id:"activity-read-retry",class:"chip",disabled:snapshot.core.activity.loading,
+                            onclick:{let source=read.clone();move |_|{if let Some(source)=source.clone(){source.start(state,crate::activity_feed::Mode::Retry);}}},
+                            if initial_failure {"Retry loading activity"} else if failed_older {"Retry loading older activity"} else {"Retry refresh"}
+                        }
+                    }
+                }
                 if snapshot.core.activity.loading && items.is_empty() {
-                    p { class: "list-empty", "Loading activity…" }
-                } else if snapshot.core.activity.failed && items.is_empty() {
-                    p { class: "list-empty", role: "status", "Could not load activity. Try refreshing." }
-                } else if items.is_empty() {
+                    p { class: "list-empty", "Loading activity" }
+                } else if items.is_empty() && !snapshot.core.activity.failed {
                     p { class: "list-empty",
                         if unread_only { "No unread activity." } else { "No activity yet." }
                     }
@@ -540,17 +545,13 @@ pub(crate) fn activity_list_panel(mut state: Signal<ShellState>, snapshot: &Shel
                         }
                     }
                 }
-                if snapshot.core.activity.failed && !items.is_empty() {
-                    p { class: "list-empty", role: "status", "Could not load more activity. Your loaded notifications are still available." }
-                }
                 if snapshot.core.activity.next_cursor.is_some() {
                     div { class: "activity-toolbar",
                         button {
                             class: "chip", disabled: snapshot.core.activity.loading,
-                            onclick: move |_| { spawn(crate::activity_feed::load(state, true)); },
-                            if snapshot.core.activity.loading { "Loading activity…" }
-                            else if snapshot.core.activity.failed { "Retry loading more" }
-                            else { "Load older activity" }
+                            id: "activity-read-older",
+                            onclick: {let source=read.clone();move |_|{if let Some(source)=source.clone(){source.start(state,crate::activity_feed::Mode::Older);}}},
+                            "Load older activity"
                         }
                     }
                 }
@@ -756,3 +757,9 @@ fn activity_avatar(
         )
     })
 }
+
+#[cfg(test)]
+mod dm_facts_tests;
+
+#[cfg(all(test, feature = "protected-native-fixture"))]
+mod activity_recovery;

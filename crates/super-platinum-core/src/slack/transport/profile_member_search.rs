@@ -87,7 +87,7 @@ fn truth(value: &Value) -> bool {
         Value::Array(_) | Value::Object(_) => true,
     }
 }
-fn allowed(req: &PreparedRequest) -> bool {
+pub(super) fn allowed(req: &PreparedRequest) -> bool {
     if req.method != "POST" {
         return false;
     }

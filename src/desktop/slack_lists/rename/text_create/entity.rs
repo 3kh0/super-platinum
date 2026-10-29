@@ -214,13 +214,60 @@ pub(crate) fn search(mut state: Signal<ShellState>, stamp: Stamp, text: String) 
             state.write();
             return;
         };
-        let result = directory::fetch(&context, &request.query).await;
-        finish(&state.peek(), &request, result);
-        state.write();
+        complete_with(state, request, &context, |request| {
+            context.transport.execute(request)
+        })
+        .await;
     });
 }
 
+fn retire_owned(mut state: Signal<ShellState>, request: &Request) {
+    let changed = {
+        let shell = state.peek();
+        request.current(&shell)
+            && request
+                .stamp
+                .with(&shell, |draft| draft.directory.cancel(&request.query))
+    };
+    if changed {
+        // The registry is external to the shell signal; notify only after an
+        // admitted cleanup so its stopped spinner is rendered.
+        state.write();
+    }
+}
+
+async fn complete_with<F, Fut>(
+    mut state: Signal<ShellState>,
+    request: Request,
+    context: &crate::scheduled::Context,
+    execute: F,
+) where
+    F: FnMut(super_platinum_core::slack::PreparedRequest) -> Fut,
+    Fut: std::future::Future<Output = Result<Value, Error>>,
+{
+    let current =
+        |shell: &ShellState| request.current(shell) && directory::client_current(shell, context);
+    let received =
+        directory::fetch_with(context, &request.query, execute, || current(&state.peek())).await;
+    if !current(&state.peek()) {
+        retire_owned(state, &request);
+        return;
+    }
+    match received {
+        Ok(Some(rows)) => finish(&state.peek(), &request, Ok(rows)),
+        Err(error) => finish(&state.peek(), &request, Err(error)),
+        Ok(None) => {
+            retire_owned(state, &request);
+            return;
+        }
+    }
+    state.write();
+}
+
 pub(crate) mod settings;
+
+#[cfg(test)]
+mod continuation_tests;
 
 #[cfg(test)]
 mod tests;

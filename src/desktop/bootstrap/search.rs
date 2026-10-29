@@ -2,6 +2,21 @@ use super::common::credentials;
 use crate::state::{SearchResultVm, ShellState};
 use dioxus::prelude::*;
 use super_platinum_core::{search::SearchRequest, slack::api};
+pub(crate) mod control_memory;
+mod conversation;
+pub(crate) mod file_pages;
+#[cfg(test)]
+pub(crate) mod file_type_io;
+pub(crate) mod files;
+pub(crate) mod message_pages;
+#[cfg(test)]
+pub(crate) mod message_scope_io;
+mod messages;
+pub(crate) mod people;
+mod preview;
+pub(super) mod recovery;
+mod uploaders;
+use super::user_names;
 
 pub async fn search(state: Signal<ShellState>) {
     search_page(state, false).await;
@@ -12,11 +27,21 @@ pub async fn search_more(state: Signal<ShellState>) {
 }
 
 async fn search_page(mut state: Signal<ShellState>, append: bool) {
+    if !append && file_pages::refresh(state).await {
+        return;
+    }
+    if append && file_pages::has_scope(&state.peek()) {
+        return;
+    }
+    if append && message_pages::has_scope(&state.peek()) {
+        message_pages::more(state).await;
+        return;
+    }
     let query = state.read().search_query.trim().to_owned();
     if query.is_empty() {
         let mut shell = state.write();
         shell.search_pager.reset();
-        shell.search_results.clear();
+        shell.clear_search_results();
         return;
     }
     let Some((transport, client, workspaces)) = credentials(&state) else {
@@ -33,143 +58,39 @@ async fn search_page(mut state: Signal<ShellState>, append: bool) {
     };
     let request = {
         let mut shell = state.write();
-        let epoch = shell.core.account_epoch;
-        let Some(request) = shell.search_pager.begin(epoch, &team, &query, append) else {
+        let Some(request) = begin(&mut shell, &team, &query, append) else {
             return;
         };
-        if !append {
-            shell.search_results.clear();
-        }
         request
     };
-    let args = api::SearchArgs {
-        sort: request.sort,
-        page: request.page,
-        ..api::SearchArgs::new(query.clone())
-    };
-    match api::fetch_search_messages(&transport, &client, &workspace_session, args).await {
-        Ok(page) => {
-            if !current(&state.read(), &request, &transport) {
-                state.write().search_pager.fail(&request);
-                return;
-            }
-            let requested_users = page
-                .items
-                .iter()
-                .flat_map(|item| &item.messages)
-                .filter_map(|message| message.user.clone())
-                .collect::<std::collections::HashSet<_>>();
-            let missing_users = {
-                let shell = state.read();
-                let workspace = shell.core.workspaces.get(&team);
-                requested_users
-                    .into_iter()
-                    .filter(|user| {
-                        workspace.is_none_or(|workspace| !workspace.users.contains_key(user))
-                    })
-                    .collect::<Vec<_>>()
-            };
-            let mut loaded_users = Vec::new();
-            for chunk in missing_users.chunks(100) {
-                if let Ok(users) =
-                    api::fetch_users_info(&transport, &client, &workspace_session, chunk.to_vec())
-                        .await
-                {
-                    loaded_users.extend(users);
-                }
-            }
-            if !current(&state.read(), &request, &transport) {
-                state.write().search_pager.fail(&request);
-                return;
-            }
-            if !loaded_users.is_empty() {
-                let mut shell = state.write();
-                if let Some(workspace) = shell.core.workspaces.get_mut(&team) {
-                    for user in loaded_users {
-                        workspace.users.insert(user.id.clone(), user);
-                    }
-                }
-            }
-            let results = {
-                let shell = state.read();
-                let workspace = shell.core.workspaces.get(&team);
-                let media = &shell.media;
-                page.items
-                    .into_iter()
-                    .flat_map(|item| {
-                        let channel_id = item
-                            .channel
-                            .as_ref()
-                            .map(|channel| channel.id.clone())
-                            .unwrap_or_default();
-                        let channel_name = item
-                            .channel
-                            .as_ref()
-                            .map(|channel| {
-                                workspace
-                                    .map(|workspace| {
-                                        super_platinum_core::state::channel_display_name(
-                                            workspace, channel,
-                                        )
-                                    })
-                                    .unwrap_or_else(|| {
-                                        super_platinum_core::state::channel_name(channel)
-                                    })
-                            })
-                            .unwrap_or_else(|| "conversation".into());
-                        item.messages.into_iter().map(move |message| {
-                            let author = workspace
-                                .map(|workspace| {
-                                    super_platinum_core::state::message_author_name(
-                                        workspace, &message,
-                                    )
-                                })
-                                .unwrap_or_else(|| "Slack".into());
-                            let text = workspace
-                                .map(|workspace| {
-                                    let vm =
-                                        crate::message_vm::message_vm(workspace, &message, media);
-                                    crate::view::rich::message_plain_text(&vm)
-                                })
-                                .unwrap_or_else(|| {
-                                    super_platinum_core::state::message_text(&message)
-                                })
-                                .replace(['\u{e000}', '\u{e001}'], "");
-                            crate::state::SearchResultVm {
-                                thread_ts: message
-                                    .thread_ts
-                                    .clone()
-                                    .filter(|root| Some(root) != message.ts.as_ref()),
-                                channel_id: channel_id.clone(),
-                                channel_name: channel_name.clone(),
-                                ts: message.ts.clone().unwrap_or_default(),
-                                author,
-                                text,
-                            }
-                        })
-                    })
-                    .collect::<Vec<_>>()
-            };
-            let mut shell = state.write();
-            if shell
-                .search_pager
-                .complete(&request, page.pagination.as_ref())
-            {
-                merge_results(&mut shell.search_results, results);
-            }
-        }
-        Err(error) => {
-            let mut shell = state.write();
-            if !current(&shell, &request, &transport) {
-                shell.search_pager.fail(&request);
-                return;
-            }
-            shell.search_pager.fail(&request);
-            shell.report_failure(&error, "Search needs a connection", || {
-                format!("Search failed: {error}")
-            });
+    if !append {
+        super::persist_workspace_metadata(&state, &team);
+    }
+    if request.kind == super_platinum_core::search::SearchKind::Files {
+        files::load(state, request, transport, client, workspace_session).await;
+        return;
+    }
+    if request.kind == super_platinum_core::search::SearchKind::People {
+        people::load(state, request, transport, client, workspace_session).await;
+        return;
+    }
+    messages::load(state, request, transport, client, workspace_session).await;
+}
+
+fn begin(shell: &mut ShellState, team: &str, query: &str, append: bool) -> Option<SearchRequest> {
+    let request = shell
+        .search_pager
+        .begin(shell.core.account_epoch, team, query, append)?;
+    if !append {
+        shell.clear_search_results();
+        shell.search_history_open = false;
+        if let Some(workspace) = shell.core.workspaces.get_mut(team) {
+            workspace
+                .recent_searches
+                .record(&request.query, request.kind, request.sort);
         }
     }
+    Some(request)
 }
 
 fn current(
@@ -205,6 +126,7 @@ mod tests {
     use super::*;
     fn hit(channel: &str, ts: &str) -> SearchResultVm {
         SearchResultVm {
+            direct_conversation: false,
             thread_ts: None,
             channel_id: channel.into(),
             channel_name: channel.into(),
@@ -302,12 +224,85 @@ mod tests {
             );
         }
     }
+    #[test]
+    fn exact_date_apply_and_clear_preserve_result_kind_and_sort() {
+        use super_platinum_core::{
+            search::{SearchKind, SearchSort},
+            search_query::SearchFilters,
+        };
+        for kind in SearchKind::ALL {
+            let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
+            shell.set_search_query("release in:ship".into());
+            shell.set_search_kind(kind);
+            shell.search_pager.change_sort(SearchSort::Oldest);
+            let mut filters = SearchFilters::from_query(&shell.search_query);
+            filters.on = "2026-10-01".into();
+            shell.search_filters = Some(filters);
+            assert!(shell.apply_search_filters());
+            assert_eq!(shell.search_query, "release in:ship on:2026-10-01");
+            shell.search_filters = Some(SearchFilters::default());
+            assert!(shell.apply_search_filters());
+            assert_eq!(shell.search_query, "release");
+            assert_eq!(shell.search_pager.kind, kind);
+            assert_eq!(shell.search_pager.sort, SearchSort::Oldest);
+        }
+        for name in ["search-date", "search-date-narrow"] {
+            let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
+            search_fixture(&mut shell, name);
+            assert_eq!(shell.search_filters.as_ref().unwrap().on, "2026-10-01");
+        }
+    }
 }
 
 pub(crate) fn search_fixture(shell: &mut ShellState, name: &str) {
     use super_platinum_core::slack::models::SearchPagination;
+    if name.starts_with("search-people") || name.starts_with("profile-people-read-only") {
+        people::install(shell, name);
+        return;
+    }
+    if name.starts_with("search-conversations") {
+        conversation::install(shell);
+        return;
+    }
+    if name.starts_with("search-attachments") {
+        preview::install(shell);
+        return;
+    }
     shell.overlay = Some(crate::state::Overlay::Search);
     shell.set_search_query("in:ship launch".into());
+    if name.starts_with("search-history") {
+        use super_platinum_core::search::{SearchKind, SearchSort};
+        shell.set_search_query(String::new());
+        let history = &mut shell.core.workspaces.get_mut("T1").unwrap().recent_searches;
+        history.record("planning in:ship", SearchKind::Messages, SearchSort::Newest);
+        history.record(
+            "release on:2026-10-01",
+            SearchKind::Files,
+            SearchSort::Oldest,
+        );
+        history.record(
+            "\"launch notes\" from:me",
+            SearchKind::Messages,
+            SearchSort::Relevant,
+        );
+        shell.search_history_open = true;
+        return;
+    }
+    if name.starts_with("search-saved-pinned") {
+        shell.set_search_query("release is:saved has:pin".into());
+        shell.search_filters =
+            Some(super_platinum_core::search_query::SearchFilters::from_query(&shell.search_query));
+    }
+    if name.starts_with("search-context-filters") {
+        shell.set_search_query("release from:@Jules with:\"@Maya Chen\" is:thread".into());
+        shell.search_filters =
+            Some(super_platinum_core::search_query::SearchFilters::from_query(&shell.search_query));
+    }
+    if name.starts_with("search-date") {
+        shell.set_search_query("in:ship release on:2026-10-01 after:2026-09-01".into());
+        shell.search_filters =
+            Some(super_platinum_core::search_query::SearchFilters::from_query(&shell.search_query));
+    }
     if name.starts_with("search-filters") {
         shell.set_search_query(if name.ends_with("-narrow") {
             "in:ship launch has:file has:link".into()
@@ -341,6 +336,7 @@ pub(crate) fn search_fixture(shell: &mut ShellState, name: &str) {
         return;
     }
     shell.search_results = (0..6).map(|i| SearchResultVm {
+        direct_conversation: false,
         thread_ts: (i == 0).then(|| "1719800300.000100".into()),
         channel_id: "C2".into(), channel_name: "ship".into(),
         ts: format!("171980040{i}.000200"), author: "Jules".into(),

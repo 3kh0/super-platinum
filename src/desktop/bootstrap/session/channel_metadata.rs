@@ -10,7 +10,7 @@ use super_platinum_core::{
     },
 };
 
-pub(super) struct Owner {
+pub(crate) struct Owner {
     account: Option<String>,
     epoch: u64,
     transport: Arc<Transport>,
@@ -19,7 +19,7 @@ pub(super) struct Owner {
     self_user: String,
 }
 impl Owner {
-    pub(super) fn capture(
+    pub(crate) fn capture(
         core: &CoreAppState,
         transport: &Transport,
         session: &WorkspaceSession,
@@ -38,7 +38,7 @@ impl Owner {
         };
         (std::ptr::eq(owner.transport.as_ref(), transport) && owner.current(core)).then_some(owner)
     }
-    pub(super) fn current(&self, core: &CoreAppState) -> bool {
+    pub(crate) fn current(&self, core: &CoreAppState) -> bool {
         core.active_account == self.account
             && core.account_epoch == self.epoch
             && core

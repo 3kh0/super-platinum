@@ -7,21 +7,31 @@ param(
     [ValidateSet('dev-rebuild', 'dev-fast')][string]$Profile = 'dev-fast',
     [string]$Filter,
     [string]$Example,
-    [switch]$DryRun
+    [switch]$DryRun,
+    [switch]$DesktopTestNoIncremental
 )
 
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
 $desktopTarget = Join-Path $repo 'target/desktop'
 $coreTarget = Join-Path $repo 'crates/super-platinum-core/target'
-# User-authorized combined cache budget for the desktop-failure repair phase.
-$targetBudgetGiB = 48
+# Parity core gate reached 48.889 GiB; retain all caches and grow one step.
+# The authorized ceiling is 96 GiB. Preserve the 50 GiB free / 4 GiB commit guards.
+$targetBudgetGiB = 56
 $features = 'original-download-native-fixture,protected-native-fixture'
 $generatorKey = 'CMAKE_GENERATOR_x86_64_pc_windows_msvc'
 $previousPath = $env:PATH
 $previousGenerator = [Environment]::GetEnvironmentVariable($generatorKey, 'Process')
 $previousStack = $env:RUST_MIN_STACK
+$previousIncremental = $env:CARGO_INCREMENTAL
 $exitCode = 1
+
+if ($DesktopTestNoIncremental -and $Task -ne 'DesktopTest') {
+    throw '-DesktopTestNoIncremental is only valid with DesktopTest.'
+}
+if ($DesktopTestNoIncremental -and ($Jobs -ne 1 -or $Profile -ne 'dev-fast')) {
+    throw '-DesktopTestNoIncremental requires -Jobs 1 -Profile dev-fast.'
+}
 
 if ($Filter -and $Task -notin @('CoreTest', 'DesktopTest')) {
     throw '-Filter is only valid with CoreTest or DesktopTest.'
@@ -88,6 +98,7 @@ try {
         $cargoArgs += @('--profile', $Profile, '--target-dir', $desktopTarget, '--features', $features)
     }
     if ($Filter) { $cargoArgs += @('--', $Filter) }
+    if ($DesktopTestNoIncremental) { Write-Host 'Explicit desktop-test mode: CARGO_INCREMENTAL=0 (process scoped).' }
     Write-Host ('cargo ' + ($cargoArgs -join ' '))
     Write-Host "CMake: $generator; RUST_MIN_STACK: 16777216; linker/main stack: .cargo/config.toml"
     if ($DryRun) { $exitCode = 0 } else {
@@ -103,7 +114,7 @@ try {
             }
         }
         if ($free -lt 50GB -or $targetBytes -ge ($targetBudgetGiB * 1GB)) {
-            throw "Storage gate: require 50 GiB free and combined targets below $targetBudgetGiB GiB. Review cleanup separately; nothing was deleted."
+            throw "Storage gate: require 50 GiB free and combined targets below $targetBudgetGiB GiB. Review storage and the authorized budget; nothing was deleted."
         }
         $os = Get-CimInstance Win32_OperatingSystem
         if ($os.FreeVirtualMemory * 1KB -lt 4GB) {
@@ -111,6 +122,11 @@ try {
         }
         Write-Host ('Available RAM: {0:N2} GiB; commit headroom: {1:N2} GiB; targets: {2:N2} GiB; free disk: {3:N2} GiB.' -f
             ($os.FreePhysicalMemory * 1KB / 1GB), ($os.FreeVirtualMemory * 1KB / 1GB), ($targetBytes / 1GB), ($free / 1GB))
+        if ($DesktopTestNoIncremental) {
+            # Explicit opt-in exception; never removes the existing incremental cache.
+            $env:CARGO_INCREMENTAL = '0'
+            Write-Host 'Desktop test experiment: CARGO_INCREMENTAL=0; original caches retained.'
+        }
         & cargo @cargoArgs
         $exitCode = $LASTEXITCODE
         if ($exitCode -eq 0 -and $Task -eq 'Build') {
@@ -124,6 +140,7 @@ try {
 } finally {
     $env:PATH = $previousPath
     $env:RUST_MIN_STACK = $previousStack
+    $env:CARGO_INCREMENTAL = $previousIncremental
     [Environment]::SetEnvironmentVariable($generatorKey, $previousGenerator, 'Process')
     Pop-Location
 }

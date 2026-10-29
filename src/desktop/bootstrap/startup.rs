@@ -40,6 +40,8 @@ pub(crate) async fn initialize(mut state: Signal<ShellState>) {
             crate::slack_lists::reminder::carry_pending(&mut previous, &mut loaded);
             crate::app_home::workflows::navigation_history::carry(&mut previous, &mut loaded);
             crate::directory_member_fetches::carry_into_fresh_shell(&mut previous, &mut loaded);
+            crate::bootstrap::search_file_pages::saved::registry::carry(&mut previous, &mut loaded);
+            previous.media.retire();
             *previous = loaded;
         }
         crate::performance::record(crate::performance::StartupStage::CacheLoaded);

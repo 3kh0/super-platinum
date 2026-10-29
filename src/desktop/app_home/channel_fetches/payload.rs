@@ -2,7 +2,10 @@
 use super::*;
 use super_platinum_core::state::{cfm_payload as source, directory_members};
 mod auxiliary;
+pub(crate) mod file_saved_search;
+pub(crate) mod file_search;
 pub(super) mod home_context;
+pub(crate) mod people;
 pub(crate) mod plan_info;
 pub(super) fn kick(mut state: Signal<ShellState>, owner: Owner) {
     plan_info::persist(state, &owner);
@@ -32,6 +35,9 @@ pub(super) fn kick(mut state: Signal<ShellState>, owner: Owner) {
 }
 
 pub(super) struct State {
+    people: people::State,
+    file_search: file_search::State,
+    file_saved_search: file_saved_search::State,
     home_context: home_context::State,
     plan_info: plan_info::State,
     auxiliary: auxiliary::State,
@@ -62,6 +68,9 @@ impl Default for State {
         // Electron's missing accessibility bridge yields undefined -> !!false;
         // retain that provenance instead of claiming an OS observation.
         Self {
+            people: people::State::default(),
+            file_search: file_search::State::default(),
+            file_saved_search: file_saved_search::State::default(),
             home_context: home_context::State::default(),
             plan_info: plan_info::State::default(),
             auxiliary: auxiliary::State::default(),
@@ -197,6 +206,9 @@ pub(super) fn dispatch(
     let settlement = payload.dispatch(&mut sink);
     let success = settlement.result().is_ok();
     home_context::settled(sink.shell, owner, &settlement);
+    people::settled(sink.shell, owner, &settlement);
+    file_search::settled(sink.shell, owner, &settlement);
+    file_saved_search::settled(sink.shell, owner, &settlement);
     let slot = sink
         .shell
         .app_home

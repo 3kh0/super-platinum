@@ -10,13 +10,20 @@ use super_platinum_core::{
 
 pub(crate) mod check;
 
-fn reload(state: Signal<ShellState>, channel: Option<&str>, edit: impl FnOnce(&mut FilesQuery)) {
-    let mut query = crate::files::visible_for(&state.peek(), channel)
-        .map(|f| f.query.clone())
-        .unwrap_or_default();
-    query.channel = channel.map(str::to_owned);
+fn reload(
+    state: Signal<ShellState>,
+    source: Option<crate::files::Source>,
+    edit: impl FnOnce(&mut FilesQuery),
+) {
+    let Some(source) = source else {
+        return;
+    };
+    if !source.is_current(state) {
+        return;
+    }
+    let mut query = source.query.clone();
     edit(&mut query);
-    dioxus::core::spawn_forever(crate::files::load(state, query, 1));
+    source.submit(state, query);
 }
 
 #[component]
@@ -48,10 +55,7 @@ pub(crate) fn FilesPanel(
     let loading = files.is_some_and(|f| f.loading);
     let page = files.map(|f| f.page).unwrap_or(1).max(1);
     let page_count = files.map(|f| f.page_count).unwrap_or(1).max(1);
-    let refresh = query.clone();
-    let previous = query.clone();
-    let next = query.clone();
-    let retry = query.clone();
+    let source = crate::files::Source::capture(&snapshot, channel);
     let workspace = snapshot
         .core
         .active_team
@@ -64,41 +68,44 @@ pub(crate) fn FilesPanel(
                 h2 {"Files"}
                 span {class:"spacer"}
                 button {class:"later-refresh",onclick:move |_|crate::canvas_create::open(state),"New canvas"}
-                button {class:"later-refresh",disabled:loading,onclick:move |_|{dioxus::core::spawn_forever(crate::files::load(state,refresh.clone(),page));},"Refresh"}
+                button {id:"files-refresh",class:"later-refresh",disabled:loading,onclick:{let source=source.clone();move |_|{if let Some(source)=source.clone(){source.refresh(state);}}},"Refresh"}
             }
             }
             if channel.is_none() {crate::file_actions::recovery_list::RecoveryList {state}super::file_share::SavedFileShares {state}}
-            form {class:"files-search",onsubmit:move |event|{event.prevent_default();let value=text();reload(state,scope.peek().as_deref(),|q|q.text=value);},
+            form {class:"files-search",onsubmit:{let source=source.clone();move |event|{
+                event.prevent_default();let Some(source)=source.clone() else{return;};if !source.is_current(state){return;}
+                let Ok(value)=text.try_peek().map(|value|(*value).clone()) else{return;};reload(state,Some(source),|q|q.text=value);
+            }},
                 {icon(Icon::Search,"icon")}
                 input {type:"search","aria-label":"Search files",placeholder:if channel.is_some() {"Search files in this conversation"} else {"Search files, or use in:channel and from:person"},initial_value:"{text}",oninput:move |event|text.set(event.value())}
-                button {type:"submit","Search"}
+                button {id:"files-search-submit",type:"submit","Search"}
             }
             div {class:"files-controls",
                 if channel.is_none() {
                 div {class:"files-owner",role:"group","aria-label":"File ownership",
                     for owner in FileOwner::ALL {
                         button {class:if query.owner==owner {"active"}else{""},"aria-pressed":query.owner==owner,
-                            onclick:move |_|reload(state,scope.peek().as_deref(),|q|q.owner=owner),"{owner.label()}"}
+                            onclick:{let source=source.clone();move |_|reload(state,source.clone(),|q|q.owner=owner)},"{owner.label()}"}
                     }
                 }
                 }
                 div {class:"files-selects",
                     if channel.is_some() {
-                        select {"aria-label":"File ownership",value:"{query.owner.label()}",onchange:move |event|{let value=event.value();if let Some(owner)=FileOwner::ALL.into_iter().find(|o|o.label()==value){reload(state,scope.peek().as_deref(),|q|q.owner=owner);}},
+                        select {"aria-label":"File ownership",value:"{query.owner.label()}",onchange:{let source=source.clone();move |event|{let value=event.value();if let Some(owner)=FileOwner::ALL.into_iter().find(|o|o.label()==value){reload(state,source.clone(),|q|q.owner=owner);}}},
                             for owner in FileOwner::ALL {option {value:owner.label(),"{owner.label()}"}}
                         }
                     }
-                    select {"aria-label":"File type",value:"{query.kind.label()}",onchange:move |event|{let value=event.value();if let Some(kind)=FileKind::ALL.into_iter().find(|k|k.label()==value){reload(state,scope.peek().as_deref(),|q|q.kind=kind);}},
+                    select {"aria-label":"File type",value:"{query.kind.label()}",onchange:{let source=source.clone();move |event|{let value=event.value();if let Some(kind)=FileKind::ALL.into_iter().find(|k|k.label()==value){reload(state,source.clone(),|q|q.kind=kind);}}},
                         for kind in FileKind::ALL {option {value:kind.label(),"{kind.label()}"}}
                     }
-                    select {"aria-label":"Sort files",value:"{query.sort.label()}",onchange:move |event|{let value=event.value();if let Some(sort)=FileSort::ALL.into_iter().find(|s|s.label()==value){reload(state,scope.peek().as_deref(),|q|q.sort=sort);}},
+                    select {"aria-label":"Sort files",value:"{query.sort.label()}",onchange:{let source=source.clone();move |event|{let value=event.value();if let Some(sort)=FileSort::ALL.into_iter().find(|s|s.label()==value){reload(state,source.clone(),|q|q.sort=sort);}}},
                         for sort in FileSort::ALL {option {value:sort.label(),disabled:sort==FileSort::Viewed && (!query.text.trim().is_empty() || query.owner!=FileOwner::All || channel.is_some()),"{sort.label()}"}}
                     }
                 }
             }
             div {class:"files-results","aria-busy":loading,
                 if let Some(error)=files.and_then(|f|f.error.as_ref()) {
-                    div {class:"later-error",role:"alert",p {"{error}"}button {onclick:move |_|{dioxus::core::spawn_forever(crate::files::load(state,retry.clone(),page));},"Retry"}}
+                    div {class:"later-error",role:"alert",p {"{error}"}if files.is_some_and(|files|files.loaded){p {"Showing the last loaded results."}}button {id:"files-retry",disabled:loading,onclick:{let source=source.clone();move |_|{if let Some(source)=source.clone(){source.retry(state);}}},"Retry"}}
                 }
                 if loading {p {class:"files-status",role:"status","Loading files…"}}
                 if let Some(files)=files {
@@ -142,9 +149,12 @@ pub(crate) fn FilesPanel(
             footer {class:"files-pagination",
                 span {role:"status",if let Some(files)=files {if files.loaded {"{files.total} " if files.total==1 {"file"} else {"files"} " · Page {page} of {page_count}"}}}
                 span {class:"spacer"}
-                button {disabled:loading || page<=1,onclick:move |_|{dioxus::core::spawn_forever(crate::files::load(state,previous.clone(),page.saturating_sub(1)));},"Previous"}
-                button {disabled:loading || page>=page_count,onclick:move |_|{dioxus::core::spawn_forever(crate::files::load(state,next.clone(),page+1));},"Next"}
+                button {id:"files-previous",disabled:loading || !files.is_some_and(|files|files.loaded) || page<=1,onclick:{let source=source.clone();move |_|{if let Some(source)=source.clone(){source.page(state,page.saturating_sub(1));}}},"Previous"}
+                button {id:"files-next",disabled:loading || !files.is_some_and(|files|files.loaded) || page>=page_count,onclick:{let source=source.clone();move |_|{if let Some(source)=source.clone(){source.page(state,page+1);}}},"Next"}
             }
         }
     }
 }
+
+#[cfg(test)]
+mod resource_page_recovery;

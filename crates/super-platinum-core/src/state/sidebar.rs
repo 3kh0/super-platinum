@@ -130,6 +130,7 @@ mod tests {
             starred_order: Vec::new(),
             dm_order: Vec::new(),
             recent_channels: Vec::new(),
+            recent_searches: Default::default(),
             last_active_channel: None,
             priority_scores: BTreeMap::new(),
             frecency: BTreeMap::new(),

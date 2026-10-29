@@ -54,18 +54,25 @@ pub fn users_search(
     query: &str,
     count: u32,
 ) -> serde_json::Result<PreparedRequest> {
-    client.edge_json(
-        workspace,
-        "users/search",
-        serde_json::json!({
-            "query": query,
-            "count": count,
-            "fuzz": 1,
-            "include_profile_only_users": true,
-            "enable_workspace_ranking": true,
-            "search_email": true,
-        }),
-    )
+    users_search_page(client, workspace, query, count, None)
+}
+
+/// Edge continuation is a top-level opaque marker, not a page or REST cursor.
+pub fn users_search_page(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    query: &str,
+    count: u32,
+    marker: Option<&str>,
+) -> serde_json::Result<PreparedRequest> {
+    let mut payload = serde_json::json!({
+        "query":query,"count":count,"fuzz":1,"include_profile_only_users":true,
+        "enable_workspace_ranking":true,"search_email":true,
+    });
+    if let Some(marker) = marker {
+        payload["marker"] = serde_json::Value::String(marker.to_owned());
+    }
+    client.edge_json(workspace, "users/search", payload)
 }
 
 pub fn channels_search(
@@ -74,17 +81,27 @@ pub fn channels_search(
     query: &str,
     count: u32,
 ) -> serde_json::Result<PreparedRequest> {
-    client.edge_json(
-        workspace,
-        "channels/search",
-        serde_json::json!({
-            "query": query,
-            "count": count,
-            "fuzz": 1,
-            "filter": "xws",
-            "include_record_channels": true,
-        }),
-    )
+    channels_search_page(client, workspace, query, count, None)
+}
+
+pub fn channels_search_page(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    query: &str,
+    count: u32,
+    marker: Option<&str>,
+) -> serde_json::Result<PreparedRequest> {
+    let mut payload = serde_json::json!({
+        "query": query,
+        "count": count,
+        "fuzz": 1,
+        "filter": "xws",
+        "include_record_channels": true,
+    });
+    if let Some(marker) = marker {
+        payload["marker"] = serde_json::Value::String(marker.to_owned());
+    }
+    client.edge_json(workspace, "channels/search", payload)
 }
 
 fn ids_payload(ids: &[String]) -> UpdatedIds<'_> {

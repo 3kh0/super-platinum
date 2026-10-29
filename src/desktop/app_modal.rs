@@ -20,16 +20,24 @@ pub(crate) mod channel_fixture;
 mod channels;
 pub(crate) mod check;
 pub(crate) mod conversation_fixture;
+pub(crate) mod email;
 pub(crate) mod external;
 pub(crate) mod fixture;
+#[cfg(test)]
+mod introduced_numbers_tests;
+#[cfg(test)]
+mod mixed_readonly_tests;
 pub(crate) mod multi_channel_fixture;
 pub(crate) mod multi_conversation_fixture;
 pub(crate) mod multi_external_check;
 pub(crate) mod multi_external_fixture;
+pub(crate) mod number_input;
 mod origin;
 mod requests;
+pub(crate) mod scalar;
 #[cfg(test)]
 mod tests;
+pub(crate) mod url_input;
 pub(crate) mod users;
 pub(crate) mod users_check;
 pub(crate) mod users_fixture;
@@ -57,6 +65,7 @@ pub(crate) struct Session {
     // Origin evidence outlives selected chips; per-field proofs are pruned on edits.
     viewed_proofs: crate::message_buttons::inputs::channels::Proofs,
     users_fixture: Option<users_fixture::Recorder>,
+    integer_context: Option<Context>,
 }
 impl Session {
     fn new(scope: ModalScope) -> Self {
@@ -79,6 +88,7 @@ impl Session {
             channel_proofs: BTreeMap::new(),
             viewed_proofs: BTreeMap::new(),
             users_fixture: None,
+            integer_context: None,
         }
     }
     pub(crate) fn fixture(view: Value) -> Self {
@@ -121,9 +131,44 @@ impl Session {
         self.forms.get_mut(&id)
     }
     fn locked(&self) -> bool {
-        self.busy || self.uncertain || self.loading || self.conflict
+        self.busy
+            || self.uncertain
+            || self.loading
+            || self.conflict
+            || self
+                .current_form()
+                .is_some_and(|form| !form.introduced_integers_current())
+    }
+    fn settle_integer_retirement(&mut self) {
+        self.modal.capture_integer_drafts(self.forms.values());
+        if !self.modal.integer_introduction_context_live() {
+            for form in self.forms.values_mut() {
+                form.release_unused_integer_custody();
+            }
+            if !self.forms.values().any(ModalForm::has_introduced_integers) {
+                self.integer_context = None;
+            }
+        }
+    }
+    fn integer_feedback(&self, primary: Option<String>) -> Option<String> {
+        if self.busy
+            || self.loading
+            || self.uncertain
+            || !self
+                .current_form()
+                .is_some_and(|form| !form.introduced_integers_current())
+        {
+            return primary;
+        }
+        let recovery = "Close and reopen this form before submitting.";
+        Some(match primary {
+            Some(reason) if reason.contains(recovery) => reason,
+            Some(reason) => format!("{reason} {recovery}"),
+            None => recovery.into(),
+        })
     }
     fn sync_forms(&mut self) {
+        self.settle_integer_retirement();
         self.forms
             .retain(|id, _| self.modal.stack().iter().any(|v| &v.id == id));
         self.external_proofs
@@ -134,7 +179,7 @@ impl Session {
         // A hidden parent's remote changes must not block or invalidate the
         // active child. Retain its draft and reconcile the latest raw payload
         // when Back or a successful submission actually reveals that parent.
-        let Some(view) = self.modal.stack().last() else {
+        let Some(view) = self.modal.stack().last().cloned() else {
             return;
         };
         if view.needs_content {
@@ -144,24 +189,43 @@ impl Session {
             return;
         };
         let result = if let Some(form) = self.forms.get_mut(&view.id) {
-            if form.raw_view == *payload {
+            if form.raw_view == *payload && self.integer_context.is_none() {
                 return;
             }
-            form.reconcile(payload)
+            if self.integer_context.is_some() {
+                self.modal.reconcile_integer_form(form)
+            } else {
+                form.reconcile(payload)
+            }
         } else {
-            ModalForm::parse_with_context(
-                payload,
-                view.origin_conversation.as_deref(),
-                view.viewed_conversation.as_ref(),
-            )
-            .map(|form| {
+            // ModalState already owns this correlated top view. A missing form
+            // here creates a new parent; retained updates use reconcile below.
+            let parsed = if self.integer_context.is_some()
+                && self.modal.integer_introduction_context_live()
+            {
+                self.modal.parse_integer_root_form()
+            } else {
+                ModalForm::parse_with_signed_integer_context(
+                    payload,
+                    view.origin_conversation.as_deref(),
+                    view.viewed_conversation.as_ref(),
+                )
+            };
+            parsed.map(|form| {
                 self.forms.insert(view.id.clone(), form);
             })
         };
         if let Err(error) = result {
+            self.modal.revoke_integer_introductions();
             self.conflict = true;
             self.view_error = Some(error.to_string());
+        } else if self
+            .current_form()
+            .is_some_and(|form| !form.unsupported.is_empty())
+        {
+            self.modal.revoke_integer_introductions();
         }
+        self.settle_integer_retirement();
     }
 }
 
@@ -179,12 +243,18 @@ pub(crate) struct Presentation {
     pub reset_revision: u64,
 }
 pub(crate) fn presentation(shell: &ShellState) -> Option<Presentation> {
+    revoke_changed_integer_context(shell);
     let session = shell.app_modal.as_ref()?;
     if !current_scope(shell, session) || session.modal.stack().is_empty() {
         return None;
     }
     let form = session.current_form().cloned();
     let unavailable = users::unavailable_context(shell);
+    let view_error = session.integer_feedback(
+        unavailable
+            .map(str::to_owned)
+            .or_else(|| session.view_error.clone()),
+    );
     Some(Presentation {
         title: form
             .as_ref()
@@ -204,9 +274,7 @@ pub(crate) fn presentation(shell: &ShellState) -> Option<Presentation> {
         uncertain: session.uncertain,
         loading: session.loading,
         locked: session.locked() || unavailable.is_some(),
-        view_error: unavailable
-            .map(str::to_owned)
-            .or_else(|| session.view_error.clone()),
+        view_error,
         reset_revision: session.reset_revision,
     })
 }
@@ -221,6 +289,23 @@ fn scope(shell: &ShellState) -> Option<ModalScope> {
 fn current_scope(shell: &ShellState, session: &Session) -> bool {
     session.fixture && crate::fixture::is_fixture()
         || scope(shell).as_ref() == Some(session.modal.scope())
+}
+fn integer_context_current(shell: &ShellState, session: &Session) -> bool {
+    session.integer_context.as_ref().is_some_and(|context| {
+        crate::message_buttons::inputs::user::directory::context_current(shell, context)
+            && shell
+                .core
+                .workspaces
+                .get(&context.session.team_id)
+                .is_some_and(|workspace| workspace.self_user_id == context.session.user_id)
+    })
+}
+fn revoke_changed_integer_context(shell: &ShellState) -> bool {
+    shell.app_modal.as_ref().is_some_and(|session| {
+        session.integer_context.is_some()
+            && !integer_context_current(shell, session)
+            && session.modal.revoke_integer_introductions()
+    })
 }
 fn next_id() -> u64 {
     static NEXT: AtomicU64 = AtomicU64::new(1);
@@ -325,6 +410,7 @@ fn close_local(shell: &mut ShellState, all: bool) {
         shell.overlay = None;
         return;
     }
+    session.modal.capture_integer_drafts(session.forms.values());
     if let (Some(view), Some(root), Some(context)) = (
         session.modal.stack().last(),
         session.modal.stack().first(),
@@ -369,6 +455,7 @@ pub(crate) fn flush_closes(mut state: Signal<ShellState>) {
 }
 /// Reconnection/account replacement invalidates tokens and any in-flight UI work.
 pub(crate) fn poll(shell: &mut ShellState) -> bool {
+    let integer_changed = revoke_changed_integer_context(shell);
     let users_changed =
         crate::message_buttons::shortcuts::poll(shell) | users::poll(shell) | external::poll(shell);
     if shell
@@ -393,7 +480,7 @@ pub(crate) fn poll(shell: &mut ShellState) -> bool {
         shell.overlay = replacement;
         return true;
     }
-    users_changed
+    users_changed | integer_changed
 }
 pub(crate) fn realtime(
     shell: &mut ShellState,
@@ -416,13 +503,46 @@ pub(crate) fn realtime(
         return false;
     };
     poll(shell);
+    let root_context = shell
+        .app_modal
+        .as_ref()
+        .filter(|session| session.modal.stack().is_empty() && !session.locked())
+        .and_then(|_| Context::capture(shell))
+        .filter(|context| {
+            crate::message_buttons::inputs::user::directory::context_current(shell, context)
+                && shell
+                    .core
+                    .workspaces
+                    .get(&context.session.team_id)
+                    .is_some_and(|workspace| workspace.self_user_id == context.session.user_id)
+        });
+    let continue_integer_context = shell
+        .app_modal
+        .as_ref()
+        .is_some_and(|session| integer_context_current(shell, session));
     let Some(session) = shell.app_modal.as_mut() else {
         return false;
     };
     let old = session.modal.stack().last().map(|v| v.id.clone());
     let old_revision = session.modal.revision();
-    if session.modal.apply(&scope, raw, now_ms()) == ModalChange::Ignored {
+    let empty = session.modal.stack().is_empty();
+    session.modal.capture_integer_drafts(session.forms.values());
+    let change = if root_context.is_some() || continue_integer_context {
+        session
+            .modal
+            .apply_realtime_integer_context(&scope, raw, now_ms())
+    } else {
+        session.modal.apply(&scope, raw, now_ms())
+    };
+    if change == ModalChange::Ignored {
         return false;
+    }
+    if empty && change == ModalChange::Opened {
+        session.integer_context =
+            root_context.filter(|_| session.modal.integer_introduction_context_live());
+    }
+    if session.busy || session.uncertain || session.conflict {
+        session.modal.revoke_integer_introductions();
     }
     if session.modal.revision() == old_revision {
         // A hidden ancestor changed. The reducer retained its latest payload

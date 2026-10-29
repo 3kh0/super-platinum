@@ -136,6 +136,40 @@ pub(super) fn share_choices(
     query: &str,
     selected: &str,
 ) -> Vec<cal::Choice> {
+    share_choices_admitted(s, ctx, query, selected, |_, _| true)
+}
+pub(super) fn share_choices_admitted(
+    s: &ShellState,
+    ctx: &Context,
+    query: &str,
+    selected: &str,
+    admitted: impl FnMut(&User, &str) -> bool,
+) -> Vec<cal::Choice> {
+    share_choices_with_admission(s, ctx, query, selected, admitted, |_, _| true)
+}
+pub(super) fn share_channel_name(
+    s: &ShellState,
+    ctx: &Context,
+    ch: &super_platinum_core::slack::models::Channel,
+) -> String {
+    let w = s.core.workspaces.get(&ctx.session.team_id);
+    ch.name
+        .clone()
+        .or_else(|| {
+            ch.user.as_ref().map(|id| {
+                super_platinum_core::state::display_name(w.and_then(|w| w.users.get(id)), id)
+            })
+        })
+        .unwrap_or_else(|| ch.id.clone())
+}
+pub(super) fn share_choices_with_admission(
+    s: &ShellState,
+    ctx: &Context,
+    query: &str,
+    selected: &str,
+    mut admitted: impl FnMut(&User, &str) -> bool,
+    mut channel_admitted: impl FnMut(&super_platinum_core::slack::models::Channel, &str) -> bool,
+) -> Vec<cal::Choice> {
     let Some(w) = s.core.workspaces.get(&ctx.session.team_id) else {
         return vec![];
     };
@@ -155,26 +189,27 @@ pub(super) fn share_choices(
     };
     for ch in w.channels.values() {
         if sharing::channel(s, ctx, ch) {
-            offer(cal::Choice {
-                id: ch.id.clone(),
-                name: ch
-                    .name
-                    .clone()
-                    .or_else(|| {
-                        ch.user
-                            .as_ref()
-                            .map(|id| super_platinum_core::state::display_name(w.users.get(id), id))
-                    })
-                    .unwrap_or_else(|| ch.id.clone()),
-            });
+            let name = share_channel_name(s, ctx, ch);
+            if channel_admitted(ch, &name) {
+                offer(cal::Choice {
+                    id: ch.id.clone(),
+                    name,
+                });
+            }
         }
     }
     for u in w.users.values() {
-        if !u.deleted && domain::identifier(&u.id) {
-            offer(cal::Choice {
-                id: u.id.clone(),
-                name: super_platinum_core::state::display_name(Some(u), &u.id),
-            });
+        if !u.deleted
+            && domain::identifier(&u.id)
+            && (u.id == selected || cal::sharing_profile_allowed(u))
+        {
+            let name = super_platinum_core::state::display_name(Some(u), &u.id);
+            if admitted(u, &name) {
+                offer(cal::Choice {
+                    id: u.id.clone(),
+                    name,
+                });
+            }
         }
     }
     out
@@ -438,6 +473,7 @@ pub(super) fn slots(mut state: Signal<ShellState>, id: u64) {
         match result{Ok(slots)=>{c.slots=slots;if !c.slots.iter().any(|slot|Some(slot.start)==c.start&&slot.all_free){if let Some(slot)=c.slots.first(){c.start=Some(slot.start);c.end=Some(slot.end);c.start_text=cal::time::label(slot.start);c.end_text=cal::time::label(slot.end);}}},Err(_)=>c.slot_notice=Some("Availability could not be loaded. Choose a custom time or refresh after the rate limit.".into())}
     });
 }
+pub(super) mod guests;
 pub(super) fn guests(mut state: Signal<ShellState>, id: u64, query: String) {
     let job = {
         let mut s = state.write();
@@ -461,59 +497,20 @@ pub(super) fn guests(mut state: Signal<ShellState>, id: u64, query: String) {
         {
             return;
         }
-        let result = directory::read(state, id, directory::Query::Guests(generation), &ctx,
-            "users/search",serde_json::json!({"query":query,"count":24,"fuzz":1,"enable_workspace_ranking":true,"filter":"NOT deactivated"})).await;
-        let users: Vec<User> = {
-            let s = state.peek();
-            if !active(&s, id)
-                .is_some_and(|c| c.guest_generation == generation && c.stage == Stage::Editing)
-            {
-                return;
-            }
-            let mut users = cached_guest_users(&s, &ctx, &query);
-            if let Ok(raw) = result {
-                if let Some(rows) = raw
-                    .get("results")
-                    .and_then(serde_json::Value::as_array)
-                    .filter(|v| v.len() <= 512)
-                {
-                    for raw in rows.iter().take(24) {
-                        if let Ok(user) = serde_json::from_value::<User>(raw.clone()) {
-                            if !users.iter().any(|u| u.id == user.id) {
-                                users.push(user);
-                            }
-                        }
-                    }
-                }
-            }
-            users
-        };
-        agents::hydrate(state, id, generation, &ctx, users.clone()).await;
-        let mut s = state.write();
-        if !active(&s, id)
-            .is_some_and(|c| c.guest_generation == generation && c.stage == Stage::Editing)
-        {
-            return;
-        }
-        let found: Vec<Person> = users
-            .iter()
-            .filter_map(|u| {
-                let known = s
-                    .core
-                    .workspaces
-                    .get(&ctx.session.team_id)
-                    .and_then(|w| w.users.get(&u.id))
-                    .unwrap_or(u);
-                agents::eligible(active(&s, id)?, known, &ctx.session).then(|| Person {
-                    id: known.id.clone(),
-                    label: super_platinum_core::state::display_name(Some(known), &known.id),
-                })
-            })
-            .collect();
-        let c = active_mut(&mut s, id).unwrap();
-        c.guest_loading = false;
-        c.guest_choices = found;
-        c.guest_choices.truncate(64);
+        let lookup = directory::guests::read(state, id, generation, ctx.clone(), &query);
+        let original = ctx.clone();
+        guests::run_with(
+            state,
+            id,
+            generation,
+            ctx.clone(),
+            query.clone(),
+            lookup,
+            move |users| async move {
+                agents::hydrate(state, id, generation, &original, users).await;
+            },
+        )
+        .await;
     });
 }
 fn cached_guests(s: &ShellState, ctx: &Context, query: &str) -> Vec<Person> {

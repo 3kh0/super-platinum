@@ -35,7 +35,48 @@ pub(crate) fn search(mut state: Signal<ShellState>, ticket: Ticket, query: Strin
     spawn(async move {
         let (serial, revision, mut cancellation) = request;
         tokio::select! {_=tokio::time::sleep(Duration::from_millis(250))=>{},_=cancellation.changed()=>return}
-        let prepared = {
+        if ticket.conversation.is_none() {
+            let original = ticket.clone();
+            let read = continued::run_with(
+                state,
+                ticket,
+                serial,
+                revision,
+                query,
+                move |prepared, scope| {
+                    let mut state = state;
+                    let ticket = original.clone();
+                    async move {
+                        if !scope.admitted() {
+                            return Ok(None);
+                        }
+                        use fixture::exchange::Read;
+                        match fixture::exchange::channel(state, &ticket, &scope, &prepared).await {
+                            Read::Live => scope.transport(&ticket.owner.ctx, prepared).await,
+                            Read::Refused => Ok(None),
+                            Read::Unavailable(error) => {
+                                scope.finish_injected(async { Err(error) }).await
+                            }
+                            Read::Registered(mut exchange) => {
+                                scope.finish_injected(exchange.receive()).await
+                            }
+                        }
+                    }
+                },
+            );
+            until_cancelled(read, &mut cancellation).await;
+            return;
+        }
+        if ticket
+            .conversation
+            .as_ref()
+            .is_some_and(directory::conversation_mask_matches)
+        {
+            let read = continued::run_conversations(state, ticket, serial, revision, query);
+            until_cancelled(read, &mut cancellation).await;
+            return;
+        }
+        {
             let mut s = state.write();
             if !request_current(&s, serial, revision) {
                 return;
@@ -49,29 +90,13 @@ pub(crate) fn search(mut state: Signal<ShellState>, ticket: Ticket, query: Strin
                 );
                 return;
             }
-            if ticket.conversation.is_some() {
-                Ok(None)
-            } else {
-                directory::prepare_channels(&ticket.owner.ctx, &query, &ticket.policy).map(Some)
-            }
-        };
-        let result = match prepared {
-            Ok(None) => {
-                tokio::select! {result=conversation::read(state,&ticket,&query)=>result,_=cancellation.changed()=>return}
-            }
-            Ok(Some(prepared)) => {
-                let fixture = fixture::request(&mut state.write(), &ticket, &prepared);
-                let read = async {
-                    match fixture {
-                        Some(receiver) => receiver
-                            .await
-                            .unwrap_or(Err(Error::Offline("Home channel read unavailable".into()))),
-                        None => ticket.owner.ctx.transport.execute(prepared).await,
-                    }
-                };
-                tokio::select! {result=read=>result.and_then(|v|directory::decode_channels(&v)).map(|rows|(vec![],rows)),_=cancellation.changed()=>return}
-            }
+        }
+        let scope = continued::scope(state, &ticket, serial, revision);
+        let result = tokio::select! {result=conversation::read(state,&ticket,&query,&scope)=>result,_=cancellation.changed()=>return};
+        let result = match result {
+            Ok(Some(rows)) => Ok(rows),
             Err(error) => Err(error),
+            Ok(None) => return,
         };
         let mut s = state.write();
         if !directory::owner_current(&s, &ticket.owner.ctx)
@@ -89,6 +114,25 @@ pub(crate) fn search(mut state: Signal<ShellState>, ticket: Ticket, query: Strin
         complete_entities(&mut s, serial, revision, result);
     });
 }
+mod continued;
+
+async fn until_cancelled(
+    read: impl std::future::Future<Output = ()>,
+    cancellation: &mut tokio::sync::watch::Receiver<bool>,
+) {
+    tokio::select! {_=read=>{},_=cancellation.changed()=>{}}
+}
+
+#[cfg(test)]
+pub(in crate::app_home::inputs::channels) fn fixture_scope(
+    state: Signal<ShellState>,
+    ticket: &Ticket,
+    serial: u64,
+    revision: u64,
+) -> directory::read_scope::ReadScope {
+    continued::scope(state, ticket, serial, revision)
+}
+
 fn cooldown(s: &mut ShellState, t: &Ticket, seconds: u64) {
     let now = Instant::now();
     let deadline = now

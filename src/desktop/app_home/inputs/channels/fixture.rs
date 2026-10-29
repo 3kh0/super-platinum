@@ -1,9 +1,13 @@
 //! Named disconnected Home channel fixture. Reads intercept the shared prepared request.
 use super::*;
 use super_platinum_core::slack::{PreparedRequest, client::RequestBody};
+pub(super) mod bundle;
 pub(super) mod capture;
 pub(crate) mod check;
+pub(super) mod exchange;
 pub(crate) mod multiple;
+#[cfg(test)]
+pub(super) mod test_support;
 pub(crate) const REMOTE: &str = "CCHANRMT1";
 pub(crate) const ALPHA: &str = "CCHANAL01";
 pub(crate) const BETA: &str = "CCHANBE01";
@@ -19,6 +23,8 @@ pub(crate) struct Harness {
     reply: Reply,
     hold: bool,
     pending: Option<tokio::sync::oneshot::Sender<Result<Value, Error>>>,
+    pending_owner: Option<u64>,
+    lane: std::sync::Arc<tokio::sync::Mutex<()>>,
     requests: Vec<Value>,
     releases: Vec<Value>,
 }
@@ -135,6 +141,8 @@ pub(crate) fn install(s: &mut ShellState) {
         },
         hold: false,
         pending: None,
+        pending_owner: None,
+        lane: std::sync::Arc::new(tokio::sync::Mutex::new(())),
         requests: vec![],
         releases: vec![],
     });
@@ -166,11 +174,24 @@ pub(super) fn request(
     if !crate::fixture::is_fixture() {
         return None;
     }
+    request_closed(s, t, request)
+}
+fn request_closed(
+    s: &mut ShellState,
+    t: &Ticket,
+    request: &PreparedRequest,
+) -> Option<tokio::sync::oneshot::Receiver<Result<Value, Error>>> {
     let current = (named()
         || multiple::named()
         || crate::app_home::inputs::users::dispatch::fixture::channel_named())
         && t.current(s);
     let (tx, rx) = tokio::sync::oneshot::channel();
+    if pending_open(s) {
+        let _ = tx.send(Err(Error::Offline(
+            "Home fixture read already pending".into(),
+        )));
+        return Some(rx);
+    }
     let mode = t.mode.as_ref().map(|v| v.proof(s)).unwrap_or(Value::Null);
     let Some(f) = s.app_home.channels.fixture.as_mut() else {
         let _ = tx.send(Err(Error::Offline("Home channel read unavailable".into())));
@@ -194,6 +215,7 @@ pub(super) fn request(
         "homeContext":t.context.team_id(),"homeVisit":t.surface.visit,"homeRevision":t.surface.revision,
         "inputRevision":t.input_revision,"widgetRevision":t.widget_revision,"channelPolicy":t.policy.request_fields(),"mode":mode,"socket":t.owner.rt,"reply":proof(f.reply),"held":f.hold}));
     if f.hold {
+        f.pending_owner = None;
         f.pending = Some(tx);
     } else {
         let _ = tx.send(response(f.reply));
@@ -209,7 +231,20 @@ pub(super) fn request_conversations(
     if !crate::fixture::is_fixture() {
         return None;
     }
+    request_conversations_closed(s, t, requests)
+}
+fn request_conversations_closed(
+    s: &mut ShellState,
+    t: &Ticket,
+    requests: &directory::aggregate::Requests,
+) -> Option<tokio::sync::oneshot::Receiver<Result<Value, Error>>> {
     let (tx, rx) = tokio::sync::oneshot::channel();
+    if pending_open(s) {
+        let _ = tx.send(Err(Error::Offline(
+            "Home fixture read already pending".into(),
+        )));
+        return Some(rx);
+    }
     let mut parts = Vec::new();
     let mut valid = (conversation::fixture::named()
         || conversation::fixture::multiple::named()
@@ -243,11 +278,20 @@ pub(super) fn request_conversations(
     f.requests.push(json!({"parts":parts,"accountTeam":t.owner.ctx.session.team_id,"enterprise":t.owner.ctx.session.enterprise_id,
   "homeContext":t.context.team_id(),"homeVisit":t.surface.visit,"homeRevision":t.surface.revision,"inputRevision":t.input_revision,"widgetRevision":t.widget_revision,"socket":t.owner.rt,"reply":proof(f.reply),"held":f.hold}));
     if f.hold {
+        f.pending_owner = None;
         f.pending = Some(tx)
     } else {
         let _ = tx.send(response(f.reply));
     }
     Some(rx)
+}
+fn pending_open(s: &ShellState) -> bool {
+    s.app_home
+        .channels
+        .fixture
+        .as_ref()
+        .and_then(|f| f.pending.as_ref())
+        .is_some_and(|sender| !sender.is_closed())
 }
 pub(crate) fn configure(s: &mut ShellState, reply: Reply, hold: bool) {
     let f = s.app_home.channels.fixture.as_mut().unwrap();

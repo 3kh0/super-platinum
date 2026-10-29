@@ -7,6 +7,7 @@ pub(super) fn wire_type(kind: &InputKind) -> &str {
         InputKind::Text { .. } => "plain_text_input",
         InputKind::Number { .. } => "number_input",
         InputKind::Email => "email_text_input",
+        InputKind::Url => "url_text_input",
         InputKind::ExternalSelect { .. } => "external_select",
         InputKind::MultiExternalSelect { .. } => "multi_external_select",
         InputKind::StaticSelect {
@@ -38,6 +39,7 @@ pub(super) fn matches(kind: &InputKind, value: &InputValue) -> bool {
             | (InputKind::Text { .. }, InputValue::Text(_))
             | (InputKind::Number { .. }, InputValue::Number(_))
             | (InputKind::Email, InputValue::Email(_))
+            | (InputKind::Url, InputValue::Url(_))
             | (
                 InputKind::StaticSelect { .. }
                     | InputKind::Checkboxes { .. }
@@ -70,12 +72,29 @@ fn choices(kind: &InputKind) -> Option<(&[OptionSpec], bool, Option<usize>)> {
         _ => None,
     }
 }
+pub(super) fn error_in(field: &FormField, inputs: ScalarInputs) -> Option<String> {
+    if inputs.signed_integer && matches!(field.kind, InputKind::Number { .. }) {
+        modal_number::error_signed(field)
+    } else {
+        error(field)
+    }
+}
+
 pub(super) fn error(field: &FormField) -> Option<String> {
     if matches!(field.kind, InputKind::Unsupported { .. }) {
         return Some("This control is not supported yet.".into());
     }
     if !matches(&field.kind, &field.value) {
         return Some("This value no longer matches the field.".into());
+    }
+    if matches!(field.kind, InputKind::Email) {
+        return home::email_error(field);
+    }
+    if matches!(field.kind, InputKind::Url) {
+        return modal_url::error(field);
+    }
+    if matches!(field.kind, InputKind::Number { .. }) {
+        return modal_number::error(field);
     }
     // HvtU clears to null. An empty string is an invalid identity, including
     // for optional inputs; it must not bypass identity checks as an empty field.
@@ -95,6 +114,7 @@ pub(super) fn error(field: &FormField) -> Option<String> {
         | InputValue::Channels(values)
         | InputValue::Conversations(values) => values.is_empty(),
         InputValue::Email(value)
+        | InputValue::Url(value)
         | InputValue::Number(value)
         | InputValue::Conversation(value)
         | InputValue::Channel(value)
@@ -216,7 +236,7 @@ pub(super) fn error(field: &FormField) -> Option<String> {
 pub(super) fn wire(field: &FormField) -> Value {
     let mut value = json!({"type":wire_type(&field.kind)});
     match &field.value {
-        InputValue::Email(email) => {
+        InputValue::Email(email) | InputValue::Url(email) => {
             if let Some(email) = email {
                 value["value"] = json!(email);
             }
@@ -323,6 +343,10 @@ pub(super) fn from_wire(kind: &InputKind, value: &Value) -> Result<InputValue, F
         InputKind::Text { .. } => InputValue::Text(string("value")?.unwrap_or_default()),
         InputKind::Number { .. } => InputValue::Number(string("value")?),
         InputKind::Email => InputValue::Email(match value.get("value") {
+            None => None,
+            Some(v) => Some(v.as_str().ok_or_else(invalid)?.to_owned()),
+        }),
+        InputKind::Url => InputValue::Url(match value.get("value") {
             None => None,
             Some(v) => Some(v.as_str().ok_or_else(invalid)?.to_owned()),
         }),

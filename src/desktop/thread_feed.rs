@@ -1,7 +1,6 @@
 //! Native loading for the workspace Threads feed; no read marks are sent here.
 use crate::state::ShellState;
-use dioxus::prelude::*;
-use super_platinum_core::{domain::ThreadsState, slack::api};
+use super_platinum_core::domain::ThreadsState;
 
 pub fn visible_state(shell: &ShellState) -> Option<&ThreadsState> {
     shell
@@ -11,116 +10,9 @@ pub fn visible_state(shell: &ShellState) -> Option<&ThreadsState> {
         .then_some(&shell.core.threads_view)
 }
 
-pub async fn load(mut state: Signal<ShellState>, append: bool) {
-    if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
-        return;
-    }
-    let Some((transport, client, sessions)) = crate::bootstrap::credentials(&state) else {
-        return;
-    };
-    let Some(team) = state.peek().core.active_team.clone() else {
-        return;
-    };
-    let Some(session) = sessions.into_iter().find(|s| s.team_id == team) else {
-        return;
-    };
-    let (epoch, request, cursors, counts_revision) = {
-        let mut shell = state.write();
-        let epoch = shell.core.account_epoch;
-        shell.core.threads_view.ensure_scope(epoch, &team);
-        let Some(request) = shell.core.threads_view.begin(append) else {
-            return;
-        };
-        let cursors = shell
-            .core
-            .threads
-            .iter()
-            .filter(|(key, _)| key.0 == team)
-            .map(|(key, bag)| (key.clone(), bag.read_revision))
-            .collect();
-        let counts_revision = shell.core.workspaces[&team].thread_counts.revision();
-        (epoch, request, cursors, counts_revision)
-    };
-    let cursor_owner = crate::realtime::activity_counts::CursorOwner::capture(
-        &state.peek().core,
-        &transport,
-        &session,
-    );
-    let result = api::fetch_threads_view(
-        &transport,
-        &client,
-        &session,
-        30,
-        request.cursor.clone(),
-        false,
-    )
-    .await;
-    let applied = {
-        let mut shell = state.write();
-        if shell.core.account_epoch != epoch
-            || shell.core.active_team.as_ref() != Some(&team)
-            || !shell
-                .core
-                .transport
-                .as_ref()
-                .is_some_and(|active| std::sync::Arc::ptr_eq(active, &transport))
-            || !shell.core.threads_view.matches_scope(epoch, &team)
-            || shell.core.threads_view.load_seq != request.sequence
-        {
-            return;
-        }
-        if !cursor_owner
-            .as_ref()
-            .is_some_and(|owner| owner.current(&shell.core))
-        {
-            shell.core.threads_view.fail(&request);
-            return;
-        }
-        match result {
-            Ok(mut page) => {
-                let counts = page.threads_state.take();
-                let keys: Vec<_> = page
-                    .threads
-                    .iter()
-                    .filter_map(|item| {
-                        Some((
-                            team.clone(),
-                            item.channel()?.clone(),
-                            item.root_ts()?.clone(),
-                        ))
-                    })
-                    .collect();
-                let applied = shell
-                    .core
-                    .apply_thread_feed_page(&team, &request, page, &cursors);
-                if applied {
-                    reconcile_cursors(&mut shell.core, &keys);
-                }
-                if applied && let Some(counts) = counts {
-                    shell
-                        .core
-                        .workspaces
-                        .get_mut(&team)
-                        .unwrap()
-                        .thread_counts
-                        .apply_snapshot(counts, counts_revision);
-                }
-                applied
-            }
-            Err(error) => {
-                shell.core.threads_view.fail(&request);
-                shell.report_failure(&error, "Threads need a connection", || {
-                    "Could not load threads. Please try again.".into()
-                });
-                false
-            }
-        }
-    };
-    if applied {
-        crate::bootstrap::persist_workspace(&state, &team);
-        crate::bootstrap::hydrate_current_surface(state).await;
-    }
-}
+mod read;
+pub use read::load;
+pub(crate) use read::{Mode, Reads, Source, load_reconnect};
 
 // Use the cursor retained by the revision-aware merge, never the stale page's
 // last_read when a socket mark arrived while it was in flight.
@@ -152,6 +44,21 @@ pub(crate) fn fixture(shell: &mut ShellState, name: &str) {
     feed.has_more = true;
     feed.next_cursor = Some("1719800403.000000".into());
     match name {
+        "thread-feed-refresh-retry"
+        | "thread-feed-refresh-retry-narrow"
+        | "thread-feed-older-retry"
+        | "thread-feed-older-retry-narrow"
+        | "thread-feed-initial-retry"
+        | "thread-feed-initial-retry-narrow" => {
+            if name.contains("initial") {
+                feed.items.clear();
+                feed.loaded = false;
+                feed.has_more = false;
+                feed.next_cursor = None;
+            }
+            let request = feed.begin(name.contains("older")).unwrap();
+            feed.fail(&request);
+        }
         "thread-feed-empty" => {
             feed.items.clear();
             feed.has_more = false;

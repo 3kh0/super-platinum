@@ -7,7 +7,7 @@ use super::xparams::{Identity, XParams};
 
 mod avatar;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SlackClientConfig {
     pub identity: Identity,
     pub xparams: XParams,
@@ -27,7 +27,17 @@ pub struct SlackClient {
     config: SlackClientConfig,
 }
 
+mod file_pages;
+mod file_sort_preference;
+mod people_pages;
+mod people_sort_preference;
+
 impl SlackClient {
+    /// Compare stable configuration, not generated per-request trace UUIDs.
+    pub fn same_configuration(&self, other: &Self) -> bool {
+        self.config == other.config
+    }
+
     pub fn new(config: SlackClientConfig) -> Self {
         Self { config }
     }

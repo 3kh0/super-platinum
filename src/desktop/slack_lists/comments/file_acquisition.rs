@@ -168,10 +168,12 @@ pub(super) fn transcript_accepted(shell: &mut ShellState, owner: &Owner) {
             .comments
             .file_acquisition
             .transcript_socket = shell
-            .core
-            .workspaces
-            .get(&owner.scope.team)
-            .map(|w| (owner.serial, w.rt_generation));
+            .slack_lists
+            .comments
+            .entry
+            .as_ref()
+            .and_then(|e| e.read_socket)
+            .map(|socket| (owner.serial, socket));
     }
 }
 pub(super) fn retire(shell: &mut ShellState) {

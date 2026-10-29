@@ -29,7 +29,9 @@ fn started_current(
 ) -> bool {
     shell.thread_scope() == scope
         && shell.reconnect_generation == request
-        && reconnect.is_none_or(|visit| visit.current(shell))
+        // A workflow can hide the pane without changing its thread scope.
+        // Reconnect reads must remain visible through every existing fence.
+        && reconnect.is_none_or(|visit| visit.current(shell) && shell.thread_visible())
 }
 
 #[cfg(test)]
@@ -89,21 +91,52 @@ pub(crate) async fn load_started_thread(
 }
 
 pub(super) async fn load_started_thread_owned(
-    mut state: Signal<ShellState>,
+    state: Signal<ShellState>,
     channel: String,
     root: String,
     target: Option<String>,
     scope: String,
     reconnect: Option<super::reconnect::Visit>,
 ) {
+    load_started_thread_with(
+        state,
+        channel,
+        root,
+        target,
+        scope,
+        reconnect,
+        |transport, client, session, args| async move {
+            api::fetch_replies(&transport, &client, &session, args).await
+        },
+    )
+    .await;
+}
+
+// Only the request factory varies; admission, merge and settlement stay shared.
+async fn load_started_thread_with<F, Fut>(
+    mut state: Signal<ShellState>,
+    channel: String,
+    root: String,
+    target: Option<String>,
+    scope: String,
+    reconnect: Option<super::reconnect::Visit>,
+    fetch: F,
+) where
+    F: FnOnce(
+        Arc<Transport>,
+        super_platinum_core::slack::SlackClient,
+        super_platinum_core::config::WorkspaceSession,
+        api::RepliesArgs,
+    ) -> Fut,
+    Fut: std::future::Future<
+            Output = Result<
+                super_platinum_core::slack::models::HistoryPage,
+                super_platinum_core::slack::Error,
+            >,
+        >,
+{
     let request = state.peek().reconnect_generation;
-    if reconnect
-        .as_ref()
-        .is_some_and(|visit| !visit.current(&state.peek()))
-    {
-        return;
-    }
-    if state.peek().thread_scope() != scope {
+    if !started_current(&state.peek(), &scope, request, reconnect.as_ref()) {
         return;
     }
     if super::reconnect::fixture::enabled(&state.peek()) {
@@ -150,10 +183,10 @@ pub(super) async fn load_started_thread_owned(
         &session,
     );
     let file_read = state.write().core.begin_file_display_read(&team);
-    let result = api::fetch_replies(
-        &visit.transport,
-        &client,
-        &session,
+    let result = fetch(
+        visit.transport.clone(),
+        client,
+        session,
         range.request(channel.clone(), root.clone()),
     )
     .await;
@@ -214,12 +247,7 @@ pub(super) async fn load_started_thread_owned(
                     );
                 }
                 crate::thread_unread::remember_anchor(&mut shell);
-                shell.thread_loading = false;
-                if !found {
-                    shell.thread_error =
-                        Some("This reply is unavailable. It may have been deleted.".into());
-                    shell.show_toast("This reply is unavailable. It may have been deleted.");
-                }
+                finish_read_status(&mut shell, found);
                 crate::messaging::upload_recovery::reconcile(
                     &mut shell,
                     &team,
@@ -249,6 +277,16 @@ pub(super) async fn load_started_thread_owned(
                 "Could not load replies.".into()
             });
         }
+    }
+}
+
+// Called only inside the accepted, current replies-success commit above.
+fn finish_read_status(shell: &mut ShellState, found: bool) {
+    shell.thread_loading = false;
+    shell.thread_error = None;
+    if !found {
+        shell.thread_error = Some("This reply is unavailable. It may have been deleted.".into());
+        shell.show_toast("This reply is unavailable. It may have been deleted.");
     }
 }
 
@@ -411,6 +449,153 @@ mod tests {
         shell.core.transport = Some(current.transport.clone());
         shell.core.account_epoch += 1;
         assert!(!current.current(&shell));
+    }
+
+    #[test]
+    fn accepted_reply_status_clears_retained_failure_without_changing_read_or_draft_state() {
+        let mut shell = ShellState::fixture(crate::media::MediaRegistry::default());
+        let root = "1750000900.000001".to_owned();
+        shell.begin_thread(root.clone(), None);
+        let key = (
+            shell.core.active_team.clone().unwrap(),
+            shell.core.active_channel.clone().unwrap(),
+            root.clone(),
+        );
+        let bag = shell.core.threads.entry(key.clone()).or_default();
+        bag.upsert(
+            serde_json::from_value(
+                serde_json::json!({"ts":root,"thread_ts":root,"text":"Retained replies"}),
+            )
+            .unwrap(),
+        );
+        bag.last_read = Some(root);
+        bag.read_revision = 17;
+        crate::thread_unread::remember_anchor(&mut shell);
+        shell.core.composer.text = "Keep conversation draft".into();
+        shell.core.thread_composer.text = "Keep thread draft".into();
+        let before = (
+            format!("{:?}", shell.core.threads.get(&key)),
+            shell.core.composer.text.clone(),
+            shell.core.thread_composer.text.clone(),
+            crate::thread_unread::shortcut_initial_cursor(&shell).map(str::to_owned),
+        );
+        shell.thread_error = Some("Replies could not load. Please try again.".into());
+        shell.thread_loading = true;
+        shell.show_toast("Existing unrelated toast");
+        finish_read_status(&mut shell, true);
+        assert!(!shell.thread_loading);
+        assert!(shell.thread_error.is_none());
+        assert_eq!(
+            shell.toast.as_ref().map(|t| t.text.as_str()),
+            Some("Existing unrelated toast")
+        );
+        let after = (
+            format!("{:?}", shell.core.threads.get(&key)),
+            shell.core.composer.text.clone(),
+            shell.core.thread_composer.text.clone(),
+            crate::thread_unread::shortcut_initial_cursor(&shell).map(str::to_owned),
+        );
+        assert_eq!(after, before);
+        shell.thread_loading = true;
+        finish_read_status(&mut shell, false);
+        assert!(!shell.thread_loading);
+        assert_eq!(
+            shell.thread_error.as_deref(),
+            Some("This reply is unavailable. It may have been deleted.")
+        );
+        assert_eq!(
+            shell.toast.as_ref().map(|t| t.text.as_str()),
+            Some("This reply is unavailable. It may have been deleted.")
+        );
+        assert_eq!(shell.core.thread_read_revision(&key), 17);
+        assert_eq!(shell.core.thread_cursor(&key), Some(key.2.as_str()));
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn accepted_reply_driver_clears_retained_failure_after_decoded_success() {
+        use crate::bootstrap::test_support::harness;
+        use std::{cell::Cell, rc::Rc};
+        let mut h = harness();
+        let mut state = h.state;
+        let root = "1750000900.000001".to_owned();
+        let reply = "1750000900.000002".to_owned();
+        let (channel, scope, reconnect) = {
+            let mut s = state.write();
+            assert!(s.core.cache.is_none());
+            assert!(std::env::var_os("SUPER_PLATINUM_FIXTURE").is_none());
+            s.overlay = None;
+            s.main_view = crate::state::MainView::Home;
+            s.channel_tab = crate::state::ChannelTab::Files;
+            s.begin_thread(root.clone(), Some(reply.clone()));
+            s.thread_error = Some("Replies could not load. Please try again.".into());
+            s.core.composer.text = "Retained channel draft".into();
+            s.core.thread_composer.text = "Retained reply draft".into();
+            let reconnect = super::super::reconnect::resource_test_visit(&mut s);
+            (
+                s.core.active_channel.clone().unwrap(),
+                s.thread_scope(),
+                reconnect,
+            )
+        };
+        let done = Rc::new(Cell::new(false));
+        let finished = done.clone();
+        let expected_channel = channel.clone();
+        let expected_root = root.clone();
+        let expected_reply = reply.clone();
+        let work = load_started_thread_with(
+            state,
+            channel.clone(),
+            root.clone(),
+            Some(reply.clone()),
+            scope.clone(),
+            Some(reconnect),
+            move |transport, client, session, args| async move {
+                assert_eq!(transport.d_cookie(), "synthetic");
+                assert_eq!(args.channel, expected_channel);
+                assert_eq!(args.ts, expected_root);
+                assert_eq!(args.oldest.as_deref(), Some(expected_reply.as_str()));
+                assert!(args.inclusive);
+                api::fetch_replies_with(&client,&session,args,move |request| async move {
+                    assert!(request.url.contains("conversations.replies"));
+                    Ok(serde_json::json!({"ok":true,"messages":[
+                        {"ts":expected_root,"thread_ts":expected_root,"text":"Retained root"},
+                        {"ts":expected_reply,"thread_ts":expected_root,"text":"Accepted recovered reply"}
+                    ],"has_more":false}))
+                }).await
+            },
+        );
+        h._dom.in_runtime(|| {
+            h._dom.in_scope(dioxus::core::ScopeId::ROOT, || {
+                spawn(async move {
+                    work.await;
+                    finished.set(true);
+                })
+            })
+        });
+        tokio::time::timeout(std::time::Duration::from_secs(3), async {
+            while !done.get() {
+                h._dom.render_immediate_to_vec();
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .expect("actual replies success continuation must settle");
+        let s = state.peek();
+        assert!(!s.thread_loading);
+        assert!(s.thread_error.is_none());
+        assert_eq!(s.thread_scope(), scope);
+        assert_eq!(s.thread_target.as_deref(), Some(reply.as_str()));
+        assert_eq!(s.core.composer.text, "Retained channel draft");
+        assert_eq!(s.core.thread_composer.text, "Retained reply draft");
+        let key = ("T1".into(), channel, root);
+        assert!(
+            s.core.threads[&key]
+                .messages
+                .iter()
+                .any(|m| m.ts.as_deref() == Some(reply.as_str())
+                    && m.text.as_deref() == Some("Accepted recovered reply"))
+        );
+        assert!(s.core.threads[&key].loaded);
     }
 
     #[test]

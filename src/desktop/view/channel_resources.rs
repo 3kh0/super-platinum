@@ -39,6 +39,26 @@ pub fn tabs(state: Signal<ShellState>, selected: ChannelTab) -> Element {
 #[component]
 pub fn ChannelResources(state: Signal<ShellState>, channel: String) -> Element {
     let selected = state.read().channel_tab;
+    let (file_source, link_source, loading) = {
+        let shell = state.read();
+        (
+            if selected == ChannelTab::Files {
+                crate::files::Source::capture(&shell, Some(&channel))
+            } else {
+                None
+            },
+            if selected == ChannelTab::Links {
+                crate::channel_resources::LinksSource::capture(&shell, &channel)
+            } else {
+                None
+            },
+            if selected == ChannelTab::Files {
+                crate::files::visible_for(&shell, Some(&channel)).is_some_and(|f| f.loading)
+            } else {
+                crate::channel_resources::visible_links(&shell, &channel).is_some_and(|l| l.loading)
+            },
+        )
+    };
     rsx! {
         section {class:"channel-resources","aria-label":"Channel files and links",
             nav {class:"resource-tabs","aria-label":"Resource type",
@@ -47,7 +67,10 @@ pub fn ChannelResources(state: Signal<ShellState>, channel: String) -> Element {
                 button {class:if selected==ChannelTab::Links {"active"} else {""},"aria-pressed":selected==ChannelTab::Links,
                     onclick:move |_|crate::channel_resources::select(state,ChannelTab::Links),"Links"}
                 span {class:"spacer"}
-                button {onclick:move |_|{dioxus::core::spawn_forever(crate::channel_resources::refresh(state));},"Refresh"}
+                button {id:"channel-resources-refresh",disabled:loading,onclick:move |_|{
+                    if let Some(source)=file_source.clone(){source.refresh(state);}
+                    else if let Some(source)=link_source.clone(){source.refresh(state);}
+                },"Refresh"}
             }
             if selected == ChannelTab::Files {
                 super::files::FilesPanel {key:"files-{channel}",state,channel:Some(channel.clone())}
@@ -70,21 +93,22 @@ fn LinksPanel(mut state: Signal<ShellState>, channel: String) -> Element {
     let links = crate::channel_resources::visible_links(&snapshot, &scope.read());
     let loading = links.is_some_and(|l| l.loading);
     let query = links.map(|l| l.query.clone()).unwrap_or_default();
-    let retry = query.clone();
-    let previous = query.clone();
-    let next = query.clone();
+    let source = crate::channel_resources::LinksSource::capture(&snapshot, &scope.read());
     let page = links.map(|l| l.page).unwrap_or(1).max(1);
     let pages = links.map(|l| l.page_count).unwrap_or(1).max(1);
     rsx! {
         section {class:"files-panel","aria-label":"Shared links",
-            form {class:"files-search",onsubmit:move |event|{event.prevent_default();dioxus::core::spawn_forever(crate::channel_resources::load_links(state,scope(),text(),1));},
+            form {class:"files-search",onsubmit:{let source=source.clone();move |event|{
+                event.prevent_default();let Some(source)=source.clone() else{return;};if !source.is_current(state){return;}
+                let Ok(value)=text.try_peek().map(|value|(*value).clone()) else{return;};source.submit(state,value);
+            }},
                 {icon(Icon::Search,"icon")}
                 input {type:"search","aria-label":"Search links",placeholder:"Search links in this conversation",value:"{text}",oninput:move |event|text.set(event.value())}
-                button {type:"submit","Search"}
+                button {id:"links-search-submit",type:"submit","Search"}
             }
             div {class:"files-results","aria-busy":loading,
                 if let Some(error)=links.and_then(|l|l.error.as_ref()) {
-                    div {class:"later-error",role:"alert",p {"{error}"}button {onclick:move |_|{dioxus::core::spawn_forever(crate::channel_resources::load_links(state,scope(),retry.clone(),page));},"Retry"}}
+                    div {class:"later-error",role:"alert",p {"{error}"}if links.is_some_and(|links|links.loaded){p {"Showing the last loaded results."}}button {id:"links-retry",disabled:loading,onclick:{let source=source.clone();move |_|{if let Some(source)=source.clone(){source.retry(state);}}},"Retry"}}
                 }
                 if loading {p {class:"files-status",role:"status","Loading links…"}}
                 if let Some(links)=links {
@@ -121,9 +145,12 @@ fn LinksPanel(mut state: Signal<ShellState>, channel: String) -> Element {
             footer {class:"files-pagination",
                 span {role:"status",if let Some(links)=links {if links.loaded {"{links.total} " if links.total==1 {"link"} else {"links"} " · Page {page} of {pages}"}}}
                 span {class:"spacer"}
-                button {disabled:loading||page<=1,onclick:move |_|{dioxus::core::spawn_forever(crate::channel_resources::load_links(state,scope(),previous.clone(),page.saturating_sub(1)));},"Previous"}
-                button {disabled:loading||page>=pages,onclick:move |_|{dioxus::core::spawn_forever(crate::channel_resources::load_links(state,scope(),next.clone(),page+1));},"Next"}
+                button {id:"links-previous",disabled:loading||!links.is_some_and(|links|links.loaded)||page<=1,onclick:{let source=source.clone();move |_|{if let Some(source)=source.clone(){source.page(state,page.saturating_sub(1));}}},"Previous"}
+                button {id:"links-next",disabled:loading||!links.is_some_and(|links|links.loaded)||page>=pages,onclick:{let source=source.clone();move |_|{if let Some(source)=source.clone(){source.page(state,page+1);}}},"Next"}
             }
         }
     }
 }
+
+#[cfg(test)]
+mod resource_page_recovery;

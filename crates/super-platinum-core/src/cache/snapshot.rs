@@ -43,6 +43,7 @@ impl WorkspaceSnapshot {
         workspace.starred_order = source.starred_order.clone();
         workspace.last_active_channel = source.last_active_channel.clone();
         workspace.recent_channels = source.recent_channels.clone();
+        workspace.recent_searches = source.recent_searches.clone();
         workspace.frecency = source.frecency.clone();
         workspace.channels = source.channels.clone();
         workspace.users = source.users.clone();

@@ -71,7 +71,7 @@ FIXTURES=(
   threads-keyboard-narrow
   threads-file-paste threads-file-paste-narrow
   rail-account-snoozed
-  animated-reaction reaction-picker later later-files later-files-narrow later-cold-message-navigation later-cold-message-navigation-narrow reconnect-thread-continuation reconnect-thread-continuation-narrow reconnect-unread-opening reconnect-unread-opening-narrow ordinary-history-cursor ordinary-history-cursor-narrow later-empty later-error later-reminder later-new-reminder
+  animated-reaction reaction-picker later later-files later-files-narrow later-cold-message-navigation later-cold-message-navigation-narrow reconnect-thread-continuation reconnect-thread-continuation-narrow reconnect-unread-opening reconnect-unread-opening-narrow ordinary-history-cursor ordinary-history-cursor-narrow later-empty later-error later-reminder later-new-reminder later-read-recovery later-read-recovery-narrow
   bookmarks bookmarks-narrow bookmarks-edit bookmarks-remove bookmarks-error bookmarks-folder bookmarks-folder-remove bookmarks-move
   channel-canvas-surface channel-canvas-surface-narrow
   channel-tabs-canvas channel-tabs-canvas-narrow
@@ -112,6 +112,7 @@ FIXTURES=(
   canvas-structure-text canvas-structure-text-narrow
   canvas-local-review canvas-local-review-narrow
   files files-narrow files-empty files-error files-density files-density-narrow
+  resource-files-recovery resource-files-recovery-narrow resource-links-recovery resource-links-recovery-narrow
   channel-files channel-files-narrow channel-links channel-links-narrow channel-links-empty channel-links-error
   pins pins-narrow pins-empty pins-error channel-pinned-message
   pins-files pins-files-narrow
@@ -133,7 +134,7 @@ FIXTURES=(
   huddle-video huddle-video-expanded huddle-settings huddle-people huddle-captions
   chat-paused-pill
   thread-follow-on thread-follow-off thread-follow-pending thread-follow-narrow
-  thread-feed thread-feed-empty thread-feed-error thread-feed-loading thread-feed-updated thread-feed-narrow
+  thread-feed thread-feed-empty thread-feed-error thread-feed-loading thread-feed-updated thread-feed-narrow thread-feed-refresh-retry thread-feed-refresh-retry-narrow thread-feed-older-retry thread-feed-older-retry-narrow thread-feed-initial-retry thread-feed-initial-retry-narrow
   thread-counts-mentions thread-counts-unread thread-counts-clear thread-counts-narrow
   thread-unread-divider thread-list-unread thread-marked-unread thread-marked-unread-narrow thread-target thread-error thread-paging thread-paging-error thread-grouped thread-grouped-pending thread-window-200 thread-window-2000 thread-window-10000 thread-window-target thread-window-gap main-dev settings settings-storage appearance-countertop
   appearance-blue-steel appearance-paper-bag appearance-custom-background
@@ -147,8 +148,17 @@ FIXTURES=(
   file-preview-refresh-check file-preview-refresh-check-narrow cached-viewer-save-check
   file-preview-refresh file-preview-refresh-narrow file-preview-refresh-error file-preview-refresh-error-narrow
   file-preview-text file-preview-narrow file-preview-large file-preview-utf16 file-preview-empty file-preview-binary file-preview-audio
-  video-viewer search search-opening search-loading search-empty search-error search-more-error search-narrow search-filters search-filters-narrow search-has-filters search-has-filters-narrow palette palette-people activity-unread activity-channel-post
-  activity-thread-tools activity-paging activity-loading activity-error activity-more-error activity-empty activity-narrow activity-navigation activity-navigation-narrow dms
+  video-viewer search search-opening search-loading search-empty search-error search-more-error search-narrow search-filters search-filters-narrow search-has-filters search-has-filters-narrow search-files search-files-narrow search-files-types search-files-types-narrow search-files-types-clear search-files-types-clear-narrow search-message-scopes search-message-scopes-narrow search-message-scopes-clear search-message-scopes-clear-narrow search-saved-pinned search-saved-pinned-narrow search-context-filters search-context-filters-narrow search-date search-date-narrow search-history search-history-narrow search-attachments search-attachments-narrow search-conversations search-conversations-narrow palette palette-people activity-unread activity-channel-post
+  search-people-paging search-people-paging-narrow
+  search-files-pages search-files-pages-narrow search-files-page-failed search-files-page-failed-narrow
+  search-files-saving search-files-saving-narrow search-files-save-unconfirmed search-files-save-unconfirmed-narrow
+  search-messages-pages search-messages-pages-narrow search-messages-page2 search-messages-page2-narrow
+  search-messages-page-failed search-messages-page-failed-narrow
+  search-people-account-type search-people-account-type-narrow search-people-account-type-deactivated search-people-account-type-deactivated-narrow
+  search-people-saving search-people-saving-narrow search-people-save-unconfirmed search-people-save-unconfirmed-narrow
+  search-people search-people-narrow search-people-loading search-people-loading-narrow search-people-empty search-people-empty-narrow search-people-error search-people-error-narrow
+  profile-people-read-only profile-people-read-only-narrow profile-people-read-only-error profile-people-read-only-error-narrow
+  activity-thread-tools activity-paging activity-loading activity-error activity-more-error activity-empty activity-narrow activity-navigation activity-navigation-narrow activity-refresh-retry activity-refresh-retry-narrow activity-older-retry activity-older-retry-narrow dms dms-cold-rows dms-cold-rows-narrow dms-paging-filtered dms-paging-filtered-narrow dms-paging-loading dms-paging-loading-narrow dms-paging-empty dms-paging-empty-narrow dms-initial-unloaded dms-initial-unloaded-narrow dms-initial-loading dms-initial-loading-narrow dms-current-facts dms-current-facts-narrow
   dm-history-failed dm-cached-refresh-failed toast-long-error
   connection-connecting connection-no-network composer-multiline
   composer-upload-progress
@@ -221,6 +231,11 @@ FIXTURES=(
   # Stateful coverage uses check-app-home-external-select-native.py with exact closed flags.
   app-home-calendar app-home-calendar-narrow
   app-modal-form app-modal-form-narrow app-modal-lifecycle app-modal-lifecycle-narrow
+  app-modal-email app-modal-email-narrow app-modal-email-error app-modal-email-error-narrow
+  app-modal-url app-modal-url-narrow app-modal-url-error app-modal-url-error-narrow
+  app-modal-url-prefill app-modal-url-prefill-narrow
+  app-modal-required-integer app-modal-required-integer-narrow
+  app-modal-signed-integer app-modal-signed-integer-narrow
   app-modal-users app-modal-users-narrow
   app-modal-user app-modal-user-narrow
   app-modal-conversation app-modal-conversation-narrow

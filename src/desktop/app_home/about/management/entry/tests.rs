@@ -359,3 +359,232 @@ fn thread_and_pin_retirement_prevents_direct_owner_and_late_load_admission() {
         );
     }
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn resource_reconnect_keeps_workflow_hidden_thread_inert() {
+    use dioxus::prelude::*;
+    use std::{
+        cell::{Cell, RefCell},
+        rc::Rc,
+    };
+    let (mut s, _) = source_surface(0);
+    s.core.transport = Some(crate::bootstrap::test_support::transport("synthetic"));
+    s.channel_tab = crate::state::ChannelTab::Files;
+    let root = s.thread_root.clone().unwrap();
+    let key = ("TWORKFLOW".into(), "C2".into(), root.clone());
+    let raw = s.core.threads[&key].messages[0].clone();
+    let row = crate::message_vm::message_vm(&s.core.workspaces["TWORKFLOW"], &raw, &s.media);
+    let source = Source::capture(&s, &row, "C2", Bag::Thread { root: root.clone() }).unwrap();
+    let owner = super::Owner::message(&s, source).unwrap();
+    s.app_home.about.management.surface.as_mut().unwrap().owner = owner;
+    assert!(showing(&s), "real workflow must hide the retained thread");
+    assert!(!s.thread_visible());
+    assert!(std::env::var_os("SUPER_PLATINUM_FIXTURE").is_none());
+    assert!(!crate::read_shortcuts::bulk::blocks_reads(&s));
+    s.thread_at_bottom = true;
+    s.thread_target = None;
+    s.thread_loading = false;
+    s.thread_history.newer = None;
+    s.core.threads.get_mut(&key).unwrap().last_read = Some(root.clone());
+    s.core.threads.get_mut(&key).unwrap().read_revision = 17;
+    crate::thread_unread::remember_anchor(&mut s);
+    let cursor = s.core.thread_cursor(&key).map(str::to_owned);
+    let anchor = crate::thread_unread::shortcut_initial_cursor(&s).map(str::to_owned);
+    assert!(cursor.is_some() && anchor.is_some());
+    let workflow = s.app_home.about.management.surface.take();
+    assert!(s.thread_visible());
+    assert!(
+        s.reading_thread(true, "C2", &root),
+        "all ordinary read guards admit a visible pane"
+    );
+    s.app_home.about.management.surface = workflow;
+    assert!(showing(&s));
+    assert!(
+        !s.reading_thread(true, "C2", &root),
+        "workflow-hidden pane is ineligible"
+    );
+    s.thread_error = Some("hidden workflow replies sentinel".into());
+    let before = (
+        s.thread_scope(),
+        s.thread_target.clone(),
+        s.core.composer.text.clone(),
+        s.core.thread_composer.text.clone(),
+        format!("{:?}", &s.core.threads[&key]),
+        s.core.thread_read_revision(&key),
+    );
+    type Props = (
+        Rc<RefCell<Option<ShellState>>>,
+        Rc<Cell<Option<Signal<ShellState>>>>,
+    );
+    let slot = Rc::new(Cell::new(None));
+    let mut dom = VirtualDom::new_with_props(
+        |(input, slot): Props| {
+            let state = use_signal(|| input.borrow_mut().take().unwrap());
+            slot.set(Some(state));
+            VNode::empty()
+        },
+        (Rc::new(RefCell::new(Some(s))), slot.clone()),
+    );
+    dom.rebuild_to_vec();
+    let state = slot.get().unwrap();
+    let finished = Rc::new(Cell::new(false));
+    let done = finished.clone();
+    let hidden_root = root.clone();
+    dom.in_runtime(|| {
+        dom.in_scope(dioxus::core::ScopeId::ROOT, || {
+            spawn(async move {
+                crate::bootstrap::mark_thread_read(state, "C2".into(), hidden_root).await;
+                crate::bootstrap::reload_after_outage(state).await;
+                done.set(true);
+            })
+        })
+    });
+    tokio::time::timeout(std::time::Duration::from_secs(3), async {
+        while !finished.get() {
+            dom.render_immediate_to_vec();
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .expect("workflow-hidden resource reconnect must finish");
+    let s = state.peek();
+    assert!(showing(&s));
+    assert!(!s.thread_visible());
+    assert_eq!(
+        s.thread_error.as_deref(),
+        Some("hidden workflow replies sentinel")
+    );
+    assert!(!s.thread_loading);
+    let after = (
+        s.thread_scope(),
+        s.thread_target.clone(),
+        s.core.composer.text.clone(),
+        s.core.thread_composer.text.clone(),
+        format!("{:?}", &s.core.threads[&key]),
+        s.core.thread_read_revision(&key),
+    );
+    assert_eq!(after, before);
+    assert_eq!(s.core.thread_cursor(&key), cursor.as_deref());
+    assert_eq!(
+        crate::thread_unread::shortcut_initial_cursor(&s),
+        anchor.as_deref()
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn workflow_entry_hides_timeline_origin_channel_from_automatic_read_marks() {
+    use dioxus::prelude::*;
+    use std::{
+        cell::{Cell, RefCell},
+        rc::Rc,
+    };
+    let (mut s, _) = setup();
+    assert!(std::env::var_os("SUPER_PLATINUM_FIXTURE").is_none());
+    assert!(s.core.cache.is_none());
+    assert_eq!(s.main_view, crate::state::MainView::Home);
+    assert_eq!(s.channel_tab, crate::state::ChannelTab::Messages);
+    s.core.transport = Some(crate::bootstrap::test_support::transport("synthetic"));
+    s.overlay = None;
+    s.core.pending_scroll_to = None;
+    s.loading = false;
+    {
+        let w = s.core.workspaces.get_mut("TWORKFLOW").unwrap();
+        w.channels
+            .get_mut("C2")
+            .unwrap()
+            .extra
+            .insert("is_member".into(), true.into());
+        let bag = w.messages.get_mut("C2").unwrap();
+        bag.loaded = true;
+        bag.history_refreshing = false;
+        bag.history_failed = false;
+        bag.last_read = Some("1.000000".into());
+        bag.read_revision = 17;
+        bag.unread_count = 1;
+    }
+    let raw = s.core.workspaces["TWORKFLOW"].messages["C2"]
+        .messages
+        .iter()
+        .find(|m| m.ts.as_deref() == Some(fixture::TS))
+        .unwrap();
+    let row = crate::message_vm::message_vm(&s.core.workspaces["TWORKFLOW"], raw, &s.media);
+    let source = Source::capture(&s, &row, "C2", Bag::Timeline).unwrap();
+    let owner = super::Owner::message(&s, source).unwrap();
+    s.app_home.about.management.surface.as_mut().unwrap().owner = owner;
+    let workflow = s.app_home.about.management.surface.take();
+    assert!(s.transcript_visible());
+    assert!(
+        crate::read_preferences::renderer::eligible(&s, true),
+        "all ordinary read eligibility guards admit the visible transcript"
+    );
+    s.app_home.about.management.surface = workflow;
+    assert!(
+        showing(&s),
+        "Timeline-origin owner must stay current while it hides the transcript"
+    );
+    assert!(!s.transcript_visible());
+    assert!(!crate::read_preferences::renderer::eligible(&s, true));
+    let before = (
+        format!("{:?}", s.core.workspaces["TWORKFLOW"].messages["C2"]),
+        s.core.workspaces["TWORKFLOW"]
+            .read_cursor("C2")
+            .map(str::to_owned),
+        s.core.pending_marks.clone(),
+        s.core.composer.text.clone(),
+        s.core.thread_composer.text.clone(),
+    );
+    type Props = (
+        Rc<RefCell<Option<ShellState>>>,
+        Rc<Cell<Option<Signal<ShellState>>>>,
+    );
+    let slot = Rc::new(Cell::new(None));
+    let mut dom = VirtualDom::new_with_props(
+        |(input, slot): Props| {
+            let state = use_signal(|| input.borrow_mut().take().unwrap());
+            slot.set(Some(state));
+            VNode::empty()
+        },
+        (Rc::new(RefCell::new(Some(s))), slot.clone()),
+    );
+    dom.rebuild_to_vec();
+    let state = slot.get().unwrap();
+    let finished = Rc::new(Cell::new(false));
+    let done = finished.clone();
+    dom.in_runtime(|| {
+        dom.in_scope(dioxus::core::ScopeId::ROOT, || {
+            spawn(async move {
+                crate::bootstrap::mark_visible_read(state).await;
+                done.set(true);
+            })
+        })
+    });
+    tokio::time::timeout(std::time::Duration::from_secs(3), async {
+        while !finished.get() {
+            dom.render_immediate_to_vec();
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .expect("hidden channel mark must return before native focus lookup");
+    let s = state.peek();
+    assert!(showing(&s));
+    assert!(!s.transcript_visible());
+    let after = (
+        format!("{:?}", s.core.workspaces["TWORKFLOW"].messages["C2"]),
+        s.core.workspaces["TWORKFLOW"]
+            .read_cursor("C2")
+            .map(str::to_owned),
+        s.core.pending_marks.clone(),
+        s.core.composer.text.clone(),
+        s.core.thread_composer.text.clone(),
+    );
+    assert_eq!(after, before);
+    assert_eq!(
+        s.core.workspaces["TWORKFLOW"].messages["C2"].read_revision,
+        17
+    );
+    assert_eq!(
+        s.core.workspaces["TWORKFLOW"].read_cursor("C2"),
+        Some("1.000000")
+    );
+}
