@@ -249,6 +249,13 @@ impl Read {
                 self.channel.clone(),
                 incoming.descriptor.root.clone(),
             );
+            // Current known unsubscribe/pending intent outranks an older server
+            // index row even when it predates this read's baseline capture.
+            if core.thread_subscriptions.active(self.epoch, &key) == Some(false)
+                || core.thread_subscriptions.pending(self.epoch, &key)
+            {
+                continue;
+            }
             let channel_bag = core.workspaces[&self.team].messages.get(&self.channel);
             let deleted = |ts: &str| {
                 channel_bag.is_some_and(|b| b.was_deleted(ts))

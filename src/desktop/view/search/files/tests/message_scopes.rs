@@ -289,3 +289,7 @@ async fn actual_cached_find_reaches_beyond_thirty_rows_without_read_and_deleted_
     assert!(intent::rows(&state.peek(), Scope::Authors).is_empty());
     assert_eq!(intent::count(&state.peek(), Scope::Authors), 0);
 }
+
+mod reactions;
+
+mod fallback;

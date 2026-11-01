@@ -1,4 +1,6 @@
 //! Bounded, inert text previews. Original bytes remain available for download.
+pub mod isolated_image;
+pub mod isolated_pdf;
 pub const MAX_PREVIEW_BYTES: usize = 256 * 1024;
 pub const MAX_PREVIEW_LINES: usize = 2_000;
 

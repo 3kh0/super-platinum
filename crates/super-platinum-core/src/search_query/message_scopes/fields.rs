@@ -30,6 +30,7 @@ pub(super) fn project(query: &str, lex: &lex::Lex) -> SearchFilters {
         in_thread: has(FLAGS[2]),
         saved: has(FLAGS[3]),
         pinned: has(FLAGS[4]),
+        reactions: Some(super::super::reactions::project(query, &lex.tokens)),
         ..Default::default()
     }
 }
@@ -94,5 +95,13 @@ pub(super) fn edits(
             );
         }
     }
+    let (reaction_remove, reaction_append) = super::super::reactions::edits(
+        query,
+        &lex.tokens,
+        baseline.reactions.as_ref(),
+        fields.reactions.as_ref(),
+    )?;
+    remove.extend(reaction_remove);
+    append.extend(reaction_append);
     Ok((remove, append))
 }

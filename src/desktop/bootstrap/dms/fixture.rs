@@ -86,3 +86,22 @@ pub(crate) fn install_facts(shell: &mut ShellState) {
     bag.last_read = Some("8.0".into());
     ws.channels.insert("G_NAME_FACTS".into(),serde_json::from_value(json!({"id":"G_NAME_FACTS","is_mpim":true,"is_group":true,"name":"Release Planning","unread_count":0})).unwrap());
 }
+
+/// Presentation only; no credential/transport or private row owner is minted.
+pub(crate) fn install_styled_preview(shell: &mut ShellState) {
+    shell.main_view = crate::state::MainView::Dms;
+    shell.overlay = None;
+    shell.core.active_account = None;
+    shell.core.transport = None;
+    shell.core.session = None;
+    shell.core.dms.loaded = true;
+    shell.core.dms.loading = false;
+    shell.core.dms.next_cursor = None;
+    shell.set_dm_query(String::new());
+    shell.set_dm_unread_only(false);
+    let user = shell.core.workspaces["T1"].self_user_id.clone();
+    shell.core.dms.entries = serde_json::from_value(json!([
+        {"id":"D_STYLED_SELF","latest":"1719801000.000400","channel":{"id":"D_STYLED_SELF","is_im":true,"user":"U2"},"message":{"user":user,"ts":"1719801000.000400","text":"Review the release plan\nMore context stays in the conversation.","blocks":[{"type":"rich_text","elements":[{"type":"rich_text_section","elements":[{"type":"text","text":"Review "},{"type":"text","text":"the release","style":{"bold":true}},{"type":"text","text":" plan\nMore context stays in the conversation."}]}]}]}},
+        {"id":"G_STYLED","latest":"1719800900.000300","channel":{"id":"G_STYLED","is_group":true,"is_mpim":true,"name":"Release planning"},"message":{"user":"U1","ts":"1719800900.000300","text":"Keep inline emphasis readable.","blocks":[{"type":"rich_text","elements":[{"type":"rich_text_section","elements":[{"type":"text","text":"Keep "},{"type":"text","text":"inline emphasis","style":{"italic":true}},{"type":"text","text":" readable."}]}]}]}}
+    ])).unwrap();
+}

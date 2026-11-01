@@ -7,6 +7,10 @@ use crate::state::ShellState;
 pub(crate) mod activity_counts;
 mod presence;
 mod reactions;
+mod replied;
+
+#[cfg(all(test, feature = "protected-native-fixture"))]
+mod explicit_clear;
 
 pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
     // The supervisor watches the same link verdict the shell paints on the
@@ -65,6 +69,7 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                 if !owned_socket.can_accept(&shell, &team, generation) {
                     continue;
                 }
+                crate::bootstrap::search_message_pages::profiles::connected(&mut shell, &team);
                 crate::file_share::connection(&mut shell, &team, generation);
                 if shell.core.active_team.as_ref() == Some(&team) {
                     crate::performance::record(crate::performance::StartupStage::RealtimeConnected);
@@ -353,8 +358,8 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                 let group_work =
                     crate::usergroups::prepare_event(&mut shell, &team, generation, &event);
                 let group_tracked = group_work.is_some();
-                apply_in_view_with_groups(
-                    &mut shell.core,
+                apply_in_view_with_context(
+                    &mut shell,
                     &team,
                     generation,
                     *event,
@@ -519,9 +524,37 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     dioxus::prelude::spawn(crate::huddle::finish(state, teardown));
                 }
             }
+            RtUpdate::ReadBarrier {
+                generation,
+                barrier,
+            } => {
+                // This worker has already checked its original authenticated
+                // owner/transport. The barrier follows the corresponding Core
+                // mutation and belongs to this exact original connection.
+                crate::bootstrap::search_message_pages::reaction_actions::accept_barrier(
+                    &mut shell,
+                    &team,
+                    generation,
+                    barrier.clone(),
+                );
+                crate::bootstrap::search_message_pages::profiles::accept_barrier(
+                    &mut shell,
+                    &team,
+                    generation,
+                    barrier.clone(),
+                );
+                crate::thread_feed::accept_read_barrier(&mut shell, &team, generation, barrier);
+                drop(shell);
+                crate::bootstrap::search_message_pages::profiles::after_barrier(
+                    state, &team, generation,
+                );
+            }
             RtUpdate::Preference { .. } => continue,
             RtUpdate::Disconnected { generation } => {
                 owned_socket.disconnected(&mut shell, &team, generation);
+                crate::bootstrap::search_message_pages::profiles::connection_changed(
+                    &mut shell, &team,
+                );
                 crate::file_share::connection(&mut shell, &team, generation);
                 mark_disconnected(&mut shell, &team, generation);
             }
@@ -631,6 +664,42 @@ pub(crate) fn apply_in_view(
     transcript_visible: bool,
 ) {
     apply_in_view_with_groups(core, team, generation, event, transcript_visible, true);
+}
+
+/// Actual native before/Core/after seam. It holds one serial shell borrow with
+/// no await. The private context token is not constructible from an event DTO.
+pub(crate) fn apply_in_view_with_context(
+    shell: &mut crate::state::ShellState,
+    team: &str,
+    generation: u64,
+    event: RtEvent,
+    transcript_visible: bool,
+    apply_groups: bool,
+) {
+    crate::bootstrap::search_message_pages::profiles::event(shell, team, generation, &event);
+    let thread_rows = matches!(
+        &event,
+        RtEvent::Message(_) | RtEvent::MessageChanged { .. } | RtEvent::MessageDeleted { .. }
+    ) || matches!(&event, RtEvent::Unknown(raw) if matches!(raw.kind.as_str(),"thread_subscribed"|"thread_unsubscribed"));
+    let copy_demotion =
+        crate::thread_feed::copy_link::before_event(shell, team, generation, &event);
+    let timestamp_demotion =
+        crate::thread_feed::timestamp::before_event(shell, team, generation, &event);
+    let context = crate::thread_feed::prepare_context(shell, team, generation, &event);
+    apply_in_view_with_groups(
+        &mut shell.core,
+        team,
+        generation,
+        event,
+        transcript_visible,
+        apply_groups,
+    );
+    crate::thread_feed::finish_context(shell, context);
+    crate::thread_feed::copy_link::after_event(shell, copy_demotion);
+    crate::thread_feed::timestamp::after_event(shell, timestamp_demotion);
+    if thread_rows {
+        crate::thread_feed::after_native_mutation(shell, team, generation);
+    }
 }
 
 fn apply_in_view_with_groups(
@@ -757,27 +826,60 @@ fn apply_in_view_with_groups(
             // is for, where the payload really is the whole message.
             workspace
                 .messages
-                .entry(channel)
-                .or_default()
-                .merge_update(super_platinum_core::state::visible_message(message));
-        }
-        RtEvent::MessageChanged {
-            channel, message, ..
-        } => {
-            if core.later.matches_scope(core.account_epoch, team) {
-                core.later.update_message(&channel, &message);
-            }
-            workspace
-                .messages
                 .entry(channel.clone())
                 .or_default()
-                .merge_update(message.clone());
+                .merge_update(super_platinum_core::state::visible_message(message.clone()));
+            if message.subtype.as_deref() == Some("bot_message") {
+                core.update_dm_bot_preview(team, &channel, &message);
+            } else {
+                core.update_dm_ordinary_preview(team, &channel, &message);
+            }
+        }
+        RtEvent::MessageChanged {
+            channel,
+            message,
+            original_update,
+        } => {
+            // A parent can already be known only in its thread. Preserve that
+            // canonical copy before the existing transcript insertion merges
+            // this partial; a typed default must not erase known reactions.
+            let inherited = replied::inherited_parent(
+                workspace.messages.get(&channel),
+                message.ts.as_ref().and_then(|ts| {
+                    core.threads
+                        .get(&(team.to_owned(), channel.clone(), ts.clone()))
+                }),
+                team,
+                &channel,
+                &message,
+                original_update.as_ref(),
+            );
+            if core.later.matches_scope(core.account_epoch, team) {
+                core.later
+                    .update_original_message(&channel, &message, original_update.as_ref());
+            }
+            let transcript = workspace.messages.entry(channel.clone()).or_default();
+            if let Some(parent) = inherited {
+                transcript.upsert(parent);
+            }
+            transcript.merge_original_update(&channel, message.clone(), original_update.as_ref());
             for ((thread_team, thread_channel, _), messages) in &mut core.threads {
                 if thread_team == team && thread_channel == &channel {
-                    messages.merge_update(message.clone());
+                    messages.merge_original_update(
+                        &channel,
+                        message.clone(),
+                        original_update.as_ref(),
+                    );
                 }
             }
-            core.update_pinned_message(team, &channel, &message);
+            core.update_pinned_original_message(team, &channel, &message, original_update.as_ref());
+            core.update_dm_original_preview(team, &channel, &message, original_update.as_ref());
+            core.update_activity_original_message(
+                team,
+                &channel,
+                &message,
+                original_update.as_ref(),
+            );
         }
         RtEvent::MessageDeleted {
             channel,
@@ -801,6 +903,7 @@ fn apply_in_view_with_groups(
                     messages.record_remote_deletion(&deleted_ts);
                 }
             }
+            core.delete_activity_message(team, &channel, &deleted_ts);
         }
         RtEvent::UserTyping { channel, user } => {
             workspace.set_typing(&channel, user, std::time::Instant::now())

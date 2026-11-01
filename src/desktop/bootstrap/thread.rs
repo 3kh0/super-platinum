@@ -3,6 +3,8 @@ use crate::state::ShellState;
 use dioxus::prelude::*;
 use std::sync::Arc;
 use super_platinum_core::slack::{Transport, api};
+#[cfg(test)]
+pub(crate) mod test_io;
 
 struct Visit {
     scope: String,
@@ -98,6 +100,25 @@ pub(super) async fn load_started_thread_owned(
     scope: String,
     reconnect: Option<super::reconnect::Visit>,
 ) {
+    #[cfg(test)]
+    if let Some(io) = test_io::current() {
+        load_started_thread_with(
+            state,
+            channel,
+            root,
+            target,
+            scope,
+            reconnect,
+            move |_transport, client, session, args| async move {
+                api::fetch_replies_with(&client, &session, args, move |request| async move {
+                    io.execute(request).await
+                })
+                .await
+            },
+        )
+        .await;
+        return;
+    }
     load_started_thread_with(
         state,
         channel,
@@ -112,9 +133,80 @@ pub(super) async fn load_started_thread_owned(
     .await;
 }
 
-// Only the request factory varies; admission, merge and settlement stay shared.
+/// Original already-admitted native row lineage, never a payload or Ready flag.
+pub(crate) type ThreadReadCheck = Arc<dyn Fn(&ShellState) -> bool + Send + Sync>;
+fn read_check_current(shell: &ShellState, check: Option<&ThreadReadCheck>) -> bool {
+    check.is_none_or(|check| check(shell))
+}
+
+pub(crate) async fn load_started_thread_checked(
+    state: Signal<ShellState>,
+    channel: String,
+    root: String,
+    scope: String,
+    check: ThreadReadCheck,
+) {
+    let dispatch = check.clone();
+    load_started_thread_with_check(
+        state,
+        channel,
+        root,
+        None,
+        scope,
+        None,
+        Some(check),
+        move |transport, client, session, args| async move {
+            api::fetch_replies_with(&client, &session, args, move |request| async move {
+                transport
+                    .execute_current(request, || state.try_peek().is_ok_and(|s| dispatch(&s)))
+                    .await
+            })
+            .await
+        },
+    )
+    .await;
+}
+
+// Only request execution/optional original admission varies; legacy APIs retain
+// their existing behavior, and every checked await keeps both sets of fences.
+#[cfg(test)]
+pub(crate) async fn load_started_thread_checked_for_test<F, Fut>(
+    state: Signal<ShellState>,
+    channel: String,
+    root: String,
+    target: Option<String>,
+    scope: String,
+    check: ThreadReadCheck,
+    fetch: F,
+) where
+    F: FnOnce(
+        Arc<Transport>,
+        super_platinum_core::slack::SlackClient,
+        super_platinum_core::config::WorkspaceSession,
+        api::RepliesArgs,
+    ) -> Fut,
+    Fut: std::future::Future<
+            Output = Result<
+                super_platinum_core::slack::models::HistoryPage,
+                super_platinum_core::slack::Error,
+            >,
+        >,
+{
+    load_started_thread_with_check(
+        state,
+        channel,
+        root,
+        target,
+        scope,
+        None,
+        Some(check),
+        fetch,
+    )
+    .await;
+}
+
 async fn load_started_thread_with<F, Fut>(
-    mut state: Signal<ShellState>,
+    state: Signal<ShellState>,
     channel: String,
     root: String,
     target: Option<String>,
@@ -135,8 +227,37 @@ async fn load_started_thread_with<F, Fut>(
             >,
         >,
 {
+    load_started_thread_with_check(state, channel, root, target, scope, reconnect, None, fetch)
+        .await;
+}
+
+async fn load_started_thread_with_check<F, Fut>(
+    mut state: Signal<ShellState>,
+    channel: String,
+    root: String,
+    target: Option<String>,
+    scope: String,
+    reconnect: Option<super::reconnect::Visit>,
+    admission: Option<ThreadReadCheck>,
+    fetch: F,
+) where
+    F: FnOnce(
+        Arc<Transport>,
+        super_platinum_core::slack::SlackClient,
+        super_platinum_core::config::WorkspaceSession,
+        api::RepliesArgs,
+    ) -> Fut,
+    Fut: std::future::Future<
+            Output = Result<
+                super_platinum_core::slack::models::HistoryPage,
+                super_platinum_core::slack::Error,
+            >,
+        >,
+{
     let request = state.peek().reconnect_generation;
-    if !started_current(&state.peek(), &scope, request, reconnect.as_ref()) {
+    if !read_check_current(&state.peek(), admission.as_ref())
+        || !started_current(&state.peek(), &scope, request, reconnect.as_ref())
+    {
         return;
     }
     if super::reconnect::fixture::enabled(&state.peek()) {
@@ -144,7 +265,8 @@ async fn load_started_thread_with<F, Fut>(
             super::reconnect::fixture::thread_read(state, target.as_deref(), reconnect.is_some())
                 .await;
         let mut shell = state.write();
-        let current = started_current(&shell, &scope, request, reconnect.as_ref());
+        let current = read_check_current(&shell, admission.as_ref())
+            && started_current(&shell, &scope, request, reconnect.as_ref());
         super::reconnect::fixture::finish_thread(id, &mut shell, &channel, &root, current);
         return;
     }
@@ -172,10 +294,18 @@ async fn load_started_thread_with<F, Fut>(
         super_platinum_core::state::now_secs(),
     );
     let thread_key = (team.clone(), channel.clone(), root.clone());
-    dioxus::prelude::spawn(crate::thread_subscription::refresh(
-        state,
-        thread_key.clone(),
-    ));
+    if let Some(check) = admission.as_ref() {
+        dioxus::prelude::spawn(crate::thread_subscription::refresh_checked(
+            state,
+            thread_key.clone(),
+            check.clone(),
+        ));
+    } else {
+        dioxus::prelude::spawn(crate::thread_subscription::refresh(
+            state,
+            thread_key.clone(),
+        ));
+    }
     let read_revision = state.peek().core.thread_read_revision(&thread_key);
     let cursor_owner = crate::realtime::activity_counts::CursorOwner::capture(
         &state.peek().core,
@@ -190,7 +320,7 @@ async fn load_started_thread_with<F, Fut>(
         range.request(channel.clone(), root.clone()),
     )
     .await;
-    if !visit.current(&state.peek()) {
+    if !visit.current(&state.peek()) || !read_check_current(&state.peek(), admission.as_ref()) {
         return;
     }
     let result = result.and_then(|page| {
@@ -257,13 +387,17 @@ async fn load_started_thread_with<F, Fut>(
                 shell.refresh_from_core();
             }
             super::session::hydrate_current_surface(state).await;
-            if !visit.current(&state.peek()) {
+            if !visit.current(&state.peek())
+                || !read_check_current(&state.peek(), admission.as_ref())
+            {
                 return;
             }
             // Opening an older reply does not mean the newer replies were read.
             if target.is_none() {
                 super::history::mark_thread_read(state, channel, root).await;
-                if !visit.current(&state.peek()) {
+                if !visit.current(&state.peek())
+                    || !read_check_current(&state.peek(), admission.as_ref())
+                {
                     return;
                 }
             }

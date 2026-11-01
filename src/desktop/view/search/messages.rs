@@ -1,5 +1,6 @@
 //! A single selected Messages page, reusing the existing native row projection.
 use super::*;
+pub(crate) mod reaction_picker;
 use crate::bootstrap::search_message_pages as pages;
 const PREVIOUS_ID: &str = "message-search-previous";
 const NEXT_ID: &str = "message-search-next";
@@ -21,12 +22,18 @@ pub(crate) fn results(state: Signal<ShellState>, shell: &ShellState) -> Element 
     let shown = pages::status(shell)
         .map(|s| s.0)
         .unwrap_or(shell.search_pager.page);
-    rsx! {for (index,hit) in rows.iter().enumerate() {
+    rsx! {
+    if let Some((message,retry))=pages::profiles::status(shell) {div {class:"search-footer",role:"status",
+        p {"{message}"}
+        if let Some(token)=retry {button {id:"message-search-author-retry",r#type:"button",class:"chip",
+            onclick:move |_|pages::profiles::retry(state,token.clone()),"Retry author profiles"}}
+    }}
+    for (index,hit) in rows.iter().enumerate() {
         {row(state,shell,hit,index,shown,owned)}
     }}
 }
 fn row(
-    state: Signal<ShellState>,
+    mut state: Signal<ShellState>,
     shell: &ShellState,
     hit: &crate::state::SearchResultVm,
     index: usize,
@@ -36,25 +43,134 @@ fn row(
     let source = owned
         .then(|| pages::RowSource::capture(shell, index))
         .flatten();
+    let author_source = owned
+        .then(|| pages::profiles::control(shell, index))
+        .flatten();
+    let author_fixture = pages::profiles::fixture_view(shell) && index == 0;
     let legacy = hit.clone();
-    let disabled = (owned && source.is_none()) || shell.search_message_pages_fixture.is_some();
+    let deleted = (owned && pages::row_was_deleted(shell, index))
+        || (shell.search_message_pages_fixture == Some(pages::Fixture::Deleted) && index == 0);
+    let disabled =
+        deleted || (owned && source.is_none()) || shell.search_message_pages_fixture.is_some();
+    let fixture_body =
+        if shell.search_message_pages_fixture == Some(pages::Fixture::Emphasis) && index == 0 {
+            pages::emphasis_fixture_body()
+        } else if matches!(
+            shell.search_message_pages_fixture,
+            Some(pages::Fixture::Rich | pages::Fixture::Expanded)
+        ) && index == 0
+        {
+            pages::disclosure_fixture_body()
+        } else {
+            Vec::new()
+        };
+    let body = if owned {
+        pages::body(shell, index)
+    } else {
+        &fixture_body
+    };
+    let expanded = if owned {
+        pages::is_expanded(shell, index)
+    } else {
+        shell.search_message_pages_fixture == Some(pages::Fixture::Expanded) && index == 0
+    };
+    let expandable = if owned {
+        pages::can_expand(shell, index)
+    } else {
+        shell.search_message_pages_fixture == Some(pages::Fixture::Rich) && index == 0
+    };
+    let disclosure_source = source.clone();
+    let thread_source = owned
+        .then(|| pages::ThreadSource::capture(shell, index))
+        .flatten();
+    let reply_count = if owned {
+        pages::reply_count(shell, index)
+    } else {
+        (shell.search_message_pages_fixture == Some(pages::Fixture::Thread) && index == 0)
+            .then_some(3)
+    };
+    let reactions = if owned {
+        pages::reaction_actions::fresh_reactions(shell, index)
+            .unwrap_or_else(|| pages::reactions(shell, index))
+    } else if shell.search_message_pages_fixture == Some(pages::Fixture::Reactions) && index == 0 {
+        pages::fixture_reactions()
+    } else if shell.search_message_pages_fixture == Some(pages::Fixture::ReactionGroups)
+        && index == 0
+    {
+        pages::fixture_reaction_groups()
+    } else {
+        Vec::new()
+    };
+    let body_class = if expanded {
+        "message-text search-message-body expanded"
+    } else {
+        "message-text search-message-body"
+    };
+    let reaction_source = owned
+        .then(|| pages::RowSource::capture(shell, index))
+        .flatten();
+    let reaction_candidate = owned && pages::reaction_actions::candidate(shell, index);
+    let reaction_available = reaction_candidate && pages::reaction_actions::available(shell, index);
     let key = if owned {
         format!("message-page-{shown}-row-{index}")
     } else {
         format!("{}-{}", hit.channel_id, hit.ts)
     };
-    rsx! {button {
+    rsx! {div {class:"search-message-result",
         key:"{key}",
+        button {
+        id:"message-search-hit-{shown}-{index}",
         class:"search-result", disabled,
         onclick:move |_| {
             if let Some(source)=source.clone() {pages::open(state,source);}
             else if !disabled {crate::bootstrap::open_search_hit(state,legacy.clone());}
         },
         strong {{result_heading(hit)}}
-        span {"{hit.text}"}
+        if deleted {span {"This message was deleted."}}
+        else if body.is_empty() {span {"{hit.text}"}}
+        else {div {id:"message-search-body-{shown}-{index}",class:body_class,
+            for node in body {{super::super::rich::rich_node(node,shell.media_epoch,state)}}
+        }}
         span {class:"search-time",{super_platinum_core::state::format_relative_ts(&hit.ts)}
             if hit.thread_ts.is_some() {" \u{b7} Thread reply"}
         }
+        }
+        if !deleted {if let Some(author)=author_source {button {
+            id:"message-search-author-{shown}-{index}",r#type:"button",class:"search-message-more",
+            "aria-label":"View author profile",onclick:move|event|{
+                event.stop_propagation();
+                if event.modifiers().is_empty() && event.trigger_button().is_none_or(|b|b==dioxus::html::input_data::MouseButton::Primary) {
+                    pages::profiles::open(state,author.clone());
+                }
+            },"View author profile"
+        }} else if author_fixture {button {id:"message-search-author-{shown}-{index}",class:"search-message-more",disabled:true,"View author profile"}}}
+        if !deleted && !reactions.is_empty() {div {class:"message-actions",role:"group","aria-label":"Message reactions (read only)",
+            {super::super::rich::reaction_groups_read_only(state,&shell.media,shell.media_epoch,&reactions)}
+        }}
+        if !deleted&&reaction_candidate{div{class:"message-actions",
+            button{id:"message-search-react-{shown}-{index}",r#type:"button",class:"icon-btn","aria-label":"Add reaction","aria-haspopup":"dialog",
+                disabled:disabled||!reaction_available,
+                onclick:move|event|{event.stop_propagation();if let Some(source)=reaction_source.clone(){pages::reaction_actions::open(state,source);}},
+                {crate::icons::icon(crate::icons::Icon::AddReaction,"icon sm")}
+            }
+        }}
+        if !deleted {if let Some(count)=reply_count{button{
+            id:"message-search-thread-{shown}-{index}",r#type:"button",class:"search-message-more",
+            "aria-label":format!("View thread with {count} {}",if count==1{"reply"}else{"replies"}),
+            disabled:disabled||thread_source.is_none(),
+            onclick:move|event|{event.stop_propagation();if let Some(source)=thread_source.clone(){pages::open_thread(state,source);}},
+            "{count} " if count==1{"reply"}else{"replies"}
+        }}}
+        if expandable && !deleted {button {
+            id:"message-search-expand-{shown}-{index}",r#type:"button",
+            class:"search-message-more",disabled,
+            "aria-expanded":"false",
+            "aria-controls":"message-search-body-{shown}-{index}",
+            onclick:move |event| {
+                event.stop_propagation();
+                if let Some(source)=disclosure_source.as_ref() {pages::expand(&mut state.write(),source);}
+            },"Show more"
+        }}
     }}
 }
 

@@ -1,4 +1,5 @@
 use super::*;
+mod preformatted;
 
 fn key() -> DraftKey {
     DraftKey {

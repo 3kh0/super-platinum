@@ -1,20 +1,23 @@
 //! A deliberately small, reversible projection for ordinary text composers.
 //!
 //! Accepted snapshots have one conversation/thread destination, no files, and exactly one
-//! rich_text / rich_text_section containing canonical text runs. Decode succeeds
+//! rich_text / rich_text_section containing canonical text runs, or one strict
+//! whole-composer code block containing one literal text run. Decode succeeds
 //! only if encoding the projected text reproduces the complete Snapshot exactly
 //! (JSON object ordering excepted). Unknown fields are rejected, not discarded.
 //! The original raw snapshot is retained separately and never rewritten on read.
 //!
 //! Supported local syntax follows ComposerState's nonnested *bold*, _italic_,
 //! ~strike~ and `code` delimiters. Styling may differ between runs, but combined
-//! styles, nested markup, quotes, fences, entities and shortcode emoji are not
-//! projected. Literal unmatched delimiters remain literal when unambiguous.
+//! styles, nested markup, quotes, noncanonical fences, entities and shortcode
+//! emoji outside code are not projected. Literal unmatched delimiters remain
+//! literal when unambiguous.
 //! This is a supported subset, not a general Slack markdown parser or a promise
 //! about server normalization. Empty text is content here, not a delete command.
 use super::{DraftKey, sync::Snapshot};
 use crate::ComposerState;
 use serde_json::{Value, json};
+mod preformatted;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, thiserror::Error)]
 pub enum Unsupported {
@@ -191,6 +194,13 @@ pub fn encode(key: &DraftKey, text: &str) -> Result<Snapshot, Unsupported> {
     {
         return Err(Unsupported::Formatting);
     }
+    if let Some(block) = preformatted::block(text) {
+        return Ok(Snapshot {
+            blocks: vec![block],
+            file_ids: vec![],
+            destinations: vec![destination],
+        });
+    }
     let mut runs = Vec::new();
     for (index, part) in text.split('\n').enumerate() {
         if index > 0 {
@@ -254,6 +264,9 @@ pub fn decode(key: &DraftKey, snapshot: &Snapshot) -> Result<Projection, Unsuppo
         return Err(Unsupported::Shape);
     }
     let section = &sections[0];
+    if section["type"] == "rich_text_preformatted" {
+        return preformatted::project(key, snapshot, section, expected_destination, broadcast);
+    }
     if !exact_keys(section, &["type", "elements"]) || section["type"] != "rich_text_section" {
         return Err(Unsupported::Shape);
     }

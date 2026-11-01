@@ -34,8 +34,63 @@ pub(crate) fn busy(shell: &ShellState) -> bool {
     })
 }
 
-pub(crate) async fn refresh(mut state: Signal<ShellState>, key: ThreadKey) {
-    if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some() {
+pub(crate) async fn refresh(state: Signal<ShellState>, key: ThreadKey) {
+    refresh_with_check(state, key, None).await;
+}
+
+pub(crate) async fn refresh_checked(
+    state: Signal<ShellState>,
+    key: ThreadKey,
+    check: crate::bootstrap::ThreadReadCheck,
+) {
+    refresh_with_check(state, key, Some(check)).await;
+}
+fn subscription_check(
+    shell: &ShellState,
+    check: Option<&crate::bootstrap::ThreadReadCheck>,
+) -> bool {
+    check.is_none_or(|check| check(shell))
+}
+
+// Same request and required Vec<String> decoder as Core's existing
+// fetch_thread_subscription. Only native dispatch-current fencing differs;
+// omission/malformed data never becomes an inactive-subscription observation.
+async fn fetch_checked(
+    state: Signal<ShellState>,
+    check: &crate::bootstrap::ThreadReadCheck,
+    transport: &super_platinum_core::slack::Transport,
+    client: &super_platinum_core::slack::SlackClient,
+    session: &super_platinum_core::config::WorkspaceSession,
+    key: &ThreadKey,
+) -> Result<bool, super_platinum_core::slack::Error> {
+    #[derive(serde::Deserialize)]
+    struct Page {
+        subscriptions: Vec<String>,
+    }
+    let value = transport
+        .execute_current(
+            client.rest_form(
+                session,
+                "subscriptions.thread.get",
+                vec![("channel", key.1.clone()), ("thread_ts", key.2.clone())],
+            ),
+            || state.try_peek().is_ok_and(|shell| check(&shell)),
+        )
+        .await?;
+    let page: Page = serde_json::from_value(value).map_err(|_| {
+        super_platinum_core::slack::Error::Api("malformed_thread_subscription_response".into())
+    })?;
+    Ok(page.subscriptions.contains(&key.2))
+}
+
+async fn refresh_with_check(
+    mut state: Signal<ShellState>,
+    key: ThreadKey,
+    check: Option<crate::bootstrap::ThreadReadCheck>,
+) {
+    if std::env::var_os("SUPER_PLATINUM_FIXTURE").is_some()
+        || !subscription_check(&state.peek(), check.as_ref())
+    {
         return;
     }
     let Some((transport, client, sessions)) = crate::bootstrap::credentials(&state) else {
@@ -54,11 +109,15 @@ pub(crate) async fn refresh(mut state: Signal<ShellState>, key: ThreadKey) {
                 .revision(shell.core.account_epoch, &key),
         )
     };
-    let result =
+    let result = if let Some(check) = check.as_ref() {
+        fetch_checked(state, check, &transport, &client, &session, &key).await
+    } else {
         api::fetch_thread_subscription(&transport, &client, &session, key.1.clone(), key.2.clone())
-            .await;
+            .await
+    };
     let mut shell = state.write();
-    if shell.core.account_epoch != epoch
+    if !subscription_check(&shell, check.as_ref())
+        || shell.core.account_epoch != epoch
         || !shell
             .core
             .transport

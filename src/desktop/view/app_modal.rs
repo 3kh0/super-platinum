@@ -10,7 +10,9 @@ use crate::{
     icons::{Icon, icon},
     state::ShellState,
 };
+
 mod email;
+mod initial_url;
 mod scalar;
 
 pub(crate) fn app_modal(state: Signal<ShellState>) -> Element {
@@ -179,8 +181,14 @@ pub(crate) fn ModalField(
             }
         }
         InputKind::Url => {
-            if home.is_some() {
-                rsx! {p {class:"app-modal-hint","This field is not supported yet."}}
+            if let Some(visit) = home {
+                if crate::app_home::inputs::text::url::supported(&state.read(), &input_key) {
+                    rsx! {crate::app_home::inputs::text::url::Control {state,visit,input_key:input_key.clone(),
+                    id:id.clone(),label:label_id.clone(),description:described_by.clone(),invalid:invalid.clone(),
+                    placeholder:field.placeholder.clone().filter(|v|!v.is_empty()).unwrap_or_else(||"Enter a URL".into()),locked}}
+                } else {
+                    rsx! {p {class:"app-modal-hint","This field is not supported yet."}}
+                }
             } else {
                 let initial = match &seed {
                     InputValue::Url(value) => value.clone().unwrap_or_default(),
@@ -379,7 +387,10 @@ pub(crate) fn ModalField(
             }
         }
         InputKind::Unsupported { .. } => {
-            rsx! {p {class:"app-modal-hint","This field is not supported yet."}}
+            rsx! {
+                {initial_url::view(&field,home.is_some())}
+                p {class:"app-modal-hint","This field is not supported yet."}
+            }
         }
     };
     rsx! {div {class:"app-modal-field","data-block-id":"{input_key.block_id}","data-action-id":"{input_key.action_id}",

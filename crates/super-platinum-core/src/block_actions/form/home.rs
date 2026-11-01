@@ -13,6 +13,7 @@ mod radio;
 mod static_select;
 mod text;
 mod time;
+mod url;
 mod users;
 pub use channels::{ChannelParent, ChannelTeamPolicy};
 pub use checkboxes::CheckboxSelection;
@@ -25,6 +26,7 @@ pub use number::{NumberParent, NumberTrigger};
 pub use static_select::StaticEvent;
 pub use text::{TextEvent, TextTrigger};
 pub use time::TimeParent;
+pub use url::{UrlMount, UrlParent, UrlScope, UrlTrigger};
 pub use users::UserParent;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Dispatch {
@@ -42,6 +44,7 @@ pub struct HomeForm {
     view: Value,
     wire: BTreeMap<InputKey, Value>,
     native_errors: BTreeMap<InputKey, String>,
+    url_profile: Option<url::Profile>,
 }
 fn invalid() -> FormError {
     FormError::InvalidView("Malformed Home input".into())
@@ -64,6 +67,9 @@ fn plain(v: Option<&Value>) -> Result<Option<String>, FormError> {
 }
 impl HomeForm {
     pub fn parse(view: &Value) -> Result<Self, FormError> {
+        Self::parse_profile(view, None)
+    }
+    fn parse_profile(view: &Value, url_profile: Option<url::Profile>) -> Result<Self, FormError> {
         if view["type"] != "home" {
             return Err(invalid());
         }
@@ -79,6 +85,7 @@ impl HomeForm {
             view: view.clone(),
             wire: BTreeMap::new(),
             native_errors: BTreeMap::new(),
+            url_profile,
         };
         let mut seen = std::collections::BTreeSet::new();
         for block in blocks {
@@ -116,7 +123,11 @@ impl HomeForm {
                 }
                 // QjSI ignores default_to_current_conversation; Home has no viewed
                 // provider. Keep Modal's origin-aware parser unchanged.
-                let (kind, initial_value) = if element["type"] == "email_text_input" {
+                let (kind, initial_value) = if element["type"] == "url_text_input"
+                    && out.url_profile.as_ref().is_some_and(|p| p.contains(&key))
+                {
+                    url::parse(block, element)?
+                } else if element["type"] == "email_text_input" {
                     email::parse(element)?
                 } else if element["type"] == "number_input" {
                     number::parse(element)?
@@ -201,11 +212,21 @@ impl HomeForm {
                     raw: element.clone(),
                 };
                 field.error = home_error(&field);
-                let mode = dispatch(block, element, &field.kind)?;
+                if matches!(field.kind, InputKind::Url) && out.url_profile.is_some() {
+                    field.error = out.url_expected_error(&key, &field);
+                }
+                let mode = if matches!(field.kind, InputKind::Url) && out.url_profile.is_some() {
+                    url::dispatch(block, element)?
+                } else {
+                    dispatch(block, element, &field.kind)?
+                };
                 if mode != Dispatch::Quiet
                     && !text::supported(block, element, &field.kind)
                     && !number::supported(block, element, &field.kind)
                     && !email::supported(block, element, &field.kind)
+                    && !(out.url_profile.is_some()
+                        && matches!(field.kind, InputKind::Url)
+                        && url::parse(block, element).is_ok())
                     && !static_select::supported(block, element, &field.kind)
                     && !checkboxes::supported(block, element, &field.kind)
                     && !radio::supported(block, element, &field.kind)
@@ -270,7 +291,10 @@ impl HomeForm {
             }
         }
         for (key, field) in &out.fields {
-            if valid_state_value(field) {
+            if valid_state_value(field)
+                || (out.url_profile.as_ref().is_some_and(|p| p.contains(key))
+                    && matches!(field.value, InputValue::Url(_)))
+            {
                 out.wire.insert(key.clone(), values::wire(field));
             }
         }
@@ -450,10 +474,44 @@ impl HomeForm {
         numbers: &[NumberParent],
         emails: &[EmailParent],
     ) -> Result<(), FormError> {
+        self.reconcile_with_url_parents(
+            view,
+            dates,
+            times,
+            datetimes,
+            users,
+            channels,
+            conversations,
+            externals,
+            numbers,
+            emails,
+            &[],
+        )
+    }
+    /// Retain only renderer-attested URL parents in an already-owned profile.
+    /// A legacy/unsupported form is never promoted by equal IDs or an absent row.
+    pub fn reconcile_with_url_parents(
+        &mut self,
+        view: &Value,
+        dates: &[DateParent],
+        times: &[TimeParent],
+        datetimes: &[DatetimeParent],
+        users: &[UserParent],
+        channels: &[ChannelParent],
+        conversations: &[ConversationParent],
+        externals: &[ExternalParent],
+        numbers: &[NumberParent],
+        emails: &[EmailParent],
+        urls: &[UrlParent],
+    ) -> Result<(), FormError> {
         if !self.native_errors.is_empty() {
             return Err(FormError::ConflictingUpdate);
         }
-        let mut next = Self::parse(view)?;
+        let profile = self.continuation_url_profile(view)?;
+        if profile.is_none() && !urls.is_empty() {
+            return Err(FormError::ConflictingUpdate);
+        }
+        let mut next = Self::parse_profile(view, profile)?;
         if next.view["id"] != self.view["id"] {
             return Err(FormError::ConflictingUpdate);
         }
@@ -466,6 +524,15 @@ impl HomeForm {
         calendar_keys.extend(self.external_parent_keys(&next, externals)?);
         calendar_keys.extend(self.number_parent_keys(&next, numbers)?);
         calendar_keys.extend(self.email_parent_keys(&next, emails)?);
+        let url_keys = self.url_parent_keys(&next, urls)?;
+        if self
+            .url_profile
+            .as_ref()
+            .is_some_and(|p| !p.all_keys().all(|k| url_keys.contains(k)))
+        {
+            return Err(FormError::ConflictingUpdate);
+        }
+        calendar_keys.extend(url_keys);
         for (key, old) in &self.fields {
             if !old.dirty && !calendar_keys.contains(key) {
                 continue;
@@ -539,7 +606,11 @@ impl HomeForm {
             new.value = old.value.clone();
             new.dirty = old.dirty;
             new.revision = old.revision;
-            new.error = home_error(new);
+            new.error = if matches!(new.kind, InputKind::Url) && next.url_profile.is_some() {
+                old.error.clone()
+            } else {
+                home_error(new)
+            };
             if let Some(wire) = self.wire.get(key) {
                 next.wire.insert(key.clone(), wire.clone());
             }
@@ -554,6 +625,10 @@ impl HomeForm {
         self.dispatch.get(key).copied()
     }
     pub fn set(&mut self, key: &InputKey, value: InputValue) -> Result<(), FormError> {
+        if self.url_profile.as_ref().is_some_and(|p| p.contains(key)) {
+            // Only the original URL occurrence/mount path can change this parent.
+            return Err(FormError::ConflictingUpdate);
+        }
         if matches!(
             self.fields.get(key).map(|f| &f.kind),
             Some(InputKind::Email)
@@ -637,6 +712,7 @@ impl HomeForm {
             || !self.external_state_inventory_valid()
             || !self.number_state_inventory_valid()
             || !self.email_state_inventory_valid()
+            || !self.url_state_inventory_valid()
         {
             return Err(FormError::ConflictingUpdate);
         }
@@ -650,7 +726,9 @@ impl HomeForm {
         for (key, field) in &self.fields {
             // Requiredness belongs to app workflow validation, but invalid
             // retained option/date identities cannot turn into another value.
-            if if matches!(field.kind, InputKind::Checkboxes { .. }) {
+            if if self.url_profile.as_ref().is_some_and(|p| p.contains(key)) {
+                !self.url_state_valid(key)
+            } else if matches!(field.kind, InputKind::Checkboxes { .. }) {
                 !self.checkbox_state_valid(key)
             } else if matches!(field.kind, InputKind::Radio { .. }) {
                 !self.radio_state_valid(key)

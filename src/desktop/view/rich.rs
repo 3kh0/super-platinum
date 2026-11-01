@@ -80,6 +80,25 @@ fn rich_node_with_source(
             );
             rsx! { span { class: "{class}", "{text}" } }
         }
+        RichNode::SearchText {
+            spans,
+            bold,
+            italic,
+            strike,
+            code,
+        } => {
+            let class = format!(
+                "{}{}{}{}",
+                if *bold { " bold" } else { "" },
+                if *italic { " italic" } else { "" },
+                if *strike { " strike" } else { "" },
+                if *code { " inline-code" } else { "" }
+            );
+            rsx! {span {class:"{class}", for (text, matched) in spans {
+                if *matched {mark {class:"search-match","{text}"}}
+                else {span {"{text}"}}
+            }}}
+        }
         RichNode::Link { label, url } => {
             let destination = url.clone();
             rsx! {
@@ -747,7 +766,10 @@ fn attachment_embed(
 }
 
 mod reactions;
-pub(crate) use reactions::{reactions_list_comments, reactions_read_only, reactions_row};
+pub(crate) use reactions::{
+    grouped_reaction_vms, reaction_groups_read_only, reaction_slice_read_only,
+    reactions_list_comments, reactions_read_only, reactions_row,
+};
 
 /// Slack's thread reply bar: replier avatars, the count, and the last reply age.
 pub(crate) fn reply_bar(

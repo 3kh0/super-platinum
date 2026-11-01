@@ -7,6 +7,7 @@ pub struct TextAction {
     user: String,
     view: View,
     event: TextEvent,
+    url_scope: Option<crate::block_actions::form::home::UrlScope>,
 }
 impl View {
     pub fn text_action(&self, event: &TextEvent, user: &str) -> Result<TextAction, Error> {
@@ -26,6 +27,38 @@ impl View {
             user: user.into(),
             view: self.clone(),
             event: event.clone(),
+            url_scope: None,
+        })
+    }
+    pub fn text_action_in_owned_form(
+        &self,
+        event: &TextEvent,
+        user: &str,
+        form: &HomeForm,
+    ) -> Result<TextAction, Error> {
+        if !id(user) || !event.same_view(&self.raw) {
+            return Err(invalid());
+        }
+        // Revalidate source shape, not the event value against a later draft.
+        if !form.has_owned_urls() {
+            return self.text_action(event, user);
+        }
+        if !form.owned_url_view(&self.raw) {
+            return Err(invalid());
+        }
+        match event.action()["type"].as_str() {
+            Some("plain_text_input") => form.text_field(event.key()),
+            Some("number_input") => form.number_field(event.key()),
+            Some("email_text_input") => form.email_field(event.key()),
+            Some("url_text_input") if form.url_event_current(event) => form.url_field(event.key()),
+            _ => return Err(invalid()),
+        }
+        .map_err(|_| invalid())?;
+        Ok(TextAction {
+            user: user.into(),
+            view: self.clone(),
+            event: event.clone(),
+            url_scope: form.owned_url_scope(),
         })
     }
 }
@@ -56,7 +89,12 @@ impl TextAction {
         token: &str,
         view_context_team_id: Option<&str>,
     ) -> Result<PreparedRequest, Error> {
-        if workspace.user_id != self.user
+        if self.url_scope.is_some() != form.has_owned_urls()
+            || self
+                .url_scope
+                .as_ref()
+                .is_some_and(|scope| !form.same_url_scope(scope))
+            || workspace.user_id != self.user
             || !self.same_view(current)
             || form.raw_view() != current.raw()
             || token.is_empty()

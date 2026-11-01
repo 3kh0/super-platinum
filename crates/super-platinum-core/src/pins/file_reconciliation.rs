@@ -3,7 +3,10 @@ use super::{PinUpdate, PinnedItem, PinsPage, PinsState};
 use crate::{
     CoreAppState,
     file_actions::{FileDisplayRead, tombstone, visit_message},
-    slack::models::{File, Message},
+    slack::{
+        events::MessageUpdate,
+        models::{File, Message},
+    },
 };
 
 fn visit_item(item: &mut PinnedItem, update: &mut impl FnMut(&mut File)) {
@@ -22,7 +25,7 @@ impl PinsState {
             visit_item(item, update);
         }
         for message in self.message_updates.values_mut().filter_map(Option::as_mut) {
-            visit_message(message, update);
+            visit_message(&mut message.message, update);
         }
     }
 
@@ -33,7 +36,7 @@ impl PinsState {
         if let Some(ts) = key.strip_prefix("message:")
             && let Some(Some(message)) = self.message_updates.get_mut(ts)
         {
-            visit_message(message, update);
+            visit_message(&mut message.message, update);
         }
     }
 }
@@ -98,12 +101,23 @@ impl CoreAppState {
 
     /// Mask both the visible copy and the pending copy after the normal merge.
     pub fn update_pinned_message(&mut self, team: &str, channel: &str, message: &Message) {
+        self.update_pinned_original_message(team, channel, message, None);
+    }
+
+    pub fn update_pinned_original_message(
+        &mut self,
+        team: &str,
+        channel: &str,
+        message: &Message,
+        original: Option<&MessageUpdate>,
+    ) {
         if !self.pins.matches_scope(self.account_epoch, team)
             || self.pins.channel.as_deref() != Some(channel)
         {
             return;
         }
-        self.pins.update_message(channel, message);
+        self.pins
+            .update_original_message(channel, message, original);
         if let Some(ts) = &message.ts {
             self.mask_pin_file_deletions(team, Some(&format!("message:{ts}")));
         }

@@ -12,6 +12,7 @@ mod owner;
 use owner::Owner;
 mod choices;
 use choices::Bank;
+pub(crate) mod fallback;
 mod fixture;
 pub(crate) use fixture::Fixture;
 fn index(kind: Scope) -> usize {
@@ -79,7 +80,9 @@ pub(crate) fn generic_allowed(s: &ShellState) -> bool {
     !has_draft(s) && s.search_message_scope_fixture.is_none()
 }
 pub(crate) fn retire(s: &mut ShellState) {
-    if s.search_message_scope_filters.take().is_some() {
+    let typed = s.search_message_scope_filters.take().is_some();
+    let fallback = s.search_message_fallback_filters.take().is_some();
+    if typed || fallback {
         s.search_filters = None;
         s.search_filter_error = None;
     }
@@ -283,6 +286,7 @@ impl Submission {
         self.owner.current(s)
             && s.search_filters.is_none()
             && !has_draft(s)
+            && !fallback::has_draft(s)
             && s.search_file_type_filters.is_none()
             && !s.search_history_open
     }

@@ -4,6 +4,7 @@ pub(crate) mod folder;
 pub(crate) mod knowledge;
 mod owner;
 pub(crate) mod selection;
+pub(crate) mod threads;
 use owner::Owner;
 mod run;
 use crate::state::ShellState;
@@ -21,6 +22,8 @@ pub(super) struct Key {
 #[derive(Default)]
 pub(crate) struct Root {
     entries: BTreeMap<Key, Entry>,
+    threads: threads::State,
+    thread_limits: threads::Limits,
     navigation: selection::Navigation,
     next: u64,
     fixture: Option<fixture::Capability>,
@@ -83,6 +86,9 @@ impl Visit {
     }
     pub(crate) fn channel(&self) -> &str {
         &self.0.key.channel
+    }
+    pub(super) fn native_read_check(&self) -> Option<owner::NativeReadCheck> {
+        self.0.native_read_check()
     }
     pub(crate) fn native_read_current(&self, shell: &ShellState) -> bool {
         self.0.fixture.is_none() && self.current(shell)

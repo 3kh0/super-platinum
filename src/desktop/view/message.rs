@@ -11,6 +11,7 @@ use crate::media::MediaUri;
 use dioxus::prelude::*;
 
 mod delivery;
+mod discussion;
 
 use super::rich::{
     attachment_embeds, attachment_embeds_for_list, message_plain_text, pending_attachment_strip,
@@ -29,6 +30,7 @@ pub(crate) enum RowSurface {
     Thread,
     /// An independently owned thread reader has no timeline mutation authority.
     ReadOnlyThread,
+    ReadOnlyChannel,
     /// List comments own only their loaded reaction toggle, never timeline actions.
     ListComments {
         generation: u64,
@@ -39,11 +41,14 @@ impl RowSurface {
     fn in_thread(self) -> bool {
         matches!(
             self,
-            Self::Thread | Self::ReadOnlyThread | Self::ListComments { .. }
+            Self::Thread | Self::ReadOnlyThread | Self::ReadOnlyChannel | Self::ListComments { .. }
         )
     }
     fn read_only_actions(self) -> bool {
-        matches!(self, Self::ReadOnlyThread | Self::ListComments { .. })
+        matches!(
+            self,
+            Self::ReadOnlyThread | Self::ReadOnlyChannel | Self::ListComments { .. }
+        )
     }
 }
 
@@ -291,6 +296,7 @@ pub(crate) fn message_row(
     // Text-only rows never need canonical bag scans or action revision clones.
     // This allocation-free walk short-circuits at the first supported app control or identified file.
     let read_only = surface.read_only_actions();
+    let static_channel = surface == RowSurface::ReadOnlyChannel;
     let action_source = action_bag
         .filter(|_| !read_only)
         .filter(|_| !message.pending && body_has_owned_control(&message.body))
@@ -358,7 +364,7 @@ pub(crate) fn message_row(
             if compact {
                 div { class: "compact-gutter", title: "{message.timestamp}", "{message.timestamp}" }
             } else {
-                {message_avatar(state, snapshot, message)}
+                {if static_channel {discussion::avatar(state,snapshot,message)}else{message_avatar(state, snapshot, message)}}
             }
             {message_tools(state, message, channel_id, surface)}
             div { class: "message-content",
@@ -367,7 +373,7 @@ pub(crate) fn message_row(
                     div {class:"message-pin-label",{crate::icons::icon(crate::icons::Icon::Pin,"icon sm")} "Pinned"}
                 }
                 if !compact {
-                    {message_meta(state, snapshot, message)}
+                    {if static_channel {discussion::meta(message)}else{message_meta(state, snapshot, message)}}
                 }
                 if editing {
                     div { class: "message-editor",
@@ -390,7 +396,7 @@ pub(crate) fn message_row(
                 } else {
                     div { class: if message.is_system { "message-body message-system" } else { "message-body" },
                         for node in &message.body {
-                            {if let Some(source)=list_source.as_ref() {
+                            {if static_channel {discussion::body(state,snapshot.media_epoch,node)}else if let Some(source)=list_source.as_ref() {
                                 rich_node_for_list(node,snapshot.media_epoch,state,source)
                             } else if let Some(source)=action_source.as_ref() {
                                 rich_node_for_message(node,snapshot.media_epoch,state,source)
@@ -399,7 +405,7 @@ pub(crate) fn message_row(
                         if compact && message.edited {span {class:"message-edited"," (edited)"}}
                     }
                     if !message.attachments.is_empty() {
-                        {if let Some(source)=list_source.as_ref() {
+                        {if static_channel {discussion::attachments(state,snapshot.media_epoch,&message.attachments)}else if let Some(source)=list_source.as_ref() {
                             attachment_embeds_for_list(state, snapshot.media_epoch, &message.attachments,source)
                         } else {attachment_embeds(state, snapshot.media_epoch, &message.attachments)}}
                     }
@@ -416,7 +422,7 @@ pub(crate) fn message_row(
                         ondoubleclick: |event| event.stop_propagation(),
                         {match surface {
                             RowSurface::ListComments { generation } => super::rich::reactions_list_comments(state, snapshot, generation, message),
-                            RowSurface::ReadOnlyThread => super::rich::reactions_read_only(state, &snapshot.media, snapshot.media_epoch, message),
+                            RowSurface::ReadOnlyThread | RowSurface::ReadOnlyChannel => super::rich::reactions_read_only(state, &snapshot.media, snapshot.media_epoch, message),
                             _ => reactions_row(state, &snapshot.media, snapshot.media_epoch, channel_id, message),
                         }}
                     }

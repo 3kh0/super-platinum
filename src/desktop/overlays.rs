@@ -9,6 +9,9 @@ pub fn overlay_view(
     overlay: Overlay,
     snapshot: &ShellState,
 ) -> Element {
+    if overlay == Overlay::ChannelDirectory {
+        return crate::channel_directory::dialog(state);
+    }
     if overlay == Overlay::ButtonConfirmation {
         return crate::view::button_confirmation::button_confirmation(state);
     }
@@ -84,6 +87,7 @@ pub fn overlay_view(
         Overlay::ProfileTitle => unreachable!("title editor owns its dialog"),
         Overlay::ProfileEdit => unreachable!("profile editor owns its dialog"),
         Overlay::NewDm => unreachable!("recipient picker owns its dialog"),
+        Overlay::ChannelDirectory => unreachable!("channel directory owns its dialog"),
         Overlay::Accounts => ("Accounts", "", ""),
         Overlay::Palette => (
             "Jump to…",
@@ -120,6 +124,9 @@ pub fn overlay_view(
         div { class: "scrim", onclick: move |_| state.write().dismiss_overlay() }
         section { class: if compact { "modal compact" } else if overlay == Overlay::Search { "modal search-dialog" } else if overlay == Overlay::Viewer { "modal file-viewer-dialog" } else { "modal" }, role: "dialog", "aria-label": "{title}", "aria-modal": "true",
             id: "shell-overlay-dialog",
+            "data-search-reaction-frame": if overlay==Overlay::Search {Some(format!("{}:{}:{}:{}:{}",snapshot.core.account_epoch,snapshot.search_open_generation,snapshot.search_input_revision,snapshot.search_pager.revision(),snapshot.search_pager.page))}else{None},
+            inert: overlay == Overlay::Search && crate::bootstrap::search_message_pages::reaction_actions::presentation(snapshot).is_some(),
+            "aria-hidden": (overlay == Overlay::Search && crate::bootstrap::search_message_pages::reaction_actions::presentation(snapshot).is_some()).then_some("true"),
             tabindex: "-1",
             "data-keyboard-dialog": "true",
             "data-dialog-generation": snapshot.shortcut_generation,
@@ -270,6 +277,7 @@ pub fn overlay_view(
                 {crate::view::settings::settings_view(state, snapshot)}
             }
         }
+        if overlay==Overlay::Search{{crate::view::search::reaction_picker_panel(state)}}
     }
 }
 

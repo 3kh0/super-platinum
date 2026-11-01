@@ -79,3 +79,4 @@ mod initial;
 pub(crate) use initial::{Source as InitialSource, load as load_initial, phase as initial_phase};
 
 pub(crate) use fixture::install_facts as install_facts_fixture;
+pub(crate) use fixture::install_styled_preview as install_styled_preview_fixture;

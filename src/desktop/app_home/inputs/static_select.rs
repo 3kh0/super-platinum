@@ -418,7 +418,7 @@ fn receive(s: &mut ShellState, b: &Binding, e: &Occurrence) -> Option<(u64, Opti
         .as_ref()?
         .view
         .as_ref()?
-        .static_action(&event, &b.owner.ctx.session.user_id)
+        .static_action_in_owned_form(&event, &b.owner.ctx.session.user_id, form(s)?)
         .ok()?;
     let id = next();
     let at = Instant::now();
@@ -522,7 +522,9 @@ fn enqueue_typed(
     let Some(view) = s.app_home.surface.as_ref().and_then(|h| h.view.as_ref()) else {
         return None;
     };
-    let Ok(action) = view.static_action(&event, &b.owner.ctx.session.user_id) else {
+    let Ok(action) =
+        view.static_action_in_owned_form(&event, &b.owner.ctx.session.user_id, form(s)?)
+    else {
         return None;
     };
     let id = next();

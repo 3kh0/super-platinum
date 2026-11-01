@@ -7,6 +7,7 @@ pub struct StaticAction {
     user: String,
     view: View,
     event: StaticEvent,
+    url_scope: Option<crate::block_actions::form::home::UrlScope>,
 }
 impl View {
     pub fn static_action(&self, event: &StaticEvent, user: &str) -> Result<StaticAction, Error> {
@@ -102,6 +103,113 @@ impl View {
             user: user.into(),
             view: self.clone(),
             event: event.clone(),
+            url_scope: None,
+        })
+    }
+    pub fn static_action_in_owned_form(
+        &self,
+        event: &StaticEvent,
+        user: &str,
+        form: &HomeForm,
+    ) -> Result<StaticAction, Error> {
+        if !id(user) || !event.same_view(&self.raw) {
+            return Err(invalid());
+        }
+        if !form.has_owned_urls() {
+            return self.static_action(event, user);
+        }
+        if !form.owned_url_view(&self.raw) {
+            return Err(invalid());
+        }
+        match event.action()["type"].as_str() {
+            Some("multi_external_select") => form.external_field(event.key()).and_then(|f| {
+                if matches!(
+                    f.kind,
+                    crate::block_actions::form::InputKind::MultiExternalSelect { .. }
+                ) {
+                    Ok(f)
+                } else {
+                    Err(crate::block_actions::form::FormError::ValueTypeMismatch)
+                }
+            }),
+            Some("external_select") => form.external_field(event.key()).and_then(|f| {
+                if matches!(
+                    f.kind,
+                    crate::block_actions::form::InputKind::ExternalSelect { .. }
+                ) {
+                    Ok(f)
+                } else {
+                    Err(crate::block_actions::form::FormError::ValueTypeMismatch)
+                }
+            }),
+            Some("conversations_select") => form.conversation_field(event.key()).and_then(|f| {
+                if matches!(f.kind, crate::block_actions::form::InputKind::Conversation) {
+                    Ok(f)
+                } else {
+                    Err(crate::block_actions::form::FormError::ValueTypeMismatch)
+                }
+            }),
+            Some("multi_conversations_select") => {
+                form.conversation_field(event.key()).and_then(|f| {
+                    if matches!(
+                        f.kind,
+                        crate::block_actions::form::InputKind::MultiConversation { .. }
+                    ) {
+                        Ok(f)
+                    } else {
+                        Err(crate::block_actions::form::FormError::ValueTypeMismatch)
+                    }
+                })
+            }
+            Some("multi_channels_select") => form.channel_field(event.key()).and_then(|f| {
+                if matches!(
+                    f.kind,
+                    crate::block_actions::form::InputKind::MultiChannel { .. }
+                ) {
+                    Ok(f)
+                } else {
+                    Err(crate::block_actions::form::FormError::ValueTypeMismatch)
+                }
+            }),
+            Some("channels_select") => form.channel_field(event.key()).and_then(|f| {
+                if matches!(f.kind, crate::block_actions::form::InputKind::Channel) {
+                    Ok(f)
+                } else {
+                    Err(crate::block_actions::form::FormError::ValueTypeMismatch)
+                }
+            }),
+            Some("users_select") => form.user_field(event.key()).and_then(|f| {
+                if matches!(f.kind, crate::block_actions::form::InputKind::User) {
+                    Ok(f)
+                } else {
+                    Err(crate::block_actions::form::FormError::ValueTypeMismatch)
+                }
+            }),
+            Some("multi_users_select") => form.user_field(event.key()).and_then(|f| {
+                if matches!(
+                    f.kind,
+                    crate::block_actions::form::InputKind::MultiUser { .. }
+                ) {
+                    Ok(f)
+                } else {
+                    Err(crate::block_actions::form::FormError::ValueTypeMismatch)
+                }
+            }),
+            Some("static_select") => form.static_field(event.key()),
+            Some("multi_static_select") => form.multi_static_field(event.key()),
+            Some("checkboxes") => form.checkbox_field(event.key()),
+            Some("radio_buttons") => form.radio_field(event.key()),
+            Some("datepicker") => form.date_field(event.key()),
+            Some("timepicker") => form.time_field(event.key()),
+            Some("datetimepicker") => form.datetime_field(event.key()),
+            _ => return Err(invalid()),
+        }
+        .map_err(|_| invalid())?;
+        Ok(StaticAction {
+            user: user.into(),
+            view: self.clone(),
+            event: event.clone(),
+            url_scope: form.owned_url_scope(),
         })
     }
 }
@@ -132,7 +240,12 @@ impl StaticAction {
         token: &str,
         view_context_team_id: Option<&str>,
     ) -> Result<PreparedRequest, Error> {
-        if workspace.user_id != self.user
+        if self.url_scope.is_some() != form.has_owned_urls()
+            || self
+                .url_scope
+                .as_ref()
+                .is_some_and(|scope| !form.same_url_scope(scope))
+            || workspace.user_id != self.user
             || !self.same_view(current)
             || form.raw_view() != current.raw()
             || token.is_empty()

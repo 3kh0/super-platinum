@@ -253,19 +253,13 @@ impl CoreAppState {
             }
         }
         if self.activity.matches_scope(self.account_epoch, team) {
-            for message in self.activity.hydrated.values_mut() {
-                visit_message(message, &mut update);
-            }
+            self.activity.visit_message_files(&mut update);
         }
         if self.later.matches_scope(self.account_epoch, team) {
             self.later.visit_files(&mut update);
         }
         if self.active_team.as_deref() == Some(team) {
-            for dm in &mut self.dms.entries {
-                if let Some(message) = &mut dm.message {
-                    visit_message(message, &mut update);
-                }
-            }
+            self.dms.visit_preview_files(&mut update);
         }
     }
 }

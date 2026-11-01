@@ -64,6 +64,7 @@ async fn run(
     let team = context.session.team_id.clone();
     // Assignments and raw member initialization are dependencies, not positive
     // major authority and not a reason to replace retained warm channels.
+    let privacy_input = header_privacy::begin(&mut state.write(), context.clone());
     let assignments = context
         .transport
         .execute(api::list_experiments(&context.client, &context.session))
@@ -71,13 +72,15 @@ async fn run(
     if !context.current(&state.peek()) {
         return;
     }
-    let transformations = match assignments {
+    let (transformations, privacy_observation) = match assignments {
         Ok(raw) => match members::Transformations::decode(&raw) {
             Ok(mut value) => {
+                let privacy_observation =
+                    privacy_input.and_then(|input| input.observe(&state.peek(), &raw));
                 // Optional presentation facts share this exact original read;
                 // decoding failure must not block channel initialization.
                 value.emoji = emoji::prepare(state, context.clone(), &raw).await;
-                Arc::new(value)
+                (Arc::new(value), privacy_observation)
             }
             Err(error) => {
                 state.write().report_failure(&error, "", || {
@@ -97,6 +100,11 @@ async fn run(
         Ok(owner) => owner,
         Err(_) => return,
     };
+    if let Some(observed) = privacy_observation {
+        // `begin` may legitimately clone the emoji preparation. Bind only its
+        // accepted final owner/Arc, never the decoder's pre-acceptance value.
+        observed.bind(&mut state.write(), &owner);
+    }
     let pause = boot
         .then(|| crate::app_home::cfm_lifecycle::boot_started(&mut state.write(), &team))
         .flatten();

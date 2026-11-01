@@ -160,9 +160,14 @@ fn start(
             sessions: Sessions::default(),
             scene: None,
             saved: State::default(),
+            cooling_ui: false,
+            expired_ui: None,
         });
     }
     s.search_file_module.as_mut()?.scene = Some(Scene {
+        preview: None,
+        closed_image: None,
+        pdf: None,
         frame: frame.clone(),
         book,
         control: Arc::new(()),

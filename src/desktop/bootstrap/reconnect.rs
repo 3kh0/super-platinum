@@ -92,6 +92,7 @@ pub async fn reload_after_outage(mut state: Signal<ShellState>) {
         Visit::begin(&mut s)
     };
     super::search::recovery::schedule(state, visit.clone());
+    crate::channel_directory::schedule_after_outage(state, visit.clone());
     super::search::message_pages::schedule_after_outage(state, visit.clone());
     super::search::file_pages::schedule_after_outage(state, visit.clone());
     super::search_people::numbered::schedule_after_outage(state, visit.clone());

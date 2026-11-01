@@ -46,7 +46,7 @@
   function detach(){if(closed)return;closed=true;observer?.disconnect();node.removeEventListener('focus',focus);node.removeEventListener('blur',blur);if(h.node===node){h.isFocused=false;h.detach=null;}}
   h.detach=detach;h.current=owns;
   observer=new MutationObserver(update);
-  observer.observe(host,{attributes:true,attributeFilter:['data-home-focus','data-locked','data-email-loading','data-invalid','data-required','data-label','data-description','data-placeholder','disabled','placeholder','aria-required','aria-invalid','aria-labelledby','aria-describedby']});
+  observer.observe(host,{attributes:true,attributeFilter:['data-home-focus','data-locked','data-email-loading','data-url-loading','data-invalid','data-required','data-label','data-description','data-placeholder','disabled','placeholder','aria-required','aria-invalid','aria-labelledby','aria-describedby']});
   update();return {update,detach};
  }
  function attachQuiet(c){const node=document.getElementById(c.id);return attach(c,node,node);}

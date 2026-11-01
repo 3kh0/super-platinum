@@ -1,5 +1,10 @@
+mod isolated;
+mod render;
+pub use isolated::{Decoded, IsolatedPdf};
 pub mod check;
 pub mod fixture;
+#[cfg(test)]
+pub(crate) mod test_io;
 // PDF rendering uses bundled PDF.js and opaque, current-viewer-only bytes.
 use crate::state::{Overlay, ShellState};
 use dioxus::prelude::*;
@@ -29,6 +34,13 @@ pub fn serve_asset(
             "application/octet-stream"
         };
         (200, mime, Cow::Borrowed(bytes))
+    } else if let Some(relative) = path.strip_prefix("/pdf/search-data/") {
+        let bytes = search_bytes(&state.peek(), relative);
+        if let Some(bytes) = bytes {
+            (200, "application/pdf", Cow::Owned(bytes.to_vec()))
+        } else {
+            (404, "text/plain", Cow::Borrowed(b""))
+        }
     } else if let Some(opaque) = path.strip_prefix("/pdf/data/") {
         let bytes = viewer_bytes(&state.peek(), opaque);
         if let Some(bytes) = bytes {
@@ -50,6 +62,19 @@ pub fn serve_asset(
     );
 }
 
+pub(crate) fn search_bytes(shell: &ShellState, relative: &str) -> Option<std::sync::Arc<[u8]>> {
+    let (nonce, opaque) = relative.split_once('/')?;
+    if nonce.is_empty() || opaque.is_empty() || opaque.contains('/') {
+        return None;
+    }
+    crate::bootstrap::search_file_pages::pdf::bytes(shell, nonce, opaque)
+}
+/// Inert named-fixture markup. No decoder, private route or readiness exists.
+#[component]
+pub(crate) fn IsolatedPdfLayout() -> Element {
+    render::view("pdf-search-layout".into(), EventHandler::new(|_| {}))
+}
+
 #[component]
 pub fn PdfPreview(state: Signal<ShellState>, id: MediaAssetId) -> Element {
     let _ = state;
@@ -62,41 +87,21 @@ pub fn PdfPreview(state: Signal<ShellState>, id: MediaAssetId) -> Element {
             serde_json::to_string(&cleanup).unwrap()
         ));
     });
-    rsx! {
-        div {id:"{dom_id}",class:"pdf-preview",onmounted:move |_|{
-            let config=config.clone();
+    render::view(
+        dom_id,
+        EventHandler::new(move |_| {
+            let config = config.clone();
             spawn(async move {
-                let mut eval=document::eval(include_str!("bridge.js"));
-                if eval.send(config).is_ok(){let _=eval.recv::<serde_json::Value>().await;}
+                let mut eval = document::eval(&format!(
+                    "{}\nawait runPdfPreview(await dioxus.recv(),globalThis,dioxus);",
+                    include_str!("bridge.js")
+                ));
+                if eval.send(config).is_ok() {
+                    let _ = eval.recv::<serde_json::Value>().await;
+                }
             });
-        },
-            div {class:"pdf-toolbar","aria-label":"PDF controls",
-                button {r#type:"button","data-pdf":"previous",disabled:true,"Previous"}
-                label {"Page",input {r#type:"number",min:"1",value:"1",disabled:true,"aria-label":"PDF page","data-pdf":"page"}}
-                span {"data-pdf":"count","of …"}
-                button {r#type:"button","data-pdf":"next",disabled:true,"Next"}
-                label {"Zoom",select {"data-pdf":"zoom",disabled:true,"aria-label":"PDF zoom",
-                    option {value:"1","Fit width"}option {value:"1.5","150%"}option {value:"2","200%"}option {value:"3","300%"}
-                }}
-                button {r#type:"button","data-pdf":"rotate",disabled:true,"Rotate"}
-            }
-            div {class:"pdf-search",role:"search","aria-label":"Find in PDF",
-                input {r#type:"text",role:"searchbox",placeholder:"Find in PDF",disabled:true,"data-pdf":"find","aria-label":"Find in PDF",autocomplete:"off",spellcheck:false}
-                span {role:"status","data-pdf":"find-status"}
-                button {r#type:"button",class:"pdf-find-previous",disabled:true,"data-pdf":"find-previous","aria-label":"Previous PDF match",title:"Previous match (Shift+Enter)",{crate::icons::icon(crate::icons::Icon::ChevronRight,"icon")}}
-                button {r#type:"button",disabled:true,"data-pdf":"find-next","aria-label":"Next PDF match",title:"Next match (Enter)",{crate::icons::icon(crate::icons::Icon::ChevronRight,"icon")}}
-                button {r#type:"button",disabled:true,"data-pdf":"find-clear","aria-label":"Clear PDF search",title:"Clear search",{crate::icons::icon(crate::icons::Icon::Close,"icon")}}
-            }
-            p {class:"pdf-status",role:"status","data-pdf":"status","Loading PDF…"}
-            form {class:"pdf-password",hidden:true,"data-pdf":"password-form",
-                label {"Password",input {r#type:"password",autocomplete:"off","data-pdf":"password","aria-label":"PDF password"}}
-                button {r#type:"submit","Unlock"}
-            }
-            div {class:"pdf-scroll",tabindex:"0","aria-label":"PDF document",
-                div {class:"pdf-page",canvas {"aria-label":"PDF page image"}div {class:"textLayer"}}
-            }
-        }
-    }
+        }),
+    )
 }
 
 fn viewer_bytes(shell: &ShellState, opaque: &str) -> Option<std::sync::Arc<[u8]>> {

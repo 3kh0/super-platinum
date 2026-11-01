@@ -49,6 +49,7 @@ fn recording() -> bool {
         || focus::named()
         || crate::app_home::inputs::number_fixture::named()
         || crate::app_home::inputs::email_fixture::named()
+        || super::url::fixture::named()
         || crate::app_home::inputs::focus_fixture::named()
 }
 pub(crate) fn case() -> String {

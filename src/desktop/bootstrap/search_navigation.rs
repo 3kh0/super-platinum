@@ -3,6 +3,24 @@ use crate::state::{MainView, Overlay, SearchResultVm, ShellState};
 use dioxus::prelude::*;
 use std::sync::Arc;
 use super_platinum_core::slack::{Transport, api, models::GenericInfoPage};
+#[cfg(test)]
+pub(super) mod test_io;
+
+enum PageSource {
+    Message(super::search_message_pages::RowSource),
+    Thread(super::search_message_pages::ThreadSource),
+}
+impl PageSource {
+    fn resolve(
+        &self,
+        shell: &ShellState,
+    ) -> Option<(SearchResultVm, super::search_message_pages::OpenProof)> {
+        match self {
+            Self::Message(source) => Some((source.resolve(shell)?, source.proof())),
+            Self::Thread(source) => Some((source.resolve(shell)?, source.proof())),
+        }
+    }
+}
 
 struct OpenVisit {
     request: u64,
@@ -93,21 +111,28 @@ pub(super) fn open_message_page_hit(
     state: Signal<ShellState>,
     source: super::search_message_pages::RowSource,
 ) {
-    open_hit(state, None, Some(source));
+    open_hit(state, None, Some(PageSource::Message(source)));
+}
+
+pub(super) fn open_message_page_thread(
+    state: Signal<ShellState>,
+    source: super::search_message_pages::ThreadSource,
+) {
+    open_hit(state, None, Some(PageSource::Thread(source)));
 }
 
 fn open_hit(
     mut state: Signal<ShellState>,
     legacy: Option<SearchResultVm>,
-    source: Option<super::search_message_pages::RowSource>,
+    source: Option<PageSource>,
 ) {
     let (hit, visit) = {
         let mut shell = state.write();
         let (hit, proof) = if let Some(source) = source {
-            let Some(hit) = source.resolve(&shell) else {
+            let Some((hit, proof)) = source.resolve(&shell) else {
                 return;
             };
-            (hit, Some(source.proof()))
+            (hit, Some(proof))
         } else {
             // A queued legacy row cannot borrow an owned page's matching ID.
             if super::search_message_pages::has_scope(&shell) {
@@ -135,6 +160,8 @@ fn open_hit(
         }
         (hit, visit)
     };
+    #[cfg(test)]
+    let history_io = dioxus::prelude::try_consume_context::<std::rc::Rc<test_io::Io>>();
     dioxus::core::spawn_forever(async move {
         if !visit.source_current(&state.peek()) {
             visit.release(&mut state.write());
@@ -220,6 +247,13 @@ fn open_hit(
             }
             (shell.channel_generation, shell.thread_generation)
         };
+        #[cfg(test)]
+        if let Some(io) = history_io {
+            io.refresh(state).await;
+        } else {
+            super::refresh_selected_channel(state).await;
+        }
+        #[cfg(not(test))]
         super::refresh_selected_channel(state).await;
         let current = {
             let shell = state.peek();

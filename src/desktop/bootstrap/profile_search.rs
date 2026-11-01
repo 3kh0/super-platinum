@@ -4,6 +4,10 @@ use crate::state::ShellState;
 use dioxus::prelude::*;
 use std::{future::Future, sync::Arc};
 use super_platinum_core::slack::{Error, api, models::User};
+mod member;
+pub(crate) use member::Refreshed;
+pub(crate) use member::show as show_member;
+pub(crate) use member::{SearchTicket, back_search, show_search};
 
 const FAILED: &str = "Could not refresh this profile. Please try again.";
 const RETIRED: &str = "Refresh this profile to see its details.";
@@ -16,6 +20,7 @@ pub(crate) struct Snapshot {
     id: String,
     user: Option<User>,
     serial: u64,
+    member: Option<member::Owner>,
 }
 pub(crate) struct Ticket {
     anchor: Arc<ProfileVisit>,
@@ -23,6 +28,7 @@ pub(crate) struct Ticket {
     cookie: Option<String>,
     id: String,
     serial: u64,
+    member: Option<member::Owner>,
 }
 #[derive(Clone)]
 pub(crate) struct Retry {
@@ -52,6 +58,14 @@ impl Snapshot {
         self.anchor.same_owner_pane(shell)
             && self.visit.current(shell)
             && cookie_current(shell, &self.cookie)
+            && self
+                .member
+                .as_ref()
+                .is_none_or(|owner| owner.current(shell))
+            && self
+                .member
+                .as_ref()
+                .is_none_or(|o| o.search_data_current(shell))
     }
     fn ticket(&self) -> Ticket {
         Ticket {
@@ -60,6 +74,7 @@ impl Snapshot {
             cookie: self.cookie.clone(),
             id: self.id.clone(),
             serial: self.serial,
+            member: self.member.clone(),
         }
     }
 }
@@ -73,6 +88,11 @@ impl Ticket {
                 && self.visit.current(shell)
                 && self.anchor.same_owner_pane(shell)
                 && cookie_current(shell, &self.cookie)
+                && self
+                    .member
+                    .as_ref()
+                    .is_none_or(|owner| owner.current(shell))
+                && s.member.is_some() == self.member.is_some()
         })
     }
 }
@@ -101,6 +121,7 @@ pub(crate) fn show_id(shell: &mut ShellState, id: &str) -> Option<Ticket> {
         id: id.into(),
         user: None,
         serial: 1,
+        member: None,
     };
     let ticket = snapshot.ticket();
     shell.profile_search = Some(snapshot);
@@ -124,6 +145,7 @@ pub(crate) fn show(shell: &mut ShellState, hint: User) -> Option<Ticket> {
         id: hint.id.clone(),
         user: Some(hint),
         serial: 1,
+        member: None,
     };
     let ticket = snapshot.ticket();
     shell.profile_search = Some(snapshot);
@@ -132,15 +154,27 @@ pub(crate) fn show(shell: &mut ShellState, hint: User) -> Option<Ticket> {
 
 pub(crate) fn presentation<'a>(shell: &'a ShellState, id: &str) -> Option<Presentation<'a>> {
     let s = shell.profile_search.as_ref()?;
+    if s.id == id && s.member.is_some() && !s.anchor.same_owner_pane(shell) {
+        // A retired purpose-specific pane must not fall through to canonical
+        // actions merely because another account has the same user/cache key.
+        return Some(Presentation {
+            id: &s.id,
+            user: None,
+            loading: false,
+            error: Some(RETIRED.into()),
+            retry: None,
+        });
+    }
     if s.id != id
         || !s.anchor.same_owner_pane(shell)
-        || shell
-            .core
-            .active_team
-            .as_ref()
-            .and_then(|team| shell.core.workspaces.get(team))?
-            .users
-            .contains_key(id)
+        || s.member.is_none()
+            && shell
+                .core
+                .active_team
+                .as_ref()
+                .and_then(|team| shell.core.workspaces.get(team))?
+                .users
+                .contains_key(id)
     {
         return None;
     }
@@ -150,7 +184,17 @@ pub(crate) fn presentation<'a>(shell: &'a ShellState, id: &str) -> Option<Presen
         .as_ref()
         .filter(|pane| pane.user == id)?;
     let current = s.current(shell);
-    let loading = current && pane.loading;
+    let search_origin = s
+        .member
+        .as_ref()
+        .is_none_or(|o| !o.is_search() || o.current(shell));
+    let loading = if s.member.as_ref().is_some_and(|o| o.is_search()) {
+        s.visit.current(shell)
+            && s.member.as_ref().is_some_and(|o| o.current(shell))
+            && pane.loading
+    } else {
+        current && pane.loading
+    };
     Some(Presentation {
         id: &s.id,
         user: current.then_some(s.user.as_ref()).flatten(),
@@ -158,9 +202,13 @@ pub(crate) fn presentation<'a>(shell: &'a ShellState, id: &str) -> Option<Presen
         error: if current {
             pane.error.clone()
         } else {
-            Some(RETIRED.into())
+            Some(if search_origin {
+                RETIRED.into()
+            } else {
+                "Open this author profile again from Search.".into()
+            })
         },
-        retry: (!loading).then(|| Retry {
+        retry: (!loading && search_origin).then(|| Retry {
             anchor: s.anchor.clone(),
             serial: s.serial,
         }),
@@ -177,15 +225,26 @@ fn begin_retry(shell: &mut ShellState, token: Retry, explicit: bool) -> Option<T
         return None;
     }
     let current = old.current(shell);
+    let search = old.member.as_ref().is_some_and(|o| o.is_search());
+    if search && old.serial == u64::MAX {
+        return None;
+    }
     let pane = shell
         .core
         .profile_pane
         .as_ref()
         .filter(|p| p.user == old.id)?;
-    if (!explicit && !current) || (current && pane.loading) {
+    if (!explicit && !current) || ((current || search) && pane.loading) {
         return None;
     }
     let retained = if current { old.user.clone() } else { None };
+    let member = match &old.member {
+        Some(owner) => Some(member::recapture(shell, owner)?),
+        None => None,
+    };
+    if search {
+        member.as_ref()?.search_refresh_started(shell);
+    }
     let visit = Arc::new(ProfileVisit::capture(shell)?);
     let frame_cookie = cookie(shell);
     let s = shell.profile_search.as_mut()?;
@@ -193,6 +252,7 @@ fn begin_retry(shell: &mut ShellState, token: Retry, explicit: bool) -> Option<T
     s.cookie = frame_cookie;
     s.user = retained;
     s.serial = s.serial.wrapping_add(1);
+    s.member = member;
     let ticket = s.ticket();
     if let Some(pane) = shell.core.profile_pane.as_mut() {
         pane.loading = true;
@@ -212,6 +272,10 @@ pub(crate) fn retry(mut state: Signal<ShellState>, token: Retry) {
 }
 
 pub(crate) async fn run(state: Signal<ShellState>, ticket: Ticket) {
+    if ticket.member.is_some() {
+        member::run(state, ticket).await;
+        return;
+    }
     let context = state.try_read().ok().and_then(|shell| {
         if !ticket.current(&shell) {
             return None;
@@ -296,7 +360,7 @@ pub(crate) async fn refresh_if_owned(mut state: Signal<ShellState>, id: &str) ->
             .as_ref()
             .and_then(|t| shell.core.workspaces.get(t))
             .is_some_and(|w| w.users.contains_key(id));
-        if known {
+        if known && s.member.is_none() {
             shell.profile_search = None;
             return false;
         }
@@ -317,13 +381,14 @@ fn failed_current(shell: &ShellState) -> Option<Retry> {
     if !snapshot.current(shell) {
         return None;
     }
-    if shell
-        .core
-        .active_team
-        .as_ref()
-        .and_then(|t| shell.core.workspaces.get(t))?
-        .users
-        .contains_key(&snapshot.id)
+    if snapshot.member.is_none()
+        && shell
+            .core
+            .active_team
+            .as_ref()
+            .and_then(|t| shell.core.workspaces.get(t))?
+            .users
+            .contains_key(&snapshot.id)
     {
         return None;
     }
@@ -369,3 +434,43 @@ pub(super) fn schedule_after_outage(mut state: Signal<ShellState>, visit: super:
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+pub(crate) async fn refresh_member_with<F, Fut>(
+    mut state: Signal<ShellState>,
+    token: Retry,
+    fetch: F,
+) where
+    F: FnOnce(
+        Arc<super_platinum_core::slack::Transport>,
+        super_platinum_core::slack::client::PreparedRequest,
+    ) -> Fut,
+    Fut: Future<Output = Result<serde_json::Value, Error>>,
+{
+    let ticket = state
+        .try_write()
+        .ok()
+        .and_then(|mut shell| begin_retry(&mut shell, token, true));
+    if let Some(ticket) = ticket {
+        assert!(ticket.member.is_some());
+        member::run_with(state, ticket, fetch).await;
+    }
+}
+
+// Only the actual sealed Search pane may add its passive return control.
+pub(crate) fn is_search(shell: &ShellState, id: &str) -> bool {
+    shell
+        .profile_search
+        .as_ref()
+        .is_some_and(|s| s.id == id && s.member.as_ref().is_some_and(|o| o.is_search()))
+}
+pub(crate) fn search_back(
+    shell: &ShellState,
+    id: &str,
+) -> Option<crate::bootstrap::search_message_pages::profiles::Back> {
+    let s = shell
+        .profile_search
+        .as_ref()
+        .filter(|s| s.id == id && s.anchor.same_owner_pane(shell) && s.visit.current(shell))?;
+    s.member.as_ref()?.search_back(shell)
+}

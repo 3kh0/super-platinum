@@ -1,5 +1,7 @@
 //! Shared reaction visuals with caller-owned toggle authority.
 use super::*;
+mod groups;
+pub(crate) use groups::{groups as grouped_reaction_vms, reaction_groups_read_only};
 
 /// The reaction pills under a message. Clicking one toggles it.
 pub(crate) fn reactions_row(
@@ -23,8 +25,18 @@ pub(crate) fn reactions_read_only(
     media_epoch: u64,
     message: &MessageVm,
 ) -> Element {
+    reaction_slice_read_only(state, media, media_epoch, &message.reactions)
+}
+
+/// Passive visual projection shared by readers that do not own a toggle.
+pub(crate) fn reaction_slice_read_only(
+    state: Signal<ShellState>,
+    media: &crate::media::MediaRegistry,
+    media_epoch: u64,
+    reactions: &[ReactionVm],
+) -> Element {
     rsx! {
-        for reaction in &message.reactions {
+        for reaction in reactions {
             span {
                 key: "reaction-{reaction.name}",
                 "data-reaction-name": "{reaction.name}",

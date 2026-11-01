@@ -10,6 +10,9 @@
 .app-modal-display { margin: 0 0 16px; overflow-wrap: anywhere; }
 .app-modal-field { margin: 0 0 20px; min-width: 0; }
 .app-modal-field:last-child { margin-bottom: 0; }
+.app-modal-initial-url { margin-bottom: var(--space-2); }
+.app-modal-initial-url-value { margin: var(--space-1) 0 0; max-height: 8em; overflow: auto; overflow-wrap: anywhere; white-space: pre-wrap; user-select: text; }
+.app-modal-initial-url-value:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-sm); }
 .app-modal-users { min-width: 0; }
 .app-modal-users .message-multi-selected { max-height: 128px; overflow: auto; margin-bottom: var(--space-2); }
 .app-modal-users .message-user-options { max-height: 160px; overflow: auto; margin-top: var(--space-2); }

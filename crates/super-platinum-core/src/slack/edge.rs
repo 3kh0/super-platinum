@@ -40,6 +40,38 @@ pub fn users_info(
     client.edge_json(workspace, "users/info", ids_payload(user_ids))
 }
 
+/// The explicit zero-revision, interaction-aware member-reading branch.
+/// This builds a request only; neither zero nor its result shape proves custody.
+pub fn profile_users_info(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+    user_ids: &[String],
+) -> Result<PreparedRequest, &'static str> {
+    if workspace.enterprise_id.is_some()
+        || !crate::profile_reading::valid_id(&workspace.team_id)
+        || user_ids.is_empty()
+        || user_ids.len() > 100
+        || user_ids
+            .iter()
+            .any(|id| !crate::profile_reading::valid_id(id))
+    {
+        return Err("Unsupported profile member namespace or ids");
+    }
+    let updated_ids = user_ids
+        .iter()
+        .map(|id| (id.as_str(), 0u64))
+        .collect::<BTreeMap<_, _>>();
+    client
+        .edge_json(
+            workspace,
+            "users/info",
+            serde_json::json!({
+                "updated_ids":updated_ids,"check_interaction":true,"include_profile_only_users":true
+            }),
+        )
+        .map_err(|_| "Could not build profile member read")
+}
+
 pub fn emojis_info(
     client: &SlackClient,
     workspace: &WorkspaceSession,

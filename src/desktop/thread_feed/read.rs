@@ -1,7 +1,13 @@
 //! Captured followed-Threads reads; exact failed coordinate and original cursor owner.
 use crate::state::{MainView, ShellState};
 use dioxus::prelude::*;
-use std::{future::Future, sync::Arc};
+use std::{
+    future::Future,
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    },
+};
 use super_platinum_core::{
     config::WorkspaceSession,
     slack::{Error, SlackClient, Transport, api, models::ThreadsViewPage},
@@ -12,11 +18,76 @@ use super_platinum_core::{
 pub(crate) struct Reads {
     incarnation: Arc<()>,
     pending: Option<Arc<Ticket>>,
+    accepted: Option<Arc<row::Accepted>>,
+    owned_sequence: Option<u64>,
+    pub(super) presentation: Option<super::unread::Presentation>,
+    bulk: bulk::State,
+    profiles: Option<Arc<profiles::Scope>>,
+    document_names: Option<Arc<document_names::Scope>>,
+    windows: Option<Arc<windows::Scope>>,
+    context: Option<Arc<windows::ContextScope>>,
+    earlier: Option<Arc<earlier::Scope>>,
+    applied_read_barrier: Option<super_platinum_core::slack::realtime::ReadBarrier>,
+    pub(super) earlier_layout: bool,
+    copy_link: copy_link::State,
+    timestamp: timestamp::State,
+}
+mod bulk;
+pub(crate) mod copy_link;
+mod document_names;
+mod earlier;
+mod profiles;
+mod row;
+pub(crate) mod timestamp;
+mod windows;
+pub(crate) use bulk::{
+    Action as MarkAll, has_unreads as has_unread_threads, status as mark_all_status,
+};
+pub(crate) use document_names::{document_author_id, schedule as schedule_document_names};
+pub(crate) use earlier::accept_barrier as accept_read_barrier;
+pub(crate) use profiles::Member as ProfileMember;
+pub(crate) use profiles::Open as ProfileOpen;
+pub(crate) use profiles::publish_refresh as publish_profile_refresh;
+pub(crate) use windows::{ContextPrepared, finish_context, prepare_context};
+pub(crate) fn reply_visible_limit(
+    shell: &ShellState,
+    item: &super_platinum_core::slack::models::ThreadViewItem,
+) -> Option<usize> {
+    windows::context_visible_limit(shell, item).or_else(|| windows::visible_limit(shell, item))
+}
+pub(crate) fn unread_marker(
+    shell: &ShellState,
+    item: &super_platinum_core::slack::models::ThreadViewItem,
+    replies: &[&str],
+) -> Option<(usize, bool)> {
+    let cue = if let Some(accepted) = shell.thread_feed_reads.accepted.as_ref() {
+        accepted.unread_marker(shell, item, replies)?
+    } else {
+        shell
+            .thread_feed_reads
+            .presentation
+            .as_ref()?
+            .cue(shell, item, replies)?
+    };
+    Some((cue.index, cue.ghost))
+}
+pub(super) fn retire_after_native_mutation(shell: &ShellState) {
+    if let Some(accepted) = shell.thread_feed_reads.accepted.as_ref() {
+        accepted.retire_missing(shell);
+    }
+    if let Some(windows) = shell.thread_feed_reads.windows.as_ref() {
+        windows.retire_missing(shell);
+    }
+    profiles::retire_deferred(shell);
+    document_names::retire_missing(shell);
+    windows::retire_contexts(shell);
+    earlier::retire_missing(shell);
 }
 struct Ticket {
     epoch: u64,
     team: String,
     request: FeedRequest,
+    settled: AtomicBool,
 }
 impl Ticket {
     fn owns(&self, shell: &ShellState) -> bool {
@@ -38,12 +109,21 @@ impl Ticket {
         if !self.owns(shell) {
             return;
         }
+        let active = self.active(shell);
         if shell
             .core
             .threads_view
             .matches_scope(self.epoch, &self.team)
         {
             shell.core.threads_view.cancel(&self.request);
+        }
+        // An externally settled public Core request is not a native row
+        // publication. Exact pointer ownership authorizes local release only.
+        if !active
+            && !self.settled.load(Ordering::Acquire)
+            && shell.thread_feed_reads.owned_sequence == Some(self.request.sequence)
+        {
+            shell.thread_feed_reads.owned_sequence = None;
         }
         shell.thread_feed_reads.pending = None;
     }
@@ -110,6 +190,60 @@ pub(crate) struct Source {
     reconnect: Option<crate::bootstrap::reconnect::Visit>,
 }
 impl Source {
+    pub(crate) fn timestamp(
+        &self,
+        shell: &ShellState,
+        item: &super_platinum_core::slack::models::ThreadViewItem,
+    ) -> Option<timestamp::Action> {
+        timestamp::action(self, shell, item)
+    }
+    pub(crate) fn copy_link(
+        &self,
+        shell: &ShellState,
+        item: &super_platinum_core::slack::models::ThreadViewItem,
+    ) -> Option<copy_link::Action> {
+        copy_link::action(self, shell, item)
+    }
+    pub(crate) fn reading_member_name(&self, shell: &ShellState, id: &str) -> Option<String> {
+        profiles::reading_name(self, shell, id)
+    }
+    pub(crate) fn reading_document_name(
+        &self,
+        shell: &ShellState,
+        item: &super_platinum_core::slack::models::ThreadViewItem,
+        message: &super_platinum_core::slack::models::Message,
+    ) -> Option<String> {
+        document_names::label(self, shell, item, message)
+    }
+    pub(crate) fn earlier_replies(
+        &self,
+        shell: &ShellState,
+        item: &super_platinum_core::slack::models::ThreadViewItem,
+    ) -> Option<windows::Action> {
+        windows::Action::capture(self, shell, item)
+    }
+    pub(crate) fn network_earlier_replies(
+        &self,
+        shell: &ShellState,
+        item: &super_platinum_core::slack::models::ThreadViewItem,
+    ) -> Option<earlier::Action> {
+        earlier::Action::capture(self, shell, item)
+    }
+    pub(crate) fn profile(
+        &self,
+        shell: &ShellState,
+        item: &super_platinum_core::slack::models::ThreadViewItem,
+        message: &super_platinum_core::slack::models::Message,
+    ) -> Option<ProfileOpen> {
+        profiles::Open::capture(self, shell, item, message)
+    }
+    pub(crate) fn row(
+        &self,
+        shell: &ShellState,
+        item: &super_platinum_core::slack::models::ThreadViewItem,
+    ) -> Option<row::Row> {
+        row::Row::capture(self, shell, item)
+    }
     pub(crate) fn capture(shell: &ShellState) -> Option<Self> {
         Self::capture_with(shell, None)
     }
@@ -190,6 +324,8 @@ impl Source {
             if current {
                 crate::bootstrap::persist_workspace(&state, &self.team);
                 crate::bootstrap::hydrate_current_surface(state).await;
+                document_names::schedule(state);
+                profiles::load(self.clone(), state).await;
             }
         }
     }
@@ -203,11 +339,30 @@ impl Source {
         F: FnOnce(Request) -> Fut,
         Fut: Future<Output = Result<ThreadsViewPage, Error>>,
     {
-        let (ticket, cursors, counts_revision) = {
+        let (ticket, cursors, counts_revision, previous_markers, copy_carry, timestamp_carry) = {
             let mut shell = state.try_write().ok()?;
             if !self.current(&shell) || (matches!(mode, Mode::Retry) && !self.stamp.scoped) {
                 return None;
             }
+            // Do not re-authorize a public/untracked Core replacement merely
+            // by starting another native request at a new scalar coordinate.
+            if shell
+                .thread_feed_reads
+                .accepted
+                .as_ref()
+                .is_some_and(|p| !p.current(&shell))
+            {
+                shell.thread_feed_reads.accepted = None;
+            }
+            // Retain visual memory only from a record just checked above.
+            // It carries no row capability or message/canonical body.
+            let copy_carry = copy_link::carry_roster(&shell);
+            let timestamp_carry = timestamp::carry_roster(&shell);
+            let previous_markers = shell
+                .thread_feed_reads
+                .accepted
+                .as_ref()
+                .map(|p| p.markers.clone());
             shell.core.threads_view.ensure_scope(self.epoch, &self.team);
             let retry = matches!(mode, Mode::Retry)
                 || (matches!(mode, Mode::Resume)
@@ -230,9 +385,19 @@ impl Source {
                 epoch: self.epoch,
                 team: self.team.clone(),
                 request,
+                settled: AtomicBool::new(false),
             });
+            shell.thread_feed_reads.owned_sequence = Some(ticket.request.sequence);
             shell.thread_feed_reads.pending = Some(ticket.clone());
-            (ticket, cursors, counts_revision)
+            let previous_markers = ticket.request.cursor.as_ref().and(previous_markers);
+            (
+                ticket,
+                cursors,
+                counts_revision,
+                previous_markers,
+                copy_carry,
+                timestamp_carry,
+            )
         };
         let _lease = Lease {
             state,
@@ -252,6 +417,12 @@ impl Source {
         }
         match result {
             Ok(mut page) => {
+                let copy_candidates = copy_link::candidates(&page);
+                let timestamp_candidates = timestamp::candidates(&page);
+                let reply_windows = windows::Candidates::from_page(&page, &self.team);
+                let earlier_candidates = earlier::Candidates::from_page(&page, &self.team);
+                let profile_candidates = profiles::Candidates::from_page(&page, &self.team);
+                let document_candidates = document_names::Candidates::from_page(&page, &self.team);
                 let counts = page.threads_state.take();
                 let keys = page
                     .threads
@@ -271,6 +442,9 @@ impl Source {
                     return None;
                 }
                 super::reconcile_cursors(&mut shell.core, &keys);
+                if ticket.request.cursor.is_none() {
+                    bulk::after_refresh(&mut shell);
+                }
                 if let Some(counts) = counts {
                     shell
                         .core
@@ -280,12 +454,58 @@ impl Source {
                         .thread_counts
                         .apply_snapshot(counts, counts_revision);
                 }
+                // Only this successful original native-ticket acceptance can
+                // publish row ownership. Every success retires the old record,
+                // even byte-equal data or unavailable new qualification.
+                shell.thread_feed_reads.accepted =
+                    row::Accepted::capture(self, &shell, previous_markers.as_deref()).map(Arc::new);
+                shell.thread_feed_reads.profiles = profiles::Scope::capture(
+                    self,
+                    &shell,
+                    profile_candidates,
+                    ticket.request.cursor.is_some(),
+                )
+                .map(Arc::new);
+                shell.thread_feed_reads.document_names = document_names::Scope::capture(
+                    self,
+                    &shell,
+                    document_candidates,
+                    ticket.request.cursor.is_some(),
+                )
+                .map(Arc::new);
+                shell.thread_feed_reads.windows = windows::Scope::capture(
+                    self,
+                    &shell,
+                    reply_windows,
+                    ticket.request.cursor.is_some(),
+                )
+                .map(Arc::new);
+                shell.thread_feed_reads.earlier = earlier::Scope::capture(
+                    self,
+                    &shell,
+                    earlier_candidates,
+                    ticket.request.cursor.is_some(),
+                )
+                .map(Arc::new);
+                let copy_carry = ticket.request.cursor.as_ref().and(copy_carry);
+                copy_link::publish(self, &mut shell, &ticket, copy_candidates, copy_carry);
+                let timestamp_carry = ticket.request.cursor.as_ref().and(timestamp_carry);
+                timestamp::publish(
+                    self,
+                    &mut shell,
+                    &ticket,
+                    timestamp_candidates,
+                    timestamp_carry,
+                );
+                windows::context_page(&mut shell, &keys, ticket.request.cursor.is_some());
+                ticket.settled.store(true, Ordering::Release);
                 Some(shell.core.threads_view.load_seq)
             }
             Err(error) => {
                 // All original native/cursor ownership and Core acceptance
                 // precede both failure settlement and visible error reporting.
                 shell.core.threads_view.fail(&ticket.request);
+                ticket.settled.store(true, Ordering::Release);
                 shell.report_failure(&error, "Threads need a connection", || {
                     "Could not load threads. Please try again.".into()
                 });

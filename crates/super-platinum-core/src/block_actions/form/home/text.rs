@@ -13,13 +13,44 @@ pub struct TextEvent {
     view: Value,
     key: InputKey,
     action: Value,
+    url_origin: Option<std::sync::Arc<()>>,
 }
 impl TextEvent {
     pub(super) fn email(view: Value, key: InputKey, action: Value) -> Self {
-        Self { view, key, action }
+        Self {
+            view,
+            key,
+            action,
+            url_origin: None,
+        }
     }
     pub(super) fn number(view: Value, key: InputKey, action: Value) -> Self {
-        Self { view, key, action }
+        Self {
+            view,
+            key,
+            action,
+            url_origin: None,
+        }
+    }
+    pub(super) fn url(
+        view: Value,
+        key: InputKey,
+        action: Value,
+        origin: std::sync::Arc<()>,
+    ) -> Self {
+        Self {
+            view,
+            key,
+            action,
+            url_origin: Some(origin),
+        }
+    }
+    pub(super) fn url_profile(&self, form: &HomeForm) -> bool {
+        self.url_origin.as_ref().is_some_and(|origin| {
+            form.url_profile
+                .as_ref()
+                .is_some_and(|p| std::sync::Arc::ptr_eq(origin, &p.identity))
+        })
     }
     pub fn action(&self) -> &Value {
         &self.action
@@ -121,10 +152,14 @@ impl HomeForm {
             view: self.view.clone(),
             key: key.clone(),
             action,
+            url_origin: None,
         }))
     }
 
     pub(super) fn expected_error(&self, key: &InputKey, field: &FormField) -> Option<String> {
+        if self.url_profile.as_ref().is_some_and(|p| p.contains(key)) {
+            return self.url_expected_error(key, field);
+        }
         if matches!(field.kind, InputKind::Radio { .. }) && self.radio_state_valid(key) {
             return self.radio_error(key);
         }

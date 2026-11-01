@@ -1,6 +1,16 @@
 //! Request shapes verified against Slack's shipped thread subscription fetchers.
 use super::*;
 
+/// The ordinary no-bound Mark-all call from the shipped Threads banner.
+/// No loaded-row timestamp is a workspace-wide high-water or Undo receipt.
+/// SDK provider defaults and live server acceptance are separate boundaries.
+pub fn clear_thread_unreads_request(
+    client: &SlackClient,
+    workspace: &WorkspaceSession,
+) -> PreparedRequest {
+    client.rest_form(workspace, "subscriptions.thread.clearAll", Vec::new())
+}
+
 pub fn thread_subscription_request(
     client: &SlackClient,
     workspace: &WorkspaceSession,
@@ -61,4 +71,28 @@ pub async fn fetch_thread_subscription(
         .await?;
     let page: Page = decode(value, "subscriptions.thread.get")?;
     Ok(page.subscriptions.contains(&root))
+}
+
+#[cfg(test)]
+mod clear_tests {
+    use super::*;
+
+    #[test]
+    fn ordinary_clear_all_has_no_guessed_bound_or_undo_and_is_not_retry_safe() {
+        let workspace = WorkspaceSession {
+            team_id: "T1".into(),
+            enterprise_id: None,
+            user_id: "U1".into(),
+            name: "Offline fixture".into(),
+            url: "https://fixture.slack.com".into(),
+            token: "synthetic-token".into(),
+        };
+        let request = clear_thread_unreads_request(&SlackClient::default(), &workspace);
+        assert!(request.url.contains("/api/subscriptions.thread.clearAll?"));
+        assert!(!request.retry_safe());
+        let crate::slack::client::RequestBody::Form(fields) = request.body else {
+            panic!("ordinary Slack form recipe");
+        };
+        assert_eq!(fields, vec![("token".into(), "synthetic-token".into())]);
+    }
 }

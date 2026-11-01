@@ -4,7 +4,21 @@ use super::*;
 use crate::state::Overlay;
 use std::{collections::BTreeMap, sync::Arc};
 use super_platinum_core::{search::SearchKind, slack::models::SearchPagination};
+mod body;
+mod disclosure;
+mod emphasis;
+pub(crate) mod profiles;
+pub(crate) mod reaction_actions;
+mod reactions;
+mod thread;
+pub(in crate::bootstrap::search) use thread::ordinary_root;
+pub(crate) use thread::{ThreadSource, open_thread, reply_count};
 mod read;
+pub(super) use body::{Bodies, Supplied, clean_nodes};
+pub(crate) use body::{body, fixture_body};
+pub(crate) use disclosure::{can_expand, disclosure_fixture_body, expand, is_expanded};
+pub(crate) use emphasis::emphasis_fixture_body;
+pub(crate) use reactions::{fixture_reaction_groups, fixture_reactions, reactions};
 use read::run;
 pub(super) use read::{Lease, Read, initial};
 
@@ -12,6 +26,9 @@ pub(crate) struct Book {
     frame: Arc<read::Frame>,
     activation: Arc<()>,
     pages: BTreeMap<u32, Vec<SearchResultVm>>,
+    bodies: BTreeMap<u32, Bodies>,
+    profiles: profiles::State,
+    expanded: disclosure::Expanded,
     bound: u32,
     total: u64,
     shown: u32,
@@ -61,6 +78,28 @@ pub(crate) fn rows(shell: &ShellState) -> &[SearchResultVm] {
         .and_then(|book| book.pages.get(&book.shown))
         .map(Vec::as_slice)
         .unwrap_or_default()
+}
+// Native positive evidence only. No mutation of indexed rows/metadata and no
+// conversion to Source deletedMessages, tombstones, or canonical body state.
+fn known_deleted(shell: &ShellState, book: &Book, index: usize) -> bool {
+    let Some(hit) = book.pages.get(&book.shown).and_then(|rows| rows.get(index)) else {
+        return false;
+    };
+    !hit.channel_id.is_empty()
+        && !hit.ts.is_empty()
+        && shell
+            .core
+            .workspaces
+            .get(&book.frame.team)
+            .and_then(|workspace| workspace.messages.get(&hit.channel_id))
+            .is_some_and(|messages| messages.was_deleted(&hit.ts))
+}
+pub(crate) fn row_was_deleted(shell: &ShellState, index: usize) -> bool {
+    shell
+        .search_message_pages
+        .as_ref()
+        .filter(|book| book.current(shell))
+        .is_some_and(|book| known_deleted(shell, book, index))
 }
 pub(crate) fn status(shell: &ShellState) -> Option<(u32, u32, u32, u64, bool, bool)> {
     let book = shell
@@ -166,7 +205,12 @@ fn plan_read(
         return None;
     }
     let cached = (!retry && !refresh)
-        .then(|| book.pages.get(&page).cloned())
+        .then(|| {
+            book.pages
+                .get(&page)
+                .cloned()
+                .map(|rows| (rows, book.bodies.get(&page).cloned().unwrap_or_default()))
+        })
         .flatten();
     let frame = book.frame.clone();
     let request =
@@ -189,7 +233,7 @@ fn plan_read(
         cursor: recovery::Cursor::capture(shell),
         restored: restored.map(|visit| (visit, shell.search_open_generation)),
     };
-    if let Some(rows) = cached {
+    if let Some((rows, bodies)) = cached {
         let metadata = shell.search_message_pages.as_ref()?.metadata(page);
         if !shell
             .search_pager
@@ -198,7 +242,8 @@ fn plan_read(
             Read::Page(ticket).retire(shell);
             return None;
         }
-        Read::Page(ticket).publish(shell, rows, Some(&metadata));
+        Read::Page(ticket).publish(shell, rows, Some(&metadata), bodies);
+        profiles::cached_activation(shell);
         Some(Plan::Cached)
     } else {
         Some(Plan::Fetch(read::Work { ticket }))
@@ -231,6 +276,9 @@ pub(crate) fn choose(mut state: Signal<ShellState>, source: Control, page: u32) 
         .try_write()
         .ok()
         .and_then(|mut shell| plan(&mut shell, &source, page, false, None));
+    if matches!(planned.as_ref(), Some(Plan::Cached)) {
+        profiles::prepare(state, false);
+    }
     if let Some(Plan::Fetch(work)) = planned {
         spawn(async move {
             run(state, work).await;
@@ -258,6 +306,9 @@ pub(super) async fn more(mut state: Signal<ShellState>) {
         };
         plan(&mut shell, &source, page, source.failed, None)
     });
+    if matches!(planned.as_ref(), Some(Plan::Cached)) {
+        profiles::prepare(state, false);
+    }
     if let Some(Plan::Fetch(work)) = planned {
         run(state, work).await;
     }
@@ -302,6 +353,9 @@ impl RowSource {
             return None;
         }
         rows(shell).get(index)?;
+        if row_was_deleted(shell, index) {
+            return None;
+        }
         Some(Self {
             control,
             index,
@@ -317,6 +371,9 @@ impl RowSource {
             || shell.thread_generation != self.thread_generation
             || shell.main_view != self.view
         {
+            return None;
+        }
+        if row_was_deleted(shell, self.index) {
             return None;
         }
         rows(shell).get(self.index).cloned()
@@ -349,6 +406,7 @@ impl OpenProof {
                     && Arc::ptr_eq(&book.frame, &self.frame)
                     && Arc::ptr_eq(&book.activation, &self.activation)
                     && book.pending.is_none()
+                    && !known_deleted(shell, book, self.index)
                     && book
                         .pages
                         .get(&book.shown)
@@ -365,10 +423,31 @@ pub(crate) enum Fixture {
     First,
     Second,
     Failed,
+    Deleted,
+    Rich,
+    Expanded,
+    Emphasis,
+    Reactions,
+    ReactionGroups,
+    Thread,
 }
 pub(crate) fn fixture(shell: &mut ShellState, name: &str) {
     super::search_fixture(shell, "search");
-    shell.search_message_pages_fixture = Some(if name.contains("failed") {
+    shell.search_message_pages_fixture = Some(if name.contains("root-thread") {
+        Fixture::Thread
+    } else if name.contains("reaction-groups") {
+        Fixture::ReactionGroups
+    } else if name.contains("reactions") {
+        Fixture::Reactions
+    } else if name.contains("emphasis") {
+        Fixture::Emphasis
+    } else if name.contains("expanded") {
+        Fixture::Expanded
+    } else if name.contains("rich") {
+        Fixture::Rich
+    } else if name.contains("deleted") {
+        Fixture::Deleted
+    } else if name.contains("failed") {
         Fixture::Failed
     } else if name.contains("page2") {
         Fixture::Second
@@ -379,6 +458,11 @@ pub(crate) fn fixture(shell: &mut ShellState, name: &str) {
     shell.search_pager.page_count = 9;
     shell.search_pager.total = 172;
     shell.search_pager.failed = name.contains("failed");
+    if shell.search_message_pages_fixture == Some(Fixture::Thread) {
+        if let Some(hit) = shell.search_results.first_mut() {
+            hit.thread_ts = None;
+        }
+    }
 }
 
 #[cfg(test)]

@@ -23,6 +23,8 @@ use super_platinum_core::{
 };
 mod load;
 mod parameters;
+pub(crate) mod pdf;
+pub(crate) mod preview;
 pub(crate) mod saved;
 use parameters::ReadParameters;
 #[cfg(test)]
@@ -121,6 +123,8 @@ pub(crate) struct Module {
     sessions: Sessions,
     scene: Option<Scene>,
     saved: saved::State,
+    cooling_ui: bool,
+    expired_ui: Option<Instant>,
 }
 impl Module {
     pub(crate) fn clear_results(&mut self) {
@@ -131,6 +135,9 @@ struct Scene {
     frame: Arc<Frame>,
     book: Book,
     control: Arc<()>,
+    preview: Option<preview::Attempt>,
+    closed_image: Option<Arc<preview::ClosedImage>>,
+    pdf: Option<pdf::Attempt>,
 }
 struct Frame {
     owner: Identity,
@@ -189,6 +196,36 @@ pub(crate) fn has_scope(s: &ShellState) -> bool {
 }
 pub(crate) fn active(s: &ShellState) -> bool {
     scene(s).is_some()
+}
+/// The existing runtime tick notifies only visible changes. A shared account
+/// cooldown expiring must repaint disabled controls even when nothing else
+/// changes. This neither admits a request nor replaces any captured source.
+pub(crate) fn poll(s: &mut ShellState) -> bool {
+    let pdf_changed = pdf::poll(s);
+    if s.overlay != Some(Overlay::Search) || s.search_pager.kind != SearchKind::Files {
+        return pdf_changed;
+    }
+    let Some((cooling, expired)) = s
+        .search_file_module
+        .as_ref()
+        .filter(|m| m.rate.owner.current(s))
+        .map(|m| {
+            let cooling = m.rate.cooling();
+            let expired = (!cooling)
+                .then(|| m.rate.until.lock().ok().and_then(|value| *value))
+                .flatten();
+            (cooling, expired)
+        })
+    else {
+        return pdf_changed;
+    };
+    let module = s.search_file_module.as_mut().unwrap();
+    // A complete short cooldown can occur between visible polls. Its actual
+    // deadline still needs one expiry notification even if true was never seen.
+    let changed = module.cooling_ui != cooling || expired.is_some() && module.expired_ui != expired;
+    module.cooling_ui = cooling;
+    module.expired_ui = expired;
+    changed || pdf_changed
 }
 pub(crate) fn visible(s: &ShellState, hit: &api::Hit) -> bool {
     !hit.tombstoned()
@@ -357,9 +394,14 @@ fn plan_entry(s: &mut ShellState, source: EntrySource, sort: api::Sort) -> Optio
             sessions: Sessions::default(),
             scene: None,
             saved: saved::State::default(),
+            cooling_ui: false,
+            expired_ui: None,
         });
     }
     s.search_file_module.as_mut()?.scene = Some(Scene {
+        preview: None,
+        closed_image: None,
+        pdf: None,
         frame: frame.clone(),
         book,
         control: Arc::new(()),

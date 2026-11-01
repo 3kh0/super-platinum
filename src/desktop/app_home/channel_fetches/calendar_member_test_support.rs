@@ -49,6 +49,34 @@ pub(crate) fn assignments(shell: &mut ShellState, raw: &Value) -> Result<Initial
     let owner = initial::begin(shell, ctx, transformations, true, false)?;
     Ok(Initialization { owner })
 }
+
+/// Original privacy input start and its later response boundary, with no HTTP.
+/// Existing assignment helpers deliberately cannot fabricate this observation.
+pub(crate) struct HeaderPrivacyInput {
+    context: Arc<Context>,
+    input: Option<header_privacy::Input>,
+}
+pub(crate) fn header_privacy_input(shell: &mut ShellState) -> Result<HeaderPrivacyInput, Error> {
+    let team = shell.core.active_team.clone().ok_or_else(unavailable)?;
+    let context = Arc::new(Context::capture(shell, &team)?);
+    let input = header_privacy::begin(shell, context.clone());
+    Ok(HeaderPrivacyInput { context, input })
+}
+impl HeaderPrivacyInput {
+    pub(crate) fn complete(
+        self,
+        shell: &mut ShellState,
+        raw: &Value,
+    ) -> Result<Initialization, Error> {
+        let transformations = Arc::new(members::Transformations::decode(raw)?);
+        let observed = self.input.and_then(|input| input.observe(shell, raw));
+        let owner = initial::begin(shell, self.context, transformations, true, false)?;
+        if let Some(observed) = observed {
+            observed.bind(shell, &owner);
+        }
+        Ok(Initialization { owner })
+    }
+}
 impl Initialization {
     pub(crate) async fn drain(&self, state: Signal<ShellState>) -> Result<(), Error> {
         members::drain(state, &self.owner).await

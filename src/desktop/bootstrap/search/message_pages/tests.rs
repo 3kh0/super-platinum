@@ -407,3 +407,13 @@ async fn owned_entry_guards_metadata_legacy_append_and_actual_queued_row_opener_
     assert!(state.peek().search_opening.is_none());
     assert_eq!(calls.get(), 3);
 }
+
+pub(crate) mod rich;
+
+pub(crate) mod disclosure;
+
+pub(crate) mod reactions;
+
+pub(crate) mod thread;
+
+mod reaction_actions;

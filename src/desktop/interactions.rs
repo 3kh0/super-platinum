@@ -264,6 +264,16 @@ impl ShellState {
         ts: Option<&str>,
         thread_ts: Option<&str>,
     ) -> bool {
+        if self
+            .core
+            .activity
+            .items
+            .iter()
+            .find(|item| item.key == key)
+            .is_some_and(|item| self.core.activity_item_message_deleted(item))
+        {
+            return false;
+        }
         if crate::canvas_create::departure::request(
             self,
             crate::canvas_create::departure::Destination::Activity {
@@ -319,6 +329,20 @@ impl ShellState {
                 .push(crate::channel_vm::channel_vm(workspace, info, &self.media));
         }
         self.open_message(channel, ts, ChannelOpen::Global)
+    }
+
+    /// Consumes one timestamp-purpose invocation, never a deferred string route.
+    pub(crate) fn open_thread_timestamp(
+        &mut self,
+        commit: crate::thread_feed::timestamp::target::Commit,
+    ) -> Option<crate::thread_feed::timestamp::target::Work> {
+        let (channel, ts) = commit.coordinates(self)?;
+        // Keep the existing non-targeted Canvas departure guard in open_message.
+        // Refusal consumes this invocation; no Destination::Message is retained.
+        if !self.open_message(channel, ts, ChannelOpen::Global) {
+            return None;
+        }
+        commit.successor(self)
     }
 
     pub fn open_later_item(&mut self, channel: &str, ts: &str) -> bool {

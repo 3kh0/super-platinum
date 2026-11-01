@@ -40,7 +40,11 @@ pub(super) fn hydrate(s: &mut ShellState) {
         .filter_map(|(key, field)| {
             Some((
                 key.clone(),
-                kind(field)?,
+                if matches!(field.kind, InputKind::Url) && f.url_field(key).is_ok() {
+                    "url"
+                } else {
+                    kind(field)?
+                },
                 field.raw["focus_on_load"] == true,
             ))
         })

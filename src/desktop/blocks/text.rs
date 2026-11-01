@@ -4,6 +4,10 @@
 use super::BlockCtx;
 use crate::model::RichNode;
 
+#[path = "text/passive_topic.rs"]
+mod passive_topic_format;
+pub(crate) use passive_topic_format::{TopicRun, passive_topic};
+
 /// Slack's `mrkdwn` at block level: fenced code, `>` quotes, and paragraphs.
 pub(crate) fn mrkdwn_blocks(ctx: BlockCtx<'_>, text: &str) -> Vec<RichNode> {
     mrkdwn_blocks_with(ctx, text, false)

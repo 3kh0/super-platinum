@@ -31,6 +31,7 @@ pub(super) fn ChannelDetailsButton(
     state: Signal<ShellState>,
     channel: String,
     title: String,
+    #[props(default)] private_title: Option<super::HeaderPrivacyTitle>,
 ) -> Element {
     let mut opened = use_signal(|| {
         matches!(
@@ -52,8 +53,21 @@ pub(super) fn ChannelDetailsButton(
                 | "channel-members")
         )
     });
+    let accessible_title = private_title
+        .as_ref()
+        .map(|p| format!("Channel details for private channel {}", p.label()))
+        .unwrap_or_else(|| format!("Channel details for {title}"));
+    let shown_name = private_title
+        .as_ref()
+        .map(|p| p.label().to_owned())
+        .unwrap_or_else(|| title.clone());
     rsx! {
-        h2{button{id:"channel-details-trigger",class:"header-name","aria-label":"Channel details for {title}",onclick:move |_|opened.set(true),"{title}"}}
+        h2{button{id:"channel-details-trigger",class:if private_title.is_some(){"header-name has-private-title"}else{"header-name"},"aria-label":accessible_title,onclick:move |_|opened.set(true),
+            if let Some(private)=private_title.as_ref(){
+                span{id:"conversation-header-private",class:"header-private-icon","aria-hidden":"true","data-header-privacy":private.provenance(),{icon(Icon::LockFilled,"icon sm")}}
+                span{class:"header-private-name","{shown_name}"}
+            }else{"{title}"}
+        }}
         if opened(){DetailsDialog{state,channel,title:title.clone(),onclose:move |_|{opened.set(false);dioxus::document::eval("document.getElementById('channel-details-trigger')?.focus();");}}}
     }
 }

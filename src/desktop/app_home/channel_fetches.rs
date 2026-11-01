@@ -22,6 +22,7 @@ mod drain;
 mod emoji;
 mod events;
 pub(crate) mod fixture;
+mod header_privacy;
 mod initial;
 mod members;
 mod payload;
@@ -40,8 +41,11 @@ pub(crate) use emoji::{
 };
 pub(crate) use events::request_initialization;
 pub(crate) use events::{after_event, before_event, connected, resume};
+pub(crate) use header_privacy::{
+    Inactive as HeaderPrivacyInactive, inactive as header_privacy_inactive,
+};
 pub(crate) use initial::{initialize, resync};
-pub(crate) use members::{MemberFlags, member_flags};
+pub(crate) use members::{ChannelThreads, MemberFlags, channel_threads, member_flags};
 pub(crate) use render::fields_guarded as member_fields;
 
 const GENERATION: &str = "shared-channel-initialization";
@@ -53,6 +57,7 @@ fn unavailable() -> Error {
 #[derive(Default)]
 pub(crate) struct Registry {
     slots: BTreeMap<Key, Slot>,
+    header_privacy: header_privacy::Registry,
     topics: topics::Queue<u64>,
     topic_owners: BTreeMap<u64, Owner>,
     topic_timer: Option<Arc<()>>,

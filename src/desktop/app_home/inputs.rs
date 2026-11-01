@@ -65,6 +65,8 @@ pub(super) fn hydrate(s: &mut ShellState) {
     let external_parents = external::dispatch::parents(s);
     let number_parents = text::number::parents(s);
     let email_parents = text::email::parents(s);
+    let url_parents = text::url::parents(s);
+    let previous_urls = text::url::keys(s);
     let previous_emails = text::email::keys(s);
     let previous_external = external_keys(s)
         .into_iter()
@@ -82,6 +84,7 @@ pub(super) fn hydrate(s: &mut ShellState) {
         if form.raw_view() == &raw {
             focus::hydrate(s);
             text::email::hydrate(s, &[]);
+            text::url::hydrate(s, &[]);
             text::number::hydrate(s);
             native::date::hydrate(s);
             native::time::hydrate(s);
@@ -92,7 +95,7 @@ pub(super) fn hydrate(s: &mut ShellState) {
             static_select::hydrate(s);
             return;
         }
-        form.reconcile_with_email_parents(
+        form.reconcile_with_url_parents(
             &raw,
             &date_parents,
             &time_parents,
@@ -103,6 +106,7 @@ pub(super) fn hydrate(s: &mut ShellState) {
             &external_parents,
             &number_parents,
             &email_parents,
+            &url_parents,
         )
     } else {
         // Only unchanged pristine inactive entries may be forgotten. Dirty Home
@@ -113,7 +117,7 @@ pub(super) fn hydrate(s: &mut ShellState) {
         if s.app_home.forms.len() >= 64 {
             Err(FormError::ConflictingUpdate)
         } else {
-            HomeForm::parse(&raw).map(|form| {
+            HomeForm::parse_first_owned_urls(&raw).map(|form| {
                 s.app_home.forms.insert(key.clone(), form);
             })
         }
@@ -129,6 +133,11 @@ pub(super) fn hydrate(s: &mut ShellState) {
             .filter(|k| !previous_emails.contains(k))
             .collect::<Vec<_>>();
         text::email::hydrate(s, &new_emails);
+        let new_urls = text::url::keys(s)
+            .into_iter()
+            .filter(|k| !previous_urls.contains(k))
+            .collect::<Vec<_>>();
+        text::url::hydrate(s, &new_urls);
         text::number::hydrate(s);
         native::date::hydrate(s);
         native::time::hydrate(s);
@@ -270,11 +279,12 @@ pub(crate) fn reset(mut state: Signal<ShellState>, visit: actions::Key) {
         .as_ref()
         .unwrap()
         .raw();
-    let Ok(form) = HomeForm::parse(raw) else {
+    let Ok(form) = HomeForm::parse_first_owned_urls(raw) else {
         return;
     };
     text::number::reset(&mut s, &key);
     text::email::reset(&mut s, &key);
+    text::url::reset(&mut s, &key);
     native::reset(&mut s, &key);
     static_select::reset(&mut s, &key);
     users::dispatch::reset(&mut s, &key);
@@ -287,6 +297,8 @@ pub(crate) fn reset(mut state: Signal<ShellState>, visit: actions::Key) {
     text::number::hydrate(&mut s);
     let new_emails = text::email::keys(&s);
     text::email::hydrate(&mut s, &new_emails);
+    let new_urls = text::url::keys(&s);
+    text::url::hydrate(&mut s, &new_urls);
     native::date::hydrate(&mut s);
     native::time::hydrate(&mut s);
     native::datetime::hydrate(&mut s);

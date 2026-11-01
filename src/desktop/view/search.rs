@@ -9,6 +9,7 @@ pub(crate) use files::{
     busy_or_retired as file_page_busy_or_retired, controls as file_page_controls,
     owns as file_page_scope,
 };
+pub(crate) use messages::reaction_picker::panel as reaction_picker_panel;
 mod people;
 use crate::state::ShellState;
 use dioxus::prelude::*;
@@ -168,6 +169,10 @@ pub(crate) fn controls(mut state: Signal<ShellState>, shell: &ShellState) -> Ele
                     }
                     if shell.search_pager.kind == SearchKind::Messages {
                         {field(state, "With person", "@Name", "with_person", &filters.with_person, Some("search-with-person-options"), filter_source.clone())}
+                        if crate::state::search_message_scopes::typed_panel(shell) || crate::state::search_message_scopes::fallback::has_draft(shell) {
+                            {field(state, "Has reaction", ":eyes:", "reaction", filters.reactions.as_ref().map_or("", |r| r.any.as_str()), None, filter_source.clone())}
+                            {field(state, "My reaction", ":eyes:", "my_reaction", filters.reactions.as_ref().map_or("", |r| r.mine.as_str()), None, filter_source.clone())}
+                        }
                     }
                     {field(state, "On date", "YYYY-MM-DD", "on", &filters.on, None, filter_source.clone())}
                     {field(state, "After date", "YYYY-MM-DD", "after", &filters.after, None, filter_source.clone())}
@@ -276,6 +281,8 @@ fn field(
                             "channel" => filters.channel = event.value(),
                             "sender" => filters.sender = event.value(),
                             "with_person" => filters.with_person = event.value(),
+                            "reaction" => filters.reactions.get_or_insert_with(Default::default).any = event.value(),
+                            "my_reaction" => filters.reactions.get_or_insert_with(Default::default).mine = event.value(),
                             "on" => filters.on = event.value(),
                             "after" => filters.after = event.value(),
                             "before" => filters.before = event.value(),

@@ -7,6 +7,9 @@ pub(super) fn pane(
     shell: &ShellState,
     details: Presentation<'_>,
 ) -> Element {
+    let fixture = crate::bootstrap::search_message_pages::profiles::fixture_user(shell).is_some();
+    let search = crate::bootstrap::profile_search::is_search(shell, details.id) || fixture;
+    let back = crate::bootstrap::profile_search::search_back(shell, details.id);
     let name = super_platinum_core::state::display_name(details.user, details.id);
     let profile = details.user.and_then(|u| u.profile.as_ref());
     let title = profile.and_then(|p| p.title.clone()).unwrap_or_default();
@@ -29,6 +32,7 @@ pub(super) fn pane(
         .to_uppercase();
     let avatar = details
         .user
+        .filter(|_| !search)
         .and_then(super_platinum_core::state::user_profile_image_url)
         .map(|url| shell.media.register_avatar(details.id, &url));
     let ready = avatar.as_ref().is_some_and(|id| shell.media.is_ready(id));
@@ -38,6 +42,8 @@ pub(super) fn pane(
         aside { class:if width<300.0 {"profile-pane profile-pane-narrow"} else {"profile-pane"},
             style:"{style}", role:"dialog", "aria-label":"{name} Profile", "data-profile-read-only":"true",
             {pane_header(state,width)}
+            if let Some(back)=back {button {id:"message-search-profile-back",r#type:"button",class:"chip",
+                onclick:move |_|crate::bootstrap::search_message_pages::profiles::back(state,back.clone()),"Back to search"}} else if fixture {button {id:"message-search-profile-back",r#type:"button",class:"chip",disabled:true,"Back to search"}}
             div {class:"profile-pane-scroll",
                 div {class:"profile-pane-hero",div {class:"profile-pane-avatar",
                     {avatar_fields(&name,&initials,avatar.as_ref(),shell.media_epoch,"profile-pane-avatar-image",ready)}

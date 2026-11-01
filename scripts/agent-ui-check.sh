@@ -78,6 +78,7 @@ FIXTURES=(
   channel-tabs-manager channel-tabs-manager-narrow
   channel-tabs-enterprise channel-tabs-enterprise-narrow
   channel-tabs-knowledge channel-tabs-knowledge-narrow
+  channel-threads channel-threads-narrow channel-threads-error channel-threads-error-narrow channel-threads-empty channel-threads-empty-narrow channel-threads-loading channel-threads-loading-narrow channel-threads-previous channel-threads-previous-narrow
   channel-tabs-folder channel-tabs-folder-narrow channel-tabs-folder-manage channel-tabs-folder-manage-narrow
   bookmarks-emoji bookmarks-emoji-narrow
   canvas-create canvas-create-narrow canvas-create-error
@@ -134,7 +135,7 @@ FIXTURES=(
   huddle-video huddle-video-expanded huddle-settings huddle-people huddle-captions
   chat-paused-pill
   thread-follow-on thread-follow-off thread-follow-pending thread-follow-narrow
-  thread-feed thread-feed-empty thread-feed-error thread-feed-loading thread-feed-updated thread-feed-narrow thread-feed-refresh-retry thread-feed-refresh-retry-narrow thread-feed-older-retry thread-feed-older-retry-narrow thread-feed-initial-retry thread-feed-initial-retry-narrow
+  thread-feed-earlier-local thread-feed-earlier-local-narrow your-channels your-channels-narrow thread-feed-rich-root thread-feed-rich-root-narrow thread-feed-unread thread-feed-unread-narrow thread-feed-unread-read thread-feed-unread-read-narrow thread-feed-mark-all thread-feed-mark-all-narrow thread-feed-replies thread-feed-replies-narrow thread-feed-replies-reactions thread-feed-replies-reactions-narrow thread-feed-root-reactions thread-feed-root-reactions-narrow thread-feed thread-feed-empty thread-feed-error thread-feed-loading thread-feed-updated thread-feed-narrow thread-feed-refresh-retry thread-feed-refresh-retry-narrow thread-feed-older-retry thread-feed-older-retry-narrow thread-feed-initial-retry thread-feed-initial-retry-narrow
   thread-counts-mentions thread-counts-unread thread-counts-clear thread-counts-narrow
   thread-unread-divider thread-list-unread thread-marked-unread thread-marked-unread-narrow thread-target thread-error thread-paging thread-paging-error thread-grouped thread-grouped-pending thread-window-200 thread-window-2000 thread-window-10000 thread-window-target thread-window-gap main-dev settings settings-storage appearance-countertop
   appearance-blue-steel appearance-paper-bag appearance-custom-background
@@ -151,14 +152,35 @@ FIXTURES=(
   video-viewer search search-opening search-loading search-empty search-error search-more-error search-narrow search-filters search-filters-narrow search-has-filters search-has-filters-narrow search-files search-files-narrow search-files-types search-files-types-narrow search-files-types-clear search-files-types-clear-narrow search-message-scopes search-message-scopes-narrow search-message-scopes-clear search-message-scopes-clear-narrow search-saved-pinned search-saved-pinned-narrow search-context-filters search-context-filters-narrow search-date search-date-narrow search-history search-history-narrow search-attachments search-attachments-narrow search-conversations search-conversations-narrow palette palette-people activity-unread activity-channel-post
   search-people-paging search-people-paging-narrow
   search-files-pages search-files-pages-narrow search-files-page-failed search-files-page-failed-narrow
+  search-files-excerpts search-files-excerpts-narrow
+  search-files-image-preview search-files-image-preview-narrow
+  search-files-pdf-preview search-files-pdf-preview-narrow
+  search-files-image-zoom search-files-image-zoom-narrow
   search-files-saving search-files-saving-narrow search-files-save-unconfirmed search-files-save-unconfirmed-narrow
   search-messages-pages search-messages-pages-narrow search-messages-page2 search-messages-page2-narrow
-  search-messages-page-failed search-messages-page-failed-narrow
+  search-messages-page-failed search-messages-page-failed-narrow search-messages-deleted search-messages-deleted-narrow search-messages-rich search-messages-rich-narrow search-messages-expanded search-messages-expanded-narrow search-messages-emphasis search-messages-emphasis-narrow
+  search-messages-reactions search-messages-reactions-narrow
+  search-messages-reaction-groups search-messages-reaction-groups-narrow
+  search-messages-reaction-picker search-messages-reaction-picker-narrow
+  search-messages-reaction-unknown search-messages-reaction-unknown-narrow
+  thread-feed-reaction-groups thread-feed-reaction-groups-narrow
+  thread-feed-reaction-groups-people thread-feed-reaction-groups-people-narrow
+  thread-feed-profile-reading thread-feed-profile-reading-narrow
+  thread-feed-document-authors thread-feed-document-authors-narrow
+  thread-feed-copy-link thread-feed-copy-link-narrow
+  thread-feed-timestamp thread-feed-timestamp-narrow
+  thread-feed-edited thread-feed-edited-narrow
+  conversation-header-topic conversation-header-topic-narrow
+  conversation-header-status conversation-header-status-narrow
+  conversation-header-private conversation-header-private-narrow
+  conversation-header-private-topic conversation-header-private-topic-narrow
+  search-messages-root-thread search-messages-root-thread-narrow
+  search-messages-author-profile search-messages-author-profile-narrow
   search-people-account-type search-people-account-type-narrow search-people-account-type-deactivated search-people-account-type-deactivated-narrow
   search-people-saving search-people-saving-narrow search-people-save-unconfirmed search-people-save-unconfirmed-narrow
   search-people search-people-narrow search-people-loading search-people-loading-narrow search-people-empty search-people-empty-narrow search-people-error search-people-error-narrow
   profile-people-read-only profile-people-read-only-narrow profile-people-read-only-error profile-people-read-only-error-narrow
-  activity-thread-tools activity-paging activity-loading activity-error activity-more-error activity-empty activity-narrow activity-navigation activity-navigation-narrow activity-refresh-retry activity-refresh-retry-narrow activity-older-retry activity-older-retry-narrow dms dms-cold-rows dms-cold-rows-narrow dms-paging-filtered dms-paging-filtered-narrow dms-paging-loading dms-paging-loading-narrow dms-paging-empty dms-paging-empty-narrow dms-initial-unloaded dms-initial-unloaded-narrow dms-initial-loading dms-initial-loading-narrow dms-current-facts dms-current-facts-narrow
+  activity-thread-tools activity-inline-styles activity-inline-styles-narrow activity-paging activity-loading activity-error activity-more-error activity-empty activity-narrow activity-navigation activity-navigation-narrow activity-refresh-retry activity-refresh-retry-narrow activity-older-retry activity-older-retry-narrow dms dms-cold-rows dms-cold-rows-narrow dms-paging-filtered dms-paging-filtered-narrow dms-paging-loading dms-paging-loading-narrow dms-paging-empty dms-paging-empty-narrow dms-initial-unloaded dms-initial-unloaded-narrow dms-initial-loading dms-initial-loading-narrow dms-current-facts dms-current-facts-narrow dms-styled-preview dms-styled-preview-narrow
   dm-history-failed dm-cached-refresh-failed toast-long-error
   connection-connecting connection-no-network composer-multiline
   composer-upload-progress
@@ -166,6 +188,7 @@ FIXTURES=(
   multi-paragraph-custom-emoji slack-connect-avatar message-unfurl-embed block-kit-layout button-metadata button-metadata-narrow block-control-values block-control-values-narrow
   app-shortcuts app-shortcuts-narrow
   app-home app-home-narrow
+  app-home-url-readonly app-home-url-readonly-narrow
   app-about app-about-narrow app-about-unknown app-about-unknown-narrow app-about-connect app-about-connect-narrow
   workflow-managed workflow-managed-narrow workflow-editor workflow-editor-narrow workflow-reply-loss workflow-reply-loss-narrow
   workflow-activity workflow-activity-narrow
@@ -191,6 +214,7 @@ FIXTURES=(
   app-home-multi-external-dispatch app-home-multi-external-dispatch-narrow
   app-home-number-input app-home-number-input-narrow
   app-home-email-input app-home-email-input-narrow
+  app-home-url-input app-home-url-input-narrow
   app-home-focus-on-load app-home-focus-on-load-narrow
   app-home-multi-channel-select app-home-multi-channel-select-narrow
   # Ordered Home channels: check-app-home-multi-channel-select-native.py.

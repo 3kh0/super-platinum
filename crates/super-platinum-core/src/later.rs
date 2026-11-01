@@ -6,6 +6,7 @@ mod file_metadata;
 mod files;
 use file_metadata::FileUpdate;
 mod membership;
+mod message_updates;
 pub use files::FileHydrationFailure;
 pub use membership::{SavedMembership, SavedRequest};
 
@@ -159,60 +160,7 @@ pub enum SavedAction {
     Reminder(i64),
 }
 
-#[derive(Debug, Default)]
-struct PreviewUpdate {
-    revision: u64,
-    message: Option<Message>,
-    fields: HashMap<&'static str, u64>,
-    extras: HashMap<String, u64>,
-}
-
-// Keep partial-event fields independent: a count-only event must not renew an
-// earlier text, reaction or file update over a fresher history response.
-macro_rules! preview_fields {
-    ($action:ident) => {
-        $action!(user, bot_id, username, bot_profile, icons, kind, subtype,
-            client_msg_id, text, team, channel, thread_ts, parent_user_id,
-            reply_count, reply_users_count, latest_reply, edited, message;
-            reply_users, reactions, blocks, files, attachments);
-    };
-}
-impl PreviewUpdate {
-    fn record_fields(&mut self, message: &Message, revision: u64) {
-        macro_rules! record {
-            ($($optional:ident),*; $($vector:ident),*) => {
-                $(if message.$optional.is_some() {
-                    self.fields.insert(stringify!($optional), revision);
-                })*
-                $(if !message.$vector.is_empty() {
-                    self.fields.insert(stringify!($vector), revision);
-                })*
-            };
-        }
-        preview_fields!(record);
-        for key in message.extra.keys() {
-            self.extras.insert(key.clone(), revision);
-        }
-    }
-    fn since(&self, revision: u64) -> Option<Message> {
-        let mut update = self.message.clone()?;
-        macro_rules! retain {
-            ($($optional:ident),*; $($vector:ident),*) => {
-                $(if self.fields.get(stringify!($optional)).is_none_or(|at| *at <= revision) {
-                    update.$optional = None;
-                })*
-                $(if self.fields.get(stringify!($vector)).is_none_or(|at| *at <= revision) {
-                    update.$vector.clear();
-                })*
-            };
-        }
-        preview_fields!(retain);
-        update
-            .extra
-            .retain(|key, _| self.extras.get(key).is_some_and(|at| *at > revision));
-        Some(update)
-    }
-}
+use crate::state::PreviewUpdate;
 
 #[derive(Debug, Default)]
 pub struct LaterState {
@@ -294,44 +242,7 @@ impl LaterState {
             .insert(id.into(), FileHydrationFailure::Deleted);
     }
     pub fn update_message(&mut self, channel: &str, message: &Message) {
-        let Some(ts) = message.ts.as_ref() else {
-            return;
-        };
-        let key = SavedKey::message(channel, ts);
-        if !self.items.contains_key(&key) && !self.hydrated.contains_key(&key) {
-            return;
-        }
-        if self
-            .preview_updates
-            .get(&key)
-            .is_some_and(|update| update.message.is_none())
-        {
-            return;
-        }
-        let mut message = message.clone();
-        crate::file_actions::visit_message(&mut message, &mut |file| {
-            if let Some(id) = file.id.as_deref()
-                && self.deleted_files.contains(id)
-            {
-                *file = crate::file_actions::tombstone(id);
-            }
-        });
-        let revision = self.next_hydration_revision();
-        let pending = self
-            .preview_updates
-            .entry(key.clone())
-            .or_insert_with(|| PreviewUpdate {
-                message: Some(Message::default()),
-                ..Default::default()
-            });
-        pending.revision = revision;
-        pending.record_fields(&message, revision);
-        if let Some(update) = &mut pending.message {
-            crate::state::merge_message(update, message.clone());
-        }
-        if let Some(existing) = self.hydrated.get_mut(&key) {
-            crate::state::merge_message(existing, message);
-        }
+        self.update_original_message(channel, message, None);
     }
     pub fn delete_message(&mut self, channel: &str, ts: &str) {
         let key = SavedKey::message(channel, ts);
@@ -386,7 +297,9 @@ impl LaterState {
         if let Some(pending) = self.preview_updates.get(&key) {
             if let Some(update) = pending.since(requested_revision) {
                 if pending.revision > requested_revision {
-                    crate::state::merge_message(&mut message, update);
+                    pending
+                        .body
+                        .merge_into(&mut message, &key.item_id, update, requested_revision);
                 }
             } else {
                 message = Message {

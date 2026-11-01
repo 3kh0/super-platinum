@@ -164,3 +164,47 @@ pub(crate) async fn settle(dom: &mut VirtualDom, done: impl Fn() -> bool) {
     .await
     .expect("actual resource callback settles through disconnected transport");
 }
+
+/// Actual form callback lookup through pinned templates; leaves prior helpers intact.
+pub(crate) fn listener(v: &VNode, id: &str, event: &str) -> Option<AttributeValue> {
+    fn at(v: &VNode, node: &TemplateNode, id: &str, event: &str) -> Option<AttributeValue> {
+        match node {
+            TemplateNode::Element {
+                attrs, children, ..
+            } => {
+                let mut matched = false;
+                let mut listener = None;
+                for a in attrs.iter() {
+                    match a {
+                        TemplateAttribute::Static {
+                            name: "id", value, ..
+                        } if *value == id => matched = true,
+                        TemplateAttribute::Dynamic { id: dynamic } => {
+                            for a in v.dynamic_attrs[*dynamic].iter() {
+                                if a.name == "id"
+                                    && matches!(&a.value, AttributeValue::Text(s) if s == id)
+                                {
+                                    matched = true;
+                                }
+                                if a.name == event {
+                                    listener = Some(a.value.clone());
+                                }
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                if matched {
+                    return listener;
+                }
+                children.iter().find_map(|n| at(v, n, id, event))
+            }
+            TemplateNode::Dynamic { id: dynamic } => match &v.dynamic_nodes[*dynamic] {
+                DynamicNode::Fragment(nodes) => nodes.iter().find_map(|v| listener(v, id, event)),
+                _ => None,
+            },
+            _ => None,
+        }
+    }
+    v.template.roots.iter().find_map(|n| at(v, n, id, event))
+}

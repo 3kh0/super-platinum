@@ -49,7 +49,7 @@ fn exact_initial_wire_and_strict_positive_original_assignment() {
     let req = request(&SlackClient::default(), &session(), C).unwrap();
     assert_eq!(req.method, "POST");
     assert!(req.url.contains("/api/subscriptions.thread.getView?"));
-    let crate::slack::RequestBody::Form(body) = req.body else {
+    let crate::slack::client::RequestBody::Form(body) = req.body else {
         panic!("form")
     };
     assert_eq!(
@@ -280,4 +280,32 @@ fn hidden_reply_is_not_hidden_in_thread_and_count_cutoff_is_observed_not_loaded_
     );
     let short: Message = serde_json::from_value(json!({"reply_count":4})).unwrap();
     assert_eq!(minimum_visible(&short, &keys, Some(R2), false), None);
+}
+
+#[test]
+fn known_unsubscription_and_pending_intent_never_reacquire_index_membership() {
+    for (active, pending) in [(false, false), (true, true)] {
+        let mut c = core();
+        c.thread_subscriptions
+            .apply(c.account_epoch, &key(), active);
+        if pending {
+            c.thread_subscriptions
+                .begin(c.account_epoch, &key(), false)
+                .unwrap();
+        }
+        let read = Read::capture(&c, T, C).unwrap();
+        let accepted = read
+            .publish(&mut c, Page::decode(&raw(), C).unwrap())
+            .unwrap();
+        assert!(accepted.discussions().is_empty());
+        assert!(c.threads.is_empty());
+        assert_eq!(
+            c.thread_subscriptions.active(c.account_epoch, &key()),
+            Some(active)
+        );
+        assert_eq!(
+            c.thread_subscriptions.pending(c.account_epoch, &key()),
+            pending
+        );
+    }
 }

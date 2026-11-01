@@ -13,6 +13,8 @@ struct Fixture {
 
 #[path = "tests/actions.rs"]
 mod actions_tests;
+#[path = "tests/code_blocks.rs"]
+mod code_blocks;
 #[path = "tests/delivery.rs"]
 mod delivery_tests;
 #[path = "tests/retention.rs"]

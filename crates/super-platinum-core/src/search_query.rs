@@ -1,6 +1,7 @@
 //! Edits explicit search modifiers without rewriting the user's free-form query.
 pub mod file_types;
 pub mod message_scopes;
+pub mod reactions;
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct SearchFilters {
@@ -15,6 +16,8 @@ pub struct SearchFilters {
     pub in_thread: bool,
     pub saved: bool,
     pub pinned: bool,
+    /// Typed Messages-only intent; generic/Files parsing never owns these terms.
+    pub reactions: Option<reactions::Fields>,
 }
 
 impl SearchFilters {
@@ -41,10 +44,14 @@ impl SearchFilters {
             in_thread: has_token(query, "is:thread"),
             saved: has_token(query, "is:saved"),
             pinned: has_token(query, "has:pin"),
+            reactions: None,
         }
     }
 
     pub fn apply(&self, query: &str) -> Result<String, &'static str> {
+        if self.reactions.is_some() {
+            return Err("Use the current Messages filters to edit reactions.");
+        }
         let original = Self::from_query(query);
         for (value, old) in [
             (&self.on, &original.on),

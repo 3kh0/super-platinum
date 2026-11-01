@@ -3,6 +3,8 @@
 use super::*;
 use serde_json::Value;
 use uuid::Uuid;
+mod excerpt;
+pub use excerpt::{Excerpt, Part};
 
 pub const MAX_REPLY_BYTES: usize = 4 * 1024 * 1024;
 pub const MAX_PAGE: u32 = 10_000;
@@ -161,6 +163,7 @@ pub struct Hit {
     user: Option<String>,
     size: Option<u64>,
     tombstoned: bool,
+    excerpt: Option<Excerpt>,
 }
 impl Hit {
     pub fn id(&self) -> &str {
@@ -183,6 +186,10 @@ impl Hit {
     }
     pub fn tombstoned(&self) -> bool {
         self.tombstoned
+    }
+    /// Optional supplied reading data, never a File or action capability.
+    pub fn excerpt(&self) -> Option<&Excerpt> {
+        self.excerpt.as_ref()
     }
 }
 pub struct Page {
@@ -266,6 +273,7 @@ impl Page {
                 kind,
                 user,
                 size,
+                excerpt: excerpt::from_original_item(item),
                 // Preserve the existing native search-display tombstone veto;
                 // these fields confer no metadata or action authority.
                 tombstoned: item.get("mode").and_then(Value::as_str) == Some("tombstone")

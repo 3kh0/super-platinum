@@ -63,3 +63,6 @@ async fn original_page_proof_survives_only_its_own_open_serial_and_guards_metada
     assert!(!visit.current(&state.peek()));
     assert!(!visit.resolve(&mut state.write(), &hit.channel_id, channel, revision));
 }
+
+#[path = "message_page_tests/deleted.rs"]
+mod deleted;

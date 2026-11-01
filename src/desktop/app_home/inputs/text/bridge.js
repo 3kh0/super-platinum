@@ -32,11 +32,14 @@ function lockHomeText(config){
  const book=window.__spHomeText||(window.__spHomeText={entries:new Map()});if(book.activeLease)return 'busy';
  for(const f of config.fields){const n=document.getElementById(f.id);if(!n||!home.contains(n)||n.value!==f.value)return null;
   const emailEntry=f.email?book.entries.get(f.mount):null;
+  const urlEntry=f.url?book.entries.get(f.mount):null;
   // Source loading disables editing, not exact sibling observation or queued delivery.
-  const policyDisabled=f.email&&emailEntry?.node===n&&emailEntry.host.dataset.locked!=='true'&&emailEntry.host.dataset.emailLoading==='true';
+  const policyDisabled=(f.email&&emailEntry?.node===n&&emailEntry.host.dataset.locked!=='true'&&emailEntry.host.dataset.emailLoading==='true')||
+   (f.url&&urlEntry?.node===n&&urlEntry.host.dataset.locked!=='true'&&urlEntry.host.dataset.urlLoading==='true');
   if(n.disabled&&!policyDisabled)return null;
   if(f.email&&(n.type!=='email'||!emailEntry?.email||emailEntry.composing))return null;
   if(f.number&&(n.type!=='number'||n.validity.badInput))return null;
+  if(f.url&&(n.type!=='url'||!urlEntry?.url||urlEntry.composing||urlEntry.badInput||n.validity.badInput))return null;
   if(f.mount!==null){const e=book?.entries.get(f.mount);if(!e||e.closed||e.lease||e.node!==n||e.node.parentNode!==e.host||e.seq!==f.seq||e.acked!==f.seq||e.value!==f.value||(f.number&&(!e.number||e.badInput||e.composing)))return null;held.push({n,e,f,host:e.host,readOnly:n.readOnly});}
   else held.push({n,e:null,f,host:n.parentNode,readOnly:n.readOnly});
  }

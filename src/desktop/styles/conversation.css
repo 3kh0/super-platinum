@@ -33,6 +33,26 @@
   background: transparent;
   cursor: pointer;
 }
+.header-name.has-private-title { display: inline-flex; align-items: center; gap: 4px; min-width: 0; max-width: 100%; vertical-align: middle; }
+.header-private-icon { flex: 0 0 auto; display: inline-flex; align-items: center; }
+.header-private-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.conversation-header-topic {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-tight);
+}
+.header-dm-title { display: flex; align-items: center; gap: 4px; }
+.header-dm-title .header-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.conversation-header-status { flex: 0 0 auto; font-size: var(--text-md); font-weight: 400; line-height: 1; }
+.conversation-header-topic .topic-bold { font-weight: 600; }
+.conversation-header-topic .topic-italic { font-style: italic; }
+.conversation-header-topic .topic-strike { text-decoration: line-through; }
+.conversation-header-topic .topic-code { font-family: var(--font-mono); background: var(--surface-raised); border-radius: var(--radius-sm); }
 .header-avatar {
   width: 24px;
   height: 24px;

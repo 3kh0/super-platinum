@@ -130,6 +130,9 @@ where
             reads: reads.clone(),
         },
     )?;
+    // A cold policy completion may unblock an already-original Doc roster.
+    // This schedules no work without its independent current read purpose.
+    crate::thread_feed::schedule_document_names(state);
     Ok(Acquired {
         store,
         source: "fresh",

@@ -19,8 +19,12 @@ pub struct ActivityState {
     pub sync: ActivitySync,
 }
 
+mod messages;
+pub use messages::ActivityMessageRead;
+
 #[derive(Debug, Clone, Default)]
 pub struct ActivitySync {
+    messages: messages::MessageSync,
     scope: Option<(u64, String)>,
     changes: HashMap<String, ActivityItem>,
     cursors: HashSet<String>,
@@ -225,6 +229,7 @@ impl ActivityState {
             })
             .collect();
         self.hydrated.retain(|key, _| referenced.contains(key));
+        self.prune_message_updates();
         true
     }
 
@@ -350,6 +355,7 @@ impl ActivityState {
             self.sync.changes.insert(change.identity(), change);
         }
         self.sort();
+        self.prune_message_updates();
     }
 
     fn upsert_inner(&mut self, item: ActivityItem) -> bool {

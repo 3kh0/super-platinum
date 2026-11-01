@@ -24,6 +24,7 @@ impl CanvasRoute {
 pub(crate) enum Route {
     Resource(ChannelTab),
     Canvas(CanvasRoute),
+    Threads(super::threads::Route),
     Folder(super_platinum_core::channel_tabs::folder::Folder),
 }
 impl Route {
@@ -31,6 +32,7 @@ impl Route {
         match self {
             Self::Resource(tab) => *tab,
             Self::Canvas(_) => ChannelTab::Canvas,
+            Self::Threads(_) => ChannelTab::Threads,
             Self::Folder(_) => ChannelTab::Bookmarks,
         }
     }
@@ -39,7 +41,8 @@ impl Route {
             Self::Resource(ChannelTab::AppHome | ChannelTab::AppAbout) => {
                 crate::app_home::eligible(shell)
             }
-            Self::Resource(tab) => *tab != ChannelTab::Canvas,
+            Self::Resource(tab) => !matches!(tab, ChannelTab::Canvas | ChannelTab::Threads),
+            Self::Threads(route) => route.current(shell),
             Self::Canvas(route) => inventory(shell).is_some_and(|base| route.current(&base)),
             Self::Folder(route) => inventory(shell).is_some_and(|base| route.current(&base)),
         }
@@ -86,11 +89,73 @@ pub(crate) fn removal_pending(shell: &ShellState) -> bool {
 }
 
 pub(crate) fn current(shell: &ShellState) -> Option<Route> {
-    if shell.channel_tab != ChannelTab::Canvas && !folder_selected(shell) {
+    if !matches!(shell.channel_tab, ChannelTab::Canvas | ChannelTab::Threads)
+        && !folder_selected(shell)
+    {
         return Some(Route::Resource(shell.channel_tab));
     }
     let h = shell.channel_tabs.navigation.entries.get(&key(shell)?)?;
     h.routes.get(h.index).filter(|r| r.valid(shell)).cloned()
+}
+/// Retained selection identity only. Its old Gate may be retired and supplies
+/// NO permission/readiness; the recovery actor must capture fresh positive facts.
+pub(super) struct ThreadSlot {
+    key: Key,
+    index: usize,
+    touched: u64,
+    pub(super) route: super::threads::Route,
+}
+pub(super) fn retained_thread(shell: &ShellState) -> Option<ThreadSlot> {
+    if shell.channel_tab != ChannelTab::Threads {
+        return None;
+    }
+    let key = key(shell)?;
+    let h = shell.channel_tabs.navigation.entries.get(&key)?;
+    let Route::Threads(route) = h.routes.get(h.index)? else {
+        return None;
+    };
+    Some(ThreadSlot {
+        key,
+        index: h.index,
+        touched: h.touched,
+        route: route.clone(),
+    })
+}
+fn retained_current(shell: &ShellState, slot: &ThreadSlot) -> bool {
+    shell.channel_tab == ChannelTab::Threads
+        && key(shell).as_ref() == Some(&slot.key)
+        && shell
+            .channel_tabs
+            .navigation
+            .entries
+            .get(&slot.key)
+            .is_some_and(|h| {
+                h.index == slot.index
+                    && h.touched == slot.touched
+                    && h.routes.get(h.index) == Some(&Route::Threads(slot.route.clone()))
+            })
+}
+pub(super) fn renew_thread(
+    shell: &mut ShellState,
+    slot: &ThreadSlot,
+    next: super::threads::Route,
+) -> bool {
+    if !retained_current(shell, slot)
+        || !next.current(shell)
+        || slot.route.tab != next.tab
+        || slot.route.channel() != next.channel()
+    {
+        return false;
+    }
+    let nav = &mut shell.channel_tabs.navigation;
+    let Some(clock) = nav.clock.checked_add(1) else {
+        return false;
+    };
+    nav.clock = clock;
+    let h = nav.entries.get_mut(&slot.key).unwrap();
+    h.routes[h.index] = Route::Threads(next);
+    h.touched = clock;
+    true
 }
 pub(crate) fn folder_selected(shell: &ShellState) -> bool {
     if shell.channel_tab != ChannelTab::Bookmarks {
@@ -195,6 +260,11 @@ pub(crate) fn record(shell: &mut ShellState, route: Route, step: Option<&Step>) 
     h.touched = nav.clock;
     if let Some(step) = step {
         h.index = step.to;
+    } else if matches!((h.routes.get(h.index), &route), (Some(Route::Threads(old)), Route::Threads(next)) if old.tab == next.tab)
+    {
+        // An explicit fresh selection replaces this destination's original
+        // receipt and visit; equal labels must not retain a retired guard.
+        h.routes[h.index] = route;
     } else if h.routes.get(h.index) != Some(&route) {
         if h.routes.is_empty() && route != Route::Resource(ChannelTab::Messages) {
             h.routes.push(Route::Resource(ChannelTab::Messages));

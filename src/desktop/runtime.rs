@@ -9,6 +9,7 @@ pub async fn ticks(mut state: Signal<ShellState>) {
     let mut interval = timing::interval();
     let mut media_sweep = timing::MediaSweep::default();
     let mut profile_clock = crate::profile::clock::Clock::default();
+    let mut header_status_clock = crate::view::HeaderStatusClock::default();
     let mut draft_save_error = None;
     loop {
         interval.tick().await;
@@ -27,7 +28,12 @@ pub async fn ticks(mut state: Signal<ShellState>) {
         let mut connection = crate::connection::Next::Nothing;
         let mut observations_ready = None;
         let mut changed = profile_clock.poll(&shell);
+        changed |= header_status_clock.poll(&shell);
         changed |= crate::app_modal::poll(&mut shell);
+        changed |= crate::bootstrap::search_file_pages::poll(&mut shell);
+        changed |= crate::bootstrap::search_message_pages::reaction_actions::poll(&mut shell);
+        changed |= crate::thread_feed::copy_link::poll(&mut shell);
+        changed |= crate::thread_feed::timestamp::poll(&mut shell);
         changed |= crate::app_home::inputs::external::poll(&mut shell);
         changed |= crate::app_home::inputs::users::poll(&mut shell);
         changed |= crate::app_home::inputs::channels::poll(&mut shell);

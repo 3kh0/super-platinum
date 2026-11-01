@@ -120,6 +120,65 @@ fn home_view(h: &Home, saved: bool) -> Value {
  {"type":"section","block_id":"summary","text":{"type":"mrkdwn","text":if saved{"*Review received*\nThe app updated this Home after receiving your form."}else{"*Prepare your release*\nOpen a review form without changing your conversation draft."}}},
  {"type":"actions","block_id":"entry","elements":[{"type":"button","action_id":"review","text":{"type":"plain_text","text":"Review release"},"value":"review"}]}]})
 }
+
+pub(crate) const READONLY_INITIAL_URL: &str = "https://EXAMPLE.test/Project?q=one%20two#review";
+pub(crate) fn install_readonly_urls(s: &mut ShellState) {
+    install(s);
+    let h = s.app_home.surface.as_mut().unwrap();
+    let home = h.home.clone().unwrap();
+    let mut raw = h.view.as_ref().unwrap().raw().clone();
+    let fields = json!([
+        {"type":"input","block_id":"project-url","label":{"type":"plain_text","text":"Project URL"},
+         "hint":{"type":"plain_text","text":"The app supplied this initial URL. Editing remains unavailable."},
+         "element":{"type":"url_text_input","action_id":"value","initial_value":READONLY_INITIAL_URL}},
+        {"type":"input","block_id":"empty-url","label":{"type":"plain_text","text":"Another URL"},"optional":true,
+         "element":{"type":"url_text_input","action_id":"value","initial_value":""}},
+        {"type":"input","block_id":"retained-name","label":{"type":"plain_text","text":"Review name"},
+         "element":{"type":"plain_text_input","action_id":"value","initial_value":"Retained draft"}}
+    ]);
+    raw["blocks"]
+        .as_array_mut()
+        .unwrap()
+        .splice(2..2, fields.as_array().unwrap().iter().cloned());
+    h.view = Some(View::decode(&home, raw).unwrap());
+    h.revision = next();
+    inputs::hydrate(s);
+}
+
+#[cfg(test)]
+mod readonly_url_tests {
+    use super::*;
+    use crate::media::MediaRegistry;
+    use super_platinum_core::block_actions::form::{FormError, InputKey, InputKind};
+
+    #[test]
+    fn readonly_initial_url_fixture_preserves_unsupported_full_state_and_disabled_actions() {
+        let mut s = ShellState::fixture(MediaRegistry::default());
+        install_readonly_urls(&mut s);
+        let key = InputKey {
+            block_id: "project-url".into(),
+            action_id: "value".into(),
+        };
+        let form = s
+            .app_home
+            .forms
+            .values()
+            .find(|f| f.fields.contains_key(&key))
+            .unwrap();
+        assert_eq!(form.fields[&key].raw["initial_value"], READONLY_INITIAL_URL);
+        assert!(
+            matches!(&form.fields[&key].kind,InputKind::Unsupported { kind } if kind=="url_text_input")
+        );
+        assert!(
+            form.fields
+                .values()
+                .any(|f| matches!(&f.kind, InputKind::Text { .. }))
+        );
+        assert!(matches!(form.state(), Err(FormError::Unsupported(_))));
+        assert!(!inputs::editable(&s) && !inputs::supported(&s) && !inputs::ready(&s));
+        assert!(!form.dirty() && s.app_home.fixture_forms.is_empty());
+    }
+}
 /// Static Home entry preview. Buttons remain fixture-inert: no auth URL, Calendar
 /// discovery, preference or event request can be dispatched from this surface.
 pub(crate) fn install_calendar(s: &mut ShellState) {

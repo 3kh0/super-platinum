@@ -10,8 +10,13 @@ mod channel_membership;
 mod channel_notifications;
 mod channel_resources;
 mod channel_tabs;
+mod channel_threads;
 mod channel_window_check;
 mod chrome;
+pub(crate) use chrome::dm_status::{Clock as HeaderStatusClock, fixture as header_status_fixture};
+pub(crate) use chrome::privacy::{Title as HeaderPrivacyTitle, fixture as header_private_fixture};
+pub(crate) use chrome::topic::fixture as header_topic_fixture;
+pub(crate) use chrome::topic::private_fixture as header_private_topic_fixture;
 mod completion;
 pub(crate) mod composer;
 pub(crate) mod external_choices;
@@ -52,6 +57,10 @@ pub(crate) mod rich_editor;
 pub(crate) mod scheduled;
 pub(crate) mod search;
 mod secondary;
+#[cfg(test)]
+pub(crate) use secondary::activity_list_panel as activity_list_for_test;
+#[cfg(test)]
+pub(crate) use secondary::dm_list_panel as dm_list_for_test;
 mod selection;
 mod selection_check;
 pub(crate) mod self_status;
@@ -63,6 +72,12 @@ mod thread_paging;
 mod thread_window;
 mod thread_window_check;
 mod threads;
+pub(crate) use threads::eligible_replies as eligible_thread_replies;
+pub(crate) use threads::selected_replies as selected_thread_replies;
+#[cfg(test)]
+pub(crate) use threads::thread_list as thread_list_for_test;
+#[cfg(all(test, feature = "protected-native-fixture"))]
+mod saved_pins_body;
 mod user_choices;
 
 use dioxus::prelude::*;
@@ -354,6 +369,8 @@ pub fn shell() -> Element {
                             crate::canvas::surface::Panel {key:"{snapshot.core.account_epoch}-{snapshot.core.active_team:?}-{active_channel_id}-{snapshot.channel_generation}-{snapshot.shortcut_generation}",state}
                         } else if crate::channel_tabs::selection::folder_selected(&snapshot) {
                             crate::channel_tabs::folder::Panel {key:"{snapshot.core.account_epoch}-{snapshot.core.active_team:?}-{active_channel_id}-{snapshot.channel_generation}",state}
+                        } else if snapshot.channel_tab == ChannelTab::Threads {
+                            {channel_threads::owned(state)}
                         } else if snapshot.channel_tab == ChannelTab::Workflows {
                             crate::channel_workflows::Panel {key:"{snapshot.core.account_epoch}-{snapshot.core.active_team:?}-{active_channel_id}-{snapshot.channel_generation}",state}
                         } else if snapshot.channel_tab == ChannelTab::Bookmarks {
@@ -613,4 +630,33 @@ pub(super) fn activity_badge_total(
     } else {
         workspace.activity_unread_count
     }
+}
+
+pub(crate) fn channel_discussion_message(
+    state: Signal<ShellState>,
+    snapshot: &ShellState,
+    message: &crate::state::MessageVm,
+    channel: &str,
+) -> Element {
+    message_row(
+        state,
+        snapshot,
+        message,
+        channel,
+        None,
+        RowSurface::ReadOnlyChannel,
+        None,
+    )
+}
+
+#[cfg(test)]
+pub(crate) fn channel_thread_test_surface(state: Signal<ShellState>) -> Element {
+    rsx! {{channel_tabs::owned(state)}
+        if state.read().channel_tab==ChannelTab::Threads{{channel_threads::owned(state)}}
+    }
+}
+
+#[cfg(all(test, feature = "protected-native-fixture"))]
+pub(crate) fn channel_directory_sidebar_for_test(state: Signal<ShellState>) -> Element {
+    chrome::channel_sidebar(state, &state.read(), "Fixture", "Ctrl+K")
 }

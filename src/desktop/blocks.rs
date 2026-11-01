@@ -19,7 +19,8 @@ pub(crate) use controls::fixture::apply as controls_fixture;
 
 use text::channel_mention;
 pub(crate) use text::{
-    canvas_root_mrkdwn, custom_emoji_media, mrkdwn_blocks, mrkdwn_inline, plain_inline_nodes,
+    TopicRun, canvas_root_mrkdwn, custom_emoji_media, mrkdwn_blocks, mrkdwn_inline, passive_topic,
+    plain_inline_nodes,
 };
 
 use serde_json::Value;

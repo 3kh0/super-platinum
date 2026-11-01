@@ -256,6 +256,9 @@
   cursor: pointer;
 }
 .reaction-emoji { width: 15px; height: 15px; object-fit: contain; }
+.reaction-variants { display: inline-flex; align-items: center; }
+.reaction-read-only { cursor: default; }
+.reaction-variants-overflow { transform: rotate(90deg); }
 /* A custom emoji still downloading: hold the pill's size and read as loading
    rather than as an empty pill. */
 .reaction-emoji.pending {

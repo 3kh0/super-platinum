@@ -85,6 +85,40 @@ pub(crate) fn member_flags(shell: &ShellState, team: &str) -> Result<MemberFlags
     Ok(observed)
 }
 
+/// Existing original assignments plus an observed settled native initialization.
+/// Neither tab presence, warm metadata nor a copied bool supplies this receipt.
+pub(crate) struct ChannelThreads {
+    flags: MemberFlags,
+    boot: crate::app_home::cfm_lifecycle::PostBoot,
+}
+impl ChannelThreads {
+    pub(crate) fn current(&self, shell: &ShellState) -> bool {
+        self.flags.current(shell)
+            && shell
+                .core
+                .client
+                .same_configuration(&self.flags.owner.context.client)
+            && self.flags.flags().channel_threads_enabled()
+            && self.boot.current(shell)
+            && shell
+                .app_home
+                .channel_fetches
+                .slots
+                .get(&self.flags.owner.context.key())
+                .is_some_and(|s| s.initial.is_none())
+    }
+}
+pub(crate) fn channel_threads(shell: &ShellState, team: &str) -> Result<ChannelThreads, Error> {
+    let flags = member_flags(shell, team)?;
+    let boot = crate::app_home::cfm_lifecycle::post_boot(shell, team)?;
+    let receipt = ChannelThreads { flags, boot };
+    if receipt.current(shell) {
+        Ok(receipt)
+    } else {
+        Err(unavailable())
+    }
+}
+
 pub(super) fn peer_ids<'a>(
     rows: impl Iterator<Item = &'a Value>,
     self_id: &str,

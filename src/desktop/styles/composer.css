@@ -391,3 +391,32 @@
 .composer-command-chooser button:hover:not(:disabled) { background: var(--hover-overlay); }
 .composer-command-chooser button:disabled { opacity: 0.5; }
 .composer-command-chooser .composer-command-run { min-inline-size: 112px; }
+
+/* Channel discussion reader shares message geometry without mutation controls. */
+.channel-threads-panel { padding-bottom: var(--space-4, 16px); }
+.channel-threads-panel .secondary-toolbar h2 { font-size: var(--text-md); margin: 0; flex: 1; }
+.channel-discussion { margin: 0; padding: 8px 0; border-top: 1px solid var(--border); }
+.channel-discussion-heading, .channel-discussion-context { padding: 4px 24px; color: var(--muted); font-size: var(--text-sm); }
+.channel-discussion .secondary-toolbar { justify-content: flex-start; }
+
+/* Global followed-thread roots remain selectable, multiline reading content. */
+.thread-row { cursor: default; }
+.thread-feed-root-body, .thread-feed-reply-body { color: var(--text); font-size: var(--text-md); }
+.thread-feed-root-body p, .thread-feed-reply-body p {
+  color: inherit;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.thread-feed-root-body span, .thread-feed-reply-body span { color: inherit; font-size: inherit; }
+.thread-feed-root-actions { margin-top: var(--space-2); }
+.thread-feed-new { display: flex; align-items: center; gap: var(--space-2); color: var(--danger); margin: var(--space-2) 0; font-size: var(--text-sm); }
+.thread-feed-new hr { flex: 1; margin: 0; border: 0; border-top: 1px solid currentColor; }
+.thread-feed-new span { flex: none; color: inherit; }
+.thread-feed-new.ghost { color: var(--text-dim); }
+.thread-feed-reactions { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-top: var(--space-1); }
+.thread-feed-reaction { display: inline-flex; align-items: center; gap: var(--space-1); padding: 2px 6px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); }
+.thread-feed-reaction.own { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); background: var(--accent-soft); }
+.thread-feed-author { padding: 0; border: 0; background: transparent; color: inherit; font: inherit; font-weight: inherit; text-align: left; cursor: pointer; }
+.thread-feed-author:hover { text-decoration: underline; }

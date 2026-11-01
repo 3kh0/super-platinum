@@ -36,6 +36,9 @@ impl Navigation {
             .items
             .iter()
             .find(|item| item.key == key)?;
+        if shell.core.activity_item_message_deleted(item) {
+            return None;
+        }
         let channel = item.channel()?.to_owned();
         if shell.core.activity.selected.as_deref() != Some(key)
             || shell.core.active_channel.as_ref() != Some(&channel)
@@ -117,6 +120,7 @@ impl Navigation {
                 item.key == self.key
                     && item.feed_ts == self.feed_ts
                     && serde_json::to_value(&item.item).ok().as_ref() == Some(&self.item)
+                    && !shell.core.activity_item_message_deleted(item)
             })
     }
 

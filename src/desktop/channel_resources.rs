@@ -201,6 +201,11 @@ async fn refresh_with_reconnect(
     match tab {
         // Workflows owns its mounted read and Retry lifecycle.
         ChannelTab::Messages | ChannelTab::Canvas | ChannelTab::Workflows => {}
+        ChannelTab::Threads => {
+            if let Some(visit) = reconnect {
+                crate::channel_tabs::threads::recovery::after_outage(state, visit).await;
+            }
+        }
         ChannelTab::AppHome => crate::app_home::refresh(state).await,
         ChannelTab::AppAbout => crate::app_home::about::refresh(state).await,
         ChannelTab::Bookmarks => crate::bookmarks::load(state, channel).await,

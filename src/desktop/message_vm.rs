@@ -1,5 +1,6 @@
 pub(crate) mod broadcast;
 pub(crate) mod broadcast_check;
+pub(crate) mod preview;
 use super_platinum_core::MediaAssetKind;
 use super_platinum_core::slack_lists::comments::edit_seed::prepare::StandardEmoji;
 
@@ -181,10 +182,29 @@ pub(crate) fn message_vm_with_standard(
 
 /// Reaction pills resolve like inline emoji: workspace custom emoji become
 /// images, standard shortcodes become glyphs, unknown names stay `:name:`.
-fn reaction_vms(
+pub(crate) fn reaction_vms(
     workspace: &super_platinum_core::state::Workspace,
     message: &super_platinum_core::slack::models::Message,
     media: &MediaRegistry,
+) -> Vec<ReactionVm> {
+    reaction_vms_mode(workspace, message, media, false)
+}
+
+/// Passive Search preserves supplied counters, including zero. Deduplicate
+/// people before the existing hover-name cap so a duplicate cannot hide a name.
+pub(crate) fn reaction_vms_for_reading(
+    workspace: &super_platinum_core::state::Workspace,
+    message: &super_platinum_core::slack::models::Message,
+    media: &MediaRegistry,
+) -> Vec<ReactionVm> {
+    reaction_vms_mode(workspace, message, media, true)
+}
+
+fn reaction_vms_mode(
+    workspace: &super_platinum_core::state::Workspace,
+    message: &super_platinum_core::slack::models::Message,
+    media: &MediaRegistry,
+    reading: bool,
 ) -> Vec<ReactionVm> {
     let ctx = BlockCtx::new(workspace, media);
     message
@@ -198,12 +218,16 @@ fn reaction_vms(
                     .then(|| workspace.emoji_glyph(&reaction.name)),
                 media: emoji,
                 name: reaction.name.clone(),
-                count: reaction.count.max(1),
+                count: if reading {
+                    reaction.count
+                } else {
+                    reaction.count.max(1)
+                },
                 own: super_platinum_core::state::reaction_has_user(
                     reaction,
                     &workspace.self_user_id,
                 ),
-                reactors: reactor_vms(workspace, reaction, media),
+                reactors: reactor_vms(workspace, reaction, media, reading),
             }
         })
         .collect()
@@ -215,12 +239,15 @@ fn reactor_vms(
     workspace: &super_platinum_core::state::Workspace,
     reaction: &super_platinum_core::slack::models::Reaction,
     media: &MediaRegistry,
+    unique: bool,
 ) -> Vec<ReactorVm> {
     let me = workspace.self_user_id.as_str();
+    let mut seen = std::collections::HashSet::new();
     let mut users = reaction
         .users
         .iter()
         .filter(|user| !user.is_empty())
+        .filter(|user| !unique || seen.insert(user.as_str()))
         .collect::<Vec<_>>();
     // Stable sort: the viewer first, everyone else keeps Slack's order.
     users.sort_by_key(|user| me.is_empty() || user.as_str() != me);

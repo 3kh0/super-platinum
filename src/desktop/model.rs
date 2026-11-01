@@ -12,6 +12,7 @@ pub enum ChannelTab {
     Bookmarks,
     Workflows,
     Canvas,
+    Threads,
 }
 
 use super_platinum_core::MediaAssetId;
@@ -157,6 +158,15 @@ pub enum RichNode {
         strike: bool,
         code: bool,
     },
+    /// Passive supplied-search emphasis. Strings/flags only: no URL, media,
+    /// action owner, editor format, or canonical message identity.
+    SearchText {
+        spans: Vec<(String, bool)>,
+        bold: bool,
+        italic: bool,
+        strike: bool,
+        code: bool,
+    },
     Link {
         label: String,
         url: String,
@@ -266,6 +276,11 @@ impl RichNode {
             Self::Canvas(target) => output.push_str(&target.title),
             Self::FileMention { fallback, .. } => output.push_str(fallback),
             Self::Underlined(node) => node.write_plain(output),
+            Self::SearchText { spans, .. } => {
+                for (text, _) in spans {
+                    output.push_str(text);
+                }
+            }
             Self::Text(text) | Self::StyledText { text, .. } | Self::Code(text) => {
                 output.push_str(text)
             }
@@ -739,6 +754,7 @@ pub enum Overlay {
     Forward,
     FileShare,
     NewDm,
+    ChannelDirectory,
 }
 
 #[derive(Debug, Clone)]

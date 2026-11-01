@@ -9,6 +9,23 @@ use super_platinum_core::{
     files::FileKind,
 };
 
+/// A keyed fragment renews hook custody on an actual conversation visit.
+/// A key on a singleton component is ignored by this pinned reconciler.
+pub(super) fn owned(state: Signal<ShellState>) -> Element {
+    let scope = {
+        let s = state.read();
+        format!(
+            "{}-{:?}-{:?}-{}-{:?}",
+            s.core.account_epoch,
+            s.core.active_team,
+            s.core.active_channel,
+            s.channel_generation,
+            s.main_view
+        )
+    };
+    rsx! {for scope in [scope] {CustomTabs {key:"{scope}",state}}}
+}
+
 #[component]
 pub(super) fn CustomTabs(state: Signal<ShellState>) -> Element {
     let mut opened = use_signal(|| {
@@ -35,6 +52,7 @@ pub(super) fn CustomTabs(state: Signal<ShellState>) -> Element {
     let selected = match tabs::selection::current(&state.read()) {
         Some(tabs::selection::Route::Canvas(route)) => Some(route.tab),
         Some(tabs::selection::Route::Folder(route)) => Some(route.tab().into()),
+        Some(tabs::selection::Route::Threads(route)) => Some(route.tab),
         _ => None,
     };
     let scope = use_hook(|| {
@@ -56,10 +74,10 @@ pub(super) fn CustomTabs(state: Signal<ShellState>) -> Element {
     }
     rsx! {
         if let Some(base)=inventory {
-            for row in base.rows().iter().filter(|r|r["type"]!="workflows"&&(r["type"]=="folder"||r.get("id").and_then(|v|v.as_str()).is_some_and(|s|s.starts_with("Ct")))) {
+            for row in base.rows().iter().filter(|r|r["type"]!="workflows"&&(r["type"]=="folder"||r["type"]=="threads"||r.get("id").and_then(|v|v.as_str()).is_some_and(|s|s.starts_with("Ct")))) {
                 if let Some(id)=channel_tabs::id(row) {
-                    {let base=base.clone();let id=id.to_owned();let allowed=current&&(base.canvas_record(&id).is_ok()||channel_tabs::folder::Folder::capture(&base,&id).is_ok());let label=tab_label(row);let visit=visit.clone();let active=selected.as_deref()==Some(id.as_str());rsx!{
-                        button{class:if active{"active"}else{""},"aria-pressed":active,title:if allowed{"Open channel tab"}else{"This tab type is not available yet"},disabled:!allowed,onclick:move |_|if let Some(v)=visit.as_ref(){tabs::open_canvas(state,v,base.clone(),id.clone())},"{label}"}
+                    {let base=base.clone();let id=id.to_owned();let threads=tabs::threads::Route::capture(&state.read(),&base,&id);let allowed=current&&(base.canvas_record(&id).is_ok()||channel_tabs::folder::Folder::capture(&base,&id).is_ok()||threads.is_some());let label=tab_label(row);let visit=visit.clone();let active=selected.as_deref()==Some(id.as_str());rsx!{
+                        button{"data-channel-tab-id":"{id}",class:if active{"active"}else{""},"aria-pressed":active,title:if allowed{"Open channel tab"}else{"This tab type is not available yet"},disabled:!allowed,onclick:move |_|if let Some(v)=visit.as_ref(){if let Some(route)=threads.clone(){tabs::threads::open(state,v,route)}else{tabs::open_canvas(state,v,base.clone(),id.clone())}},"{label}"}
                     }}
                 }
             }

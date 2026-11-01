@@ -244,6 +244,24 @@ impl Snapshot {
             Ok(false)
         }
     }
+    /// Agreement of the fresh unified aggregate and active-team raw recipe.
+    /// This is DATA only: callers retain the original complete membership,
+    /// preferences and current owner. It does not observe Source's memoized
+    /// global value, choose a client branch or create membership/actor authority.
+    pub fn convergent_fresh_name_preference(&self, active_team: &str) -> Option<bool> {
+        if !self.membership.workspaces.contains_key(active_team) {
+            return None;
+        }
+        let expected = self.teams.get(active_team)?.value.as_ref()?.as_bool()?;
+        for team in self.membership.workspaces.keys() {
+            let raw = self.teams.get(team)?.value.as_ref()?;
+            let effective = self.inherited(team).unwrap_or(raw);
+            if raw.as_bool()? != expected || effective.as_bool()? != expected {
+                return None;
+            }
+        }
+        Some(expected)
+    }
     pub fn hidden(&self, id: &str) -> bool {
         !id.is_empty()
             && !self.enterprise.as_ref().is_some_and(|e| e.hide_locked)

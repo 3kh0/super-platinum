@@ -3,6 +3,7 @@ mod admission;
 pub(crate) mod check;
 pub(crate) use admission::Navigation;
 mod navigation;
+mod styled_fixture;
 pub(crate) use navigation::thread_destination;
 
 use crate::state::{MainView, ShellState};
@@ -16,6 +17,9 @@ pub(crate) fn fixture(shell: &mut ShellState, name: &str) {
     feed.loaded = true;
     feed.next_cursor = Some("older-notifications".into());
     match name {
+        "activity-inline-styles" | "activity-inline-styles-narrow" => {
+            styled_fixture::install(shell)
+        }
         "activity-refresh-retry"
         | "activity-refresh-retry-narrow"
         | "activity-older-retry"

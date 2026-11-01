@@ -14,9 +14,9 @@ pub(super) struct Frame {
     pub(super) team: String,
     pub(super) raw: String,
     sort: super_platinum_core::search::SearchSort,
-    transport: Arc<Transport>,
-    client: SlackClient,
-    session: WorkspaceSession,
+    pub(super) transport: Arc<Transport>,
+    pub(super) client: SlackClient,
+    pub(super) session: WorkspaceSession,
 }
 impl Frame {
     pub(super) fn current(&self, shell: &ShellState) -> bool {
@@ -139,6 +139,25 @@ impl Read {
             && frame.current(shell)
             && super::super::current(shell, request, &frame.transport)
     }
+    pub(in crate::bootstrap::search) fn publish_actors(
+        &self,
+        shell: &mut ShellState,
+        raw: profiles::RawRoster,
+    ) -> bool {
+        let (frame, page) = match self {
+            Self::Initial(i) => (&i.frame, i.request.page),
+            Self::Page(t) => (&t.frame, t.request.page),
+        };
+        if !shell
+            .search_message_pages
+            .as_ref()
+            .is_some_and(|b| b.current(shell) && Arc::ptr_eq(&b.frame, frame) && b.shown == page)
+        {
+            return false;
+        }
+        profiles::install(shell, raw);
+        true
+    }
     pub(in crate::bootstrap::search) fn valid_metadata(
         &self,
         metadata: Option<&SearchPagination>,
@@ -171,7 +190,12 @@ impl Read {
         shell: &mut ShellState,
         rows: Vec<SearchResultVm>,
         metadata: Option<&SearchPagination>,
+        mut bodies: Bodies,
     ) {
+        bodies.retain(|(channel, ts), _| {
+            rows.iter()
+                .any(|row| &row.channel_id == channel && &row.ts == ts)
+        });
         match self {
             Self::Initial(initial) => {
                 let known = metadata.filter(|p| {
@@ -186,6 +210,9 @@ impl Read {
                         frame: initial.frame.clone(),
                         activation: Arc::new(()),
                         pages: BTreeMap::from([(1, rows.clone())]),
+                        bodies: BTreeMap::from([(1, bodies)]),
+                        profiles: Default::default(),
+                        expanded: Default::default(),
                         bound,
                         total,
                         shown: 1,
@@ -206,6 +233,7 @@ impl Read {
                 let p = metadata.expect("validated owned page metadata");
                 let book = shell.search_message_pages.as_mut().unwrap();
                 book.pages.insert(ticket.request.page, rows.clone());
+                book.bodies.insert(ticket.request.page, bodies);
                 book.shown = ticket.request.page;
                 book.target = ticket.request.page;
                 book.total = p.total_count.unwrap_or(book.total);

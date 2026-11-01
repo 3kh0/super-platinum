@@ -152,7 +152,10 @@ pub struct DmsState {
     pub loaded: bool,
     pub unread_only: bool,
     pub filter: String,
+    preview_updates: dms::PreviewUpdates,
 }
+
+mod dms;
 
 impl DmsState {
     pub fn upsert(&mut self, entry: DmEntry) {

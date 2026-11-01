@@ -4,10 +4,10 @@ use crate::{
     CoreAppState,
     domain::ThreadKey,
     slack::{
-        events::RtEvent,
+        events::{MessageUpdate, RtEvent},
         models::{Message, MessageTs, ThreadViewItem, ThreadsViewPage},
     },
-    state::{cmp_ts, merge_message},
+    state::{cmp_ts, merge_message_update},
 };
 use std::collections::{HashMap, HashSet};
 
@@ -18,9 +18,10 @@ pub struct FeedRequest {
 }
 #[derive(Debug, Clone)]
 enum Change {
-    Message(String, Message, bool),
+    Message(String, Message, bool, Option<MessageUpdate>),
     Delete(String, String),
     Unsubscribe(String, String),
+    Reaction(String, String, String, String, bool),
 }
 #[derive(Debug, Clone, Default)]
 pub struct ThreadsState {
@@ -150,14 +151,46 @@ impl ThreadsState {
             RtEvent::Message(m) => m
                 .channel
                 .clone()
-                .map(|c| Change::Message(c, m.clone(), true)),
+                .map(|c| Change::Message(c, m.clone(), true, None)),
             RtEvent::MessageChanged {
-                channel, message, ..
-            } => Some(Change::Message(channel.clone(), message.clone(), false)),
+                channel,
+                message,
+                original_update,
+            } => Some(Change::Message(
+                channel.clone(),
+                message.clone(),
+                false,
+                original_update.clone(),
+            )),
             RtEvent::MessageDeleted {
                 channel,
                 deleted_ts,
             } => Some(Change::Delete(channel.clone(), deleted_ts.clone())),
+            RtEvent::ReactionAdded {
+                channel,
+                ts,
+                user,
+                reaction,
+            }
+            | RtEvent::ReactionRemoved {
+                channel,
+                ts,
+                user,
+                reaction,
+            } if self.scope.is_some()
+                && !channel.is_empty()
+                && !ts.is_empty()
+                && !user.is_empty()
+                && !reaction.is_empty() =>
+            {
+                Some(Change::Reaction(
+                    channel.clone(),
+                    ts.clone(),
+                    user.clone(),
+                    reaction.clone(),
+                    matches!(event, RtEvent::ReactionAdded { .. }),
+                ))
+            }
             RtEvent::Unknown(raw)
                 if raw.kind == "thread_unsubscribed" || raw.kind == "thread_subscribed" =>
             {
@@ -189,6 +222,46 @@ impl ThreadsState {
     }
     fn apply_change(&mut self, change: &Change) {
         match change {
+            Change::Reaction(channel, ts, user, name, added) => {
+                let Some((_, team)) = self.scope.as_ref() else {
+                    return;
+                };
+                for item in &mut self.items {
+                    if item.root_msg.channel.as_ref() != Some(channel)
+                        || item.root_msg.team.as_ref().is_some_and(|t| t != team)
+                    {
+                        continue;
+                    }
+                    let Some(root) = item.root_msg.ts.as_ref().filter(|s| !s.is_empty()).cloned()
+                    else {
+                        continue;
+                    };
+                    if item.root_msg.thread_ts.as_ref().is_some_and(|r| r != &root) {
+                        continue;
+                    }
+                    if &root == ts {
+                        crate::state::apply_message_reaction(
+                            &mut item.root_msg,
+                            user,
+                            name,
+                            *added,
+                        );
+                    }
+                    for message in item
+                        .latest_replies
+                        .iter_mut()
+                        .chain(&mut item.unread_replies)
+                    {
+                        if message.ts.as_ref() == Some(ts)
+                            && message.channel.as_ref().is_none_or(|c| c == channel)
+                            && message.thread_ts.as_ref().is_none_or(|r| r == &root)
+                            && message.team.as_ref().is_none_or(|t| t == team)
+                        {
+                            crate::state::apply_message_reaction(message, user, name, *added);
+                        }
+                    }
+                }
+            }
             Change::Unsubscribe(channel, root) => self
                 .items
                 .retain(|i| i.channel() != Some(channel) || i.root_ts() != Some(root)),
@@ -209,7 +282,7 @@ impl ThreadsState {
                     }
                 }
             }
-            Change::Message(channel, message, arrival) => {
+            Change::Message(channel, message, arrival, original) => {
                 let Some(ts) = message.ts.as_ref() else {
                     return;
                 };
@@ -219,7 +292,12 @@ impl ThreadsState {
                     .filter(|i| i.channel() == Some(channel))
                 {
                     if item.root_ts() == Some(ts) {
-                        merge_message(&mut item.root_msg, message.clone());
+                        merge_message_update(
+                            &mut item.root_msg,
+                            channel,
+                            message.clone(),
+                            original.as_ref(),
+                        );
                         continue;
                     }
                     let known = item.replies().iter().any(|m| m.ts.as_ref() == Some(ts));
@@ -236,7 +314,12 @@ impl ThreadsState {
                         if let Some(existing) =
                             replies.iter_mut().find(|m| m.ts.as_ref() == Some(ts))
                         {
-                            merge_message(existing, message.clone());
+                            merge_message_update(
+                                existing,
+                                channel,
+                                message.clone(),
+                                original.as_ref(),
+                            );
                         }
                     }
                     if incoming && !known {
@@ -331,6 +414,15 @@ impl CoreAppState {
 
 #[cfg(test)]
 mod recovery;
+
+mod context;
+pub use context::VisibleChange;
+
+#[cfg(test)]
+mod explicit_clear;
+
+#[cfg(test)]
+mod reactions;
 
 #[cfg(test)]
 mod tests {

@@ -15,6 +15,7 @@ pub struct ShellState {
     pub(crate) surface_hydration: crate::bootstrap::SurfaceHydration,
     pub(crate) resource_reads: crate::resource_reads::Root,
     pub(crate) thread_feed_reads: crate::thread_feed::Reads,
+    pub(crate) channel_directory: crate::channel_directory::State,
     pub(crate) message_buttons: crate::message_buttons::State,
     pub(crate) app_home: crate::app_home::Root,
     pub(crate) directory_member_fetches: crate::directory_member_fetches::Registry,
@@ -107,16 +108,24 @@ pub struct ShellState {
     pub search_filters: Option<super_platinum_core::search_query::SearchFilters>,
     pub(crate) search_file_type_filters: Option<super::search_filter_types::Draft>,
     pub(crate) search_message_scope_filters: Option<super::search_message_scopes::Draft>,
+    pub(crate) search_message_fallback_filters:
+        Option<super::search_message_scopes::fallback::Draft>,
     pub(crate) search_message_scope_fixture: Option<super::search_message_scopes::Fixture>,
     pub search_history_open: bool,
     pub search_filter_error: Option<&'static str>,
     pub search_results: Vec<SearchResultVm>,
     pub(crate) search_message_pages: Option<crate::bootstrap::search_message_pages::Book>,
+    pub(crate) search_author_profiles: crate::bootstrap::search_message_pages::profiles::Registry,
+    pub(crate) search_reaction_actions:
+        crate::bootstrap::search_message_pages::reaction_actions::State,
     /// Named offline presentation, never a request/cache ownership receipt.
     pub(crate) search_message_pages_fixture:
         Option<crate::bootstrap::search_message_pages::Fixture>,
     pub(crate) search_people_results: Option<crate::bootstrap::search_people::Results>,
     pub(crate) search_file_pages_fixture: Option<bool>,
+    pub(crate) search_file_excerpt_fixture: bool,
+    pub(crate) search_file_image_fixture: Option<super_platinum_core::MediaAssetId>,
+    pub(crate) search_file_pdf_fixture: bool,
     pub(crate) search_file_sort_fixture:
         Option<crate::bootstrap::search_file_pages::saved::Fixture>,
     pub(crate) search_file_module: Option<crate::bootstrap::search_file_pages::Module>,
@@ -583,11 +592,14 @@ pub(crate) fn account_vms(accounts: &super_platinum_core::config::Accounts) -> V
 
 impl ShellState {
     pub(crate) fn clear_search_results(&mut self) {
+        self.search_reaction_actions.retire_ui();
         self.search_results.clear();
         self.search_message_pages = None;
         self.search_message_pages_fixture = None;
         self.search_file_results.clear();
         self.search_file_pages_fixture = None;
+        self.search_file_excerpt_fixture = false;
+        self.search_file_pdf_fixture = false;
         self.search_file_sort_fixture = None;
         if let Some(module) = &mut self.search_file_module {
             module.clear_results();
@@ -645,6 +657,7 @@ impl ShellState {
     pub fn apply_search_filters(&mut self) -> bool {
         if self.search_file_type_filters.is_some()
             || self.search_message_scope_filters.is_some()
+            || self.search_message_fallback_filters.is_some()
             || self.search_message_scope_fixture.is_some()
         {
             return false;
@@ -669,6 +682,8 @@ impl ShellState {
 
 impl ShellState {
     pub fn cancel_search_open(&mut self) {
+        crate::bootstrap::search_message_pages::profiles::retire_ui(self);
+        self.search_reaction_actions.retire_ui();
         super::search_filter_types::retire(self);
         super::search_message_scopes::retire(self);
         self.search_open_generation = self.search_open_generation.wrapping_add(1);
@@ -733,6 +748,7 @@ impl ShellState {
         if self.overlay == Some(Overlay::Canvas) {
             crate::canvas::checklist::close_visit(self);
         }
+        crate::channel_directory::remember_on_close(self);
         self.cancel_profile_dm();
         self.cancel_palette_open();
         self.cancel_search_open();

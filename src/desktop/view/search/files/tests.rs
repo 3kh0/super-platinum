@@ -1,4 +1,7 @@
 use super::*;
+mod excerpt;
+mod image;
+mod pdf;
 use dioxus::core::{
     AttributeValue, DynamicNode, ElementId, Mutation, ScopeId, TemplateAttribute, TemplateNode,
     VNode,

@@ -234,3 +234,15 @@ async fn actual_enabled_page_buttons_dispatch_next_cached_previous_failed_fourth
     let edits = legacy.rebuild_to_vec();
     assert!(!edits.edits.iter().any(|m|matches!(m,Mutation::SetAttribute{name:"id",value:AttributeValue::Text(value),..} if [PREVIOUS_ID,NEXT_ID,RETRY_ID].contains(&value.as_str()))));
 }
+
+mod deleted;
+
+pub(crate) mod rich;
+
+pub(crate) mod disclosure;
+
+pub(crate) mod emphasis;
+
+pub(crate) mod reactions;
+
+pub(crate) mod thread;

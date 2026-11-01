@@ -1,5 +1,6 @@
 use super::*;
 use serde_json::json;
+mod convergent;
 #[test]
 fn complete_gantry_workspace_preferences_use_the_same_policy_without_an_envelope() {
     let mut p = snapshot(json!({}), json!({}), json!({}));

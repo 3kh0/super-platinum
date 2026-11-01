@@ -20,6 +20,7 @@ pub(super) struct Owner {
     pub cached: Value,
     pub rt: u64,
 }
+pub(super) type NativeReadCheck = Arc<dyn Fn(&ShellState) -> bool + Send + Sync>;
 impl Owner {
     pub fn capture(shell: &ShellState) -> Option<Self> {
         if crate::fixture::is_fixture() || shell.channel_tabs.fixture.is_some() {
@@ -71,6 +72,41 @@ impl Owner {
                 && serde_json::to_value(&n.member).ok() == serde_json::to_value(&self.member).ok()
                 && n.plan == self.plan
         })
+    }
+    /// Negative/coalescing metadata from the ORIGINAL native owner. No fixture,
+    /// Signal or Rc enters ShellState, and this does not authorize a request.
+    pub(super) fn native_read_check(&self) -> Option<NativeReadCheck> {
+        if self.fixture.is_some() {
+            return None;
+        }
+        let key = self.key.clone();
+        let epoch = self.epoch;
+        let generation = self.generation;
+        let transport = self.transport.clone()?;
+        let client = self.client.clone();
+        let session = self.session.clone();
+        let cookie = self.cookie.clone();
+        let member = self.member.clone();
+        let plan = self.plan.clone();
+        let cached = self.cached.clone();
+        let rt = self.rt;
+        Some(Arc::new(move |shell| {
+            let original = Owner {
+                key: key.clone(),
+                epoch,
+                generation,
+                transport: Some(transport.clone()),
+                fixture: None,
+                client: client.clone(),
+                session: session.clone(),
+                cookie: cookie.clone(),
+                member: member.clone(),
+                plan: plan.clone(),
+                cached: cached.clone(),
+                rt,
+            };
+            original.current(shell)
+        }))
     }
     pub fn account_current(&self, shell: &ShellState) -> bool {
         if let Some(capability) = &self.fixture {

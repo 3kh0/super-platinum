@@ -124,6 +124,7 @@ where
         .map_err(|_| super::acquire::at("observations.names.complete", unavailable()))?;
     Ok(Names {
         policy,
+        user_preferences: prefs,
         history,
         enterprise,
         self_user,

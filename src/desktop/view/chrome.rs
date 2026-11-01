@@ -2,6 +2,9 @@ use crate::media::MediaUri;
 use dioxus::prelude::*;
 
 use crate::state::{ConnectionStatus, MainView, PresenceVm, SelfAccountVm, ShellState};
+pub(super) mod dm_status;
+pub(super) mod privacy;
+pub(super) mod topic;
 
 /// Presence glyphs traced from the real client (`status-member*`, viewBox
 /// `0 0 20 20`): a ring when away, a filled disc when active, each gaining the
@@ -143,6 +146,7 @@ pub(crate) fn channel_sidebar(
     shortcut: &str,
 ) -> Element {
     let has_unreads = snapshot.channels.iter().any(|channel| channel.unread);
+    let directory = crate::channel_directory::Launch::capture(snapshot);
     let threads = snapshot
         .core
         .active_team
@@ -170,6 +174,11 @@ pub(crate) fn channel_sidebar(
                 span { class: "hint", "{shortcut}" }
             }
             nav { class: "sidebar-pages",
+                button {id:"open-your-channels",class:"nav-row",disabled:directory.is_none(),
+                    onclick:{let directory=directory.clone();move |_|if let Some(directory)=&directory{directory.start(state);}},
+                    {crate::icons::icon(crate::icons::Icon::Search,"icon sm")}
+                    span {"Your channels"}
+                }
                 button { class: "nav-row", title: if cfg!(target_os = "macos") { "Search messages (⌘G)" } else { "Search messages (Ctrl+G)" },
                     onclick: move |_| state.write().open_search(false),
                     {crate::icons::icon(crate::icons::Icon::Search, "icon sm")}
@@ -303,6 +312,18 @@ pub(crate) fn conversation_header(
         format!("#{channel_name}")
     };
     let is_dm = channel.is_some_and(|c| c.is_im);
+    let private_title = if is_dm {
+        None
+    } else {
+        privacy::display(snapshot)
+    };
+    let status_key = format!(
+        "{}-{}-{:?}-{}",
+        snapshot.core.account_epoch,
+        snapshot.channel_generation,
+        snapshot.main_view,
+        channel.map(|c| c.id.as_str()).unwrap_or_default()
+    );
     let dm_user = channel.and_then(|c| c.user_id.clone());
     let dm_user_name = dm_user.clone();
     let dm_user_hover_avatar = dm_user.clone();
@@ -336,6 +357,7 @@ pub(crate) fn conversation_header(
         }
         if is_dm {
             h2 {
+                class: "header-dm-title",
                 button {
                     class: "header-name",
                     onmouseenter: move |event: MouseEvent| {
@@ -352,10 +374,12 @@ pub(crate) fn conversation_header(
                     },
                     "{title}"
                 }
+                dm_status::HeaderStatus { key:"{status_key}",state }
             }
         } else if let Some(channel)=channel {
-            super::channel_details::ChannelDetailsButton{key:"{snapshot.core.account_epoch}-{snapshot.core.active_team.as_deref().unwrap_or_default()}-{channel.id}",state,channel:channel.id.clone(),title}
+            super::channel_details::ChannelDetailsButton{key:"{snapshot.core.account_epoch}-{snapshot.core.active_team.as_deref().unwrap_or_default()}-{channel.id}",state,channel:channel.id.clone(),title,private_title}
         }
+        {topic::render(snapshot)}
         {super::huddle::huddle_header_button(state, snapshot, channel.map(|c| c.id.as_str()).unwrap_or_default(), huddle)}
     }
 }

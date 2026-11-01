@@ -949,6 +949,10 @@ mod helpers;
 pub use helpers::*;
 use helpers::{append_unique, custom_emoji_url, linked_list_order, merge_channel_metadata};
 pub(crate) use helpers::{apply_message_reaction, merge_message};
+mod message_updates;
+pub(crate) use message_updates::{
+    DeferredBody, PreviewUpdate, merge as merge_message_update, original_edit_matches,
+};
 
 mod sidebar;
 pub use sidebar::*;

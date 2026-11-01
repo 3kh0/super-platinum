@@ -173,6 +173,19 @@ pub(crate) fn profile_pane(mut state: Signal<ShellState>, snapshot: &ShellState)
     let Some(user_id) = snapshot.profile_user.as_deref() else {
         return rsx! {};
     };
+    if let Some(user) = crate::bootstrap::search_message_pages::profiles::fixture_user(snapshot) {
+        return read_only::pane(
+            state,
+            snapshot,
+            crate::bootstrap::profile_search::Presentation {
+                id: &user.id,
+                user: Some(user),
+                loading: false,
+                error: None,
+                retry: None,
+            },
+        );
+    }
     if let Some(details) = crate::bootstrap::profile_search::presentation(snapshot, user_id) {
         return read_only::pane(state, snapshot, details);
     }

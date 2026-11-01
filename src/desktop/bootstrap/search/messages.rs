@@ -1,5 +1,6 @@
 //! Shared message search response, hydration and projection.
 use super::*;
+mod projection;
 use std::{future::Future, sync::Arc};
 use super_platinum_core::{
     config::WorkspaceSession,
@@ -144,7 +145,23 @@ pub(super) async fn load_owned_with_profiles<F, Fut, U, UFut>(
         page: request.page,
         ..api::SearchArgs::new(request.query.clone())
     };
-    match api::fetch_search_messages_with(client, session, args, execute).await {
+    let raw_actors = std::rc::Rc::new(std::cell::RefCell::new(None));
+    let capture = raw_actors.clone();
+    let actor_team = team.clone();
+    let capture_owned = owned.is_some();
+    let mut prepare_authors = false;
+    match api::fetch_search_messages_with(client, session, args, move |request| async move {
+        let response = execute(request).await;
+        if capture_owned && let Ok(raw) = &response {
+            *capture.borrow_mut() = Some(super::message_pages::profiles::capture_raw(
+                raw,
+                &actor_team,
+            ));
+        }
+        response
+    })
+    .await
+    {
         Ok(page) => {
             if !signal_current(
                 state,
@@ -285,67 +302,16 @@ pub(super) async fn load_owned_with_profiles<F, Fut, U, UFut>(
                 retire(state, &request);
                 return;
             }
-            let results = {
+            let (results, bodies) = {
                 let Ok(shell) = state.try_read() else {
                     return;
                 };
-                let workspace = shell.core.workspaces.get(&team);
-                let media = &shell.media;
-                page.items
-                    .into_iter()
-                    .flat_map(|item| {
-                        let channel_id = item
-                            .channel
-                            .as_ref()
-                            .map(|channel| channel.id.clone())
-                            .unwrap_or_default();
-                        let (channel_name, direct_conversation) = item
-                            .channel
-                            .as_ref()
-                            .map(|channel| {
-                                workspace
-                                    .map(|workspace| super::conversation::label(workspace, channel))
-                                    .unwrap_or_else(|| {
-                                        (
-                                            super_platinum_core::state::channel_name(channel),
-                                            channel.is_im || channel.is_mpim,
-                                        )
-                                    })
-                            })
-                            .unwrap_or_else(|| ("conversation".into(), false));
-                        item.messages.into_iter().map(move |message| {
-                            let author = workspace
-                                .map(|workspace| {
-                                    super_platinum_core::state::message_author_name(
-                                        workspace, &message,
-                                    )
-                                })
-                                .unwrap_or_else(|| "Slack".into());
-                            let text = workspace
-                                .map(|workspace| {
-                                    let vm =
-                                        crate::message_vm::message_vm(workspace, &message, media);
-                                    super::preview::text(&vm)
-                                })
-                                .unwrap_or_else(|| {
-                                    super_platinum_core::state::message_text(&message)
-                                })
-                                .replace(['\u{e000}', '\u{e001}'], "");
-                            crate::state::SearchResultVm {
-                                direct_conversation,
-                                thread_ts: message
-                                    .thread_ts
-                                    .clone()
-                                    .filter(|root| Some(root) != message.ts.as_ref()),
-                                channel_id: channel_id.clone(),
-                                channel_name: channel_name.clone(),
-                                ts: message.ts.clone().unwrap_or_default(),
-                                author,
-                                text,
-                            }
-                        })
-                    })
-                    .collect::<Vec<_>>()
+                projection::rows(
+                    shell.core.workspaces.get(&team),
+                    &shell.media,
+                    page.items,
+                    owned.is_some(),
+                )
             };
             let Ok(mut shell) = state.try_write() else {
                 return;
@@ -366,7 +332,10 @@ pub(super) async fn load_owned_with_profiles<F, Fut, U, UFut>(
                 if let Some(read) = &owned {
                     let mut rows = Vec::new();
                     merge_results(&mut rows, results);
-                    read.publish(&mut shell, rows, page.pagination.as_ref());
+                    read.publish(&mut shell, rows, page.pagination.as_ref(), bodies);
+                    if let Some(raw) = raw_actors.borrow_mut().take() {
+                        prepare_authors = read.publish_actors(&mut shell, raw);
+                    }
                 } else {
                     merge_results(&mut shell.search_results, results);
                 }
@@ -400,6 +369,9 @@ pub(super) async fn load_owned_with_profiles<F, Fut, U, UFut>(
                 }
             });
         }
+    }
+    if prepare_authors {
+        super::message_pages::profiles::prepare(state, false);
     }
 }
 

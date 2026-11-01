@@ -10,7 +10,11 @@ use super::models::{Message as SlackMessage, TeamId};
 
 mod member_subscription;
 mod preference;
+mod read_barrier;
 pub use preference::PreferenceCarrier;
+pub use read_barrier::{ReadBarrier, ReadIdentity, ReadWatch};
+#[cfg(any(test, feature = "protected-test-support"))]
+pub use read_barrier::{protected_connection, protected_updates};
 pub(super) mod message_update;
 pub use member_subscription::{MemberSubscription, MemberSubscriptionError, SubscriptionReceipt};
 
@@ -37,6 +41,10 @@ pub enum RtUpdate {
         generation: u64,
         carrier: PreferenceCarrier,
     },
+    ReadBarrier {
+        generation: u64,
+        barrier: ReadBarrier,
+    },
     Disconnected {
         generation: u64,
     },
@@ -46,6 +54,7 @@ pub enum RtUpdate {
 pub struct Connection {
     tx: mpsc::Sender<String>,
     subscriptions: std::sync::Arc<member_subscription::PendingReplies>,
+    read_ingress: std::sync::Arc<read_barrier::Ingress>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -67,10 +76,19 @@ impl Connection {
         })
     }
 
+    pub fn read_identity(&self) -> ReadIdentity {
+        self.read_ingress.identity()
+    }
+
+    pub fn watch_message_read(&self, channel: &str) -> Option<ReadWatch> {
+        self.read_ingress.watch(channel)
+    }
+
     pub fn from_sender(tx: mpsc::Sender<String>) -> Self {
         Self {
             tx,
             subscriptions: Default::default(),
+            read_ingress: Default::default(),
         }
     }
 }
@@ -195,18 +213,12 @@ async fn run_connection(
     // last external Connection must still close rx and end this socket loop.
     let subscriptions = connection.subscriptions.clone();
     let _close_pending = subscriptions.close_on_drop();
-    if output
-        .send((
-            params.team.clone(),
-            RtUpdate::Connected {
-                generation,
-                connection,
-            },
-        ))
-        .await
-        .is_err()
-    {
-        return Ok(());
+    let read_ingress = connection.read_ingress.clone();
+    let _close_reads = read_barrier::Close(read_ingress.clone());
+    for update in read_barrier::connected(generation, connection) {
+        if output.send((params.team.clone(), update)).await.is_err() {
+            return Ok(());
+        }
     }
 
     let mut ping = tokio::time::interval(PING_EVERY);
@@ -228,23 +240,12 @@ async fn run_connection(
                 Some(Ok(wreq::ws::message::Message::Text(text))) => {
                     last_seen = tokio::time::Instant::now();
                     trace_frame(text.as_str());
-                    let value = serde_json::from_str::<Value>(text.as_str()).ok();
-                    if let Some(event) = value.and_then(|value| {
-                        if subscriptions.receive(&value) {
-                            None
-                        } else {
-                            parse_event_value(value)
+                    // Retire a watched read synchronously at consumed ingress,
+                    // before lossy parsing or waiting for the native queue.
+                    for update in read_barrier::updates(&read_ingress, &subscriptions, generation, text.as_str()) {
+                        if output.send((params.team.clone(), update)).await.is_err() {
+                            return Ok(());
                         }
-                    })
-                        && output
-                            .send((
-                                params.team.clone(),
-                                preference::update(generation, event, text.as_str()),
-                            ))
-                            .await
-                            .is_err()
-                    {
-                        return Ok(());
                     }
                 }
                 Some(Ok(wreq::ws::message::Message::Close(_))) | None => return Ok(()),

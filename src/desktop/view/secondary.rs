@@ -3,8 +3,11 @@ use dioxus::prelude::*;
 
 use crate::state::{ActivityTab, MainView, ShellState};
 
+mod activity_snippet;
 mod dm_channels;
+mod dm_snippet;
 mod paging;
+mod snippet;
 
 pub(crate) fn secondary_view(mut state: Signal<ShellState>, snapshot: &ShellState) -> Element {
     let workspace = snapshot
@@ -207,7 +210,7 @@ pub(crate) fn dm_list_panel(mut state: Signal<ShellState>, snapshot: &ShellState
                         let label = snapshot.dm_row_label(entry);
                         let source = row_frame.as_ref().and_then(|frame| crate::bootstrap::dms::Source::for_row(frame, &entry.id));
                         let opening = crate::bootstrap::dms::is_opening(snapshot, &entry.id);
-                        let snippet = dm_preview(snapshot, workspace, entry);
+                        let snippet = dm_snippet::project(snapshot, workspace, entry);
                         let time = entry
                             .latest
                             .as_deref()
@@ -268,7 +271,11 @@ pub(crate) fn dm_list_panel(mut state: Signal<ShellState>, snapshot: &ShellState
                                 }
                                 div { class: "dm-mid",
                                     span { class: "dm-name", "{label}" }
-                                    p { class: "dm-snippet", "{snippet}" }
+                                    p { class: "dm-snippet",
+                                        if let Some(nodes)=snippet.rich.as_ref() {
+                                            for node in nodes {{super::rich::rich_node(node,snapshot.media_epoch,state)}}
+                                        } else {"{snippet.text}"}
+                                    }
                                 }
                                 div { class: "dm-meta",
                                     span { class: "dm-time", "{time}" }
@@ -297,24 +304,7 @@ pub(crate) fn dm_preview(
     workspace: Option<&super_platinum_core::state::Workspace>,
     entry: &super_platinum_core::slack::models::DmEntry,
 ) -> String {
-    let Some(message) = entry.message.as_ref() else {
-        return String::new();
-    };
-    let Some(ws) = workspace else {
-        return super_platinum_core::state::message_text(message);
-    };
-    let body = message_preview(snapshot, ws, message);
-    let is_mpim = ws
-        .channels
-        .get(&entry.id)
-        .or(entry.channel.as_ref())
-        .map(|channel| channel.is_mpim)
-        .unwrap_or(false);
-    match message.user.as_deref() {
-        Some(user) if user == ws.self_user_id => format!("You: {body}"),
-        Some(user) if is_mpim => format!("{}: {body}", ws.display_name(user)),
-        _ => body,
-    }
+    dm_snippet::project(snapshot, workspace, entry).text
 }
 
 pub(super) fn message_preview(
@@ -392,6 +382,7 @@ pub(crate) fn activity_list_panel(mut state: Signal<ShellState>, snapshot: &Shel
         .iter()
         .filter(|item| tab.matches(item))
         .filter(|item| !unread_only || item.is_pending())
+        .filter(|item| !snapshot.core.activity_item_message_deleted(item))
         .collect();
     // Precompute day headers so we don't mutate inside rsx.
     let mut rows: Vec<(
@@ -476,7 +467,7 @@ pub(crate) fn activity_list_panel(mut state: Signal<ShellState>, snapshot: &Shel
                         let verb = activity_verb(item);
                         let target = activity_channel_label(workspace, item);
                         let time = activity_time_label(item);
-                        let preview = activity_preview(snapshot, workspace, item);
+                        let preview = activity_snippet::project(snapshot, workspace, item);
                         let badge = item.unread_msg_count();
                         let event_icon = activity_event_glyph(item);
                         let avatar = activity_avatar(snapshot, workspace, item);
@@ -536,8 +527,12 @@ pub(crate) fn activity_list_panel(mut state: Signal<ShellState>, snapshot: &Shel
                                             }
                                         }
                                     }
-                                    if !preview.is_empty() {
-                                        p { class: "activity-preview", "{preview}" }
+                                    if !preview.text.is_empty() {
+                                        p { class: "activity-preview",
+                                            if let Some(nodes) = preview.rich.as_ref() {
+                                                for node in nodes { {super::rich::rich_node(node, snapshot.media_epoch, state)} }
+                                            } else { "{preview.text}" }
+                                        }
                                     }
                                 }
                             }
@@ -649,72 +644,7 @@ pub(crate) fn activity_preview(
     workspace: Option<&super_platinum_core::state::Workspace>,
     item: &super_platinum_core::slack::models::ActivityItem,
 ) -> String {
-    if let (Some(workspace), Some(message)) = (workspace, activity_hydrated_message(snapshot, item))
-    {
-        let vm = crate::message_vm::message_vm(workspace, message, &snapshot.media);
-        let text = super::rich::message_plain_text(&vm);
-        let body = text
-            .lines()
-            .find(|line| !line.trim().is_empty())
-            .unwrap_or("")
-            .trim();
-        if item.item.reaction.is_some() {
-            let author = message
-                .user
-                .as_deref()
-                .map(|user| {
-                    if user == workspace.self_user_id {
-                        "You".to_owned()
-                    } else {
-                        workspace.display_name(user)
-                    }
-                })
-                .unwrap_or_else(|| "You".into());
-            return format!("{author}: {body}");
-        }
-        if !body.is_empty() {
-            return body.to_owned();
-        }
-    }
-    if let Some(text) = item
-        .item
-        .message
-        .as_ref()
-        .and_then(|message| message.extra.get("text"))
-        .and_then(|value| value.as_str())
-        .map(str::trim)
-        .filter(|text| !text.is_empty())
-    {
-        if let Some(workspace) = workspace {
-            let message = super_platinum_core::slack::models::Message {
-                text: Some(text.to_owned()),
-                ..Default::default()
-            };
-            let vm = crate::message_vm::message_vm(workspace, &message, &snapshot.media);
-            let rendered = super::rich::message_plain_text(&vm);
-            return rendered.lines().next().unwrap_or(&rendered).to_owned();
-        }
-        return text.lines().next().unwrap_or(text).to_owned();
-    }
-    if let Some(reaction) = item.item.reaction.as_ref() {
-        let name = if reaction.name.is_empty() {
-            "reaction"
-        } else {
-            reaction.name.as_str()
-        };
-        let glyph = super_platinum_core::state::emoji_glyph(name);
-        let who = reaction
-            .user
-            .as_deref()
-            .map(|user| {
-                workspace
-                    .map(|ws| ws.display_name(user))
-                    .unwrap_or_else(|| user.to_owned())
-            })
-            .unwrap_or_else(|| "Someone".into());
-        return format!("{who}: {glyph}");
-    }
-    String::new()
+    activity_snippet::project(snapshot, workspace, item).text
 }
 
 fn activity_hydrated_message<'a>(

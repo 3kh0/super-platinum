@@ -80,17 +80,63 @@ impl ShellState {
                 state.overlay = Some(Overlay::Settings);
                 state
             }
+            "search-messages-reaction-picker"
+            | "search-messages-reaction-picker-narrow"
+            | "search-messages-reaction-unknown"
+            | "search-messages-reaction-unknown-narrow" => {
+                let mut state = Self::fixture(media);
+                crate::bootstrap::search_message_pages::fixture(
+                    &mut state,
+                    "search-messages-reaction-groups",
+                );
+                crate::bootstrap::search_message_pages::reaction_actions::fixture(
+                    &mut state,
+                    fixture.contains("unknown"),
+                );
+                state
+            }
+            "search-messages-author-profile" | "search-messages-author-profile-narrow" => {
+                let mut state = Self::fixture(media);
+                crate::bootstrap::search_message_pages::fixture(
+                    &mut state,
+                    "search-messages-pages",
+                );
+                crate::bootstrap::search_message_pages::profiles::fixture(&mut state);
+                state
+            }
             "search-messages-pages"
             | "search-messages-pages-narrow"
             | "search-messages-page2"
             | "search-messages-page2-narrow"
             | "search-messages-page-failed"
-            | "search-messages-page-failed-narrow" => {
+            | "search-messages-page-failed-narrow"
+            | "search-messages-deleted"
+            | "search-messages-deleted-narrow"
+            | "search-messages-rich"
+            | "search-messages-rich-narrow"
+            | "search-messages-expanded"
+            | "search-messages-expanded-narrow"
+            | "search-messages-emphasis"
+            | "search-messages-reactions"
+            | "search-messages-reaction-groups"
+            | "search-messages-reaction-groups-narrow"
+            | "search-messages-root-thread"
+            | "search-messages-root-thread-narrow"
+            | "search-messages-reactions-narrow"
+            | "search-messages-emphasis-narrow" => {
                 let mut state = Self::fixture(media);
                 crate::bootstrap::search_message_pages::fixture(&mut state, &fixture);
                 state
             }
             "search-files-pages"
+            | "search-files-excerpts"
+            | "search-files-excerpts-narrow"
+            | "search-files-pdf-preview"
+            | "search-files-pdf-preview-narrow"
+            | "search-files-image-preview"
+            | "search-files-image-preview-narrow"
+            | "search-files-image-zoom"
+            | "search-files-image-zoom-narrow"
             | "search-files-pages-narrow"
             | "search-files-page-failed"
             | "search-files-saving"
@@ -103,6 +149,13 @@ impl ShellState {
                 state.set_search_kind(super_platinum_core::search::SearchKind::Files);
                 state.set_search_query("design notes".into());
                 state.search_file_pages_fixture = Some(fixture.contains("failed"));
+                state.search_file_excerpt_fixture = fixture.contains("excerpts");
+                if fixture.contains("image-preview") {
+                    crate::bootstrap::search_file_pages::preview::fixture(&mut state);
+                }
+                if fixture.contains("pdf-preview") {
+                    crate::bootstrap::search_file_pages::pdf::fixture(&mut state);
+                }
                 state.search_file_sort_fixture = if fixture.contains("saving") {
                     Some(crate::bootstrap::search_file_pages::saved::Fixture::Saving)
                 } else if fixture.contains("save-unconfirmed") {
@@ -504,6 +557,7 @@ impl ShellState {
             surface_hydration: Default::default(),
             resource_reads: Default::default(),
             thread_feed_reads: Default::default(),
+            channel_directory: Default::default(),
             later_read: Default::default(),
             activity_tab: ActivityTab::default(),
             surfaces: HashMap::new(),
@@ -534,12 +588,16 @@ impl ShellState {
             search_filters: None,
             search_file_type_filters: None,
             search_message_scope_filters: None,
+            search_message_fallback_filters: None,
             search_message_scope_fixture: None,
             search_history_open: false,
             search_filter_error: None,
             search_results: Vec::new(),
             search_people_results: None,
             search_file_pages_fixture: None,
+            search_file_excerpt_fixture: false,
+            search_file_image_fixture: None,
+            search_file_pdf_fixture: false,
             search_file_sort_fixture: None,
             search_file_module: None,
             search_file_save_registry: Default::default(),
@@ -547,6 +605,8 @@ impl ShellState {
             search_people_pager_fixture: false,
             search_control_memory: None,
             search_message_pages: None,
+            search_author_profiles: Default::default(),
+            search_reaction_actions: Default::default(),
             search_message_pages_fixture: None,
             search_people_account_fixture: None,
             search_people_save_fixture: None,
@@ -691,6 +751,7 @@ impl ShellState {
             surface_hydration: Default::default(),
             resource_reads: Default::default(),
             thread_feed_reads: Default::default(),
+            channel_directory: Default::default(),
             later_read: Default::default(),
             activity_tab: ActivityTab::default(),
             surfaces: HashMap::new(),
@@ -721,12 +782,16 @@ impl ShellState {
             search_filters: None,
             search_file_type_filters: None,
             search_message_scope_filters: None,
+            search_message_fallback_filters: None,
             search_message_scope_fixture: None,
             search_history_open: false,
             search_filter_error: None,
             search_results: Vec::new(),
             search_people_results: None,
             search_file_pages_fixture: None,
+            search_file_excerpt_fixture: false,
+            search_file_image_fixture: None,
+            search_file_pdf_fixture: false,
             search_file_sort_fixture: None,
             search_file_module: None,
             search_file_save_registry: Default::default(),
@@ -734,6 +799,8 @@ impl ShellState {
             search_people_pager_fixture: false,
             search_control_memory: None,
             search_message_pages: None,
+            search_author_profiles: Default::default(),
+            search_reaction_actions: Default::default(),
             search_message_pages_fixture: None,
             search_people_account_fixture: None,
             search_people_save_fixture: None,
@@ -1072,6 +1139,7 @@ impl ShellState {
             surface_hydration: Default::default(),
             resource_reads: Default::default(),
             thread_feed_reads: Default::default(),
+            channel_directory: Default::default(),
             later_read: Default::default(),
             activity_tab: ActivityTab::default(),
             surfaces: HashMap::new(),
@@ -1102,12 +1170,16 @@ impl ShellState {
             search_filters: None,
             search_file_type_filters: None,
             search_message_scope_filters: None,
+            search_message_fallback_filters: None,
             search_message_scope_fixture: None,
             search_history_open: false,
             search_filter_error: None,
             search_results: Vec::new(),
             search_people_results: None,
             search_file_pages_fixture: None,
+            search_file_excerpt_fixture: false,
+            search_file_image_fixture: None,
+            search_file_pdf_fixture: false,
             search_file_sort_fixture: None,
             search_file_module: None,
             search_file_save_registry: Default::default(),
@@ -1115,6 +1187,8 @@ impl ShellState {
             search_people_pager_fixture: false,
             search_control_memory: None,
             search_message_pages: None,
+            search_author_profiles: Default::default(),
+            search_reaction_actions: Default::default(),
             search_message_pages_fixture: None,
             search_people_account_fixture: None,
             search_people_save_fixture: None,
@@ -1187,11 +1261,51 @@ impl ShellState {
     pub(crate) fn fixture_variant(media: MediaRegistry, name: &str) -> Self {
         let mut state = Self::fixture(media);
         match name {
+            "search-files-excerpts" | "search-files-excerpts-narrow" => {
+                state.overlay = Some(Overlay::Search);
+                state.set_search_kind(super_platinum_core::search::SearchKind::Files);
+                state.set_search_query("launch".into());
+                state.search_file_pages_fixture = Some(false);
+                state.search_file_excerpt_fixture = true;
+            }
+            "conversation-header-private-topic" | "conversation-header-private-topic-narrow" => {
+                crate::view::header_private_topic_fixture(&mut state);
+            }
+            "conversation-header-private" | "conversation-header-private-narrow" => {
+                crate::view::header_private_fixture(&mut state);
+            }
+            "conversation-header-status" | "conversation-header-status-narrow" => {
+                crate::view::header_status_fixture(&mut state);
+            }
+            "conversation-header-topic" | "conversation-header-topic-narrow" => {
+                crate::view::header_topic_fixture(&mut state);
+            }
+            "search-files-pdf-preview" | "search-files-pdf-preview-narrow" => {
+                crate::bootstrap::search_file_pages::pdf::fixture(&mut state);
+            }
+            "search-files-image-preview"
+            | "search-files-image-preview-narrow"
+            | "search-files-image-zoom"
+            | "search-files-image-zoom-narrow" => {
+                crate::bootstrap::search_file_pages::preview::fixture(&mut state);
+            }
             "channel-canvas-surface" | "channel-canvas-surface-narrow" => {
                 crate::canvas::surface::install_fixture(&mut state)
             }
             "channel-tabs-knowledge" | "channel-tabs-knowledge-narrow" => {
                 crate::channel_tabs::fixture::install_knowledge(&mut state);
+            }
+            "channel-threads"
+            | "channel-threads-narrow"
+            | "channel-threads-error"
+            | "channel-threads-error-narrow"
+            | "channel-threads-empty"
+            | "channel-threads-empty-narrow"
+            | "channel-threads-loading"
+            | "channel-threads-loading-narrow"
+            | "channel-threads-previous"
+            | "channel-threads-previous-narrow" => {
+                crate::channel_tabs::threads::fixture::install(&mut state, name);
             }
             "channel-tabs-folder"
             | "channel-tabs-folder-narrow"
@@ -1253,7 +1367,16 @@ impl ShellState {
                     .thread_counts
                     .apply_live(counts);
             }
+            "your-channels" | "your-channels-narrow" => {
+                crate::channel_directory::fixture(&mut state)
+            }
             "thread-feed"
+            | "thread-feed-edited"
+            | "thread-feed-edited-narrow"
+            | "thread-feed-copy-link"
+            | "thread-feed-copy-link-narrow"
+            | "thread-feed-timestamp"
+            | "thread-feed-timestamp-narrow"
             | "thread-feed-empty"
             | "thread-feed-error"
             | "thread-feed-loading"
@@ -1264,6 +1387,30 @@ impl ShellState {
             | "thread-feed-older-retry-narrow"
             | "thread-feed-initial-retry"
             | "thread-feed-initial-retry-narrow"
+            | "thread-feed-rich-root"
+            | "thread-feed-unread"
+            | "thread-feed-unread-narrow"
+            | "thread-feed-unread-read"
+            | "thread-feed-unread-read-narrow"
+            | "thread-feed-mark-all"
+            | "thread-feed-mark-all-narrow"
+            | "thread-feed-rich-root-narrow"
+            | "thread-feed-replies"
+            | "thread-feed-earlier-local"
+            | "thread-feed-earlier-local-narrow"
+            | "thread-feed-replies-narrow"
+            | "thread-feed-replies-reactions"
+            | "thread-feed-replies-reactions-narrow"
+            | "thread-feed-root-reactions"
+            | "thread-feed-root-reactions-narrow"
+            | "thread-feed-reaction-groups"
+            | "thread-feed-reaction-groups-narrow"
+            | "thread-feed-reaction-groups-people"
+            | "thread-feed-reaction-groups-people-narrow"
+            | "thread-feed-profile-reading"
+            | "thread-feed-profile-reading-narrow"
+            | "thread-feed-document-authors"
+            | "thread-feed-document-authors-narrow"
             | "thread-feed-narrow" => crate::thread_feed::fixture(&mut state, name),
             "thread-follow-on"
             | "thread-follow-off"
@@ -1669,6 +1816,9 @@ impl ShellState {
             "app-home-focus-on-load" | "app-home-focus-on-load-narrow" => {
                 crate::app_home::inputs::focus_fixture::install(&mut state)
             }
+            "app-home-url-input" | "app-home-url-input-narrow" => {
+                crate::app_home::inputs::text::url::fixture::install(&mut state)
+            }
             "app-home-email-input" | "app-home-email-input-narrow" => {
                 crate::app_home::inputs::email_fixture::install(&mut state)
             }
@@ -1686,6 +1836,9 @@ impl ShellState {
             }
             "app-home-inputs" | "app-home-inputs-narrow" => {
                 crate::app_home::fixture::install_inputs(&mut state)
+            }
+            "app-home-url-readonly" | "app-home-url-readonly-narrow" => {
+                crate::app_home::fixture::install_readonly_urls(&mut state)
             }
             #[cfg(feature = "protected-test-support")]
             "app-home-workflow-auth" | "app-home-workflow-auth-narrow" => {
@@ -2343,6 +2496,9 @@ impl ShellState {
             "dms-current-facts" | "dms-current-facts-narrow" => {
                 crate::bootstrap::dms::install_facts_fixture(&mut state)
             }
+            "dms-styled-preview" | "dms-styled-preview-narrow" => {
+                crate::bootstrap::dms::install_styled_preview_fixture(&mut state)
+            }
             "dms-initial-unloaded"
             | "dms-initial-unloaded-narrow"
             | "dms-initial-loading"
@@ -2574,6 +2730,8 @@ impl ShellState {
                 }
             }
             "activity-paging"
+            | "activity-inline-styles"
+            | "activity-inline-styles-narrow"
             | "activity-navigation"
             | "activity-navigation-narrow"
             | "activity-refresh-retry"

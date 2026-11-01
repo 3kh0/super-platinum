@@ -162,7 +162,7 @@ pub(super) fn expected_visit(s: &ShellState, visit: actions::Key) -> Option<serd
     }
     let f = form(s)?;
     let form_owner = owner(s)?;
-    let fields = f
+    let mut fields = f
         .fields
         .iter()
         .filter_map(|(k, v)| {
@@ -183,6 +183,15 @@ pub(super) fn expected_visit(s: &ShellState, visit: actions::Key) -> Option<serd
             }
         })
         .collect::<Vec<_>>();
+    if f.has_owned_urls() {
+        let urls=f.fields.iter().filter(|(_,field)|matches!(field.kind,InputKind::Url))
+            .map(|(key,_)|{
+                if !url::supported(s,key){return None;}
+                let m=s.app_home.text.mounts.get(&(form_owner.clone(),key.clone()))?;
+                Some(serde_json::json!({"id":crate::view::app_modal::field_id(key),"value":m.value,"mount":m.id,"seq":m.seq,"url":true}))
+            }).collect::<Option<Vec<_>>>()?;
+        fields.extend(urls);
+    }
     Some(serde_json::json!({"visit":visit.visit,"revision":visit.revision,"fields":fields}))
 }
 pub(super) enum Lock {

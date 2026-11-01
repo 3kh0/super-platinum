@@ -17,6 +17,7 @@ pub(crate) mod fixture;
 pub(crate) mod number;
 #[cfg(test)]
 mod tests;
+pub(crate) mod url;
 
 #[derive(Default)]
 pub(crate) struct State {
@@ -24,6 +25,7 @@ pub(crate) struct State {
     mounts: BTreeMap<(FormOwner, InputKey), Mount>,
     numbers: BTreeMap<(FormOwner, InputKey), number::Widget>,
     emails: BTreeMap<(FormOwner, InputKey), email::Widget>,
+    urls: BTreeMap<(FormOwner, InputKey), url::Widget>,
     queued: BTreeMap<(FormOwner, InputKey), Queued>,
     activity: BTreeMap<(FormOwner, String), Activity>,
     was_cooling: bool,
@@ -59,7 +61,8 @@ impl Binding {
                 f.raw_view() == &self.raw
                     && (f.text_field(&self.key).is_ok()
                         || f.number_field(&self.key).is_ok()
-                        || f.email_field(&self.key).is_ok())
+                        || f.email_field(&self.key).is_ok()
+                        || f.url_field(&self.key).is_ok())
             })
     }
     fn interactive(&self, s: &ShellState) -> bool {
@@ -98,6 +101,7 @@ pub(super) fn ready(s: &ShellState) -> bool {
             (matches!(f.kind, InputKind::Text { .. }) && dispatching(s, k))
                 || number::supported(s, k)
                 || email::supported(s, k)
+                || url::supported(s, k)
         })
         .all(|(k, f)| {
             s.app_home
@@ -109,7 +113,8 @@ pub(super) fn ready(s: &ShellState) -> bool {
                         && m.binding.current(s)
                         && (matches!(&f.value,InputValue::Text(v) if v==&m.value)
                             || number::settled(s, k, m)
-                            || email::settled(s, k, m))
+                            || email::settled(s, k, m)
+                            || url::settled(s, k, m))
                 })
         })
 }
@@ -127,6 +132,7 @@ pub(crate) fn observe_cooling(s: &mut ShellState) -> bool {
 }
 pub(crate) fn poll(s: &mut ShellState) -> bool {
     let email_changed = email::poll(s);
+    let url_changed = url::poll(s);
     let cooling_changed = observe_cooling(s);
     let stale = s
         .app_home
@@ -162,6 +168,7 @@ pub(crate) fn poll(s: &mut ShellState) -> bool {
         s.app_home.text.activity.remove(k);
     }
     email_changed
+        || url_changed
         || cooling_changed
         || !stale.is_empty()
         || !stale_mounts.is_empty()
@@ -265,7 +272,7 @@ fn capture(
     let action = h
         .view
         .as_ref()?
-        .text_action(&event, &b.owner.ctx.session.user_id)
+        .text_action_in_owned_form(&event, &b.owner.ctx.session.user_id, form(s)?)
         .ok()?;
     let id = next();
     Some(Queued {

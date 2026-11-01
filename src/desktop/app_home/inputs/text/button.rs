@@ -7,9 +7,12 @@ mod tests;
 
 pub(crate) fn needed(s: &ShellState) -> bool {
     form(s).is_some_and(|f| {
-        f.fields
-            .keys()
-            .any(|k| dispatching(s, k) || number::supported(s, k) || email::supported(s, k))
+        f.fields.keys().any(|k| {
+            dispatching(s, k)
+                || number::supported(s, k)
+                || email::supported(s, k)
+                || url::supported(s, k)
+        })
     })
 }
 

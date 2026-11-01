@@ -48,6 +48,12 @@ impl Request {
             shell.core.dms.loading = true;
         }
         shell.core.dms.load_seq = shell.core.dms.load_seq.wrapping_add(1);
+        let sequence = shell.core.dms.load_seq;
+        let epoch = shell.core.account_epoch;
+        shell
+            .core
+            .dms
+            .begin_preview_read(epoch, &owner.team, sequence);
         Some(Self {
             owner,
             sequence: shell.core.dms.load_seq,
@@ -79,6 +85,7 @@ impl Drop for Lease {
             // Navigation eligibility may retire independently of this owned slot.
             if self.request.owns(&shell) {
                 shell.core.dms.loading = false;
+                shell.core.dms.finish_preview_read(self.request.sequence);
             }
         }
     }
@@ -155,12 +162,14 @@ where
     }
     match result {
         Ok(page) => {
-            if !lease.request.append {
-                shell.core.dms.entries.clear();
-            }
-            for entry in page.dms {
-                shell.core.dms.upsert(entry);
-            }
+            let epoch = shell.core.account_epoch;
+            shell.core.dms.publish_preview_page(
+                epoch,
+                &owner.team,
+                lease.request.sequence,
+                lease.request.append,
+                page.dms,
+            );
             shell.core.dms.next_cursor = page
                 .response_metadata
                 .and_then(|m| m.next_cursor)
@@ -183,3 +192,9 @@ where
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(all(test, feature = "protected-native-fixture"))]
+mod preview_tests;
+
+#[cfg(all(test, feature = "protected-native-fixture"))]
+mod incoming_tests;

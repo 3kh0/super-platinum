@@ -15,6 +15,7 @@ mod bootstrap;
 mod canvas;
 mod canvas_check;
 mod canvas_create;
+mod channel_directory;
 mod channel_discovery;
 mod channel_mute;
 mod channel_resources;

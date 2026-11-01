@@ -20,6 +20,8 @@ use super_platinum_core::{
 #[derive(Clone)]
 pub(crate) struct Names {
     pub(crate) policy: policy::Snapshot,
+    /// Original complete users.prefs.get response, not CFM/cache defaults.
+    pub(crate) user_preferences: Value,
     pub(crate) history: History,
     pub(crate) enterprise: Option<String>,
     pub(crate) self_user: Value,
@@ -153,6 +155,24 @@ pub(crate) struct Store {
     complete: Arc<Complete>,
 }
 impl Store {
+    pub(crate) fn matches_reader(
+        &self,
+        shell: &ShellState,
+        client: &super_platinum_core::slack::SlackClient,
+        transport: &Arc<super_platinum_core::slack::Transport>,
+        session: &super_platinum_core::config::WorkspaceSession,
+    ) -> bool {
+        self.current(shell)
+            && client.same_configuration(&self.owner.context.client)
+            && Arc::ptr_eq(transport, &self.owner.context.transport)
+            && crate::emoji_preferences::same_session(session, &self.owner.context.session)
+    }
+
+    /// Identity of data publication only; never a workflow/actor permit.
+    pub(crate) fn same_publication(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.identity, &other.identity)
+    }
+
     pub(crate) fn capture(s: &ShellState) -> Option<Self> {
         s.app_home
             .share_ranking_observations
@@ -360,6 +380,7 @@ mod tests {
         Complete {
             names: Names {
                 policy,
+                user_preferences: raw.clone(),
                 history: History::default(),
                 enterprise,
                 self_user: json!({"id":c.session.user_id}),

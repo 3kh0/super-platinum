@@ -36,6 +36,7 @@ struct Entry {
     major: u64,
     major_initialized: bool,
     boot: Option<Arc<()>>,
+    post_boot_identity: Arc<()>,
 }
 pub(crate) struct Boot {
     context: Arc<Context>,
@@ -86,6 +87,7 @@ fn ensure(shell: &mut ShellState, team: &str) -> Result<Key, Error> {
                 // Not positive evidence until real source init/resync action adoption.
                 major_initialized: false,
                 boot: None,
+                post_boot_identity: Arc::new(()),
             },
         );
     }
@@ -215,6 +217,7 @@ pub(crate) fn boot_started(shell: &mut ShellState, team: &str) -> Option<Boot> {
     let key = ensure(shell, team).ok()?;
     let entry = shell.app_home.cfm_lifecycle.entries.get_mut(&key)?;
     let token = Arc::new(());
+    entry.post_boot_identity = Arc::new(());
     entry.boot = Some(token.clone());
     indefinitely();
     Some(Boot {
@@ -248,6 +251,40 @@ pub(crate) fn boot_settled(shell: &mut ShellState, boot: Option<Boot>) {
     }
     entry.boot = None;
     unpause();
+}
+
+/// Qualified native settled-boot branch. This is not a browser consistency flag.
+/// A real subsequent boot permanently retires this original receipt, even after
+/// it settles back to the same values.
+pub(crate) struct PostBoot {
+    snapshot: Snapshot,
+    identity: Arc<()>,
+}
+impl PostBoot {
+    pub(crate) fn current(&self, shell: &ShellState) -> bool {
+        self.snapshot.current(shell)
+            && shell
+                .app_home
+                .cfm_lifecycle
+                .entries
+                .get(&self.snapshot.context.key())
+                .is_some_and(|e| {
+                    e.major_initialized
+                        && e.boot.is_none()
+                        && Arc::ptr_eq(&e.post_boot_identity, &self.identity)
+                })
+    }
+}
+pub(crate) fn post_boot(shell: &ShellState, team: &str) -> Result<PostBoot, Error> {
+    let snapshot = observed_readonly(shell, team)?;
+    let entry = &shell.app_home.cfm_lifecycle.entries[&snapshot.context.key()];
+    if entry.boot.is_some() {
+        return Err(Error::Api("channel_post_boot_unavailable".into()));
+    }
+    Ok(PostBoot {
+        snapshot,
+        identity: entry.post_boot_identity.clone(),
+    })
 }
 
 #[cfg(test)]

@@ -1,5 +1,7 @@
 //! Pinned channel resources, scoped to the current authenticated account.
 mod file_reconciliation;
+mod message_updates;
+use message_updates::PendingMessage;
 
 use crate::slack::{
     events::RawEvent,
@@ -117,7 +119,7 @@ pub struct PinsState {
     pub busy: HashSet<(String, String)>,
     overrides: HashMap<String, HashMap<String, bool>>,
     versions: HashMap<String, HashMap<String, String>>,
-    message_updates: HashMap<String, Option<Message>>,
+    message_updates: HashMap<String, Option<PendingMessage>>,
     reaction_updates: HashMap<(String, String, String), bool>,
 }
 impl PinsState {
@@ -165,7 +167,17 @@ impl PinsState {
                         .and_then(|ts| self.message_updates.get(ts))
                     {
                         Some(None) => return None,
-                        Some(Some(update)) => crate::state::merge_message(message, update.clone()),
+                        Some(Some(update)) => {
+                            if item
+                                .channel
+                                .as_deref()
+                                .is_none_or(|c| Some(c) == self.channel.as_deref())
+                            {
+                                update.apply(message, self.channel.as_deref().unwrap_or_default());
+                            } else {
+                                crate::state::merge_message(message, update.message.clone());
+                            }
+                        }
                         None => {}
                     }
                     for ((ts, user, name), added) in &self.reaction_updates {
@@ -255,31 +267,7 @@ impl PinsState {
         }
     }
     pub fn update_message(&mut self, channel: &str, message: &Message) {
-        if self.channel.as_deref() != Some(channel) {
-            return;
-        }
-        let Some(ts) = message.ts.as_ref() else {
-            return;
-        };
-        if matches!(self.message_updates.get(ts), Some(None)) {
-            return;
-        }
-        if self.loading || self.items.contains_key(&format!("message:{ts}")) {
-            let update = self
-                .message_updates
-                .entry(ts.clone())
-                .or_insert_with(|| Some(Message::default()));
-            if let Some(existing) = update {
-                crate::state::merge_message(existing, message.clone());
-            }
-        }
-        if let Some(existing) = self
-            .items
-            .get_mut(&format!("message:{ts}"))
-            .and_then(|i| i.message.as_mut())
-        {
-            crate::state::merge_message(existing, message.clone());
-        }
+        self.update_original_message(channel, message, None);
     }
     pub fn delete_message(&mut self, channel: &str, ts: &str) {
         self.overrides
