@@ -4,6 +4,9 @@ use dioxus::prelude::*;
 mod author;
 mod copy_link;
 mod edited;
+mod first_add;
+pub(crate) use first_add::panel as root_first_add_dialog;
+mod reaction_toggle;
 mod replies;
 mod timestamp;
 pub(crate) use replies::eligible as eligible_replies;
@@ -98,13 +101,14 @@ pub(crate) fn thread_list(state: Signal<ShellState>, snapshot: &ShellState) -> E
                                     div {class:"message-text thread-feed-root-body",
                                         {self::edited::render(state, snapshot, item, &item.root_msg, &preview)}
                                     }
-                                    {self::replies::root_counts(snapshot, item)}
+                                    {self::replies::root_reading(state, snapshot, item, read.as_ref())}
                                     span { "{channel_name} · {replies} replies · "
                                         {self::timestamp::render(state,snapshot,item,read.as_ref().and_then(|r|r.timestamp(snapshot,item)),&time)}
                                         if !item.unread_replies.is_empty() {" · {item.unread_replies.len()} unread"}
                                     }
                                     {self::replies::render(state, snapshot, item, read.as_ref())}
                                     div {class:"thread-feed-root-actions",
+                                        {self::first_add::opener(state,snapshot,item,read.as_ref())}
                                         {self::copy_link::render(state,snapshot,read.as_ref().and_then(|r|r.copy_link(snapshot,item)))}
                                         button {r#type:"button",class:"thread-feed-open",id:"thread-feed-open-{item.channel().cloned().unwrap_or_default()}-{item.root_ts().cloned().unwrap_or_default()}",disabled:open.is_none(),
                                             onclick: { let open = open.clone(); move |_| if let Some(open)=open.as_ref(){open.start(state);} },

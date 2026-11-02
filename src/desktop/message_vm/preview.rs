@@ -28,6 +28,7 @@ fn text_only(node: RichNode, depth: usize) -> RichNode {
     let children =
         |nodes: Vec<RichNode>| nodes.into_iter().map(|n| text_only(n, depth + 1)).collect();
     match node {
+        RichNode::Table(table) => RichNode::Text(table.plain_text()),
         RichNode::Canvas(c) => RichNode::Text(c.title),
         RichNode::FileMention { fallback, .. } => RichNode::Text(if fallback.is_empty() {
             "File".into()

@@ -31,12 +31,14 @@ pub(crate) struct Reads {
     pub(super) earlier_layout: bool,
     copy_link: copy_link::State,
     timestamp: timestamp::State,
+    reaction_toggle: reaction_toggle::State,
 }
 mod bulk;
 pub(crate) mod copy_link;
 mod document_names;
 mod earlier;
 mod profiles;
+pub(crate) mod reaction_toggle;
 mod row;
 pub(crate) mod timestamp;
 mod windows;
@@ -190,6 +192,21 @@ pub(crate) struct Source {
     reconnect: Option<crate::bootstrap::reconnect::Visit>,
 }
 impl Source {
+    pub(crate) fn root_first_add(
+        &self,
+        shell: &ShellState,
+        item: &super_platinum_core::slack::models::ThreadViewItem,
+    ) -> Option<reaction_toggle::first_add::Open> {
+        reaction_toggle::first_add::opener(self, shell, item)
+    }
+    pub(crate) fn root_reaction(
+        &self,
+        shell: &ShellState,
+        item: &super_platinum_core::slack::models::ThreadViewItem,
+        name: &str,
+    ) -> Option<reaction_toggle::Action> {
+        reaction_toggle::action(self, shell, item, name)
+    }
     pub(crate) fn timestamp(
         &self,
         shell: &ShellState,
@@ -403,11 +420,15 @@ impl Source {
             state,
             ticket: ticket.clone(),
         };
+        let reaction_raw = reaction_toggle::Sink::default();
+        let first_add_raw = reaction_toggle::first_add::Sink::default();
         let result = fetch(Request {
             transport: self.transport.clone(),
             client: self.client.clone(),
             session: self.session.clone(),
             cursor: ticket.request.cursor.clone(),
+            reaction_raw: reaction_raw.clone(),
+            first_add_raw: first_add_raw.clone(),
         })
         .await;
         let mut shell = state.try_write().ok()?;
@@ -497,6 +518,8 @@ impl Source {
                     timestamp_candidates,
                     timestamp_carry,
                 );
+                reaction_toggle::publish(self, &mut shell, &reaction_raw);
+                reaction_toggle::first_add::publish(self, &mut shell, &first_add_raw);
                 windows::context_page(&mut shell, &keys, ticket.request.cursor.is_some());
                 ticket.settled.store(true, Ordering::Release);
                 Some(shell.core.threads_view.load_seq)
@@ -519,15 +542,24 @@ struct Request {
     client: SlackClient,
     session: WorkspaceSession,
     cursor: Option<String>,
+    reaction_raw: reaction_toggle::Sink,
+    first_add_raw: reaction_toggle::first_add::Sink,
 }
 async fn fetch(request: Request) -> Result<ThreadsViewPage, Error> {
-    api::fetch_threads_view(
-        &request.transport,
+    let transport = request.transport.clone();
+    let sink = request.reaction_raw;
+    let first_add_sink = request.first_add_raw;
+    api::fetch_threads_view_with(
         &request.client,
         &request.session,
         30,
         request.cursor,
         false,
+        |prepared| async move {
+            let raw = reaction_toggle::get_view(transport, prepared, sink).await?;
+            first_add_sink.observe(&raw);
+            Ok(raw)
+        },
     )
     .await
 }

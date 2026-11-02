@@ -261,6 +261,11 @@ impl ShellState {
     }
 
     pub fn start_edit(&mut self, channel: String, ts: String, text: String) {
+        if self.core.active_team.as_deref().is_some_and(|team| {
+            crate::messaging::edit_guard::known_table(self, team, &channel, &ts)
+        }) {
+            return;
+        }
         self.edit_generation = self.edit_generation.wrapping_add(1);
         self.core.editing = Some((channel, ts));
         self.core.edit_composer = super_platinum_core::ComposerState::with_text(text);

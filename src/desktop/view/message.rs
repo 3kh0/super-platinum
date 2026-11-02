@@ -81,6 +81,8 @@ fn message_tools(
         })
     };
     let can_reply = !surface.in_thread();
+    let can_edit = !message.has_table_block
+        && !crate::messaging::edit_guard::rendered_unsupported(&message.body);
     if message.pending {
         return rsx! {};
     }
@@ -160,6 +162,7 @@ fn message_tools(
                 }
             }
             if message.is_own {
+                if can_edit {
                 button {
                     onclick: {
                         let channel = channel_id.to_owned();
@@ -168,6 +171,7 @@ fn message_tools(
                         move |_| state.write().start_edit(channel.clone(), ts.clone(), text.clone())
                     },
                     "Edit"
+                }
                 }
                 button {
                     onclick: {
@@ -653,3 +657,6 @@ mod button_presence_tests {
         }
     }
 }
+
+#[cfg(all(test, feature = "protected-native-fixture"))]
+mod table_reading;

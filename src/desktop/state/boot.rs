@@ -1403,6 +1403,12 @@ impl ShellState {
             | "thread-feed-replies-reactions-narrow"
             | "thread-feed-root-reactions"
             | "thread-feed-root-reactions-narrow"
+            | "thread-feed-root-reactions-toggle"
+            | "thread-feed-root-reactions-toggle-narrow"
+            | "thread-feed-root-first-add"
+            | "thread-feed-root-first-add-narrow"
+            | "thread-feed-root-first-add-custom"
+            | "thread-feed-root-first-add-custom-narrow"
             | "thread-feed-reaction-groups"
             | "thread-feed-reaction-groups-narrow"
             | "thread-feed-reaction-groups-people"
@@ -2071,6 +2077,9 @@ impl ShellState {
             }
             "message-button-metadata" | "message-button-metadata-narrow" => {
                 crate::message_buttons::fixture::install_metadata(&mut state)
+            }
+            "block-kit-static-table" | "block-kit-static-table-narrow" => {
+                crate::blocks::table::fixture::apply(&mut state);
             }
             "button-metadata" | "button-metadata-narrow" => {
                 crate::blocks::button_metadata_fixture(&mut state)

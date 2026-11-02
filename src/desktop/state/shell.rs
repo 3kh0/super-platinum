@@ -691,6 +691,10 @@ impl ShellState {
     }
 
     pub fn dismiss_overlay(&mut self) {
+        if self.overlay == Some(Overlay::ThreadRootFirstAdd) {
+            crate::thread_feed::reaction_toggle::first_add::close_shell(self);
+            return;
+        }
         crate::bootstrap::dms::cancel(self);
         if crate::canvas_create::departure(self) {
             return;

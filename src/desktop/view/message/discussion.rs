@@ -7,6 +7,7 @@ fn inert(node: &RichNode, depth: usize) -> RichNode {
     }
     let list = |nodes: &[RichNode]| nodes.iter().map(|n| inert(n, depth + 1)).collect();
     match node {
+        RichNode::Table(table) => RichNode::Text(table.plain_text()),
         RichNode::Canvas(c) => RichNode::Text(c.title.clone()),
         RichNode::FileMention { fallback, .. } => RichNode::Text(if fallback.is_empty() {
             "File".into()

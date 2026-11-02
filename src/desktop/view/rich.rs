@@ -1,4 +1,5 @@
 mod file_mentions;
+mod table;
 use super::media_image::MediaImage;
 use dioxus::prelude::*;
 pub(super) use file_mentions::ListSource as ListFileSource;
@@ -49,6 +50,7 @@ fn rich_node_with_source(
     list: Option<&ListFileSource>,
 ) -> Element {
     match node {
+        RichNode::Table(table) => table::render(table),
         RichNode::Canvas(target) => {
             let target = target.clone();
             rsx! {button {class:"file-link",onclick:move |_|crate::canvas::open_target(state,target.clone()),{crate::icons::icon(crate::icons::Icon::AttachFile,"icon file-link-icon")} "{target.title}"}}

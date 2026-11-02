@@ -1,5 +1,485 @@
 # Windows development build workflow
 
+## Direct custom Root emoji: Core5620+doctest verified; Desktop resource hold
+
+Reviewed23-file direct custom Workspace picker batch is installed and frozen.
+Actual Core1680..1683 passed5620 units+1doctest/0/6 on one identical Core binary;
+all prior statuses and six ignored remain exact. Core5620 source/binary archived.
+Root/Core fmt and changed non-test Check1690 passed. Production executable and
+previous Desktop5378/0/7 binary remain unchanged. Current custom UI/test source
+is NOT desktop-verified: focused/affected/full Desktop1684..1689 were not started.
+No combined milestone or native/live/full parity claim follows.
+
+Desktop queue held before Cargo. One post-check stable30s measurement showed
+commit22.120..22.152GiB, below24.865GiB (previous actual19.865GiB compiler/Cargo
+private peak plus5GiB protection). Hard4GiB/protect5GiB limits stay unchanged.
+Latest Check targets54.270GiB; measured free disk
+59.484GiB. Helper56/conditional96GiB, disk53.25start/
+50.75protect/50hard unchanged. No configuration cycle, Desktop compiler attempt,
+cache/source/evidence cleanup or production rebuild occurred.
+
+Minimal human action: make at least24.865GiB commit available and stable30s.
+Then recheck all resources, preserve the exact frozen source and reuse actual
+Core1680..1683/Check1690; run pending Desktop focused/affected/full on one identical
+dev-fast1job process-onlyINC0 binary. Do not repeat unchanged Core/Check/production.
+Evidence: root-first-add-direct-custom-resource-hold-checkpoint-01.json and
+root-first-add-direct-custom-post-check-reserve-01.json. Preserve all tests/ignored
+sets, sources, caches and evidence. Current custom batch remains unverified.
+
+Next source-grounded candidate after green: compact first10 table preview and an
+owned local full-table snapshot reader. Bounded lifecycle plan80e26caf records
+stable actual row/route/occurrence guards, revocable leases and exact-token Close;
+same-value data never proves Source identity. Full-modal Source report05 (171e37a0)
+closes preview/full-data/local-close operands; actual Escape/outer-click delivery
+remains conditional at Xg3x/9rZX and their providers. The proposed local reader is
+an explicit native snapshot adaptation. No new UI feature is installed.
+Native Session0 acceptance remains blocked with no probes or bypass. Existing
+prohibited actions remain prohibited. Goal ACTIVE incomplete; full Slack parity OPEN.
+
+
+## Verified passive message tables: Desktop5378 / Core5619+doctest carried
+
+Regular messages now render bounded static Block Kit tables with first-row column
+headers, ordered/ragged rows, supplied number display text, literal raw text,
+basic rich formatting, alignment and wrapping. All admitted rows remain reachable
+in a keyboard-focusable scroll region. This is an explicit native presentation
+adaptation: Source first10/expanded modal, Copy/Download, active cell resources,
+resolved labels and full rich/custom-provider parity remain OPEN. No href/media/
+handler enters table data. Generic Home/modal parsing and its guards are unchanged;
+inert previews flatten tables to reading text. Unsupported shapes keep existing
+message fallback. Known raw tables, including unsupported ones, refuse plain-text
+Edit in the row, central start, capture and after-link dispatch; refusal preserves
+existing drafts. Already-issued results retain original ownership/baseline rules.
+
+Three meaningful regressions cover codec/format/bounds, actual production VDOM
+rows plus retained Edit callback, and canonical copies/namespace isolation/
+held-link refusal without IO plus ordinary local dispatch and late result drain.
+Actual Desktop1670..1675 passed5378/0/7 on one identical binary; prior5375 statuses,
+all original92 and ignored7 remain exact. Root fmt03 and non-test Check1676 passed.
+Unchanged2218-input Core5619 units+1doctest/0/6 evidence and binary carried without
+CoreTest rebuild/full repeat. Production executable remained unchanged. Evidence:
+blockkit-static-table-native-milestone-01.json, exact22-file freeze/review binding,
+Source static-table01/02 and native impact/edit-refusal plan, Desktop5378 archive.
+Targets54.242GiB; free after archive58.018GiB;
+minimum observed commit6.444GiB. No native paint/layout/input/live
+acceptance is claimed; Session0 remains blocked with no probe or bypass.
+
+Goal ACTIVE incomplete. Continue the next meaningful source-grounded safe journey.
+Stable dev-fast desktop1 processINC0/Check8; one Cargo pipeline; helper56 conditional96,
+disk53.25start/50.75protect/50hard and commit5protect/4hard unchanged. INC0 covers
+path dependencies; no manifest/profile/lock/dependency/default/codegen changes.
+Preserve all source/caches/evidence/tests/ignored sets. Existing prohibited actions
+remain prohibited; mixed worklog untouched. Native/live/full Slack parity OPEN.
+
+
+## Verified ordinary Root name-query input: Desktop5375 / Core5619+doctest carried
+
+The owned Root reaction picker now matches ordinary mixed-case and spaced names:
+Heart Eyes finds heart_eyes/heart_eyes_cat; Thumb Up selects the actual thumbsup
+alias with its captured preferred tone. A Model-only parser removes all colons,
+ECMA-trims and accepts ASCII alphanumeric/_/- plus the exact finite ECMA whitespace
+set, within original4096literal/256trimmed-byte bounds. Inner spaces remain until
+existing Core normalization/scoring, preserving the SH versus S H blocked-table
+distinction. Leading-plus/minus modes and Unicode letters remain outside this
+profile. Core AliasQuery API, exact-alias fast path, glyph/empty/unsupported legacy
+paths, immutable model/ranking/caps and all original owner/query/Loaded/physical/
+four-read/prewire/settlement guards stay unchanged. No query becomes a wire name.
+
+One new both-map corpus verifies case/each25whitespace/colon normalization, exact
+positive results, blocked names, unsupported inputs and both bounds. The existing
+mounted workflow is extended through raw mixed-case/spaced input, opaque alias
+selection, fresh4reads, one exact mocked Add and terminal ACK; all original prefix,
+stale-query/owner, retarget, draft and reading assertions remain. Only old THUMB/
+thumb up unsupported expectations become their exact Source-positive assertions.
+These are offline logic/scoped-IO results, not native paint/physical/live results.
+
+Actual Desktop1650..1655 passed5375/0/7 on one identical binary; all prior5374
+statuses, ignored7 and original92 remain exact. Root fmt01/changed non-test
+Check1656 passed. Unchanged2218-input Core5619 units+1doctest/0/6 evidence and
+cached binary carried, with no Core rebuild/full repeat. Production executable
+and test binaries unchanged by Check. Evidence: root-first-add-ascii-query-native-
+milestone-01.json, three-file freeze/review binding, Source ascii-name-query01,
+desktop-5375-root-first-add-ascii-query archive and reused Core5619 archive.
+Targets54.238GiB; free after archive58.523GiB;
+minimum observed commit6.476GiB. Stable dev-fast desktop1 processINC0/
+Check8, one Cargo pipeline; helper56 conditional96, disk53.25start/50.75protect/
+50hard and commit5protect/4hard unchanged. Process INC0 covers path dependencies;
+no manifest/profile/lock/dependency/default/codegen/cache cleanup changes.
+
+Own Root Edit remains held on the precise contracts recorded in decision01;
+resolve those or select the next meaningful source-grounded safe journey. Goal
+ACTIVE incomplete; Source full worker/frecency/final order and native/live/full
+Slack parity OPEN. No prohibited actions or Session0 probes/bypass. Preserve all
+source/caches/evidence/tests/ignored sets; mixed worklog untouched.
+
+
+## Verified bounded Root name search: Desktop5374 / Core5619+doctest carried
+
+The owned Root reaction picker now supports bounded name matching such as thumb:
+one group result retains its actual best raw alias and opaque canonical/alias
+selection. Existing Core candidates/score helpers match current6k3U pins; no Core
+code changed or Core rebuild/full repeat ran. The supplied native model contains
+only admitted1892 primaries+55 raw aliases, no localized display/keywords, with
+current Loaded metadata and Source initial target-key/alias order. Finite within-
+group scores/ties/block rules are retained; explicit NATIVE across-group order is
+name score then initial ordinal, cap250 after scanning,120/ShowMore presentation.
+Exact alias, empty browse and existing unsupported/glyph behavior stay separate.
+No Source worker/frecency/remote-model/locale/full final-order equality is claimed.
+
+Query capture/compute/publication uses the same production helpers outside Shell
+write/ingress locks, fenced by original literal/frame/picker/Prepared/Loaded/owner.
+Winning raw names map only to existing Selected tokens; queries never become wire
+names. Original Root purpose/policy/fullmembership/physical bank/watch/prewire/
+late outcomes/Unknown guards remain. Actual pure corpus+BOTH-map and one mounted
+Dioxus workflow verify thumb4, eyes16, interior alias/tie/block/caps, literal alias
+wire, held query/owner refusal and four-read retarget NotSent. Old eyes10 substring
+oracle is refined to the exact16 Source-derived model results; all other original
+assertions remain. Static oracles6849f036 and draft reviewb520db0f bind these changes.
+
+Actual Desktop1640..1645 passed5374/0/7 on identical binary; prior5372 statuses,
+ignored7 and original92 exact. Root fmt01/changed non-test Check1646 passed. Core
+1620..1623 carried5619 units+1doctest/0/6 with exact2218-input manifest/binary;
+production exe/test binaries unchanged by Check. Evidence: root-first-add-name-
+search-native-milestone-01.json, freeze01/installed binding and desktop-5374-root-
+first-add-name-search archive; Core5619 archive reused. Targets54.243GiB,
+free after archive59.748GiB, minimum commit6.684GiB.
+Single desktop1 processINC0/Check8 dev-fast, stable caches/helper56 conditional96,
+disk53.25start/50.75protect/50hard and commit5protect/4hard unchanged. Process INC0
+also covers path dependencies; no manifest/profile/lock/dependency/default/codegen
+changes. Source/caches/evidence retained; mixed worklog untouched. No prohibited
+cleanup/commit/push/live/device/audio/OS-input/security/signing/trust/registration
+or Session0 probes/bypass. Goal ACTIVE incomplete; native/live/full parity OPEN.
+
+
+## Verified Root exact-alias queries: Desktop5372 / Core5619+doctest
+
+The owned ordinary public joined C-channel Root picker supports55 exact common
+direct aliases, including thumbsup. The actual matched alias and selected tone
+remain separate from its canonical group and predicted final wire. A prepared
+full membership with an exact selected alias row preserves that alias wire:
+peer means Add, self means Remove, independently of owning the canonical glyph.
+An absent exact alias row normalizes to canonical wire and exact canonical-self
+direction. Source alias-query01 2a5374a8 and plan01 782549f6 prove these finite
+branches; this is not canonical synonym matching mislabeled as alias selection.
+
+Separate AliasDomain/Query/Choice/Toggle derive55 definitions from BOTH immutable
+maps:46 tone-free and9 single-tone aliases. Exact lower-case ASCII query removes
+ALL colons then ECMAScript trim; raw literal/frame ownership is preserved, including
+two literals with the same normalized alias. Full Source fuzzy/prefix/localized/
+worker/filter/ranking/global heap behavior remains unclaimed. No duplicate name
+table, alias chain/obsolete/multi/custom/resource or preference-write expansion.
+Current genuine Loaded must resolve BOTH alias and target exact names/glyphs with
+no custom/image output before projection. Alias templates map only to already
+admitted canonical groups; the ordinary picker stays1892 under numeric prefs,
+1582 otherwise, without55 extra rows. Tone-capable aliases need actual numeric1..6.
+
+Fresh original four-read policy/full membership precedes worker projection; one
+shared preference observation and one raw-name index serve all alias choices.
+The opaque tag distinguishes canonical and alias contracts. At choose fresh4reads
+must preserve complete prefs and predicted final wire; alias appearance OR
+disappearance refuses NotSent rather than silently retargeting. Explicit reopen
+can observe the new branch. Exact-name self direction and raw23/50 Add-only quotas
+remain. Original getView purpose/known denials/account/client/session/transport/
+route/Loaded/accepted ingress/watch/prewire/one-shot/common bank and unconditional
+original advice/outcome settlement remain. No idle slot/watch, optimistic canonical
+mutation, automatic replay or Unknown unblocking. Existing canonical APIs/corpora,
+family/Search/List/protected row/transport validators remain unchanged.
+
+Actual Core1620..1623 passed5619 units+1doctest/0/6; Desktop1630..1635 passed
+5372/0/7, one unchanged binary per package across focused/affected/full. All prior
+Core5618/Desktop5371 statuses, ignored6/7 and original92 remain exact. Root/Core
+fmt01 and changed non-test Check1636 passed, production executable/test binaries
+unchanged by Check. One Core corpus checks complete55 projection in BOTH maps
+for all six numeric tones, V16 wire/ownership branches, changed prefs/branches,
+custom alias/target veto, snapshots/quotas and canonical API exclusions. V17 full
+wire branches were not independently executed. One mounted Dioxus scoped-IO flow
+checks canonical-self Remove, peer-alias Add despite canonical-own, exact-alias
+Remove, ownRT-before-ACK, same-normalized raw-query retirement and BOTH fresh4read
+retarget refusals. It is not native paint/focus/physical-input/live acceptance.
+
+Static review fixed two NEW oracle gaps before installation: explicit V17 len55
+prevents truncated zip coverage; immediate pending+exactly4 reads in EACH refusal
+prevents reusing an earlier NotSent receipt. All original assertions/counts and
+preimages remain. Evidence: root-first-add-alias-native-milestone-01.json, freeze01,
+Core reviewcab82738/corpus17300bc5/native02 e08cf00a/installed-byte binding01,
+core-5619 and desktop-5372-root-first-add-alias archives and actual1620..1636.
+Targets54.239GiB; free after archives60.092GiB;
+minimum commit6.756GiB, sampled compiler/Cargo private
+peak19.444GiB; meaningful logs2792813B.
+Single Core8/desktop1 processINC0/Check8 dev-fast, stable caches/helper56 conditional96,
+disk53.25start/50.75protect/50hard and commit5protect/4hard unchanged. Desktop's
+process override covers its path dependencies; manifests/profiles/codegen/defaults
+and independently built Core8 settings stay unchanged. All source/caches/evidence
+preserved, mixed worklog untouched. No cleanup/commit/push/live/device/audio/OS-input/
+security/signing/trust/registration actions or Session0 probes/bypass.
+
+Goal ACTIVE/incomplete. Native/visual/live service/full Slack parity remain OPEN.
+Continue the next concrete source-grounded safe journey after this actual milestone;
+do not rebuild unchanged baselines or production executables.
+
+
+## Verified Root first-Add preferred tones: Desktop5371 / Core5618+doctest
+
+The owned original public joined C-channel Root picker now includes310 common
+single-tone bases such as +1 and wave, alongside1582 tone-free entries. A complete
+fresh numeric preference1 chooses the base glyph;2..6 choose its exact standard
+variant. Current Loaded canonical name/variant/glyph and !custom/noImage are
+checked before projection. Unknown/missing/string/malformed prefs retain only
+the1582 tone-free rows. Old tone-free API/corpus/exclusions remain byte-exact.
+
+Source tone01 b27b3a26 and native plan01 a43d9cf6 establish the finite common
+V16/V17 profile. One visible row per base gives1892, not1550 extra variant rows.
+Fresh four-read policy/full membership precedes worker projection. The opaque
+choice captures preference/base/exact wire/glyph; fresh selection refuses changed
+preferences without recoloring/replay or wire. Exact selected-name ownership
+determines Add/Remove; another own tone remains Add. Original Add-only23/50 quotas
+and original owner/route/Loaded/accepted ingress/watch/prewire guards remain.
+Idle browsing holds no physical slot. Original bounded settlement/advice and
+Unknown isolation remain; no preference writes/custom/GIF/resource registration.
+Search uses a named local deterministic base/name/glyph filter; Source heap,
+provider/frecency/alias ranking and whole-picker equivalence remain unclaimed.
+
+Actual focused/affected/full Core1600..1603 passed5618 units+1doctest/0/6;
+Desktop1610..1615 passed5371/0/7 using one unchanged binary per package. All prior
+Core5617/Desktop5370 statuses, ignored6/7 and original92 remain exact. Root/Core
+fmt01 and changed non-test Check1616 passed without linking a production executable
+or changing either test binary. One new Core corpus verifies all310x6 choices,
+both maps/exact glyphs, malformed prefs, custom overrides, exact ownership,
+snapshots and quotas. One mounted Dioxus workflow verifies cold preferred glyph,
+other-tone Add, exact-tone Remove, changed-pref NotSent, numeric1 base Add and
+malformed fallback. Existing workflow changed only the positive1582->1892 oracle;
+all other old assertions are exact. This is offline scoped IO/VNode evidence.
+
+Draft review F1 replaced per-row full prefs copies with one shared immutable Arc;
+semantic equality to fresh prefs remains. Native draft F1 prevented a whole-file
+CRLF rewrite; old test bytes are exact except module registration/count expansion.
+All preimages/findings remain. Evidence: root-first-add-preferred-native-milestone-
+01.json, freeze01, draft-review01 27ec1687, native-review02 687a3b71, installed-byte
+binding01, core-5618 and desktop-5371-root-first-add-preferred archives/receipts.
+Targets54.229GiB; free after archives61.221GiB;
+minimum commit6.732GiB, sampled compiler/Cargo private
+peak19.604GiB; meaningful logs2792323B.
+Stable Core8/desktop1 processINC0/Check8 dev-fast, one pipeline, helper56 conditional96,
+disk53.25start/50.75protect/50hard and commit5protect/4hard unchanged. Source/caches/
+evidence/tests retained; mixed worklog untouched. No cleanup/commit/push/live/device/
+audio/OS-input/security/signing/trust/registration action or Session0 probe/bypass.
+The desktop process override covers every Rust unit in that Cargo graph, including
+the Core path dependency; independent Core8 configuration and codegen stay unchanged.
+
+Goal ACTIVE/incomplete. Native paint/focus/physical input/live service/whole Slack
+parity remain OPEN. Revisit the original checklist and select the next concrete
+source-grounded safe journey; no unchanged baseline/production rebuild is needed.
+
+
+## Verified owned Root first-Add glyph picker: Desktop5370 / Core5617+doctest
+
+An original ordinary joined public C-channel Global Threads Root can open an owned
+glyph-only reaction picker independently of an existing reaction bar. Original
+getView absence is preserved, never invented as empty membership. Opening uses
+the real cold catalog producer, off-render joint domain construction and four
+fresh policy/full-membership reads. The finite1582 canonical tone-free domain is
+derived from BOTH existing vendored V16/V17 tables semantically equal to Source
+definitions; V16 alone wrongly admits6 extras. Current Loaded exact canonical
+entry/glyph and !custom/noImage are checked before projection. No duplicate name
+table or default Source version/global heap/provider/group/search-order equality.
+
+The dedicated dialog provides local name/glyph filtering, bounded120 rows with
+Show more, arrows/Enter, Retry and exact-owner Close; existing focus/trap/restore
+mechanics and Material Rounded icons are reused. No custom/GIF/skin preference
+writes or image registration. Complete same-owner fresh hiddenCSV/history/channel
+and actual full:true reaction []/rows remain required; omission/null/malformed
+never proves zero membership. All existing known-native denials and original
+account/client/session/transport/source/route/generations/socket/accepted ingress
+and short-watch guards remain. Typed/cached rows and old family/read/pane/Search
+purposes cannot mint this private original firstAdd scope.
+
+Opening/browsing holds no physical mutation slot or lifetime read watch. Choose
+validates the opaque owner/query/visible-row/Loaded token, claims the common
+team+self+coordinate bank once and seals the intentional UI close. It then repeats
+fresh four-read policy/full membership under a short watch and immediate wire
+fence. Exact normalized wire-name self membership determines one Add/Remove,
+separately from the existing family toggle. Add-only raw quotas remain. Original
+bounded results/headers/advice settle even after own RT, close or owner retirement;
+attempted write spends the roster. Unknown stays quarantined. No automatic replay,
+optimistic canonical mutation, rollback or Check-based unblocking is introduced.
+Existing Root family/Search/List/protected-row guards and tests are preserved.
+
+Actual fresh gates 1570:1; 1571:2; 1572:10; 1573:5618; 1590:2; 1591:38; 1592:9; 1593:1; 1594:79; 1595:5370; full Core **5617 units+1doctest/0/6** and
+Desktop **5370/0/7**, identical per-package focused/affected/full binaries. All prior
+Core5616/Desktop5368 statuses, ignored6/7 and original92 are exact. Core fmt01/root
+fmt02 and changed non-test Check1596 passed; Check changed neither production
+executable nor test binaries. Core1570..1573 was carried byte exact into Desktop
+without a second build/full repeat. No production executable link or launch.
+
+One consolidated Core corpus verifies the actual joint domain, glyph/custom
+filtering, explicit empty/full data, exact-name direction, quotas and immutable
+snapshots. Two whole mounted workflows exercise original no-bar raw intake,
+cold loading, input/filter/Add/ownRT-before-ACK/refresh-Remove/cancel and outage/
+Retry/query-retirement/queued-peer retained glyphs/idle legacy conflict/account-
+retired429/nonnoop fresh-own-heart rollback refusal/actor isolation. These are
+scoped synthetic IO and real VNode callbacks, not service/OS input/paint acceptance.
+Preflight F1 corrected the new substring oracle to10 eyes matches with exact first;
+F2 closes the actual picker before the physical account-alias check, preventing an
+open overlay from masking a broken physical bank. Originals/findings remain; no
+production or existing test assertion was weakened. Actual1580 compiled then
+reported1 pass/1 timeout in the new outage test pump. The pinned VDOM wait can
+advance a held IO request without dirtying UI; corrected test-only select rechecks
+the same predicate every10ms within the SAME6s bound. All assertions/production
+paths/Core evidence stayed exact. Failed source/log/binary and one unchanged-
+binary backtrace remain; fresh1590..1595 above are actual successor evidence. Normal/narrow fixtures are
+registered but unlaunched because native Session0 acceptance remains blocked.
+
+Evidence: root-first-add-native-milestone-01.json, freeze02, final-review01 2a7cd08e and pump-review01 291919da,
+Core review01 308cb2af, native implementation01 87a6c0e6, source/binary archives
+core-5617 and desktop-5370-root-first-add plus actual1570..1573/1590..1596 receipts; failed1580 and samebinary repro retained.
+Targets54.146GiB; free after archives
+62.407GiB; minimum commit6.692GiB,
+sampled compiler/Cargo private peak19.615GiB;
+fresh meaningful logs2975020B. Single Core8/desktop1 processINC0/
+Check8 dev-fast pipeline; stable caches/helper56 conditional96, disk53.25start/
+50.75protect/50hard and commit5protect/4hard unchanged. All source/caches/evidence
+retained; mixed worklog untouched. No cleanup/commit/push or prohibited live/device/
+audio/OS-input/security/signing/trust/registration action. No Session0 probes/bypass.
+
+Goal ACTIVE/incomplete. Physical/PNG/live service/full Slack parity remain OPEN.
+Next related candidate is standard preferred-tone firstAdd for common +1/wave,
+with no preference writes/custom/GIF. Source tone01 b27b3a26 and native-plan01 a43d9cf6 close310 common non-multi
+bases/1550 identical variants, actual numeric preference1..6 and exact selected
+wire membership. This permits a separate1892-base adapter with fresh preference
+binding; existing1582 tonefree contract and family/currentness guards stay exact.
+No preference writes/custom/GIF or Source heap/provider equality. No new product changes
+until this milestone closes; then continue the next concrete safe contract.
+
+
+## Verified existing Global Threads Root reactions: Desktop5368 / Core5616+doctest
+
+An original getView ordinary joined public C-channel Root now has actionable
+existing standard-glyph reaction pills. Fresh exact history/channel/full prefs/
+full membership and the genuine cold emoji-catalog producer determine one Add
+with no own family row or one Remove naming the actual sole owned wire variant.
+Multiple own variants, first-Add picker, private/G/D/replies and unsupported
+shapes remain passive. Typed/cached rows, labels or inert Core data confer no
+purpose. The original raw intake is captured before DTO defaults. Source action
+01/02 and plan03 qualify this bounded behavior; no SDK heap equality is claimed.
+
+Original account/session/client/transport/socket/row and accepted ingress/barriers
+remain current through each read and immediate prewrite. Per-row render validation
+avoids repeated full-message copies; click/prewrite still revalidate. Known native
+hidden/deleted/locked/reply/special copies veto fresh omissions. Existing reading,
+drafts, legacy passive bodies and protected row are retained. Check is a separate
+read-only action, cannot confirm/replay/unblock Unknown, and is unavailable while
+ingress is queued. An issued write spends the roster until a genuine new getView.
+
+The common physical key is team+authenticated self, independent of local account
+materialization; publication remains exact original owner. Coherent Root-compatible
+legacy, isolated Search and Root share pending/Unknown/cooldown. This is a scoped
+current-code guarantee, not universal cross-version/all-app exclusion. List and its
+recovery stay unchanged. Original bounded detached receipts/results and strict
+all-header max/permanent/2xx/429 advice drain before stale UI refusal. Search's
+issued429/advertised2xx quarantine remains; partial fatal/internal failures remain
+Unknown. Metadata reads never mark a mutation attempted. No optimistic Root
+canonical mutation is introduced; legacy's old awaited API still awaits its driver.
+
+Actual fresh gates 1540:1; 1541:1; 1542:2; 1543:5617; 1560:2; 1561:36; 1562:79; 1563:9; 1564:51; 1565:5368; full Core **5616 units+1doctest/0/6**,
+Desktop **5368/0/7**, identical per-package binary across focused/affected/full.
+All prior Core5614/Desktop5366 statuses, ignored6/7 and original92 are exact.
+Root fmt04/Core fmt02 and changed non-test Check1566 passed; production executable
+and test binaries remain unchanged by Check. Two Core corpora and two whole mounted
+desktop workflows cover original publication/cold producer/Add/Remove/ownRT-before-
+ACK/Check and queued-own/peer/reentry/Search/legacy/account/late429 isolation.
+Fixtures are registered normal/narrow but unlaunched, not native/visual acceptance.
+
+Actual Core1520 first compiled then failed0/1 at the unchanged tone Add assertion:
+the new validator incorrectly sent a colon wire name into the composer lookup.
+Frozen03 corrects only that helper to base/separate tone. Exact tone-entry/custom
+guards and wire spelling are retained; all tests unchanged. For compound tone the
+boolean base/custom glyph check is separate from exact variant validation, not a
+claim about the composer's returned glyph. Failed source/log/binary and all static
+parser/per-render/known-veto/corpus/workflow-oracle findings/corrections are retained.
+Desktop1550 stopped before tests at E0574/E0659: a Key name collision against
+Dioxus prelude. Frozen04 only qualifies the common-bank Key construction. All
+other code/tests and Core1540..1543 source/binary remain exact; Core was carried
+without rebuild/repeated full suite. Successor1540..1543/1560..1566 provides
+the passing evidence. No existing assertion
+or test/ignored set was weakened. Runner-prep quoting and receipt-reference failures were pre-write/
+pre-Cargo and is recorded; it did not alter source or configurations.
+
+Evidence: root-reaction-native-milestone-01.json, freeze04, final-review01 cdb1b075
+plus core1520 and desktop1550 correction reviews, desktop-5368-root-reaction/core-5616
+source/binary archives and actual terminal receipts. Targets54.113GiB,
+free after archives65.318GiB; minimum commit
+6.516GiB, sampled compiler/Cargo private peak
+19.424GiB; fresh meaningful logs2923653B.
+Single Core8/desktop1 processINC0/Check8 dev-fast pipeline; stable caches/helper56
+conditional96, disk53.25start/50.75protect/50hard and commit5protect/4hard unchanged.
+All source/caches/evidence retained; mixed worklog untouched. No cleanup/commit/push
+or prohibited live/device/security action. Native Session0 remains blocked without
+repeated probes or bypass. Physical/PNG/live service/full parity remain OPEN.
+
+Goal ACTIVE/incomplete. Next safe slice is genuine Root first-Add picker. The actual
+toolbar pFbY->9K9R route differs from Hzyh reaction-bar Add, and exact normalized-name
+direction differs from family toggles. Source standard-data01 980c4b4f plus plan02
+29ff6cab close a finite1582 canonical tone-free glyph domain: both existing vendored
+datasets equal Source definitions, but a V16-only filter wrongly admits6 extras.
+Derive the intersection off render, then require genuine current Loaded exact
+canonical entry/glyph with no custom/image override before projection. No duplicate
+name table or Source version flag/default/heap/provider/group/layout equality follows.
+Separate original raw-root/owned picker/selection/currentness/physical lifecycle
+implementation and fresh gates remain. No permission follows from current pills,
+fixtures, cached rows or catalog labels. Physical/live/full acceptance stays open.
+
+
+## Verified passive Files Search excerpts: Desktop5366 / Core5614+doctest
+
+Owned Files Search results now display the first explicitly supplied qualifying
+text excerpt with literal text and paired highlights, clamped to three lines.
+Original duplicate file occurrences keep distinct extracts. The existing original
+request/page Book, cached Previous, failed-page preservation and explicit Retry
+remain in charge; an accepted file deletion hides all affected occurrences.
+No canonical File is seeded and no resource, preview, acquisition or action grant
+follows from excerpt data. Existing image/PDF/currentness guards are unchanged.
+
+Source qualification follows current Files-tab shared-item installation, the raw
+incoming guard, positive selected updated||created||timestamp knownness and the
+actual first contents_extracts formatter. Native support is explicitly bounded
+to snippet/text/text/plain, original raw access operators and a colon-free literal
+branch. Missing remains an observation, never synthesized visible/known/default
+permission. Exact ECMAScript trimStart and paired-marker behavior are retained;
+unsupported shapes/denials/limits omit only optional excerpt data, preserving the
+original Page. This does not establish fullFileDetails or Source SDK heap equality.
+
+Actual fresh gates 1500:3; 1501:5615; 1510:1; 1511:79; 1512:26; 1513:5366; Core full1501 **5614 unit +1 doctest/0/6**,
+Desktop full1513 **5366/0/7**, each matching its focused binary byte/mtime/hash.
+All prior5613 Core and5365 Desktop statuses, original92 and ignored6/7 are exact.
+Root fmt02/Core fmt01 and changed non-test Check1514 passed. One consolidated Core corpus
+and one mounted original-request/page/cache/outage/Retry/deletion workflow are
+new. Test setup review F1 was corrected before Cargo; freeze01 receipt-field
+failure and draft01 evidence are retained. Compile1502 E0532 affected only two new
+test Placeholder patterns; corrected to pinned tuple patterns before successor1510.
+Its failed source/log and unchanged Core pass are retained. No existing test was weakened.
+
+Evidence: files-excerpt-native-milestone-01.json, files-excerpt-review-01/report.json,
+files-excerpt-root-review-02.json + final-supplement-02.json, core-5614 and desktop-5366-files-excerpt
+source/binary archives, actual1500/1501/1510..1514 receipts. References: files-search-excerpt-
+native-plan-static-20261101-01 and files-excerpt-incoming-guard-audit-static-
+20261101-01. Targets54.166GiB; after archives
+65.781GiB free; minimum commit6.091GiB,
+sampled compiler/Cargo private peak19.393GiB;
+fresh meaningful logs2368237B. Single Core8/desktop1
+processINC0/Check8 pipeline; stable caches/helper56 conditional96, disk53.25start/
+50.75protect/50hard and commit5protect/4hard unchanged. No cleanup or prohibited
+live/device/security action. Source/caches/evidence and mixed worklog preserved.
+
+An external HEAD advance to84d535b (parent2e98e204) was observed during verification;
+all6338 compiled inputs remained byte-exact. The old-HEAD archive guard stopped
+before copies; external-head-transition01 records the audited ref-only change.
+No commit/push/reset/checkout was issued by this agent.
+
+Normal/narrow excerpt fixtures are registered, not launched. Native Session0,
+physical input/PNG/live service and full parity remain OPEN. Goal ACTIVE/incomplete;
+continue the next source-qualified safe user journey after this verified milestone.
+
+
 ## Verified Search author to read-only Profile: Desktop5365 / Core5613 carried
 
 An owned ordinary C/G/D message Search result can open its genuine same-team

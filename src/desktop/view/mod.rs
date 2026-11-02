@@ -73,6 +73,7 @@ mod thread_window;
 mod thread_window_check;
 mod threads;
 pub(crate) use threads::eligible_replies as eligible_thread_replies;
+pub(crate) use threads::root_first_add_dialog;
 pub(crate) use threads::selected_replies as selected_thread_replies;
 #[cfg(test)]
 pub(crate) use threads::thread_list as thread_list_for_test;

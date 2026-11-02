@@ -70,6 +70,7 @@ mod profile_edit;
 mod profile_title;
 mod profile_vip;
 mod reaction_picker;
+mod reaction_writes;
 mod read_preferences;
 mod read_shortcuts;
 mod read_visibility;

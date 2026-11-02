@@ -17,6 +17,7 @@ pub(crate) use read::ProfileOpen;
 pub(crate) use read::accept_read_barrier;
 pub(crate) use read::copy_link;
 pub(crate) use read::publish_profile_refresh;
+pub(crate) use read::reaction_toggle;
 pub(crate) use read::reply_visible_limit;
 pub(crate) use read::timestamp;
 pub(crate) use read::{ContextPrepared, finish_context, prepare_context};
@@ -66,6 +67,11 @@ pub(crate) fn fixture(shell: &mut ShellState, name: &str) {
     }
     if name.starts_with("thread-feed-timestamp") {
         timestamp::fixture(shell);
+    }
+    if name.starts_with("thread-feed-root-first-add-custom") {
+        reaction_toggle::first_add::custom_fixture(shell);
+    } else if name.starts_with("thread-feed-root-first-add") {
+        reaction_toggle::first_add::fixture(shell);
     }
     let epoch = shell.core.account_epoch;
     let team = shell.core.active_team.clone().unwrap();

@@ -298,6 +298,11 @@ impl MediaRegistry {
         self.insert_asset(id, mime.into(), bytes.into(), false);
     }
 
+    #[cfg(test)]
+    pub(crate) fn insert_provisional_for_test(&self, id: MediaAssetId, bytes: &[u8]) {
+        self.insert_asset(id, "image/png".into(), bytes.into(), true);
+    }
+
     /// Hold the requested original while a native Save dialog is open, even
     /// if scrolling elsewhere evicts it from the bounded renderer cache.
     pub fn ready_bytes(&self, id: &MediaAssetId) -> Option<Arc<[u8]>> {

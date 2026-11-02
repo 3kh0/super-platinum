@@ -259,3 +259,6 @@ fn edit_success_preserves_later_reactions_and_never_inserts_into_another_thread(
     assert_eq!(message.text.as_deref(), Some("Submitted edit"));
     assert!(shell.core.threads[&unrelated].messages.is_empty());
 }
+
+#[path = "edit_tests/table.rs"]
+mod table;

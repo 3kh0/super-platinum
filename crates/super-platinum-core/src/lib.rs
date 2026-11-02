@@ -42,6 +42,7 @@ pub mod state;
 pub mod thread_copy_link;
 pub mod thread_feed;
 pub mod thread_history;
+pub mod thread_reaction;
 pub mod thread_reads;
 pub mod thread_subscriptions;
 pub mod thread_timestamp;

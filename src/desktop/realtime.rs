@@ -92,6 +92,7 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     Ok(source) => source,
                     Err(_) => return,
                 };
+                crate::thread_feed::reaction_toggle::connection_changed(&mut shell, &team);
                 let channel_work =
                     crate::app_home::channel_fetches::connected(&mut shell, &team, generation);
                 crate::directory_member_fetches::automatic::connected(
@@ -157,6 +158,7 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                 }
             }
             RtUpdate::Event { generation, event } => {
+                crate::thread_feed::reaction_toggle::event(&mut shell, &team, generation, &event);
                 let owned_draft = match event.as_ref() {
                     RtEvent::Unknown(raw)
                         if matches!(
@@ -543,6 +545,12 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                     generation,
                     barrier.clone(),
                 );
+                crate::thread_feed::reaction_toggle::accept_barrier(
+                    &mut shell,
+                    &team,
+                    generation,
+                    barrier.clone(),
+                );
                 crate::thread_feed::accept_read_barrier(&mut shell, &team, generation, barrier);
                 drop(shell);
                 crate::bootstrap::search_message_pages::profiles::after_barrier(
@@ -557,6 +565,7 @@ pub async fn worker(mut state: Signal<ShellState>, params: ConnectParams) {
                 );
                 crate::file_share::connection(&mut shell, &team, generation);
                 mark_disconnected(&mut shell, &team, generation);
+                crate::thread_feed::reaction_toggle::connection_changed(&mut shell, &team);
             }
         }
     }

@@ -20,6 +20,11 @@ mod file_pages;
 mod file_share_read;
 mod file_sort_preference;
 mod people_pages;
+mod reaction_observed;
+pub use reaction_observed::{
+    ObservedReactionFailure, ReactionAdvice, ReactionRequestKind, ReactionWireEvent,
+    RootReactionRead,
+};
 mod search_reaction;
 pub use search_reaction::{SearchReactionFailure, SearchReactionRead};
 mod thread_copy_link;

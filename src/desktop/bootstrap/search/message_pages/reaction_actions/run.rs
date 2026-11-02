@@ -1,5 +1,7 @@
 //! Root-owned bounded IO. Retirement fences precede dispatch, not receipt drain.
 use super::*;
+use crate::reaction_writes::Trace;
+use super_platinum_core::slack::transport::{ReactionRequestKind, ReactionWireEvent};
 use super_platinum_core::{
     search_reaction::Membership,
     slack::{
@@ -50,12 +52,18 @@ async fn read(
     if crate::fixture::is_fixture() {
         return Err(Failure::NotRequested(unavailable()));
     }
+    let trace = Trace::new(p.ledger.clone(), p.owner.key.actor.clone());
     let result = p
         .owner
         .transport
-        .execute_search_reaction_read(request, kind, &p.owner.key.channel, &p.owner.key.ts, || {
-            read_current(state, p, watch)
-        })
+        .execute_search_reaction_read_observed(
+            request,
+            kind,
+            &p.owner.key.channel,
+            &p.owner.key.ts,
+            || read_current(state, p, watch),
+            |event| trace.observe(event),
+        )
         .await;
     if let Err(Failure::NotRequested(e) | Failure::Unknown(e)) = &result {
         p.ledger.cooldown(&p.owner.key.actor, retry_after(e));
@@ -169,6 +177,7 @@ pub(super) async fn send(
     observation: Observation,
     reservation: registry::Reservation,
 ) {
+    let trace = Trace::new(p.ledger.clone(), p.owner.key.actor.clone());
     let mut name = observation.requested.clone();
     let mut adding = false;
     let result = async {
@@ -259,20 +268,33 @@ pub(super) async fn send(
             if !current() {
                 return Err(Failure::NotRequested(unavailable()));
             }
-            return io.execute(request, true).await.map_err(Failure::Unknown);
+            trace.observe(ReactionWireEvent::Attempted(ReactionRequestKind::Write));
+            let result = io.execute(request, true).await;
+            trace.test_result(ReactionRequestKind::Write, &result);
+            if result.as_ref().is_ok_and(|raw| {
+                raw["ok"] == false
+                    && matches!(
+                        raw["error"].as_str(),
+                        Some("internal_error" | "fatal_error")
+                    )
+            }) {
+                return Err(Failure::Unknown(Error::Api("reaction_unconfirmed".into())));
+            }
+            return result.map_err(Failure::Unknown);
         }
         if crate::fixture::is_fixture() {
             return Err(Failure::NotRequested(unavailable()));
         }
         p.owner
             .transport
-            .execute_search_reaction_once(
+            .execute_search_reaction_once_observed(
                 request,
                 &p.owner.key.channel,
                 &p.owner.key.ts,
                 &name,
                 adding,
                 current,
+                |event| trace.observe(event),
             )
             .await
     }

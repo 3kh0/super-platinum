@@ -10,6 +10,7 @@ pub(crate) mod action;
 mod controls;
 mod emoji;
 mod file_mentions;
+pub(crate) mod table;
 mod text;
 mod underline;
 
@@ -73,6 +74,24 @@ impl<'a> BlockCtx<'a> {
             alt: alt.to_owned(),
         }
     }
+}
+
+/// Message-only static reading. Generic Home/modal block admission is unchanged.
+pub(crate) fn message_block_nodes(ctx: BlockCtx<'_>, value: &Value) -> Vec<RichNode> {
+    if value.get("type").and_then(Value::as_str) == Some("table") {
+        return table::parse(value)
+            .map(RichNode::Table)
+            .into_iter()
+            .collect();
+    }
+    block_nodes(ctx, value)
+}
+
+/// Exact raw marker only. This fact can refuse editing, never authorize it.
+pub(crate) fn has_table_block(blocks: &[Value]) -> bool {
+    blocks
+        .iter()
+        .any(|b| b.get("type").and_then(Value::as_str) == Some("table"))
 }
 
 /// Translate one Block Kit block (or nested element) into rich nodes.

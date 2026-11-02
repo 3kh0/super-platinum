@@ -10,6 +10,7 @@ use crate::bootstrap::{credentials, persist_workspace};
 use crate::state::{PendingSend, ShellState};
 
 pub(crate) mod delivery_check;
+pub(crate) mod edit_guard;
 mod outcomes;
 mod ownership;
 pub(crate) mod thread_broadcast_check;
@@ -627,88 +628,13 @@ fn restore_upload_to_shell(
 }
 
 pub async fn toggle_reaction(
-    mut state: Signal<ShellState>,
+    state: Signal<ShellState>,
     channel: String,
     ts: String,
     name: String,
     removing: bool,
 ) {
-    let Some((transport, client, workspaces)) = credentials(&state) else {
-        return;
-    };
-    let Some(team) = state.read().core.active_team.clone() else {
-        return;
-    };
-    let Some(workspace_session) = workspaces
-        .into_iter()
-        .find(|workspace| workspace.team_id == team)
-    else {
-        return;
-    };
-    let user = workspace_session.user_id.clone();
-    {
-        let mut shell = state.write();
-        crate::realtime::apply_reaction(
-            &mut shell.core,
-            &team,
-            &channel,
-            &ts,
-            &user,
-            &name,
-            !removing,
-        );
-        shell.refresh_from_core();
-    }
-    let result = if removing {
-        api::remove_reaction(
-            &transport,
-            &client,
-            &workspace_session,
-            channel.clone(),
-            ts.clone(),
-            name.clone(),
-        )
-        .await
-    } else {
-        api::add_reaction(
-            &transport,
-            &client,
-            &workspace_session,
-            channel.clone(),
-            ts.clone(),
-            name.clone(),
-        )
-        .await
-    };
-    // Account reloads replace the transport. Never roll a late response into
-    // another account's workspace, even when the team id is the same.
-    if state
-        .peek()
-        .core
-        .transport
-        .as_ref()
-        .is_none_or(|current| !std::sync::Arc::ptr_eq(current, &transport))
-    {
-        return;
-    }
-    if let Err(error) = result {
-        let mut shell = state.write();
-        crate::realtime::apply_reaction(
-            &mut shell.core,
-            &team,
-            &channel,
-            &ts,
-            &user,
-            &name,
-            removing,
-        );
-        shell.refresh_from_core();
-        shell.report_failure(&error, "Reaction not saved — you are offline", || {
-            format!("Reaction failed: {error}")
-        });
-    } else {
-        persist_workspace(&state, &team);
-    }
+    crate::reaction_writes::legacy_toggle(state, channel, ts, name, removing).await;
 }
 
 type EditContent = (
@@ -750,6 +676,9 @@ impl EditVisit {
     ) -> Option<Self> {
         let (channel, ts) = shell.core.editing.clone()?;
         let team = shell.core.active_team.clone()?;
+        if edit_guard::known_table(shell, &team, &channel, &ts) {
+            return None;
+        }
         let channel_baseline = shell
             .core
             .workspaces
@@ -784,6 +713,40 @@ impl EditVisit {
             && shell.core.editing.as_ref() == Some(&(self.channel.clone(), self.ts.clone()))
             && shell.core.edit_composer.text == self.raw_text
     }
+}
+
+impl EditVisit {
+    fn may_send(&self, shell: &ShellState) -> bool {
+        self.editing(shell) && !edit_guard::known_table(shell, &self.team, &self.channel, &self.ts)
+    }
+}
+
+/// Recheck the negative table fact after link readiness, immediately before IO.
+/// Existing result retirement and baseline merge rules remain independent.
+async fn execute_edit(
+    state: Signal<ShellState>,
+    visit: &EditVisit,
+    transport: &super_platinum_core::slack::Transport,
+    request: super_platinum_core::slack::PreparedRequest,
+) -> Result<
+    Option<super_platinum_core::slack::models::SentMessage>,
+    super_platinum_core::slack::Error,
+> {
+    let value = transport
+        .execute_admitted(
+            request,
+            || visit.session.current(&state.peek()),
+            || visit.may_send(&state.peek()),
+            |_| {},
+        )
+        .await?;
+    value
+        .map(|v| {
+            serde_json::from_value(v).map_err(|e| {
+                super_platinum_core::slack::Error::Transport(format!("decode chat.update: {e}"))
+            })
+        })
+        .transpose()
 }
 
 fn merge_edit_if_unchanged(
@@ -896,15 +859,19 @@ pub async fn save_edit(mut state: Signal<ShellState>) {
     else {
         return;
     };
-    let result = api::edit_message(
-        &transport,
+    let request = api::chat_update(
         &client,
         &workspace_session,
         visit.channel.clone(),
         visit.ts.clone(),
         text,
-    )
-    .await;
+    );
+    let Some(result) = execute_edit(state, &visit, &transport, request)
+        .await
+        .transpose()
+    else {
+        return;
+    };
     let changed = apply_edit_result(&mut state.write(), &visit, result);
     if changed {
         persist_workspace(&state, &visit.team);

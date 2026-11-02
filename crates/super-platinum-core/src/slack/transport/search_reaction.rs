@@ -77,6 +77,125 @@ impl Transport {
             .map_err(map_failure)
     }
 }
+
+impl Transport {
+    /// Physical observation only; the native Search purpose still owns every
+    /// eligibility/currentness/one-use guard. Private wire validators unchanged.
+    pub async fn execute_search_reaction_read_observed(
+        &self,
+        request: PreparedRequest,
+        kind: SearchReactionRead,
+        channel: &str,
+        ts: &str,
+        current: impl FnMut() -> bool,
+        observe: impl FnMut(ReactionWireEvent),
+    ) -> Result<Value, SearchReactionFailure> {
+        let path = match kind {
+            SearchReactionRead::History => "/api/conversations.history",
+            SearchReactionRead::Channel => "/api/conversations.info",
+            SearchReactionRead::Membership => "/api/reactions.get",
+        };
+        let Some(fields) = fields(&request, path) else {
+            return Err(invalid());
+        };
+        if !valid_read(&request)
+            || fields.get("channel") != Some(&channel)
+            || match kind {
+                SearchReactionRead::History => fields.get("latest") != Some(&ts),
+                SearchReactionRead::Membership => fields.get("timestamp") != Some(&ts),
+                SearchReactionRead::Channel => false,
+            }
+        {
+            return Err(invalid());
+        }
+        self.execute_search_reaction_compatible_observed(
+            request,
+            ReactionRequestKind::Read,
+            current,
+            valid_read,
+            observe,
+        )
+        .await
+    }
+    pub async fn execute_search_reaction_once_observed(
+        &self,
+        request: PreparedRequest,
+        channel: &str,
+        ts: &str,
+        name: &str,
+        adding: bool,
+        current: impl FnMut() -> bool,
+        observe: impl FnMut(ReactionWireEvent),
+    ) -> Result<Value, SearchReactionFailure> {
+        let path = if adding {
+            "/api/reactions.add"
+        } else {
+            "/api/reactions.remove"
+        };
+        let Some(fields) = fields(&request, path) else {
+            return Err(invalid());
+        };
+        if !valid_write(&request)
+            || fields.get("channel") != Some(&channel)
+            || fields.get("timestamp") != Some(&ts)
+            || fields.get("name") != Some(&name)
+        {
+            return Err(invalid());
+        }
+        self.execute_search_reaction_compatible_observed(
+            request,
+            ReactionRequestKind::Write,
+            current,
+            valid_write,
+            observe,
+        )
+        .await
+    }
+
+    async fn execute_search_reaction_compatible_observed(
+        &self,
+        request: PreparedRequest,
+        kind: ReactionRequestKind,
+        current: impl FnMut() -> bool,
+        permitted: fn(&PreparedRequest) -> bool,
+        mut observe: impl FnMut(ReactionWireEvent),
+    ) -> Result<Value, SearchReactionFailure> {
+        let mut advertised = None;
+        let raw = self
+            .execute_reaction_observed(request, kind, current, permitted, |event| {
+                if let ReactionWireEvent::Response { status, advice, .. } = &event {
+                    if *advice != ReactionAdvice::None {
+                        advertised = Some((*status, *advice));
+                    }
+                }
+                observe(event);
+            })
+            .await
+            .map_err(observed_failure)?;
+        // Preserve the pre-existing Search conservative 2xx+advice quarantine.
+        // Observation still retains original successful body/header facts.
+        if let Some((status, advice)) = advertised {
+            let retry_after_secs = match advice {
+                ReactionAdvice::None => None,
+                ReactionAdvice::Seconds(s) => Some(s),
+                ReactionAdvice::Permanent => Some(u64::MAX),
+            };
+            return Err(SearchReactionFailure::Unknown(Error::HttpStatus {
+                status,
+                retry_after_secs,
+            }));
+        }
+        Ok(raw)
+    }
+}
+
+fn observed_failure(error: ObservedReactionFailure) -> SearchReactionFailure {
+    match error {
+        ObservedReactionFailure::NotRequested(e) => SearchReactionFailure::NotRequested(e),
+        ObservedReactionFailure::Unknown(e) => SearchReactionFailure::Unknown(e),
+    }
+}
+
 fn invalid() -> SearchReactionFailure {
     SearchReactionFailure::NotRequested(Error::Api("invalid_search_reaction_request".into()))
 }

@@ -260,6 +260,15 @@ fn reaction_counts(
     }
 }
 
+pub(super) fn root_reading(
+    state: Signal<ShellState>,
+    snapshot: &ShellState,
+    item: &ThreadViewItem,
+    read: Option<&crate::thread_feed::Source>,
+) -> Element {
+    super::reaction_toggle::render(state, snapshot, item, read)
+}
+
 pub(super) fn root_counts(snapshot: &ShellState, item: &ThreadViewItem) -> Element {
     let Some(team) = snapshot.core.active_team.as_deref() else {
         return rsx! {};

@@ -65,6 +65,9 @@ pub fn overlay_view(
     if overlay == Overlay::ReactionPicker {
         return rsx! { crate::reaction_picker::ReactionPicker { state } };
     }
+    if overlay == Overlay::ThreadRootFirstAdd {
+        return crate::view::root_first_add_dialog(state);
+    }
     if overlay == Overlay::FileShare {
         if let Some(dialog) = crate::file_share::visible(snapshot) {
             return rsx! {crate::view::file_share::FileShareDialog {key:"{dialog.id}",state}};
@@ -118,6 +121,7 @@ pub fn overlay_view(
         Overlay::FileShare => unreachable!("file Share owns its dialog"),
         Overlay::ComposerEmoji => unreachable!("composer emoji owns its dialog"),
         Overlay::ReactionPicker => unreachable!("reaction picker owns its dialog"),
+        Overlay::ThreadRootFirstAdd => unreachable!("Root first-Add owns its dialog"),
     };
     let compact = overlay == Overlay::Palette;
     rsx! {

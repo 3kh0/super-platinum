@@ -155,6 +155,7 @@ pub(crate) struct State {
     ready: HashMap<String, Arc<Loaded>>,
     building: HashMap<String, Building>,
     attempted: HashMap<String, (Owner, u64, Instant)>,
+    completions: HashMap<u64, Vec<tokio::sync::oneshot::Sender<Option<Arc<Loaded>>>>>,
 }
 impl State {
     fn retire(&mut self, team: &str, ticket: u64) {
@@ -164,6 +165,11 @@ impl State {
             .is_some_and(|building| building.ticket == ticket)
         {
             self.building.remove(team);
+        }
+        if let Some(waiters) = self.completions.remove(&ticket) {
+            for waiter in waiters {
+                let _ = waiter.send(None);
+            }
         }
     }
 }
@@ -258,7 +264,108 @@ fn building_current(
 }
 
 fn retire_building(mut state: Signal<ShellState>, team: &str, ticket: u64) {
-    state.write().emoji_catalog.retire(team, ticket);
+    let mut shell = state.write();
+    let ready = if shell
+        .emoji_catalog
+        .building
+        .get(team)
+        .is_some_and(|b| b.ticket == ticket)
+    {
+        current(&shell)
+    } else {
+        None
+    };
+    if let Some(waiters) = shell.emoji_catalog.completions.remove(&ticket) {
+        for waiter in waiters {
+            let _ = waiter.send(ready.clone());
+        }
+    }
+    shell.emoji_catalog.retire(team, ticket);
+}
+
+/// Explicit consumer waits for the actual on-demand producer to finish. No
+/// polling, per-render retries or synthetic Loaded can satisfy this wait.
+pub(crate) async fn ensure_complete(mut state: Signal<ShellState>) -> Option<Arc<Loaded>> {
+    #[cfg(test)]
+    if try_consume_context::<std::rc::Rc<crate::thread_feed::reaction_toggle::test_io::Io>>()
+        .is_none()
+    {
+        return None;
+    }
+    let ready = ensure(state);
+    let receiver = {
+        let mut shell = state.write();
+        let team = shell.core.active_team.clone()?;
+        if let Some(build) = shell.emoji_catalog.building.get(&team) {
+            if !building_current(
+                &shell,
+                &build.owner,
+                build.revision,
+                &build.locale,
+                build.ticket,
+            ) {
+                return None;
+            }
+            let ticket = build.ticket;
+            let (tx, rx) = tokio::sync::oneshot::channel();
+            shell
+                .emoji_catalog
+                .completions
+                .entry(ticket)
+                .or_default()
+                .push(tx);
+            Some(rx)
+        } else {
+            return ready.filter(|v| v.current(&shell));
+        }
+    };
+    receiver?
+        .await
+        .ok()
+        .flatten()
+        .filter(|v| v.current(&state.peek()))
+}
+
+async fn complete_catalog(
+    context: Context,
+) -> Result<Vec<super_platinum_core::slack::models::Emoji>, super_platinum_core::slack::Error> {
+    #[cfg(test)]
+    {
+        let io =
+            try_consume_context::<std::rc::Rc<crate::thread_feed::reaction_toggle::test_io::Io>>()
+                .ok_or_else(|| {
+                    super_platinum_core::slack::Error::Offline(
+                        "No scoped Root catalogue test IO".into(),
+                    )
+                })?;
+        let raw = io
+            .execute(
+                context
+                    .client
+                    .rest_form(&context.session, "emoji.list", Vec::new()),
+            )
+            .await?;
+        let complete = super_platinum_core::slack::api::emoji_catalog::Complete::decode(raw)?;
+        return Ok(complete.raw()["emoji"]
+            .as_object()
+            .unwrap()
+            .iter()
+            .map(|(name, value)| super_platinum_core::slack::models::Emoji {
+                name: name.clone(),
+                value: value.as_str().unwrap().into(),
+                ..Default::default()
+            })
+            .collect());
+    }
+    #[cfg(not(test))]
+    {
+        super_platinum_core::slack::api::fetch_emoji_catalog(
+            &context.transport,
+            &context.client,
+            &context.session,
+        )
+        .await
+    }
 }
 
 /// Returns the current snapshot if ready and schedules at most one worker per
@@ -362,14 +469,7 @@ pub(crate) fn ensure(mut state: Signal<ShellState>) -> Option<Arc<Loaded>> {
             {
                 Some(result)
             } else if let Some(context) = context {
-                Some(
-                    super_platinum_core::slack::api::fetch_emoji_catalog(
-                        &context.transport,
-                        &context.client,
-                        &context.session,
-                    )
-                    .await,
-                )
+                Some(complete_catalog(context).await)
             } else {
                 None
             };

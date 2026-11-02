@@ -4,7 +4,7 @@ pub(crate) mod preview;
 use super_platinum_core::MediaAssetKind;
 use super_platinum_core::slack_lists::comments::edit_seed::prepare::StandardEmoji;
 
-use crate::blocks::{BlockCtx, block_nodes, custom_emoji_media, plain_inline_nodes};
+use crate::blocks::{BlockCtx, custom_emoji_media, message_block_nodes, plain_inline_nodes};
 
 #[cfg(test)]
 mod tone_tests;
@@ -130,6 +130,7 @@ pub(crate) fn message_vm_with_standard(
         avatar,
         external_team,
         body: message_body(workspace, message, media, standard),
+        has_table_block: crate::blocks::has_table_block(&message.blocks),
         edited: message.edited.is_some(),
         pinned_to: message
             .extra
@@ -368,7 +369,7 @@ fn message_body(
     let mut nodes = message
         .blocks
         .iter()
-        .flat_map(|block| block_nodes(ctx, block))
+        .flat_map(|block| message_block_nodes(ctx, block))
         .collect::<Vec<_>>();
     if nodes.is_empty() {
         // Fall back to `text` only when the blocks rendered nothing — otherwise

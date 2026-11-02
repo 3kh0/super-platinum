@@ -1,3 +1,6 @@
+pub(crate) mod table;
+pub use table::ReadTable;
+
 pub use super_platinum_core::block_actions::{BlockElementMetadata, BlockElementSource};
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -139,6 +142,8 @@ impl ButtonStyle {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RichNode {
+    /// Passive supplied static table; no action or editor codec.
+    Table(ReadTable),
     Canvas(CanvasTarget),
     /// A whole rich-text file occurrence, retaining original source team and raw
     /// style/opaque fields. Canonical titles are resolved only while rendering.
@@ -273,6 +278,7 @@ impl RichNode {
             output.push('\n');
         };
         match self {
+            Self::Table(table) => output.push_str(&table.plain_text()),
             Self::Canvas(target) => output.push_str(&target.title),
             Self::FileMention { fallback, .. } => output.push_str(fallback),
             Self::Underlined(node) => node.write_plain(output),
@@ -472,6 +478,8 @@ pub struct MessageVm {
     pub avatar: Option<MediaAssetId>,
     pub external_team: Option<ExternalTeamVm>,
     pub body: Vec<RichNode>,
+    /// Denial-only raw marker, including a table outside the reading profile.
+    pub has_table_block: bool,
     pub edited: bool,
     pub pinned_to: Vec<String>,
     pub is_own: bool,
@@ -750,6 +758,7 @@ pub enum Overlay {
     Canvas,
     CanvasCreate,
     ReactionPicker,
+    ThreadRootFirstAdd,
     ComposerEmoji,
     Forward,
     FileShare,

@@ -135,7 +135,7 @@ FIXTURES=(
   huddle-video huddle-video-expanded huddle-settings huddle-people huddle-captions
   chat-paused-pill
   thread-follow-on thread-follow-off thread-follow-pending thread-follow-narrow
-  thread-feed-earlier-local thread-feed-earlier-local-narrow your-channels your-channels-narrow thread-feed-rich-root thread-feed-rich-root-narrow thread-feed-unread thread-feed-unread-narrow thread-feed-unread-read thread-feed-unread-read-narrow thread-feed-mark-all thread-feed-mark-all-narrow thread-feed-replies thread-feed-replies-narrow thread-feed-replies-reactions thread-feed-replies-reactions-narrow thread-feed-root-reactions thread-feed-root-reactions-narrow thread-feed thread-feed-empty thread-feed-error thread-feed-loading thread-feed-updated thread-feed-narrow thread-feed-refresh-retry thread-feed-refresh-retry-narrow thread-feed-older-retry thread-feed-older-retry-narrow thread-feed-initial-retry thread-feed-initial-retry-narrow
+  thread-feed-earlier-local thread-feed-earlier-local-narrow your-channels your-channels-narrow thread-feed-rich-root thread-feed-rich-root-narrow thread-feed-unread thread-feed-unread-narrow thread-feed-unread-read thread-feed-unread-read-narrow thread-feed-mark-all thread-feed-mark-all-narrow thread-feed-replies thread-feed-replies-narrow thread-feed-replies-reactions thread-feed-replies-reactions-narrow thread-feed-root-reactions thread-feed-root-reactions-narrow thread-feed-root-reactions-toggle thread-feed-root-reactions-toggle-narrow thread-feed-root-first-add thread-feed-root-first-add-narrow thread-feed-root-first-add-custom thread-feed-root-first-add-custom-narrow thread-feed thread-feed-empty thread-feed-error thread-feed-loading thread-feed-updated thread-feed-narrow thread-feed-refresh-retry thread-feed-refresh-retry-narrow thread-feed-older-retry thread-feed-older-retry-narrow thread-feed-initial-retry thread-feed-initial-retry-narrow
   thread-counts-mentions thread-counts-unread thread-counts-clear thread-counts-narrow
   thread-unread-divider thread-list-unread thread-marked-unread thread-marked-unread-narrow thread-target thread-error thread-paging thread-paging-error thread-grouped thread-grouped-pending thread-window-200 thread-window-2000 thread-window-10000 thread-window-target thread-window-gap main-dev settings settings-storage appearance-countertop
   appearance-blue-steel appearance-paper-bag appearance-custom-background
@@ -185,7 +185,7 @@ FIXTURES=(
   connection-connecting connection-no-network composer-multiline
   composer-upload-progress
   edit-message-composer accounts self-menu self-menu-notifications
-  multi-paragraph-custom-emoji slack-connect-avatar message-unfurl-embed block-kit-layout button-metadata button-metadata-narrow block-control-values block-control-values-narrow
+  multi-paragraph-custom-emoji slack-connect-avatar message-unfurl-embed block-kit-layout block-kit-static-table block-kit-static-table-narrow button-metadata button-metadata-narrow block-control-values block-control-values-narrow
   app-shortcuts app-shortcuts-narrow
   app-home app-home-narrow
   app-home-url-readonly app-home-url-readonly-narrow

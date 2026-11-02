@@ -97,7 +97,7 @@ fn field<'a>(value: &'a Value, snake: &str, camel: &str) -> Option<&'a Value> {
     value.get(snake).or_else(|| value.get(camel))
 }
 
-fn unicode_glyph(unicode: &str) -> Option<String> {
+pub(super) fn unicode_glyph(unicode: &str) -> Option<String> {
     unicode
         .split('-')
         .map(|part| {

@@ -39,6 +39,9 @@ impl State {
         self.fixture = None;
     }
 }
+pub(crate) fn physical_registry(s: &ShellState) -> registry::Registry {
+    s.search_reaction_actions.registry.clone()
+}
 struct Picker {
     id: u64,
     owner: Owner,
